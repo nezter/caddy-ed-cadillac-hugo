@@ -23,6 +23,24 @@ export default class PostPreview extends React.Component {
           </div>
         </div>
 
+        <div className="bg-off-white pv4">
+          <div className="ph3 mw7 center">
+            <h2 className="f2 b lh-title mb2">{entry.getIn(["data", "intro", "heading"])}</h2>
+            <p className="mb4 mw6">{entry.getIn(["data", "intro", "text"])}</p>
+
+            <div className="flex-ns mhn2-ns mb3">
+              {(entry.getIn(["data", "products"]) || []).map((product, i) => <div className="ph2-ns w-50-ns" key={i}>
+                <img src={getAsset(product.get("image"))} alt="" className="center db mb3" style={{width: "240px"}}/>
+                <p>{product.get("text")}</p>
+              </div>)}
+            </div>
+
+            <div className="tc">
+              <a href="#" className="btn raise">See all products</a>
+            </div>
+          </div>
+        </div>
+
         <div className="pb4">
         {(entry.getIn(['data', 'testimonials']) || []).map((testimonial, index) => <div className="center mb3 ph3" key={index}>
         	<blockquote className="bg-grey-1 primary pa3 mb3 br1 b mw6 center">
@@ -31,7 +49,7 @@ export default class PostPreview extends React.Component {
         	</blockquote>
         </div>)}
       </div>
-
+      
         <div className="bg-grey-1 pv4">
           <div className="ph3 mw7 center">
 
