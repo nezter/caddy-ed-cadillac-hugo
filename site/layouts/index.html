@@ -2,6 +2,12 @@
 
 {{ partial "jumbotron" (dict "imageUrl" .Params.image "title" .Title "subtitle" .Params.subtitle) }}
 
+<div class="pb4">
+    {{ range .Params.testimonials }}
+      {{ partial "blockquote" . }}
+    {{ end }}
+  </div>
+
 {{ partial "short-text" .Params.blurb}}
 
 {{ end }}

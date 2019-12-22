@@ -22,6 +22,7 @@ export default class PostPreview extends React.Component {
             <p className="w-60-l mb0">{entry.getIn(["data", "blurb", "text"])}</p>
           </div>
         </div>
+
         <div className="pb4">
         {(entry.getIn(['data', 'testimonials']) || []).map((testimonial, index) => <div className="center mb3 ph3" key={index}>
         	<blockquote className="bg-grey-1 primary pa3 mb3 br1 b mw6 center">
@@ -30,6 +31,7 @@ export default class PostPreview extends React.Component {
         	</blockquote>
         </div>)}
       </div>
+      
         <div className="bg-off-white pv4">
           <div className="ph3 mw7 center">
             <h2 className="f2 b lh-title mb2">{entry.getIn(["data", "intro", "heading"])}</h2>
