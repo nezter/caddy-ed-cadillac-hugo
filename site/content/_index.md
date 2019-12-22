@@ -3,8 +3,10 @@ title: Caddy Ed
 subtitle: '1'
 image: /img/cadillac-logo-desktop-wallpaper-933-951-hd-wallpapers.jpg
 testimonials:
-  - author: The Great Quoter
+  - author: the Quote
     quote: This is a great quote. The best quote. The best quote ever!
+  - author: The other Quote
+    quote: This is a great quote. The best quote. The best quote ever! I know it is!
 blurb:
   heading: Why Kaldi?
   text: >-
