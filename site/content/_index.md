@@ -8,12 +8,19 @@ testimonials:
   - author: The other Quote
     quote: This is a great quote. The best quote. The best quote ever! I know it is!
 blurb:
-  heading: Why Kaldi?
-  text: >-
-    Kaldi is the coffee store for everyone who believes that great coffee
-    shouldn't just taste good, it should do good too. We source all of our beans
-    directly from small scale sustainable farmers and make sure part of the
-    profits are reinvested in their communities.
+  heading: '1'
+  text: '1'
 logo: /img/edwardportellonobg.png
+contact_entries:
+  - heading: Location
+    text: '10725 Pineville Rd, Pineville, NC 28134'
+  - heading: Contact Info
+    text: |-
+      eportello@gmail.com
+      803-111-231
 ---
+<h3 class="f4 b lh-title mb2">Reach out!</h3>
 
+Submit a request below for Caddy Ed to give in-touch with you. 
+
+Provide as much detail as possible of what you are looking for.
