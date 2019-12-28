@@ -6,3 +6,7 @@ img {
 img:not(.w-100) {
   border-radius: var(--border-radius);
 }
+
+.img-round {
+  border-radius: 50%;
+}
