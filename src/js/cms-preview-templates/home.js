@@ -42,9 +42,6 @@ const ContactEntries = ({data}) => data && data.length > 0
       {data.map(({heading, text}) => <ContactEntry heading={heading} text={text} />)}
     </div>
     : "";
-
-export default class ContactPreview extends React.Component {
-  render() {
     const {entry, getAsset, widgetFor} = this.props;
     const entryContactEntries = entry.getIn(["data", "contact_entries"]);
     const contactEntries = entryContactEntries ? entryContactEntries.toJS() : [];
@@ -55,8 +52,6 @@ export default class ContactPreview extends React.Component {
         <ContactEntries data={contactEntries} />
       </div>
     </div>;
-  }
-}
 
         <div className="bg-off-white pv4">
           <div className="ph3 mw7 center">
