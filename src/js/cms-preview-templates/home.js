@@ -16,13 +16,6 @@ export default class PostPreview extends React.Component {
     return <div>
         <Jumbotron image={image} title={entry.getIn(["data", "title"])}/>
 
-        <div className="bg-grey-1 pv4">
-          <div className="flex-l mhn1-l ph3 center mw7">
-            <h2 className="f2 b lh-title mb2 w-40-l">{entry.getIn(["data", "blurb", "heading"])}</h2>
-            <p className="w-60-l mb0">{entry.getIn(["data", "blurb", "text"])}</p>
-          </div>
-        </div>
-
         <div className="pb4">
         {(entry.getIn(['data', 'testimonials']) || []).map((testimonial, index) => <div className="center mb3 ph3" key={index}>
         	<blockquote className="bg-grey-1 primary pa3 mb3 br1 b mw6 center">
@@ -31,28 +24,6 @@ export default class PostPreview extends React.Component {
         	</blockquote>
         </div>)}
       </div>
-      const ContactEntry = ({heading, text}) =>
-  <div>
-    <h4 className="f4 b lh-title mb2 primary">{ heading }</h4>
-    <p>{ text }</p>
-  </div>;
-
-const ContactEntries = ({data}) => data && data.length > 0
-    ? <div className="flex-ns mb3">
-      {data.map(({heading, text}) => <ContactEntry heading={heading} text={text} />)}
-    </div>
-    : "";
-    const {entry, getAsset, widgetFor} = this.props;
-    const entryContactEntries = entry.getIn(["data", "contact_entries"]);
-    const contactEntries = entryContactEntries ? entryContactEntries.toJS() : [];
-    return <div className="ph3 bg-off-white">
-      <img src={getAsset(entry.getIn(["data", "logo"]))} alt="" className="db w4 center pv4" />
-      <div className="center mw6 pv3">
-        { widgetFor("body") }
-        <ContactEntries data={contactEntries} />
-      </div>
-    </div>;
-
         <div className="bg-off-white pv4">
           <div className="ph3 mw7 center">
             <h2 className="f2 b lh-title mb2">{entry.getIn(["data", "intro", "heading"])}</h2>
