@@ -15,11 +15,9 @@ contact_entries:
   - heading: Location
     text: '10725 Pineville Rd, Pineville, NC 28134'
   - heading: Contact Info
-    text: |-
-      eportello@gmail.com
-      803-111-231
+    text: 'Call: 1+ 803-431-6180'
 ---
-<h3 class="f4 b lh-title mb2">Reach out!</h3>
+## **Reach out!**
 
 Submit a request below for Caddy Ed to give in-touch with you. 
 
