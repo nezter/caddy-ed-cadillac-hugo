@@ -1,15 +1,11 @@
 ---
-title: Caddy Ed
-subtitle: '1'
 image: /img/clouds.png
+centerlogo: /img/caddy-ed-with-text.png
 testimonials:
   - author: the Quote
     quote: This is a great quote. The best quote. The best quote ever!
   - author: The other Quote
     quote: This is a great quote. The best quote. The best quote ever! I know it is!
-blurb:
-  heading: '1'
-  text: '1'
 logo: /img/caddy-ed-text.png
 contact_entries:
   - heading: Location
