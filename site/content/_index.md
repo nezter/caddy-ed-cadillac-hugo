@@ -2,10 +2,15 @@
 image: /img/clouds.png
 centerlogo: /img/caddy-ed-with-text.png
 testimonials:
-  - author: the Quote
-    quote: This is a great quote. The best quote. The best quote ever!
-  - author: The other Quote
-    quote: This is a great quote. The best quote. The best quote ever! I know it is!
+  - author: Start DrivingToday!
+    quote: >-
+      I can promise that I will follow through with every aspect of a sale from
+      beginning to end. My main objective is to build a personal relationship
+      with everyone of my Guests, there family and friends.
+  - author: Start DrivingToday!
+    quote: >-
+      If you’re in the market for a new or preowned! Look no further! Start
+      DrivingToday!
 logo: /img/caddy-ed-text.png
 contact_entries:
   - heading: Location
