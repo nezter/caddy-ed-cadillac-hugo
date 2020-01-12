@@ -8,9 +8,7 @@ testimonials:
       beginning to end. My main objective is to build a personal relationship
       with everyone of my Guests, there family and friends.
   - author: Start DrivingToday!
-    quote: >-
-      If you’re in the market for a new or preowned! Look no further! Start
-      DrivingToday!
+    quote: If you’re in the market for a new or preowned! Look no further!
 logo: /img/caddy-ed-text.png
 contact_entries:
   - heading: Location
