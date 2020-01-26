@@ -4,28 +4,28 @@
 
 <div class="pb4">
     {{ range .Params.testimonials }}
-      {{ partial "blockquote" . }}
+    {{ partial "blockquote" . }}
     {{ end }}
-  </div>
+</div>
 
-  <div class="ph3 bg-off-white">
-	<div class="center mw6 pv3">
+<div class="ph4 bg-off-white">
+    <div class="center mw6 pv3">
 
-		<img src="{{ .Params.logo }}" alt="" class="db w4 center pv4 br-100">
+        <img src="{{ .Params.logo }}" alt="" class="db w4 center pv4 br-100">
 
-		{{ .Content }}
+        {{ .Content }}
 
-		<div class="flex-ns mb3">
-	        	{{ range .Params.contact_entries }}
-				<div>
-					<h4 class="f4 b lh-title mb2 primary">{{ .heading }}</h4>
-					<p>{{ .text }}</p>
-				</div>
-			{{ end }}
-		</div>
-<a name="contact-form"></a>
-		{{ partial "contact-form" . }}
+        <div class="flex-ns mb3 ph1">
+            {{ range .Params.contact_entries }}
+            <div class="flex-ns mb3 ph3">
+                <h4 class="f4 b lh-title mb2 primary">{{ .heading }}</h4>
+                <p>{{ .text }}</p>
+            </div>
+            {{ end }}
+        </div>
+        <a name="contact-form"></a>
+        {{ partial "contact-form" . }}
 
-	</div>
+    </div>
 </div>
 {{ end }}
