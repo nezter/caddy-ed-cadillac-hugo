@@ -14,10 +14,10 @@ contact_entries:
   - heading: Location
     text: '10725 Pineville Rd, Pineville, NC 28134'
   - heading: Contact Info
-    text: 'Call: 1+ 803-431-6180'
+    text: 'Call: 1+ (803) 431-6280'
 ---
 ## **Reach out!**
 
-Submit a request below for Caddy Ed to give in-touch with you. 
+Submit a request below for Caddy Ed will get in-touch with you. 
 
 Provide as much detail as possible of what you are looking for.
