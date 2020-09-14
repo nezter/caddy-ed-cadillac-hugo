@@ -14,7 +14,7 @@ contact_entries:
   - heading: Location
     text: '10725 Pineville Rd, Pineville, NC 28134'
   - heading: Call
-    text: 1+ (803) 431-6280
+    text: 1+ (803) 431-6180
 ---
 ## **Reach out!**
 
