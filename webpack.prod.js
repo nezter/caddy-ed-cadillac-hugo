@@ -17,18 +17,20 @@ module.exports = merge(common, {
     minimizer: [
       new TerserPlugin({
         parallel: true,
-        exclude: /\/node_modules\//,
+        exclude: /node_modules/,
         terserOptions: {
-          compress: {modules\//,
+          compress: {
             drop_console: true
-          }, MiniCssExtractPlugin({
-          mangle: trueilename: "[name].[hash:5].css",
-        }sh:5].css"
+          },
+          mangle: true
+        }
       }),
       new OptimizeCSSAssetsPlugin({})
     ]
   },
-  plugins: [    new MiniCssExtractPlugin({
+
+  plugins: [
+    new MiniCssExtractPlugin({
       filename: "[name].[hash:5].css",
       chunkFilename: "[id].[hash:5].css"
     })
