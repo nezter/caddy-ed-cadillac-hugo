@@ -16,16 +16,21 @@ module.exports = merge(common, {
   optimization: {
     minimizer: [
       new TerserPlugin({
-        cache: true,
         parallel: true,
-        sourceMap: true,
         exclude: /\/node_modules\//,
+        terserOptions: {
+          compress: {modules\//,
+            drop_console: true
+          }, MiniCssExtractPlugin({
+          mangle: trueilename: "[name].[hash:5].css",
+        }sh:5].css"
       }),
-      new MiniCssExtractPlugin({
-        filename: "[name].[hash:5].css",
-        chunkFilename: "[id].[hash:5].css"
-      }),
-      new OptimizeCSSAssetsPlugin({}),
+      new OptimizeCSSAssetsPlugin({})
     ]
-  }
+  },
+  plugins: [    new MiniCssExtractPlugin({
+      filename: "[name].[hash:5].css",
+      chunkFilename: "[id].[hash:5].css"
+    })
+  ]
 });
