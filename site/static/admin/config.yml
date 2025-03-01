@@ -5,6 +5,7 @@ backend:
 media_folder: "site/static/img" # Folder where user uploaded files should go
 public_folder: "img"
 media_library:
+  name: "default"
   max_file_size: 512000 # Size in KB
 
 collections: # A list of collections the CMS should be able to edit
