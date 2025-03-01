@@ -4,8 +4,8 @@
 
 [build.environment]
   HUGO_VERSION = "0.121.1"
-  NODE_VERSION = "18"
-  NPM_VERSION = "8"
+  NODE_VERSION = "18.16.0"
+  NPM_VERSION = "9.5.1"
 
 [context.production.environment]
   HUGO_ENV = "production"
