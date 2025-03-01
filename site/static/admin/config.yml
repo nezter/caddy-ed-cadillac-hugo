@@ -1,8 +1,11 @@
 backend:
   name: git-gateway
+  branch: main # Specify main branch
 
 media_folder: "site/static/img" # Folder where user uploaded files should go
 public_folder: "img"
+media_library:
+  max_file_size: 512000 # Size in KB
 
 collections: # A list of collections the CMS should be able to edit
   - name: "post" # Used in routes, ie.: /admin/collections/:slug/edit
@@ -15,6 +18,18 @@ collections: # A list of collections the CMS should be able to edit
       - {label: "Intro Blurb", name: "description", widget: "text"}
       - {label: "Image", name: "image", widget: "image", required: false}
       - {label: "Body", name: "body", widget: "markdown"}
+      - {label: "SEO Title", name: "seo_title", widget: "string", required: true, pattern: ['.{10,70}', "Must be between 10 and 70 characters"], hint: "Optimal length 50-60 characters. Include 'Cadillac Restoration' where relevant"}
+      - {label: "SEO Description", name: "seo_description", widget: "text", required: true, pattern: ['.{50,160}', "Must be between 50 and 160 characters"], hint: "Optimal length 150-160 characters. Describe the Cadillac restoration content"}
+      - {label: "Meta Keywords", name: "meta_keywords", widget: "list", required: false, hint: "Add relevant Cadillac and restoration related keywords"}
+      - {label: "Featured", name: "featured", widget: "boolean", default: false}
+      - label: "Categories"
+        name: "categories"
+        widget: "list"
+        required: false
+      - label: "Tags"
+        name: "tags"
+        widget: "list"
+        required: false
   - name: "pages"
     label: "Pages"
     files:
@@ -27,6 +42,9 @@ collections: # A list of collections the CMS should be able to edit
           - {label: Testimonials, name: testimonials, widget: list, fields: [{label: Quote, name: quote, widget: string}, {label: Author, name: author, widget: string}]}
           - {label: Logo, name: logo, widget: image}
           - {label: Body, name: body, widget: markdown}
+          - {label: "SEO Title", name: "seo_title", widget: "string", required: true, default: "Ed's Classic Cadillac Restoration | Expert Vintage Cadillac Restoration Services", pattern: ['.{10,70}', "Must be between 10 and 70 characters"]}
+          - {label: "SEO Description", name: "seo_description", widget: "text", required: true, default: "Expert vintage Cadillac restoration services by Ed. Specializing in classic Cadillac repairs, restoration, and maintenance. Quality craftsmanship with decades of experience.", pattern: ['.{50,160}', "Must be between 50 and 160 characters"]}
+          - {label: "Meta Keywords", name: "meta_keywords", widget: "list", required: false, default: ["Cadillac restoration", "classic Cadillac repair", "vintage Cadillac restoration", "Cadillac expert", "classic car restoration"]}
           - label: Contact Entries
             name: contact_entries
             widget: list
@@ -44,6 +62,9 @@ collections: # A list of collections the CMS should be able to edit
           - {label: Title, name: title, widget: string}
           - {label: Logo, name: logo, widget: image}
           - {label: Body, name: body, widget: markdown}
+          - {label: "SEO Title", name: "seo_title", widget: "string", required: true, default: "Contact Ed's Classic Cadillac Restoration | Book Your Consultation", pattern: ['.{10,70}', "Must be between 10 and 70 characters"]}
+          - {label: "SEO Description", name: "seo_description", widget: "text", required: true, default: "Contact Ed's Classic Cadillac Restoration for expert vintage Cadillac restoration services. Get in touch for consultations, quotes, and professional advice.", pattern: ['.{50,160}', "Must be between 50 and 160 characters"]}
+          - {label: "Meta Keywords", name: "meta_keywords", widget: "list", required: false, default: ["contact Cadillac restoration", "Cadillac restoration quote", "classic car consultation"]}
           - label: Contact Entries
             name: contact_entries
             widget: list

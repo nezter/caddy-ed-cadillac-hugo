@@ -9,6 +9,7 @@ module.exports = {
   entry: {
     main: path.join(__dirname, "src", "index.js"),
     cms: path.join(__dirname, "src", "js", "cms.js"),
+    sw: path.join(__dirname, "src", "sw.js")
   },
 
   output: {
@@ -46,6 +47,10 @@ module.exports = {
         from: "./src/fonts/",
         to: "fonts/",
         flatten: true
+      },
+      {
+        from: "./src/static",
+        to: "./",
       }
     ]),
     new HtmlWebpackPlugin({
