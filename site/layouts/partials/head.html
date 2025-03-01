@@ -1,4 +1,55 @@
 <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{{ if .Params.seo_title }}{{ .Params.seo_title }}{{ else }}{{ .Title }} | {{ .Site.Title }}{{ end }}</title>
+  <meta name="description" content="{{ with .Params.seo_description }}{{ . }}{{ else }}{{ .Description }}{{ end }}">
+  {{ with .Params.meta_keywords }}<meta name="keywords" content="{{ delimit . ", " }}">{{ end }}
+  
+  <!-- Open Graph -->
+  <meta property="og:title" content="{{ if .Params.seo_title }}{{ .Params.seo_title }}{{ else }}{{ .Title }} | {{ .Site.Title }}{{ end }}">
+  <meta property="og:description" content="{{ with .Params.seo_description }}{{ . }}{{ else }}{{ .Description }}{{ end }}">
+  <meta property="og:type" content="{{ if .IsPage }}article{{ else }}website{{ end }}">
+  <meta property="og:url" content="{{ .Permalink }}">
+  <meta property="og:image" content="{{ with .Params.image }}{{ . | absURL }}{{ else }}/img/og-image.jpg{{ end }}">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{ if .Params.seo_title }}{{ .Params.seo_title }}{{ else }}{{ .Title }}{{ end }}">
+  <meta name="twitter:description" content="{{ with .Params.seo_description }}{{ . }}{{ else }}{{ .Description }}{{ end }}">
+  <meta name="twitter:image" content="{{ with .Params.image }}{{ . | absURL }}{{ else }}/img/og-image.jpg{{ end }}">
+
+  <!-- Schema.org -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Ed's Classic Cadillac Restoration",
+      "url": "{{ .Site.BaseURL }}",
+      "logo": "{{ .Site.BaseURL }}img/caddy-ed-with-text.png",
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "telephone": "",
+        "contactType": "customer service"
+      }
+    }
+  </script>
+
+  <!-- Preload assets -->
+  <link rel="preload" href="/css/main.css" as="style">
+  {{ if .IsHome }}
+  <link rel="preload" href="/img/home-jumbotron.jpg" as="image">
+  {{ end }}
+
+  <link rel="stylesheet" href="/css/main.css"/>
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="/img/favicon-32x32.png" sizes="32x32">
+  <link rel="icon" type="image/png" href="/img/favicon-16x16.png" sizes="16x16">
+
+  <!-- RSS -->
+  <link rel="alternate" type="application/rss+xml" title="{{ .Site.Title }}" href="{{ "/feed.xml" | absURL }}">
+</head>
+<head>
 
   <title>{{ .Title }} | {{ $.Site.Title }}</title>
 
@@ -27,6 +78,29 @@
 	<meta property="og:title" content="Caddy Ed | Always looking out for the best car for you!">
 	<meta property="og:url" content="/">
 	<meta property="og:image" content="/img/caddy-ed-text.png">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "AutoDealer",
+    "name": "Cadillac of South Charlotte",
+    "employee": {
+      "@type": "Person",
+      "name": "Ed Portello",
+      "jobTitle": "Cadillac Sales Specialist",
+      "telephone": "(803) 431-6180"
+    },
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "10725 Pineville Rd",
+      "addressLocality": "Pineville",
+      "addressRegion": "NC",
+      "postalCode": "28134"
+    },
+    "telephone": "(980) 467-0150",
+    "url": "https://www.cadillacofsouthcharlotte.com"
+  }
+  </script>
 
   {{ if .IsHome }}
 	<script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>

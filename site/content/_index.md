@@ -1,4 +1,6 @@
 ---
+seo_title: "Caddy Ed Portello - Cadillac Sales Specialist in Charlotte, NC"
+seo_description: "Meet Ed Portello, your trusted Cadillac sales specialist at Cadillac of South Charlotte. Serving Charlotte, Pineville and surrounding areas with exceptional Cadillac sales and service."
 image: /img/clouds.png
 centerlogo: /img/caddy-ed-with-text.png
 testimonials:
@@ -12,9 +14,11 @@ testimonials:
 logo: /img/caddy-ed-text.png
 contact_entries:
   - heading: Location
-    text: '10725 Pineville Rd, Pineville, NC 28134'
-  - heading: Call
-    text: 1+ (803) 431-6180
+    text: "Cadillac of South Charlotte, 10725 Pineville Rd, Pineville, NC 28134"
+  - heading: Direct Contact
+    text: "Call Ed Portello: (803) 431-6180"
+  - heading: Dealership
+    text: "(980) 467-0150"
 ---
 ## **Reach out!**
 

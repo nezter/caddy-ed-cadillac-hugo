@@ -1,0 +1,20 @@
+{{ $image := .image }}
+{{ $alt := .alt | default "Cadillac restoration image" }}
+{{ $width := .width | default "800" }}
+{{ $height := .height | default "600" }}
+
+<picture>
+  <source 
+    srcset="{{ $image }}?nf_resize=fit&w={{ $width }}&h={{ $height }}&format=webp" 
+    type="image/webp">
+  <source 
+    srcset="{{ $image }}?nf_resize=fit&w={{ $width }}&h={{ $height }}" 
+    type="image/jpeg">
+  <img 
+    src="{{ $image }}?nf_resize=fit&w={{ $width }}&h={{ $height }}" 
+    alt="{{ $alt }}"
+    width="{{ $width }}"
+    height="{{ $height }}"
+    loading="lazy"
+    decoding="async">
+</picture>

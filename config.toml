@@ -1,2 +1,5 @@
 languageCode = "en-us"
 title = "Caddy Ed"
+baseURL = "/"
+enableRobotsTXT = true
+disableKinds = ["RSS", "taxonomy", "taxonomyTerm"]
