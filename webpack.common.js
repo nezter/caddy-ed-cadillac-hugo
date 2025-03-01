@@ -42,17 +42,20 @@ module.exports = {
       path: path.join(process.cwd(), "site/data"),
       prettyPrint: true
     }),
-    new CopyWebpackPlugin([
-      {
-        from: "./src/fonts/",
-        to: "fonts/",
-        flatten: true
-      },
-      {
-        from: "./src/static",
-        to: "./",
-      }
-    ]),
+    new CopyWebpackPlugin({
+      patterns: [
+        {
+          from: "./src/fonts/",
+          to: "fonts/",
+          noErrorOnMissing: true
+        },
+        {
+          from: "./src/static",
+          to: ".",
+          noErrorOnMissing: true
+        }
+      ]
+    }),
     new HtmlWebpackPlugin({
       filename: 'admin/index.html',
       template: 'src/cms.html',
