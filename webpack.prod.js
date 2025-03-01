@@ -1,11 +1,11 @@
-import { merge } from "webpack-merge";
-import TerserPlugin from "terser-webpack-plugin";
-import OptimizeCSSAssetsPlugin from "optimize-css-assets-webpack-plugin";
-import MiniCssExtractPlugin from "mini-css-extract-plugin";
+const { merge } = require("webpack-merge");
+const TerserPlugin = require("terser-webpack-plugin");
+const OptimizeCSSAssetsPlugin = require("optimize-css-assets-webpack-plugin");
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 
-import common from "./webpack.common.js";
+const common = require("./webpack.common.js");
 
-export default merge(common, {
+module.exports = merge(common, {
   mode: "production",
 
   output: {
@@ -35,4 +35,5 @@ export default merge(common, {
       chunkFilename: "[id].[hash:5].css"
     })
   ]
-});
+}
+);
