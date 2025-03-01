@@ -3,32 +3,19 @@
   command = "npm run build"
 
 [build.environment]
-  HUGO_VERSION = "0.119.0"
+  HUGO_VERSION = "0.121.1"
   NODE_VERSION = "18"
+  NPM_VERSION = "8"
+
+[context.production.environment]
+  HUGO_ENV = "production"
+  HUGO_ENABLEGITINFO = "true"
 
 [context.deploy-preview]
   command = "npm run build:preview"
 
 [context.branch-deploy]
   command = "npm run build:preview"
-[build]
-  publish = "public"
-  command = "hugo"
-
-[build.environment]
-  HUGO_VERSION = "0.121.1"
-
-[context.production.environment]
-  HUGO_ENV = "production"
-  HUGO_ENABLEGITINFO = "true"
-[build.environment]
-  HUGO_VERSION = "0.111.3"
-  NODE_VERSION = "16"
-  NPM_VERSION = "8"
-
-[build]
-  command = "npm run build"
-  publish = "dist"
 
 [[headers]]
   for = "/*"
@@ -59,9 +46,3 @@
 
 [[plugins]]
   package = "@netlify/plugin-lighthouse"
-
-[context.production.environment]
-  HUGO_ENV = "production"
-
-[context.deploy-preview]
-  command = "yarn build:preview"
