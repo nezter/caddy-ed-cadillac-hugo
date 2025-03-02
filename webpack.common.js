@@ -20,7 +20,12 @@ module.exports = {
     rules: [
       {
         test: /\.((png)|(eot)|(woff)|(woff2)|(ttf)|(svg)|(gif))(\?v=\d+\.\d+\.\d+)?$/,
-        loader: "file-loader?name=/[hash].[ext]"
+        use: {
+          loader: "file-loader",
+          options: {
+            name: "/[hash].[ext]"
+          }
+        }
       },
       {
         loader: "babel-loader",
