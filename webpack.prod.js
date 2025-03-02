@@ -35,5 +35,4 @@ module.exports = merge(common, {
       chunkFilename: "[id].[hash:5].css"
     })
   ]
-}
-);
+});
