@@ -1,47 +1,55 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <title>{{ if .Title }}{{ .Title }} - {{ end }}{{ .Site.Title }}</title>
-  <meta name="description" content="{{ with .Description }}{{ . }}{{ else }}{{ with .Site.Params.description }}{{ . }}{{ end }}{{ end }}">
-  {{ if .Site.Params.favicon }}
-  <link rel="shortcut icon" href="{{ .Site.Params.favicon }}" type="image/x-icon">
-  {{ end }}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ block "title" . }}{{ .Title }} | {{ .Site.Title }}{{ end }}</title>
+  <meta name="description" content="{{ block "description" . }}{{ .Site.Params.description }}{{ end }}">
   
-  <!-- Netlify Identity -->
-  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+  <!-- Open Graph -->
+  <meta property="og:title" content="{{ block "og_title" . }}{{ .Title }} | {{ .Site.Title }}{{ end }}">
+  <meta property="og:description" content="{{ block "og_description" . }}{{ .Site.Params.description }}{{ end }}">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="{{ .Permalink }}">
+  <meta property="og:image" content="{{ .Site.Params.og_image | absURL }}">
   
-  {{ $stylesheet := .Site.Data.webpack.main }}
-  {{ with $stylesheet.css }}
-  <link href="{{ relURL . }}" rel="stylesheet">
-  {{ end }}
+  <!-- Favicon -->
+  <link rel="apple-touch-icon" sizes="180x180" href="/img/favicon/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/img/favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/img/favicon/favicon-16x16.png">
+  <link rel="manifest" href="/img/favicon/site.webmanifest">
+  
+  <!-- CSS -->
+  {{ $style := resources.Get "main.css" | fingerprint }}
+  <link rel="stylesheet" href="{{ $style.Permalink }}">
+  
+  <!-- Glide.js for sliders -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@glidejs/glide@3.5.x/dist/css/glide.core.min.css">
+  
+  <!-- Custom Head -->
+  {{ block "head" . }}{{ end }}
 </head>
-<body>
-
+<body class="{{ block "body_class" . }}{{ end }}">
   {{ partial "header" . }}
   
   <main>
     {{ block "main" . }}{{ end }}
   </main>
-
+  
   {{ partial "footer" . }}
   
-  {{ $script := .Site.Data.webpack.main }}
-  {{ with $script.js }}
-  <script src="{{ relURL . }}"></script>
+  <!-- Scripts -->
+  {{ if .Site.IsServer }}
+  <script src="/main.js"></script>
+  {{ else }}
+  {{ $script := resources.Get "main.js" | fingerprint }}
+  <script src="{{ $script.Permalink }}" integrity="{{ $script.Data.Integrity }}"></script>
   {{ end }}
   
-  <script>
-    if (window.netlifyIdentity) {
-      window.netlifyIdentity.on("init", user => {
-        if (!user) {
-          window.netlifyIdentity.on("login", () => {
-            document.location.href = "/admin/";
-          });
-        }
-      });
-    }
-  </script>
+  <!-- Glide.js for sliders -->
+  <script src="https://cdn.jsdelivr.net/npm/@glidejs/glide@3.5.x/dist/glide.min.js"></script>
+  
+  <!-- Custom Scripts -->
+  {{ block "scripts" . }}{{ end }}
 </body>
 </html>

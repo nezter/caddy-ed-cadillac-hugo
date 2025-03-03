@@ -1,79 +1,237 @@
+{{ define "title" }}{{ .Site.Title }} | Luxury Cadillac Dealership in Charlotte{{ end }}
+
 {{ define "main" }}
-  <!-- Hero Section -->
-  <section class="hero" style="background-image: url('{{ .Params.hero.background_image }}')">
-    <div class="container">
-      <div class="hero-content">
-        <h1>{{ .Params.hero.heading }}</h1>
-        <p>{{ .Params.hero.subheading }}</p>
-        <a href="{{ .Params.hero.cta_link }}" class="btn btn-primary">{{ .Params.hero.cta_text }}</a>
-      </div>
-    </div>
-  </section>
-
-  <section class="section">
-    <div class="container">
-      <div class="content">
-        {{ .Content }}
-      </div>
-    </div>
-  </section>
-
-  {{ if .Params.featured }}
-    <section class="section has-background-light">
-      <div class="container">
-        <h2 class="title has-text-centered">{{ .Params.featured_heading }}</h2>
-        <div class="columns is-multiline mt-6">
-          {{ range .Params.featured }}
-            <div class="column is-4">
-              <div class="card h-100">
-                <div class="card-image">
-                  <figure class="image is-16by9">
-                    <img src="{{ .image }}" alt="{{ .heading }}">
-                  </figure>
-                </div>
-                <div class="card-content">
-                  <h3 class="title is-4">{{ .heading }}</h3>
-                  <p>{{ .description }}</p>
-                  {{ if .link }}
-                    <div class="mt-4">
-                      <a href="{{ .link }}" class="button is-primary">Learn More</a>
-                    </div>
-                  {{ end }}
+<!-- Hero Section -->
+<section class="hero">
+  <div class="glide hero-slider">
+    <div class="glide__track" data-glide-el="track">
+      <ul class="glide__slides">
+        <li class="glide__slide">
+          <div class="hero-slide" style="background-image: url('/img/hero-1.jpg');">
+            <div class="container">
+              <div class="hero-content"></div>
+                <h1>Experience the Pinnacle of Luxury</h1>
+                <p>Discover the finest selection of Cadillac vehicles in Charlotte</p>
+                <div class="hero-buttons">
+                  <a href="/inventory/" class="btn btn-primary">View Inventory</a>
+                  <a href="/contact/" class="btn btn-secondary">Contact Us</a>
                 </div>
               </div>
             </div>
-          {{ end }}
-        </div>
-      </div>
-    </section>
-  {{ end }}
+          </div>
+        </li>
+        <li class="glide__slide">
+          <div class="hero-slide" style="background-image: url('/img/hero-2.jpg');">
+            <div class="container">
+              <div class="hero-content">
+                <h1>Exceptional Service. Extraordinary Care.</h1>
+                <p>Our experienced team is dedicated to your complete satisfaction</p>
+                <div class="hero-buttons">
+                  <a href="/services/" class="btn btn-primary">Our Services</a>
+                  <a href="/about/" class="btn btn-secondary">Learn More</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </li>
+      </ul>
+    </div>
+    <div class="glide__bullets" data-glide-el="controls[nav]">
+      <button class="glide__bullet" data-glide-dir="=0"></button>
+      <button class="glide__bullet" data-glide-dir="=1"></button>
+    </div>
+  </div>
+</section>
 
-  <section class="section">
-    <div class="container">
-      <h2 class="title has-text-centered">Why Choose Caddy Ed Cadillac?</h2>
-      <div class="columns mt-6">
-        <div class="column has-text-centered">
-          <span class="icon is-large">
-            <i class="fas fa-award fa-3x"></i>
-          </span>
-          <h3 class="title is-5 mt-4">Award-Winning Service</h3>
-          <p>Exceptional customer service is our standard.</p>
-        </div>
-        <div class="column has-text-centered">
-          <span class="icon is-large">
-            <i class="fas fa-tools fa-3x"></i>
-          </span>
-          <h3 class="title is-5 mt-4">Expert Technicians</h3>
-          <p>Factory-trained specialists care for your vehicle.</p>
-        </div>
-        <div class="column has-text-centered">
-          <span class="icon is-large">
-            <i class="fas fa-dollar-sign fa-3x"></i>
-          </span>
-          <h3 class="title is-5 mt-4">Competitive Pricing</h3>
-          <p>We offer the best value in Charlotte.</p>
-        </div>
+<!-- Featured Vehicles -->
+<section class="featured-vehicles section">
+  <div class="container">
+    <div class="section-header">
+      <h2>Featured Vehicles</h2>
+      <p>Explore our premium selection of Cadillac models</p>
+    </div>
+    
+    <div class="glide featured-vehicles-slider">
+      <div class="glide__track" data-glide-el="track">
+        <ul class="glide__slides">
+          <li class="glide__slide">
+            <div class="vehicle-card">
+              <div class="vehicle-image">
+                <img src="/img/vehicles/escalade.jpg" alt="Cadillac Escalade">
+              </div>
+              <div class="vehicle-details">
+                <h3>Cadillac Escalade</h3>
+                <p class="vehicle-price">Starting at $76,295</p>
+                <p class="vehicle-description">The pinnacle of luxury SUVs, with cutting-edge technology and refined comfort.</p>
+                <a href="/vehicles/escalade/" class="btn btn-outline">Learn More</a>
+              </div>
+            </div>
+          </li>
+          <li class="glide__slide">
+            <div class="vehicle-card">
+              <div class="vehicle-image">
+                <img src="/img/vehicles/ct5.jpg" alt="Cadillac CT5">
+              </div>
+              <div class="vehicle-details">
+                <h3>Cadillac CT5</h3>
+                <p class="vehicle-price">Starting at $37,295</p>
+                <p class="vehicle-description">Bold styling meets exhilarating performance in this sophisticated sedan.</p>
+                <a href="/vehicles/ct5/" class="btn btn-outline">Learn More</a>
+              </div>
+            </div>
+          </li>
+          <li class="glide__slide">
+            <div class="vehicle-card">
+              <div class="vehicle-image">
+                <img src="/img/vehicles/xt6.jpg" alt="Cadillac XT6">
+              </div>
+              <div class="vehicle-details">
+                <h3>Cadillac XT6</h3>
+                <p class="vehicle-price">Starting at $48,595</p>
+                <p class="vehicle-description">Three-row luxury crossover with versatile seating and premium amenities.</p>
+                <a href="/vehicles/xt6/" class="btn btn-outline">Learn More</a>
+              </div>
+            </div>
+          </li>
+        </ul>
+      </div>
+      <div class="glide__arrows" data-glide-el="controls">
+        <button class="glide__arrow glide__arrow--left" data-glide-dir="<">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        </button>
+        <button class="glide__arrow glide__arrow--right" data-glide-dir=">">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
       </div>
     </div>
-  </section>
+    
+    <div class="section-footer">
+      <a href="/inventory/" class="btn btn-primary">View All Vehicles</a>
+    </div>
+  </div>
+</section>
+
+<!-- Why Choose Us -->
+<section class="why-choose-us section bg-light">
+  <div class="container">
+    <div class="section-header">
+      <h2>Why Choose Caddy Ed Cadillac</h2>
+      <p>Experience the difference that sets us apart</p>
+    </div>
+    
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M12 6v6l4 2"></path>
+          </svg>
+        </div>
+        <h3>Exceptional Service</h3>
+        <p>Our dedicated team provides personalized attention and transparent service from test drive to delivery.</p>
+      </div>
+      
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="8.5" cy="7" r="4"></circle>
+            <line x1="20" y1="8" x2="20" y2="14"></line>
+            <line x1="23" y1="11" x2="17" y2="11"></line>
+          </svg>
+        </div>
+        <h3>Expert Team</h3>
+        <p>Our factory-trained professionals have unparalleled knowledge of all Cadillac models and features.</p>
+      </div>
+      
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+          </svg>
+        </div>
+        <h3>Premium Protection</h3>
+        <p>Extended warranty options and maintenance packages to keep your vehicle performing at its best.</p>
+      </div>
+      
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+            <path d="M12 12h.01"></path>
+            <path d="M7 12h.01"></path>
+            <path d="M17 12h.01"></path>
+          </svg>
+        </div>
+        <h3>Flexible Financing</h3>
+        <p>Tailored financial solutions to meet your needs with competitive rates and transparent terms.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Testimonials -->
+<section class="testimonials section">
+  <div class="container">
+    <div class="section-header">
+      <h2>Customer Testimonials</h2>
+      <p>Hear what our customers have to say</p>
+    </div>
+    
+    <div class="glide testimonials-slider">
+      <div class="glide__track" data-glide-el="track">
+        <ul class="glide__slides">
+          <li class="glide__slide">
+            <div class="testimonial-card">
+              <div class="testimonial-rating">
+                <span class="star">★</span>
+                <span class="star">★</span>
+                <span class="star">★</span>
+                <span class="star">★</span>
+                <span class="star">★</span>
+              </div>
+              <blockquote>
+                <p>"Caddy Ed made buying our new Escalade an absolute pleasure. Their no-pressure approach and knowledge of the Cadillac lineup was impressive. We'll definitely be returning for our next vehicle!"</p>
+                <cite>- Jennifer R., Charlotte</cite>
+              </blockquote>
+            </div>
+          </li>
+          <li class="glide__slide">
+            <div class="testimonial-card">
+              <div class="testimonial-rating">
+                <span class="star">★</span>
+                <span class="star">★</span>
+                <span class="star">★</span>
+                <span class="star">★</span>
+                <span class="star">★</span>
+              </div>
+              <blockquote>
+                <p>"The service department at Caddy Ed is exceptional. They went above and beyond to fix an issue with my CT5 and even provided a loaner car. Their customer service is what keeps me coming back."</p>
+                <cite>- Michael T., Matthews</cite>
+              </blockquote>
+            </div>
+          </li>
+        </ul>
+      </div>
+      <div class="glide__bullets" data-glide-el="controls[nav]">
+        <button class="glide__bullet" data-glide-dir="=0"></button>
+        <button class="glide__bullet" data-glide-dir="=1"></button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA Section -->
+<section class="cta-section">
+  <div class="container">
+    <div class="cta-content">
+      <h2>Ready to Experience Cadillac Excellence?</h2>
+      <p>Visit our showroom today or schedule a test drive of your dream vehicle.</p>
+      <div class="cta-buttons">
+        <a href="/contact/" class="btn btn-primary">Contact Us</a>
+        <a href="/test-drive/" class="btn btn-secondary">Schedule Test Drive</a>
+      </div>
+    </div>
+  </div>
+</section>
 {{ end }}
