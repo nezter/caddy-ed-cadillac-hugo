@@ -16,4 +16,9 @@ CMS.registerPreviewTemplate("post", PostPreview);
 CMS.registerPreviewTemplate("products", ProductsPreview);
 CMS.registerPreviewTemplate("values", ValuesPreview);
 CMS.registerPreviewTemplate("contact", ContactPreview);
+
+// Initialize the CMS
 CMS.init();
+
+// You can add customizations here if needed
+console.log("CMS initialized");
