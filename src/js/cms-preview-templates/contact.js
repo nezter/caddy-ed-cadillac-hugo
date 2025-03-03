@@ -1,28 +1,31 @@
 import React from "react";
 
-const ContactEntry = ({heading, text}) =>
-  <div>
-    <h4 className="f4 b lh-title mb2 primary">{ heading }</h4>
-    <p>{ text }</p>
-  </div>;
-
-const ContactEntries = ({data}) => data && data.length > 0
-    ? <div className="flex-ns mb3">
-      {data.map(({heading, text}) => <ContactEntry heading={heading} text={text} />)}
+export default function ContactPreview({ entry }) {
+  const data = entry.getIn(["data"]).toJS();
+  
+  return (
+    <div>
+      <h1>{data.title}</h1>
+      <div dangerouslySetInnerHTML={{ __html: data.body }}></div>
+      
+      <form className="contact-form">
+        <div className="form-group">
+          <label htmlFor="name">Name</label>
+          <input type="text" id="name" name="name" disabled />
+        </div>
+        
+        <div className="form-group">
+          <label htmlFor="email">Email</label>
+          <input type="email" id="email" name="email" disabled />
+        </div>
+        
+        <div className="form-group">
+          <label htmlFor="message">Message</label>
+          <textarea id="message" name="message" disabled></textarea>
+        </div>
+        
+        <button type="button" disabled>Send</button>
+      </form>
     </div>
-    : "";
-
-export default class ContactPreview extends React.Component {
-  render() {
-    const {entry, getAsset, widgetFor} = this.props;
-    const entryContactEntries = entry.getIn(["data", "contact_entries"]);
-    const contactEntries = entryContactEntries ? entryContactEntries.toJS() : [];
-    return <div className="ph3 bg-off-white">
-      <img src={getAsset(entry.getIn(["data", "logo"]))} alt="" className="db w4 center pv4" />
-      <div className="center mw6 pv3">
-        { widgetFor("body") }
-        <ContactEntries data={contactEntries} />
-      </div>
-    </div>;
-  }
+  );
 }

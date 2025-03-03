@@ -69,3 +69,17 @@ export default class PostPreview extends React.Component {
     </div>
   }
 }
+
+export default function HomePreview({ entry, getAsset }) {
+  const data = entry.getIn(["data"]).toJS();
+  const image = getAsset(data.image);
+  
+  return (
+    <div>
+      <h1>{data.title}</h1>
+      <img src={image.toString()} alt={data.title} />
+      <div>{data.subtitle}</div>
+      {data.blurb && <p>{data.blurb.text}</p>}
+    </div>
+  );
+}
