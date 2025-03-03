@@ -1,0 +1,60 @@
+baseURL: "/"
+languageCode: "en-us"
+title: "Caddy Ed Cadillac"
+theme: "caddy-theme"
+
+# Site Parameters
+params:
+  description: "Your trusted Cadillac dealership with exceptional service and selection"
+  address: "123 Auto Drive, Charlotte, NC 28210"
+  phone: "(704) 555-1234"
+  email: "sales@caddyed.com"
+  hours:
+    monday: "9:00 AM - 8:00 PM"
+    tuesday: "9:00 AM - 8:00 PM"
+    wednesday: "9:00 AM - 8:00 PM"
+    thursday: "9:00 AM - 8:00 PM"
+    friday: "9:00 AM - 8:00 PM"
+    saturday: "9:00 AM - 6:00 PM"
+    sunday: "Closed"
+  social:
+    facebook: "https://facebook.com/caddyed"
+    instagram: "https://instagram.com/caddyed"
+    twitter: "https://twitter.com/caddyed"
+  
+# Menu Configuration
+menu:
+  main:
+    - name: "Home"
+      url: "/"
+      weight: 1
+    - name: "Inventory"
+      url: "/inventory/"
+      weight: 2
+    - name: "Services"
+      url: "/services/"
+      weight: 3
+    - name: "Financing"
+      url: "/financing/"
+      weight: 4
+    - name: "About Us"
+      url: "/about/"
+      weight: 5
+    - name: "Contact"
+      url: "/contact/"
+      weight: 6
+
+# Enable taxonomies
+taxonomies:
+  tag: "tags"
+  category: "categories"
+  
+# Disable unwanted sections
+disableKinds: ["RSS", "taxonomy", "taxonomyTerm"]
+
+# Set up asset handling
+build:
+  writeStats: true
+  
+# Pagination
+paginate: 12

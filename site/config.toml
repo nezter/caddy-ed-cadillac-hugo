@@ -1,54 +1,81 @@
-baseURL = "/"
+baseURL = "https://caddyed.com"
 languageCode = "en-us"
-title = "Caddy Ed Cadillac"
+title = "Caddy Ed Cadillac | South Charlotte Cadillac Dealership"
 enableRobotsTXT = true
 disableKinds = ["taxonomy", "taxonomyTerm"]
 
 [params]
-  description = "Your trusted Cadillac dealership in South Charlotte."
-  og_image = "/img/og-image.jpg"
-  phone = "(704) 555-5555"
+  description = "Caddy Ed Cadillac is your premier Cadillac dealership in South Charlotte, offering the latest Cadillac models, certified pre-owned vehicles, and exceptional service."
+  images = ["img/social-share.jpg"]
+  mainSections = ["inventory", "blog"]
+  address = "123 Cadillac Drive, South Charlotte, NC 28210"
+  phone = "(704) 555-1234"
   email = "sales@caddyed.com"
-  address = "123 Luxury Lane<br>Charlotte, NC 28210"
-  facebook = "https://facebook.com/caddyed"
-  instagram = "https://instagram.com/caddyed"
-  twitter = "https://twitter.com/caddyed"
-  youtube = "https://youtube.com/caddyed"
+  hours = "Monday-Friday: 9am-8pm, Saturday: 9am-6pm, Sunday: Closed"
   
+  # Social media links
+  facebook = "https://facebook.com/caddyedcadillac"
+  instagram = "https://instagram.com/caddyedcadillac"
+  twitter = "https://twitter.com/caddyedcadillac"
+  youtube = "https://youtube.com/caddyedcadillac"
+
 [menu]
   [[menu.main]]
     name = "Home"
     url = "/"
     weight = 1
   [[menu.main]]
-    name = "Inventory"
-    url = "/inventory/"
+    name = "New Inventory"
+    url = "/inventory/new/"
     weight = 2
   [[menu.main]]
-    name = "Financing"
-    url = "/financing/"
+    name = "Pre-Owned"
+    url = "/inventory/used/"
     weight = 3
   [[menu.main]]
-    name = "Services"
-    url = "/services/"
+    name = "Specials"
+    url = "/specials/"
     weight = 4
   [[menu.main]]
-    name = "About"
-    url = "/about/"
+    name = "Service"
+    url = "/service/"
     weight = 5
+  [[menu.main]]
+    name = "About Us"
+    url = "/about/"
+    weight = 6
   [[menu.main]]
     name = "Contact"
     url = "/contact/"
-    weight = 6
+    weight = 7
+
+[taxonomies]
+  tag = "tags"
+  category = "categories"
+  model = "models"
+  year = "years"
+
+[outputFormats]
+  [outputFormats.RSS]
+    mediatype = "application/rss"
+    baseName = "feed"
+
+[outputs]
+  home = ["HTML", "RSS"]
+  page = ["HTML"]
+  section = ["HTML"]
+  taxonomy = ["HTML"]
+  term = ["HTML"]
 
 [sitemap]
   changefreq = "weekly"
-  filename = "sitemap.xml"
   priority = 0.5
+  filename = "sitemap.xml"
 
 [minify]
   minifyOutput = true
 
-[outputs]
-  home = ["HTML", "RSS", "SITEMAP"]
-  section = ["HTML", "RSS"]
+[markup]
+  [markup.goldmark]
+    [markup.goldmark.renderer]
+      unsafe = true

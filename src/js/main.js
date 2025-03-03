@@ -110,6 +110,26 @@ document.addEventListener("DOMContentLoaded", function() {
       gap: 0
     }).mount();
   }
+
+  // Initialize mobile navigation menu
+  initMobileMenu();
+  // Handle sticky header on scroll
+  initStickyHeader();
+  // Initialize vehicle image sliders
+  initVehicleSliders();
+  // Set up modal functionality
+  initModals();
+  // Load vehicle details on details page
+  loadVehicleDetails();
+  
+  // Initialize AOS animations if available
+  if (window.AOS) {
+    AOS.init({
+      duration: 800,
+      easing: 'ease-in-out',
+      once: true
+    });
+  }
 });
 
 // Form validation and submission handler
@@ -266,4 +286,179 @@ function filterInventory(e) {
 
 function formatNumber(num) {
   return Number(num).toLocaleString('en-US');
+}
+
+// Initialize mobile navigation menu
+function initMobileMenu() {
+  const navToggle = document.querySelector('.nav-toggle');
+  const navMenu = document.querySelector('.nav-menu');
+  
+  if (navToggle && navMenu) {
+    navToggle.addEventListener('click', () => {
+      navToggle.classList.toggle('is-active');
+      navMenu.classList.toggle('is-active');
+    });
+  }
+}
+
+// Handle sticky header on scroll
+function initStickyHeader() {
+  const header = document.querySelector('.site-header');
+  const scrollThreshold = 100;
+  
+  if (header) {
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > scrollThreshold) {
+        header.classList.add('sticky');
+      } else {
+        header.classList.remove('sticky');
+      }
+    });
+  }
+}
+
+// Initialize vehicle image sliders
+function initVehicleSliders() {
+  const sliders = document.querySelectorAll('.vehicle-gallery-slider');
+  
+  if (sliders.length && window.Splide) {
+    sliders.forEach(slider => {
+      new Splide(slider, {
+        type: 'loop',
+        perPage: 1,
+        autoplay: true,
+        interval: 5000,
+        pagination: true,
+        arrows: true
+      }).mount();
+    });
+  }
+}
+
+// Set up modal functionality
+function initModals() {
+  const modalTriggers = document.querySelectorAll('[data-modal-trigger]');
+  const modalCloseButtons = document.querySelectorAll('.modal-close');
+  const modals = document.querySelectorAll('.modal');
+  
+  modalTriggers.forEach(trigger => {
+    trigger.addEventListener('click', (e) => {
+      e.preventDefault();
+      const targetId = trigger.getAttribute('data-modal-trigger');
+      const targetModal = document.getElementById(targetId);
+      
+      if (targetModal) {
+        targetModal.classList.add('is-active');
+        document.body.classList.add('modal-open');
+      }
+    });
+  });
+  
+  modalCloseButtons.forEach(button => {
+    button.addEventListener('click', () => {
+      const modal = button.closest('.modal');
+      if (modal) {
+        modal.classList.remove('is-active');
+        document.body.classList.remove('modal-open');
+      }
+    });
+  });
+  
+  // Close modal on outside click
+  modals.forEach(modal => {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        modal.classList.remove('is-active');
+        document.body.classList.remove('modal-open');
+      }
+    });
+  });
+}
+
+// Load vehicle details on details page
+async function loadVehicleDetails() {
+  const vehicleDetails = document.querySelector('.vehicle-details');
+  
+  if (!vehicleDetails) return;
+  
+  const vin = vehicleDetails.getAttribute('data-vin');
+  if (!vin) return;
+  
+  try {
+    const response = await fetch(`/.netlify/functions/vehicle-details?vin=${vin}`);
+    const data = await response.json();
+    
+    if (data) {
+      // Update vehicle details with fetched data
+      updateVehicleDetailsDOM(data);
+    }
+  } catch (error) {
+    console.error('Error loading vehicle details:', error);
+  }
+}
+
+// Update vehicle details in the DOM
+function updateVehicleDetailsDOM(data) {
+  // Update price
+  const priceElement = document.querySelector('.vehicle-price');
+  if (priceElement && data.price) {
+    priceElement.textContent = formatCurrency(data.price);
+  }
+  
+  // Update specs
+  const specElements = document.querySelectorAll('[data-spec]');
+  specElements.forEach(element => {
+    const specKey = element.getAttribute('data-spec');
+    if (data[specKey]) {
+      element.textContent = data[specKey];
+    }
+  });
+  
+  // Update gallery if images available
+  if (data.images && data.images.length > 0) {
+    updateGallery(data.images);
+  }
+}
+
+// Format currency for display
+function formatCurrency(value) {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 0
+  }).format(value);
+}
+
+// Update gallery with new images
+function updateGallery(images) {
+  const galleryContainer = document.querySelector('.vehicle-gallery');
+  if (!galleryContainer) return;
+  
+  // Clear existing images
+  galleryContainer.innerHTML = '';
+  
+  // Add new images
+  images.forEach(image => {
+    const slide = document.createElement('div');
+    slide.classList.add('splide__slide');
+    
+    const img = document.createElement('img');
+    img.src = image.url;
+    img.alt = image.alt || 'Vehicle image';
+    img.classList.add('vehicle-image');
+    
+    slide.appendChild(img);
+    galleryContainer.appendChild(slide);
+  });
+  
+  // Reinitialize slider
+  if (window.Splide) {
+    const slider = new Splide('.vehicle-gallery-slider', {
+      type: 'loop',
+      perPage: 1,
+      pagination: true,
+      arrows: true
+    });
+    slider.mount();
+  }
 }

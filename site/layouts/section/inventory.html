@@ -1,0 +1,60 @@
+{{ define "main" }}
+<div class="inventory-page">
+  <div class="container">
+    <h1 class="inventory-title">Our Inventory</h1>
+    
+    <div class="inventory-filters">
+      <div class="filter-container">
+        <div class="filter-row">
+          <div class="filter">
+            <label for="makeFilter">Make</label>
+            <select id="makeFilter" class="form-control">
+              <option value="">All Makes</option>
+              <option value="Cadillac" selected>Cadillac</option>
+            </select>
+          </div>
+          
+          <div class="filter">
+            <label for="modelFilter">Model</label>
+            <select id="modelFilter" class="form-control">
+              <option value="">All Models</option>
+            </select>
+          </div>
+          
+          <div class="filter">
+            <label for="yearFilter">Year</label>
+            <select id="yearFilter" class="form-control">
+              <option value="">All Years</option>
+            </select>
+          </div>
+          
+          <div class="filter">
+            <label for="priceFilter">Price</label>
+            <select id="priceFilter" class="form-control">
+              <option value="">Any Price</option>
+              <option value="30000">Under $30,000</option>
+              <option value="50000">Under $50,000</option>
+              <option value="75000">Under $75,000</option>
+              <option value="100000">Under $100,000</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="filter-buttons">
+          <button id="applyFilters" class="btn btn-primary">Filter Results</button>
+          <button id="resetFilters" class="btn btn-outline">Reset Filters</button>
+        </div>
+      </div>
+    </div>
+    
+    <div class="inventory-results">
+      <div class="results-header">
+        <div class="results-count">
+          Showing <span id="resultCount">{{ len .Pages }}</span> vehicles
+        </div>
+        <div class="results-sort">
+          <label for="sortBy">Sort By:</label>
+          <select id="sortBy" class="form-control">
+            <option value="featured">Featured</option>
+            <option value="priceAsc">Price: Low to High</option>
+            <option value="pr

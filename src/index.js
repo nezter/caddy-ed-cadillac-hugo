@@ -1,235 +1,205 @@
-import 'lazysizes';
-import './css/main.css';
-import Glide from '@glidejs/glide';
-import CookieConsent from 'vanilla-cookieconsent';
+// Import styles
+import "./css/main.css";
 
-// Initialize sliders/carousels
-document.addEventListener('DOMContentLoaded', () => {
-  // Mobile menu toggle
-  const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
-  const mobileMenu = document.querySelector('.mobile-menu');
-  
-  if (mobileMenuToggle && mobileMenu) {
-    mobileMenuToggle.addEventListener('click', function() {
-      mobileMenu.classList.toggle('active');
-      mobileMenuToggle.classList.toggle('active');
-      document.body.classList.toggle('menu-open');
-    });
-  }
+// Import JavaScript dependencies
+import "./js/main";
 
-  // Initialize hero slider if it exists
-  const heroSlider = document.querySelector('.hero-slider');
-  if (heroSlider) {
-    new Glide('.hero-slider', {
-      type: 'carousel',
-      autoplay: 5000,
-      animationDuration: 800,
-      gap: 0
-    }).mount();
-  }
+// Import Lazysizes for image loading
+import "lazysizes";
 
-  // Initialize featured vehicles slider if it exists
-  const featuredSlider = document.querySelector('.featured-vehicles-slider');
-  if (featuredSlider) {
-    new Glide('.featured-vehicles-slider', {
-      type: 'carousel',
-      perView: 3,
-      gap: 30,
-      breakpoints: {
-        992: { perView: 2 },
-        768: { perView: 1 }
-      }
-    }).mount();
-  }
-
-  // Initialize testimonials slider if it exists
-  const testimonialSlider = document.querySelector('.testimonials-slider');
-  if (testimonialSlider) {
-    new Glide('.testimonials-slider', {
-      type: 'carousel',
-      perView: 1,
-      autoplay: 8000
-    }).mount();
-  }
-  
-  // Form validation
-  const forms = document.querySelectorAll('form');
-  forms.forEach(form => {
-    form.addEventListener('submit', handleFormSubmit);
-  });
-  
-  // Cookie consent
-  initCookieConsent();
-
-  // Vehicle inventory filtering
-  const filterForm = document.querySelector('.inventory-filter-form');
-  if (filterForm) {
-    filterForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const formData = new FormData(filterForm);
-      const params = new URLSearchParams();
-      
-      for (const [key, value] of formData.entries()) {
-        if (value) {
-          params.append(key, value);
-        }
-      }
-      
-      window.location.href = `/inventory/?${params.toString()}`;
-    });
-  }
-
-  // Initialize lazy loading for images
-  document.querySelectorAll('.lazy-load').forEach(img => {
-    img.classList.add('lazyload');
-  });
-
-  // Mobile menu toggle
-  const menuToggle = document.querySelector(".navbar-burger");
-  const mobileMenu = document.querySelector(".navbar-menu");
-  
-  if (menuToggle) {
-    menuToggle.addEventListener("click", () => {
-      menuToggle.classList.toggle("is-active");
-      mobileMenu.classList.toggle("is-active");
-    });
-  }
-
-  // Vehicle image gallery functionality
-  const galleryThumbs = document.querySelectorAll(".vehicle-thumbnail");
-  const mainImage = document.querySelector(".vehicle-main-image img");
-  
-  if (galleryThumbs.length > 0 && mainImage) {
-    galleryThumbs.forEach(thumb => {
-      thumb.addEventListener("click", () => {
-        mainImage.src = thumb.dataset.fullsize;
-        mainImage.alt = thumb.alt;
-        
-        // Update active state
-        galleryThumbs.forEach(t => t.classList.remove("is-active"));
-        thumb.classList.add("is-active");
+// Registration for Service Worker
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker
+      .register("/sw.js")
+      .then(registration => {
+        console.log("SW registered: ", registration);
+      })
+      .catch(error => {
+        console.log("SW registration failed: ", error);
       });
-    });
+  });
+}
+
+// Dynamic content loading for inventory
+document.addEventListener("DOMContentLoaded", () => {
+  // Initialize forms with validation
+  initForms();
+  
+  // Load inventory data if on inventory page
+  if (document.querySelector(".inventory-container")) {
+    loadInventory();
+  }
+  
+  // Handle vehicle filter changes
+  const filterForm = document.querySelector(".vehicle-filters");
+  if (filterForm) {
+    filterForm.addEventListener("change", handleFilterChange);
   }
 });
 
-// Form submission handler with Netlify integration
-function handleFormSubmit(e) {
-  const form = e.target;
+// Form initialization and validation
+function initForms() {
+  const forms = document.querySelectorAll("form[data-form-type]");
   
-  // Basic validation
-  const requiredFields = form.querySelectorAll('[required]');
-  let isValid = true;
-  
-  requiredFields.forEach(field => {
-    if (!field.value.trim()) {
-      isValid = false;
-      field.classList.add('is-invalid');
-    } else {
-      field.classList.remove('is-invalid');
-    }
-  });
-  
-  if (!isValid) {
-    e.preventDefault();
-    form.querySelector('.form-error').textContent = 'Please fill in all required fields.';
-  }
-  
-  // For non-Netlify environments (like dev), prevent actual submission
-  if (isValid && window.location.hostname === 'localhost') {
-    e.preventDefault();
-    console.log('Form submission simulated in development');
-    form.reset();
-    form.querySelector('.form-success').textContent = 'Form submitted successfully (dev mode).';
-  }
-}
-
-// Initialize cookie consent
-function initCookieConsent() {
-  CookieConsent.run({
-    categories: {
-      necessary: {
-        enabled: true,
-        readonly: true
-      },
-      analytics: {
-        enabled: true
-      },
-      marketing: {
-        enabled: false
-      }
-    },
-    language: {
-      default: 'en',
-      translations: {
-        en: {
-          consentModal: {
-            title: 'We use cookies',
-            description: 'We use cookies to enhance your browsing experience, serve personalized content, and analyze our traffic.',
-            acceptAllBtn: 'Accept all',
-            acceptNecessaryBtn: 'Reject all',
-            showPreferencesBtn: 'Manage preferences'
-          },
-          preferencesModal: {
-            title: 'Cookie Preferences',
-            acceptAllBtn: 'Accept all',
-            acceptNecessaryBtn: 'Reject all',
-            savePreferencesBtn: 'Save preferences',
-            closeIconLabel: 'Close',
-            sections: [
-              {
-                title: 'Cookie Usage',
-                description: 'We use cookies to ensure the basic functionality of the website and to enhance your online experience.'
-              },
-              {
-                title: 'Strictly Necessary Cookies',
-                description: 'These cookies are essential for the proper functioning of the website.',
-                cookieTable: {
-                  headers: { name: 'Name', description: 'Description' },
-                  body: [
-                    { name: 'session', description: 'Used to maintain your session' },
-                    { name: 'XSRF-TOKEN', description: 'Security token for forms' }
-                  ]
-                },
-                toggle: {
-                  value: 'necessary',
-                  enabled: true,
-                  readonly: true
-                }
-              },
-              {
-                title: 'Analytics Cookies',
-                description: 'These cookies help us understand how visitors interact with our website.',
-                toggle: {
-                  value: 'analytics',
-                  enabled: true,
-                  readonly: false
-                }
-              },
-              {
-                title: 'Marketing Cookies',
-                description: 'These cookies are used to track visitors across websites to display relevant advertisements.',
-                toggle: {
-                  value: 'marketing',
-                  enabled: false,
-                  readonly: false
-                }
-              }
-            ]
-          }
-        }
-      }
-    }
+  forms.forEach(form => {
+    form.addEventListener("submit", handleFormSubmit);
   });
 }
 
-// Enable service worker for offline support
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').then(registration => {
-      console.log('Service Worker registered: ', registration);
-    }).catch(error => {
-      console.log('Service Worker registration failed: ', error);
+// Form submission handler
+async function handleFormSubmit(event) {
+  event.preventDefault();
+  
+  const form = event.target;
+  const formType = form.getAttribute("data-form-type");
+  const submitButton = form.querySelector('button[type="submit"]');
+  const statusMessage = form.querySelector(".form-status");
+  
+  // Disable button during submission
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.innerHTML = "Sending...";
+  }
+  
+  // Get form data
+  const formData = new FormData(form);
+  const formObject = {};
+  formData.forEach((value, key) => {
+    formObject[key] = value;
+  });
+  formObject.formType = formType;
+  
+  try {
+    // Submit based on form type
+    let endpoint;
+    switch (formType) {
+      case "contact":
+        endpoint = "/.netlify/functions/contact-form";
+        break;
+      case "testDrive":
+      case "tradeIn":
+        endpoint = "/.netlify/functions/lead-management";
+        break;
+      default:
+        endpoint = "/.netlify/functions/contact-form";
+    }
+    
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(formObject),
     });
-  });
+    
+    const result = await response.json();
+    
+    if (response.ok) {
+      // Success
+      if (statusMessage) {
+        statusMessage.innerHTML = `<div class="success-message">${result.message}</div>`;
+      }
+      form.reset();
+    } else {
+      // API error
+      if (statusMessage) {
+        statusMessage.innerHTML = `<div class="error-message">${result.message}</div>`;
+      }
+    }
+  } catch (error) {
+    console.error("Form submission error:", error);
+    if (statusMessage) {
+      statusMessage.innerHTML = `<div class="error-message">An unexpected error occurred. Please try again later.</div>`;
+    }
+  } finally {
+    // Re-enable button
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.innerHTML = "Submit";
+    }
+  }
+}
+
+// Load inventory data from API
+async function loadInventory() {
+  const inventoryContainer = document.querySelector(".inventory-container");
+  const loadingElement = document.querySelector(".loading-indicator");
+  
+  if (loadingElement) {
+    loadingElement.style.display = "block";
+  }
+  
+  try {
+    // Get current URL parameters for filtering
+    const urlParams = new URLSearchParams(window.location.search);
+    const searchParams = {};
+    
+    // Build search parameters
+    for (const [key, value] of urlParams) {
+      searchParams[key] = value;
+    }
+    
+    // Add default search type if not present
+    if (!searchParams.search) {
+      const inventoryType = document.querySelector("[data-inventory-type]");
+      if (inventoryType) {
+        searchParams.search = inventoryType.getAttribute("data-inventory-type") || "new";
+      }
+    }
+    
+    // Create query string
+    const queryString = new URLSearchParams(searchParams).toString();
+    
+    // Fetch inventory data
+    const response = await fetch(`/.netlify/functions/inventory-proxy?${queryString}`);
+    
+    if (response.ok) {
+      const html = await response.text();
+      
+      // Parse and extract vehicle data
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, "text/html");
+      const vehicles = doc.querySelectorAll(".vehicle-card");
+      
+      // Clear existing inventory
+      inventoryContainer.innerHTML = "";
+      
+      if (vehicles.length > 0) {
+        vehicles.forEach(vehicle => {
+          inventoryContainer.appendChild(vehicle);
+        });
+      } else {
+        inventoryContainer.innerHTML = "<div class='no-results'>No vehicles found matching your criteria. Please adjust your filters and try again.</div>";
+      }
+    } else {
+      throw new Error("Failed to load inventory");
+    }
+  } catch (error) {
+    console.error("Error loading inventory:", error);
+    inventoryContainer.innerHTML = "<div class='error-message'>There was a problem loading the inventory. Please try again later.</div>";
+  } finally {
+    if (loadingElement) {
+      loadingElement.style.display = "none";
+    }
+  }
+}
+
+// Handle filter changes
+function handleFilterChange() {
+  const form = document.querySelector(".vehicle-filters");
+  const formData = new FormData(form);
+  const params = new URLSearchParams();
+  
+  for (const [key, value] of formData.entries()) {
+    if (value) {
+      params.append(key, value);
+    }
+  }
+  
+  // Update URL and reload inventory
+  const newUrl = `${window.location.pathname}?${params.toString()}`;
+  window.history.pushState({}, '', newUrl);
+  
+  loadInventory();
 }

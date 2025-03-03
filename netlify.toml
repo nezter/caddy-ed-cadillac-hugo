@@ -1,13 +1,12 @@
 [build]
   publish = "dist"
   command = "npm run build"
+  functions = "netlify/functions"
 
 [build.environment]
   HUGO_VERSION = "0.121.1"
   NODE_VERSION = "18.16.0"
   NPM_VERSION = "9.5.1"
-  HUGO_ENV = "production"
-  HUGO_ENABLEGITINFO = "true"
 
 [context.production.environment]
   HUGO_ENV = "production"
@@ -19,24 +18,18 @@
 [context.branch-deploy]
   command = "npm run build:preview"
 
-# Redirects and rewrites
-[[redirects]]
-  from = "/api/inventory/*"
-  to = "/.netlify/functions/inventory-proxy/:splat"
-  status = 200
-  force = true
-
+# Redirects and rewrite rules
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/:splat"
   status = 200
 
-# Handle 404 errors
 [[redirects]]
   from = "/*"
-  to = "/404/"
+  to = "/404.html"
   status = 404
 
+# Headers for security and caching
 [[headers]]
   for = "/*"
   [headers.values]
@@ -44,9 +37,8 @@
     X-XSS-Protection = "1; mode=block"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
-    Content-Security-Policy = "default-src 'self' 'unsafe-inline' 'unsafe-eval' *.netlify.app netlify-cdp-loader.netlify.app; img-src 'self' data: *.cloudfront.net; connect-src 'self' *.netlify.app;"
-    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
-    Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
+    Content-Security-Policy = "default-src 'self' 'unsafe-inline' 'unsafe-eval' *.netlify.app *.cadillacofsouthcharlotte.com *.googleapis.com *.gstatic.com *.google-analytics.com *.googletagmanager.com *.youtube.com *.facebook.net *.facebook.com;"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(self)"
 
 [[headers]]
   for = "/*.js"
@@ -59,7 +51,17 @@
     Cache-Control = "public, max-age=31536000, immutable"
 
 [[headers]]
-  for = "/*.(?:jpg|jpeg|gif|png|svg|webp)"
+  for = "/*.jpg"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.png"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.webp"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
@@ -69,5 +71,20 @@
 [[plugins]]
   package = "netlify-plugin-submit-sitemap"
   [plugins.inputs]
-    baseUrl = "https://caddyed.netlify.app"
+    baseUrl = "https://caddyed.com"
     sitemapPath = "/sitemap.xml"
+    providers = [
+      "google",
+      "bing"
+    ]
+
+[[plugins]]
+  package = "netlify-plugin-cache-nextjs"
+  [plugins.inputs]
+    cacheDigest = true
+    cacheEntries = true
+    cacheNextConfig = true
+    customPaths = [
+      ".cache",
+      "site/resources"
+    ]

@@ -3,372 +3,279 @@
 
 {{ define "main" }}
 <div class="vehicle-detail-page">
-  <div class="breadcrumbs container">
-    <a href="/">Home</a> / <a href="/inventory">Inventory</a> / {{ .Title }}
-  </div>
-
-  <div class="vehicle-hero container">
-    <div class="vehicle-detail-grid">
-      <div class="vehicle-gallery">
-        {{ if .Params.gallery }}
-        <div class="gallery-main">
-          <img src="{{ index .Params.gallery 0 }}" alt="{{ .Title }}" id="mainImage" class="main-image">
-        </div>
-        <div class="gallery-thumbnails">
-          {{ range $index, $img := .Params.gallery }}
-          <div class="thumbnail {{ if eq $index 0 }}active{{ end }}">
-            <img src="{{ $img }}" alt="View {{ add $index 1 }}" onclick="setMainImage('{{ $img }}', this)">
-          </div>
-          {{ end }}
-        </div>
-        {{ else if .Params.image }}
-        <div class="gallery-main">
-          <img src="{{ .Params.image }}" alt="{{ .Title }}" class="main-image">
-        </div>
+  <div class="container">
+    <div class="vehicle-header">
+      <h1 class="vehicle-title">{{ .Title }}</h1>
+      <div class="vehicle-price">
+        {{ if gt .Params.price 0 }}
+          <span class="price">${{ lang.NumFmt 0 .Params.price }}</span>
         {{ else }}
-        <div class="gallery-main">
-          <img src="/img/vehicle-placeholder.jpg" alt="{{ .Title }}" class="main-image">
-        </div>
+          <span class="price">Call for Price</span>
+        {{ end }}
+      </div>
+      <div class="vehicle-meta">
+        <span class="stock">Stock# {{ .Params.stockNumber }}</span>
+        <span class="vin">VIN: {{ .Params.vin }}</span>
+      </div>
+    </div>
+
+    <div class="vehicle-content">
+      <div class="vehicle-gallery">
+        {{ if .Params.images }}
+          <div class="main-image">
+            <img src="{{ index .Params.images 0 }}" alt="{{ .Title }}" class="img-fluid lazyload">
+          </div>
+          {{ if gt (len .Params.images) 1 }}
+            <div class="thumbnails">
+              {{ range .Params.images }}
+                <div class="thumbnail">
+                  <img src="{{ . }}" alt="" class="img-fluid lazyload">
+                </div>
+              {{ end }}
+            </div>
+          {{ end }}
+        {{ else }}
+          <div class="no-image">
+            <img src="/img/no-image-available.jpg" alt="No image available" class="img-fluid">
+          </div>
         {{ end }}
       </div>
 
-      <div class="vehicle-info">
-        <h1 class="vehicle-title">{{ .Title }}</h1>
-        {{ if .Params.trim }}<p class="vehicle-trim">{{ .Params.trim }}</p>{{ end }}
-        
-        <div class="vehicle-price-box">
-          {{ if .Params.salePrice }}
-          <div class="price-wrapper">
-            <span class="original-price">${{ lang.NumFmt 0 .Params.price "- . ," }}</span>
-            <span class="sale-price">${{ lang.NumFmt 0 .Params.salePrice "- . ," }}</span>
-          </div>
-          {{ else }}
-          <div class="price-wrapper">
-            <span class="price">${{ lang.NumFmt 0 .Params.price "- . ," }}</span>
-          </div>
-          {{ end }}
-
-          <div class="vehicle-stock">
-            <span><strong>Stock:</strong> {{ .Params.stock }}</span>
-            <span><strong>VIN:</strong> {{ .Params.vin }}</span>
-          </div>
+      <div class="vehicle-details">
+        <div class="vehicle-specs">
+          <h2>Specifications</h2>
+          <table class="specs-table">
+            <tr>
+              <th>Year:</th>
+              <td>{{ .Params.year }}</td>
+            </tr>
+            <tr>
+              <th>Make:</th>
+              <td>{{ .Params.make }}</td>
+            </tr>
+            <tr>
+              <th>Model:</th>
+              <td>{{ .Params.model }}</td>
+            </tr>
+            <tr>
+              <th>Trim:</th>
+              <td>{{ .Params.trim }}</td>
+            </tr>
+            <tr>
+              <th>Mileage:</th>
+              <td>{{ with .Params.mileage }}{{ lang.NumFmt 0 . }} mi{{ else }}N/A{{ end }}</td>
+            </tr>
+            <tr>
+              <th>Exterior Color:</th>
+              <td>{{ .Params.exteriorColor }}</td>
+            </tr>
+            <tr>
+              <th>Interior Color:</th>
+              <td>{{ .Params.interiorColor }}</td>
+            </tr>
+            <tr>
+              <th>Engine:</th>
+              <td>{{ .Params.engine }}</td>
+            </tr>
+            <tr>
+              <th>Transmission:</th>
+              <td>{{ .Params.transmission }}</td>
+            </tr>
+            <tr>
+              <th>Drivetrain:</th>
+              <td>{{ .Params.drivetrain }}</td>
+            </tr>
+            <tr>
+              <th>Fuel Type:</th>
+              <td>{{ .Params.fuelType }}</td>
+            </tr>
+          </table>
         </div>
 
-        <div class="vehicle-cta">
-          <button class="btn btn-primary" id="contactBtn">Contact Us</button>
-          <button class="btn btn-secondary" id="scheduleBtn">Schedule Test Drive</button>
-          <button class="btn btn-outline" id="saveBtn">Save Vehicle</button>
+        <div class="vehicle-description">
+          <h2>Description</h2>
+          {{ .Content }}
         </div>
 
-        <div class="vehicle-key-specs">
-          <div class="spec">
-            <span class="icon">⚙️</span>
-            <div class="spec-detail">
-              <span class="spec-label">Mileage</span>
-              <span class="spec-value">{{ lang.NumFmt 0 .Params.mileage "- . ," }}</span>
-            </div>
-          </div>
-          <div class="spec">
-            <span class="icon">🏁</span>
-            <div class="spec-detail">
-              <span class="spec-label">Exterior</span>
-              <span class="spec-value">{{ .Params.exteriorColor }}</span>
-            </div>
-          </div>
-          <div class="spec">
-            <span class="icon">🚘</span>
-            <div class="spec-detail">
-              <span class="spec-label">Transmission</span>
-              <span class="spec-value">{{ .Params.transmission }}</span>
-            </div>
-          </div>
-          <div class="spec">
-            <span class="icon">⛽</span>
-            <div class="spec-detail">
-              <span class="spec-label">Fuel Type</span>
-              <span class="spec-value">{{ .Params.fuelType }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="vehicle-details container">
-    <div class="vehicle-tabs">
-      <nav class="tabs-nav">
-        <button class="tab-btn active" data-tab="overview">Overview</button>
-        <button class="tab-btn" data-tab="specs">Specifications</button>
-        <button class="tab-btn" data-tab="features">Features</button>
-        <button class="tab-btn" data-tab="financing">Financing</button>
-      </nav>
-
-      <div class="tab-content">
-        <div class="tab-pane active" id="overview">
-          <div class="vehicle-description">
-            {{ .Content }}
-          </div>
-        </div>
-
-        <div class="tab-pane" id="specs">
-          <div class="specs-grid">
-            <div class="spec-group">
-              <h3>Vehicle Information</h3>
-              <table class="specs-table">
-                <tr>
-                  <th>Year</th>
-                  <td>{{ .Params.year }}</td>
-                </tr>
-                <tr>
-                  <th>Make</th>
-                  <td>{{ .Params.make }}</td>
-                </tr>
-                <tr>
-                  <th>Model</th>
-                  <td>{{ .Params.model }}</td>
-                </tr>
-                <tr>
-                  <th>Trim</th>
-                  <td>{{ .Params.trim }}</td>
-                </tr>
-                <tr>
-                  <th>Body Style</th>
-                  <td>{{ .Params.bodyStyle }}</td>
-                </tr>
-                <tr>
-                  <th>Stock #</th>
-                  <td>{{ .Params.stock }}</td>
-                </tr>
-                <tr>
-                  <th>VIN</th>
-                  <td>{{ .Params.vin }}</td>
-                </tr>
-                <tr>
-                  <th>Mileage</th>
-                  <td>{{ lang.NumFmt 0 .Params.mileage "- . ," }}</td>
-                </tr>
-              </table>
-            </div>
-
-            <div class="spec-group">
-              <h3>Engine & Performance</h3>
-              <table class="specs-table">
-                <tr>
-                  <th>Engine</th>
-                  <td>{{ .Params.engine }}</td>
-                </tr>
-                <tr>
-                  <th>Transmission</th>
-                  <td>{{ .Params.transmission }}</td>
-                </tr>
-                <tr>
-                  <th>Drivetrain</th>
-                  <td>{{ .Params.drivetrain }}</td>
-                </tr>
-                <tr>
-                  <th>Fuel Type</th>
-                  <td>{{ .Params.fuelType }}</td>
-                </tr>
-                {{ if and .Params.mpgCity .Params.mpgHighway }}
-                <tr>
-                  <th>Fuel Economy</th>
-                  <td>{{ .Params.mpgCity }} City / {{ .Params.mpgHighway }} Highway</td>
-                </tr>
-                {{ end }}
-              </table>
-            </div>
-
-            <div class="spec-group">
-              <h3>Design</h3>
-              <table class="specs-table">
-                <tr>
-                  <th>Exterior Color</th>
-                  <td>{{ .Params.exteriorColor }}</td>
-                </tr>
-                <tr>
-                  <th>Interior Color</th>
-                  <td>{{ .Params.interiorColor }}</td>
-                </tr>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <div class="tab-pane" id="features">
-          <div class="features-list">
-            {{ if .Params.features }}
-            <ul>
+        {{ if .Params.features }}
+          <div class="vehicle-features">
+            <h2>Features & Options</h2>
+            <ul class="features-list">
               {{ range .Params.features }}
-              <li>{{ . }}</li>
+                <li>{{ . }}</li>
               {{ end }}
             </ul>
-            {{ else }}
-            <p>No additional features listed for this vehicle. Contact us for more information.</p>
-            {{ end }}
           </div>
-        </div>
+        {{ end }}
 
-        <div class="tab-pane" id="financing">
-          <div class="financing-info">
-            <h3>Financing Options</h3>
-            <p>At Caddy Ed, we offer competitive financing rates and flexible terms to fit your budget.</p>
-            
-            <div class="finance-calculator">
-              <h4>Payment Estimator</h4>
-              <form id="payment-calculator">
-                <div class="form-row">
-                  <div class="form-group">
-                    <label for="vehicle-price">Vehicle Price</label>
-                    <input type="number" id="vehicle-price" value="{{ .Params.price }}" readonly>
-                  </div>
-                  <div class="form-group">
-                    <label for="down-payment">Down Payment</label>
-                    <input type="number" id="down-payment" value="0">
-                  </div>
-                </div>
-                <div class="form-row">
-                  <div class="form-group">
-                    <label for="interest-rate">Interest Rate (%)</label>
-                    <input type="number" id="interest-rate" value="4.9" step="0.1">
-                  </div>
-                  <div class="form-group">
-                    <label for="loan-term">Loan Term (months)</label>
-                    <select id="loan-term">
-                      <option value="36">36 months (3 years)</option>
-                      <option value="48">48 months (4 years)</option>
-                      <option value="60" selected>60 months (5 years)</option>
-                      <option value="72">72 months (6 years)</option>
-                      <option value="84">84 months (7 years)</option>
-                    </select>
-                  </div>
-                </div>
-                <div class="form-row">
-                  <button type="button" class="btn btn-primary" id="calculate-btn">Calculate</button>
-                </div>
-                <div class="result-box" id="payment-result" style="display: none;">
-                  <h4>Estimated Monthly Payment:</h4>
-                  <p class="payment-amount" id="monthly-payment"></p>
-                  <p class="disclaimer">*This is only an estimate. Contact us for actual financing details.</p>
-                </div>
-              </form>
-            </div>
-            
-            <div class="apply-financing">
-              <h4>Get Pre-Approved</h4>
-              <p>Apply for financing directly through our secure online form.</p>
-              <a href="/financing/apply" class="btn btn-secondary">Apply Now</a>
-            </div>
+        <div class="vehicle-actions">
+          <h2>Interested in this vehicle?</h2>
+          <div class="action-buttons">
+            <button class="btn btn-primary" data-toggle="modal" data-target="#contactModal" data-vehicle="{{ .Title }}">
+              Contact Us
+            </button>
+            <button class="btn btn-secondary" data-toggle="modal" data-target="#testDriveModal" data-vehicle="{{ .Title }}">
+              Schedule Test Drive
+            </button>
+            <button class="btn btn-outline" data-toggle="modal" data-target="#tradeInModal">
+              Value Your Trade
+            </button>
           </div>
         </div>
       </div>
     </div>
   </div>
-  
-  <div class="contact-form-container" id="contactForm" style="display: none;">
-    <div class="contact-form-wrapper">
-      <button class="close-btn" id="closeContactForm">&times;</button>
-      <h2>Contact Us About This Vehicle</h2>
-      <form id="vehicleContactForm">
-        <input type="hidden" name="vehicle" value="{{ .Title }}">
-        <input type="hidden" name="stock" value="{{ .Params.stock }}">
-        <input type="hidden" name="vin" value="{{ .Params.vin }}">
-        
-        <div class="form-group">
-          <label for="name">Full Name*</label>
-          <input type="text" id="name" name="name" required>
-        </div>
-        
-        <div class="form-row">
+</div>
+
+<!-- Contact Modal -->
+<div class="modal fade" id="contactModal" tabindex="-1" role="dialog" aria-labelledby="contactModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="contactModalLabel">Contact Us</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="contactForm" class="vehicle-form" data-form-type="contact">
+          <input type="hidden" name="formType" value="contact">
+          <input type="hidden" name="vehicle" id="contactVehicle" value="{{ .Title }}">
+          
           <div class="form-group">
-            <label for="email">Email Address*</label>
-            <input type="email" id="email" name="email" required>
+            <label for="contactName">Name*</label>
+            <input type="text" class="form-control" id="contactName" name="name" required>
           </div>
+          
           <div class="form-group">
-            <label for="phone">Phone Number*</label>
-            <input type="tel" id="phone" name="phone" required>
+            <label for="contactEmail">Email*</label>
+            <input type="email" class="form-control" id="contactEmail" name="email" required>
           </div>
-        </div>
-        
-        <div class="form-group">
-          <label for="message">Message</label>
-          <textarea id="message" name="message" rows="4">I'm interested in this {{ .Params.year }} {{ .Params.make }} {{ .Params.model }} {{ .Params.trim }}.</textarea>
-        </div>
-        
-        <div class="form-group">
-          <button type="submit" class="btn btn-primary btn-block">Send Message</button>
-        </div>
-        
-        <p class="form-disclaimer">By submitting this form, you agree to be contacted by our team regarding this vehicle.</p>
-      </form>
+          
+          <div class="form-group">
+            <label for="contactPhone">Phone</label>
+            <input type="tel" class="form-control" id="contactPhone" name="phone">
+          </div>
+          
+          <div class="form-group">
+            <label for="contactMessage">Message*</label>
+            <textarea class="form-control" id="contactMessage" name="message" rows="4" required></textarea>
+          </div>
+          
+          <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+      </div>
     </div>
   </div>
+</div>
 
-  <script>
-    function setMainImage(src, thumbnail) {
-      document.getElementById('mainImage').src = src;
-      document.querySelectorAll('.thumbnail').forEach(thumb => {
-        thumb.classList.remove('active');
-      });
-      thumbnail.parentNode.classList.add('active');
-    }
-    
-    document.addEventListener('DOMContentLoaded', function() {
-      // Tab functionality
-      const tabButtons = document.querySelectorAll('.tab-btn');
-      const tabPanes = document.querySelectorAll('.tab-pane');
-      
-      tabButtons.forEach(button => {
-        button.addEventListener('click', () => {
-          const tabId = button.getAttribute('data-tab');
+<!-- Test Drive Modal -->
+<div class="modal fade" id="testDriveModal" tabindex="-1" role="dialog" aria-labelledby="testDriveModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="testDriveModalLabel">Schedule Test Drive</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="testDriveForm" class="vehicle-form" data-form-type="testDrive">
+          <input type="hidden" name="formType" value="testDrive">
+          <input type="hidden" name="vehicle" id="testDriveVehicle" value="{{ .Title }}">
           
-          // Deactivate all tabs
-          tabButtons.forEach(btn => btn.classList.remove('active'));
-          tabPanes.forEach(pane => pane.classList.remove('active'));
+          <div class="form-group">
+            <label for="testDriveName">Name*</label>
+            <input type="text" class="form-control" id="testDriveName" name="name" required>
+          </div>
           
-          // Activate selected tab
-          button.classList.add('active');
-          document.getElementById(tabId).classList.add('active');
-        });
-      });
+          <div class="form-group">
+            <label for="testDriveEmail">Email*</label>
+            <input type="email" class="form-control" id="testDriveEmail" name="email" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="testDrivePhone">Phone*</label>
+            <input type="tel" class="form-control" id="testDrivePhone" name="phone" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="preferredDate">Preferred Date</label>
+            <input type="date" class="form-control" id="preferredDate" name="preferredDate">
+          </div>
+          
+          <div class="form-group">
+            <label for="preferredTime">Preferred Time</label>
+            <select class="form-control" id="preferredTime" name="preferredTime">
+              <option value="">Select a time</option>
+              <option value="morning">Morning (9am-12pm)</option>
+              <option value="afternoon">Afternoon (12pm-5pm)</option>
+              <option value="evening">Evening (5pm-8pm)</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="testDriveComments">Comments</label>
+            <textarea class="form-control" id="testDriveComments" name="comments" rows="3"></textarea>
+          </div>
+          
+          <button type="submit" class="btn btn-primary">Schedule</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{ partial "trade-in-modal.html" . }}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Handle form submissions
+  document.querySelectorAll('.vehicle-form').forEach(form => {
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
       
-      // Contact form
-      const contactBtn = document.getElementById('contactBtn');
-      const scheduleBtn = document.getElementById('scheduleBtn');
-      const contactForm = document.getElementById('contactForm');
-      const closeContactForm = document.getElementById('closeContactForm');
+      const formData = new FormData(this);
+      const formType = this.dataset.formType;
+      const jsonData = {};
       
-      contactBtn.addEventListener('click', () => {
-        contactForm.style.display = 'flex';
-      });
+      for (let [key, value] of formData.entries()) {
+        jsonData[key] = value;
+      }
       
-      scheduleBtn.addEventListener('click', () => {
-        document.getElementById('message').value = "I would like to schedule a test drive for this {{ .Params.year }} {{ .Params.make }} {{ .Params.model }} {{ .Params.trim }}.";
-        contactForm.style.display = 'flex';
-      });
-      
-      closeContactForm.addEventListener('click', () => {
-        contactForm.style.display = 'none';
-      });
-      
-      // Payment calculator
-      const calculateBtn = document.getElementById('calculate-btn');
-      
-      calculateBtn.addEventListener('click', () => {
-        const vehiclePrice = parseFloat(document.getElementById('vehicle-price').value);
-        const downPayment = parseFloat(document.getElementById('down-payment').value) || 0;
-        const interestRate = parseFloat(document.getElementById('interest-rate').value) / 100;
-        const loanTerm = parseInt(document.getElementById('loan-term').value);
-        
-        const loanAmount = vehiclePrice - downPayment;
-        const monthlyInterest = interestRate / 12;
-        
-        // PMT formula
-        const monthlyPayment = (loanAmount * monthlyInterest) / (1 - Math.pow(1 + monthlyInterest, -loanTerm));
-        
-        document.getElementById('monthly-payment').textContent = '$' + monthlyPayment.toFixed(2);
-        document.getElementById('payment-result').style.display = 'block';
+      // Send form data to Netlify function
+      fetch('/.netlify/functions/lead-management', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(jsonData)
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          alert(data.message);
+          this.reset();
+          // Close the modal
+          $(`#${formType}Modal`).modal('hide');
+        } else {
+          alert(data.message || 'There was an error submitting the form. Please try again.');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('There was an error submitting the form. Please try again later.');
       });
     });
-  </script>
-</div>
+  });
+  
+  // Set vehicle info when modal opens
+  $('#contactModal, #testDriveModal').on('show.bs.modal', function (event) {
+    const button = $(event.relatedTarget);
+    const vehicle = button.data('vehicle');
+    const modal = $(this);
+    modal.find('.modal-body input[name="vehicle"]').val(vehicle);
+  });
+});
+</script>
 {{ end }}

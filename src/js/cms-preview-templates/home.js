@@ -70,63 +70,61 @@ export default class PostPreview extends React.Component {
   }
 }
 
-export default class HomePreview extends React.Component {
-  render() {
-    const {entry, getAsset} = this.props;
-    
-    const hero = entry.getIn(["data", "hero"]);
-    const heroBg = getAsset(hero.get("background_image"));
-    const featuredVehicles = entry.getIn(["data", "featured_vehicles"]) || [];
-    
-    return (
-      <div className="home-page">
-        <section className="hero" style={{backgroundImage: `url(${heroBg.toString()})`}}>
-          <div className="container">
-            <div className="hero-content">
-              <h1>{hero.get("heading")}</h1>
-              <p>{hero.get("subheading")}</p>
-              <a href={hero.get("cta_link")} className="btn btn-primary">{hero.get("cta_text")}</a>
-            </div>
-          </div>
-        </section>
-        
-        <section className="featured-vehicles">
-          <div className="container">
-            <h2 className="section-title">{entry.getIn(["data", "featured_title"])}</h2>
-            <div className="vehicle-grid">
-              {featuredVehicles.map((vehicle, i) => (
-                <div key={i} className="vehicle-card">
-                  <img src={getAsset(vehicle.get("image")).toString()} alt={vehicle.get("model")} />
-                  <h3>{vehicle.get("year")} {vehicle.get("make")} {vehicle.get("model")}</h3>
-                  <p className="price">${vehicle.get("price")}</p>
-                  <a href={vehicle.get("link")} className="btn">View Details</a>
-                </div>
-              ))}
-            </div>
-            <div className="text-center">
-              <a href="/inventory" className="btn btn-secondary">View All Inventory</a>
-            </div>
-          </div>
-        </section>
-        
-        <section className="services">
-          <div className="container">
-            <h2 className="section-title">{entry.getIn(["data", "services_title"])}</h2>
-            <div className="services-grid">
-              {(entry.getIn(["data", "services"]) || []).map((service, i) => (
-                <div key={i} className="service-card">
-                  <div className="service-icon">
-                    <img src={getAsset(service.get("icon")).toString()} alt="" />
-                  </div>
-                  <h3>{service.get("name")}</h3>
-                  <p>{service.get("description")}</p>
-                  <a href={service.get("link")}>Learn more</a>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
+import React from "react";
+
+export default function HomePreview({ entry, getAsset }) {
+  const data = entry.getIn(["data"]).toJS();
+  
+  const image = getAsset(data.image);
+  const featured = data.featured || [];
+  const testimonials = data.testimonials || [];
+  
+  return (
+    <div className="home-preview">
+      <div className="hero" style={{ backgroundImage: `url(${image})` }}>
+        <div className="hero-content">
+          <h1>{data.heading}</h1>
+          <div>{data.subheading}</div>
+        </div>
       </div>
-    );
-  }
+      
+      <div className="content">
+        {data.intro && (
+          <div className="intro">
+            <h2>{data.intro.heading}</h2>
+            <p>{data.intro.text}</p>
+          </div>
+        )}
+        
+        {featured.length > 0 && (
+          <div className="featured-models">
+            <h2>Featured Models</h2>
+            <div className="featured-grid">
+              {featured.map((item, i) => (
+                <div key={i} className="featured-item">
+                  <img src={getAsset(item.image)} alt={item.model} />
+                  <h3>{item.model}</h3>
+                  <p>{item.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        
+        {testimonials.length > 0 && (
+          <div className="testimonials">
+            <h2>Testimonials</h2>
+            <div className="testimonials-list">
+              {testimonials.map((item, i) => (
+                <div key={i} className="testimonial">
+                  <blockquote>"{item.quote}"</blockquote>
+                  <cite>— {item.author}</cite>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
