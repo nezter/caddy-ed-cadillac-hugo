@@ -20,20 +20,13 @@ module.exports = {
     rules: [
       {
         test: /\.((png)|(eot)|(woff)|(woff2)|(ttf)|(svg)|(gif))(\?v=\d+\.\d+\.\d+)?$/,
-        use: {
-          loader: "file-loader",
-          options: {
-            name: "/[hash].[ext]"
-          }
-        }
+        loader: "file-loader?name=/[hash].[ext]"
       },
       {
         loader: "babel-loader",
         test: /\.js?$/,
         exclude: /node_modules/,
-        options: {
-          cacheDirectory: true
-        }
+        query: {cacheDirectory: true}
       },
       {
         test: /\.(sa|sc|c)ss$/,
