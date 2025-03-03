@@ -87,6 +87,29 @@ document.addEventListener("DOMContentLoaded", function() {
 
   // Initialize the inventory filter if it exists
   initInventoryFilter();
+
+  // Setup search functionality
+  const searchForm = document.querySelector(".search-form");
+  if (searchForm) {
+    searchForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const searchTerm = e.target.querySelector("input").value.trim();
+      if (searchTerm) {
+        window.location.href = `/inventory/?q=${encodeURIComponent(searchTerm)}`;
+      }
+    });
+  }
+
+  // Initialize any carousels
+  const heroSlider = document.querySelector(".hero-slider");
+  if (heroSlider && window.Glide) {
+    new Glide('.hero-slider', {
+      type: 'carousel',
+      autoplay: 5000,
+      animationDuration: 600,
+      gap: 0
+    }).mount();
+  }
 });
 
 // Form validation and submission handler

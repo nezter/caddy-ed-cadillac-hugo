@@ -69,45 +69,62 @@ export default class PostPreview extends React.Component {
     </div>
   }
 }
+
 export default class HomePreview extends React.Component {
   render() {
     const {entry, getAsset} = this.props;
-    const data = entry.getIn(["data"]).toJS();
     
-    const heroImage = getAsset(data.hero_image);
+    const hero = entry.getIn(["data", "hero"]);
+    const heroBg = getAsset(hero.get("background_image"));
+    const featuredVehicles = entry.getIn(["data", "featured_vehicles"]) || [];
     
     return (
-      <div className="page home">
-        <div className="hero" style={{backgroundImage: `url(${heroImage?.toString()})`}}>
+      <div className="home-page">
+        <section className="hero" style={{backgroundImage: `url(${heroBg.toString()})`}}>
           <div className="container">
             <div className="hero-content">
-              <h1>{data.title}</h1>
-              <p className="subtitle">{data.subtitle}</p>
-              {data.cta_button_text && data.cta_button_link && (
-                <a href={data.cta_button_link} className="btn btn-primary">{data.cta_button_text}</a>
-              )}
+              <h1>{hero.get("heading")}</h1>
+              <p>{hero.get("subheading")}</p>
+              <a href={hero.get("cta_link")} className="btn btn-primary">{hero.get("cta_text")}</a>
             </div>
           </div>
-        </div>
+        </section>
         
-        {data.features && (
-          <section className="features">
-            <div className="container">
-              <div className="feature-grid">
-                {data.features.map((feature, i) => (
-                  <div className="feature-item" key={i}>
-                    <div className="icon">{feature.icon}</div>
-                    <h3>{feature.heading}</h3>
-                    <p>{feature.text}</p>
-                  </div>
-                ))}
-              </div>
+        <section className="featured-vehicles">
+          <div className="container">
+            <h2 className="section-title">{entry.getIn(["data", "featured_title"])}</h2>
+            <div className="vehicle-grid">
+              {featuredVehicles.map((vehicle, i) => (
+                <div key={i} className="vehicle-card">
+                  <img src={getAsset(vehicle.get("image")).toString()} alt={vehicle.get("model")} />
+                  <h3>{vehicle.get("year")} {vehicle.get("make")} {vehicle.get("model")}</h3>
+                  <p className="price">${vehicle.get("price")}</p>
+                  <a href={vehicle.get("link")} className="btn">View Details</a>
+                </div>
+              ))}
             </div>
-          </section>
-        )}
+            <div className="text-center">
+              <a href="/inventory" className="btn btn-secondary">View All Inventory</a>
+            </div>
+          </div>
+        </section>
         
-        <section className="content">
-          <div className="container" dangerouslySetInnerHTML={{ __html: data.body || "" }} />
+        <section className="services">
+          <div className="container">
+            <h2 className="section-title">{entry.getIn(["data", "services_title"])}</h2>
+            <div className="services-grid">
+              {(entry.getIn(["data", "services"]) || []).map((service, i) => (
+                <div key={i} className="service-card">
+                  <div className="service-icon">
+                    <img src={getAsset(service.get("icon")).toString()} alt="" />
+                  </div>
+                  <h3>{service.get("name")}</h3>
+                  <p>{service.get("description")}</p>
+                  <a href={service.get("link")}>Learn more</a>
+                </div>
+              ))}
+            </div>
+          </div>
         </section>
       </div>
     );

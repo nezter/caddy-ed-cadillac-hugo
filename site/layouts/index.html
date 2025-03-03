@@ -1,78 +1,79 @@
 {{ define "main" }}
-<section class="hero" style="background-image: url('/images/hero-cadillac.jpg');">
-  <div class="container">
-    <h1>Caddy Ed's Cadillac Dealership</h1>
-    <p class="subtitle">Luxury vehicles for the discerning customer, with personalized service from Ed himself</p>
-    <div class="hero-buttons">
-      <a href="/vehicles" class="cta-button">Browse Inventory</a>
-      <a href="/contact" class="cta-button cta-secondary">Schedule Test Drive</a>
+  <!-- Hero Section -->
+  <section class="hero" style="background-image: url('{{ .Params.hero.background_image }}')">
+    <div class="container">
+      <div class="hero-content">
+        <h1>{{ .Params.hero.heading }}</h1>
+        <p>{{ .Params.hero.subheading }}</p>
+        <a href="{{ .Params.hero.cta_link }}" class="btn btn-primary">{{ .Params.hero.cta_text }}</a>
+      </div>
     </div>
-  </div>
-</section>
+  </section>
 
-<section class="featured-models">
-  <div class="container">
-    <h2 class="section-title">Featured Vehicles</h2>
-    <p class="section-subtitle">Explore our collection of premium Cadillac models</p>
-    
-    <div class="vehicle-grid">
-      {{ range first 6 (where .Site.RegularPages "Section" "vehicles") }}
-        {{ partial "vehicle-card.html" . }}
-      {{ end }}
+  <section class="section">
+    <div class="container">
+      <div class="content">
+        {{ .Content }}
+      </div>
     </div>
-    <div class="view-all-container">
-      <a href="/vehicles" class="view-all-link">View All Vehicles</a>
-    </div>
-  </div>
-</section>
+  </section>
 
-<section class="testimonials">
-  <div class="container">
-    <h2 class="section-title">What Our Customers Say</h2>
-    <div class="testimonial-grid">
-      <div class="testimonial-card">
-        <blockquote>
-          <p>"Ed made buying my Escalade the easiest car purchase I've ever experienced. His knowledge and no-pressure approach was refreshing."</p>
-          <cite>- Michael Johnson</cite>
-        </blockquote>
+  {{ if .Params.featured }}
+    <section class="section has-background-light">
+      <div class="container">
+        <h2 class="title has-text-centered">{{ .Params.featured_heading }}</h2>
+        <div class="columns is-multiline mt-6">
+          {{ range .Params.featured }}
+            <div class="column is-4">
+              <div class="card h-100">
+                <div class="card-image">
+                  <figure class="image is-16by9">
+                    <img src="{{ .image }}" alt="{{ .heading }}">
+                  </figure>
+                </div>
+                <div class="card-content">
+                  <h3 class="title is-4">{{ .heading }}</h3>
+                  <p>{{ .description }}</p>
+                  {{ if .link }}
+                    <div class="mt-4">
+                      <a href="{{ .link }}" class="button is-primary">Learn More</a>
+                    </div>
+                  {{ end }}
+                </div>
+              </div>
+            </div>
+          {{ end }}
+        </div>
       </div>
-      <div class="testimonial-card">
-        <blockquote>
-          <p>"I've been buying Cadillacs from Ed for over a decade. There's a reason I keep coming back - unmatched service!"</p>
-          <cite>- Sarah Williams</cite>
-        </blockquote>
-      </div>
-      <div class="testimonial-card">
-        <blockquote>
-          <p>"The attention to detail both during and after the sale sets Caddy Ed apart from any other dealership experience."</p>
-          <cite>- Robert Chen</cite>
-        </blockquote>
+    </section>
+  {{ end }}
+
+  <section class="section">
+    <div class="container">
+      <h2 class="title has-text-centered">Why Choose Caddy Ed Cadillac?</h2>
+      <div class="columns mt-6">
+        <div class="column has-text-centered">
+          <span class="icon is-large">
+            <i class="fas fa-award fa-3x"></i>
+          </span>
+          <h3 class="title is-5 mt-4">Award-Winning Service</h3>
+          <p>Exceptional customer service is our standard.</p>
+        </div>
+        <div class="column has-text-centered">
+          <span class="icon is-large">
+            <i class="fas fa-tools fa-3x"></i>
+          </span>
+          <h3 class="title is-5 mt-4">Expert Technicians</h3>
+          <p>Factory-trained specialists care for your vehicle.</p>
+        </div>
+        <div class="column has-text-centered">
+          <span class="icon is-large">
+            <i class="fas fa-dollar-sign fa-3x"></i>
+          </span>
+          <h3 class="title is-5 mt-4">Competitive Pricing</h3>
+          <p>We offer the best value in Charlotte.</p>
+        </div>
       </div>
     </div>
-  </div>
-</section>
-
-<section class="about-section">
-  <div class="container">
-    <div class="about-content">
-      <div class="about-image">
-        <img src="/images/caddy-ed.jpg" alt="Caddy Ed">
-      </div>
-      <div class="about-text">
-        <h2>Meet Caddy Ed</h2>
-        <p>With over 25 years of experience in luxury automotive sales, Ed has built a reputation for exceptional customer service and deep product knowledge.</p>
-        <p>My philosophy is simple: treat every customer like family, understand their needs, and find the perfect Cadillac to exceed their expectations.</p>
-        <a href="/about" class="text-link">Learn more about Ed</a>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section class="cta-section">
-  <div class="container">
-    <h2>Ready to experience the Caddy Ed difference?</h2>
-    <p>Schedule a personalized consultation today</p>
-    <a href="/contact" class="cta-button">Contact Ed</a>
-  </div>
-</section>
+  </section>
 {{ end }}

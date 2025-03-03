@@ -1,8 +1,8 @@
 {
   "name": "caddy-ed-hugo",
   "version": "1.0.0",
-  "description": "Victor Hugo is a Hugo boilerplate for creating truly epic websites!",
-  "repository": "netlify/victor-hugo",
+  "description": "Caddy Ed Cadillac dealership website built with Hugo",
+  "repository": "https://github.com/caddyed/cadillac-hugo",
   "main": "index.js",
   "scripts": {
     "lint": "eslint src",
@@ -19,7 +19,7 @@
     "build:hugo:preview": "npm run build:hugo -- -D -F",
     "build:webpack": "cross-env NODE_ENV=production webpack --config webpack.prod.js"
   },
-  "author": "",
+  "author": "Caddy Ed Cadillac",
   "license": "MIT",
   "dependencies": {
     "lazysizes": "^5.3.2",
