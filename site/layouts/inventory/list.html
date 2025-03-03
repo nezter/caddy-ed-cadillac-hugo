@@ -1,0 +1,107 @@
+{{ define "main" }}
+<div class="inventory-page">
+  <div class="hero-section small-hero">
+    <div class="container">
+      <h1>New Cadillac Inventory</h1>
+      <p>Explore our selection of new Cadillac vehicles</p>
+    </div>
+  </div>
+
+  <div class="container main-content">
+    <div class="inventory-layout">
+      <aside class="filter-sidebar">
+        <div class="filter-header">
+          <h2>Filters</h2>
+          <button class="filter-toggle mobile-only" aria-label="Toggle filters">
+            <span class="filter-icon"></span>
+          </button>
+        </div>
+        
+        <form id="inventory-filter-form" class="inventory-filter">
+          <div class="filter-group">
+            <h3>Model</h3>
+            <select id="model-filter" name="model">
+              <option value="">All Models</option>
+              <!-- Options populated by JS -->
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <h3>Year</h3>
+            <select id="year-filter" name="year">
+              <option value="">All Years</option>
+              <!-- Options populated by JS -->
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <h3>Price Range</h3>
+            <div class="price-inputs">
+              <input type="number" name="minPrice" placeholder="Min" min="0" step="1000">
+              <span class="range-separator">to</span>
+              <input type="number" name="maxPrice" placeholder="Max" min="0" step="1000">
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <h3>Features</h3>
+            <div class="checkbox-group">
+              <label>
+                <input type="checkbox" name="features" value="leather">
+                Leather Seats
+              </label>
+              <label>
+                <input type="checkbox" name="features" value="sunroof">
+                Sunroof
+              </label>
+              <label>
+                <input type="checkbox" name="features" value="navigation">
+                Navigation
+              </label>
+              <label>
+                <input type="checkbox" name="features" value="heated">
+                Heated Seats
+              </label>
+            </div>
+          </div>
+
+          <div class="filter-actions">
+            <button type="button" class="button reset-filters">Reset Filters</button>
+          </div>
+        </form>
+      </aside>
+
+      <main class="inventory-main">
+        <div class="inventory-controls">
+          <div class="results-summary">
+            <!-- Updated by JS -->
+          </div>
+          
+          <div class="sort-container">
+            <label for="inventory-sort">Sort By:</label>
+            <select id="inventory-sort">
+              <option value="price-asc">Price (Low to High)</option>
+              <option value="price-desc">Price (High to Low)</option>
+              <option value="year-desc">Year (Newest First)</option>
+              <option value="year-asc">Year (Oldest First)</option>
+              <option value="model-asc">Model (A-Z)</option>
+              <option value="model-desc">Model (Z-A)</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="vehicle-inventory" class="vehicle-grid">
+          <!-- Inventory will be loaded by JS -->
+          <div class="loading">Loading inventory...</div>
+        </div>
+
+        <div id="inventory-pagination" class="pagination-container">
+          <!-- Pagination will be added by JS -->
+        </div>
+      </main>
+    </div>
+  </div>
+
+  {{ partial "cta-section.html" . }}
+</div>
+{{ end }}

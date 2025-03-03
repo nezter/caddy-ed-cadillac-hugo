@@ -2,34 +2,62 @@
 <div class="mb4">
   <h4 class="f3 b lh-title mb3 tc">Drop us a line below</h4>
 
-  <form name="contact" method="POST" data-netlify-recaptcha="true" data-netlify="true">
-    <div class="flex-l mhn1-l">
-      <!-- Name -->
-      <div class="ph1-l w-50-l">
-        <fieldset>
-          <input type="text" id="name" name="name" placeholder="Name" class="w-100 mb2">
+  <div class="contact-form form-container">
+    <form name="contact" method="POST" data-netlify="true" netlify-honeypot="bot-field">
+      <p class="hidden">
+        <label>Don't fill this out if you're human: <input name="bot-field" /></label>
+      </p>
+      
+      <div class="form-row">
+        <div class="form-group">
           <label for="name">Name</label>
-        </fieldset>
-      </div>
-      <!-- Email -->
-      <div class="ph1-l w-50-l">
-        <fieldset>
-          <input type="email" id="email" name="email" placeholder="Email" class="w-100 mb2">
+          <input type="text" id="name" name="name" required placeholder="Your Name">
+        </div>
+        <div class="form-group">
           <label for="email">Email</label>
-        </fieldset>
+          <input type="email" id="email" name="email" required placeholder="your@email.com" data-validate-live="true">
+        </div>
       </div>
-    </div>
-    <!-- Message -->
-    <fieldset>
-      <textarea id="message" name="message" placeholder="Your message" rows="8" cols="80" class="w-100"></textarea>
-      <label for="message">Your message</label>
-    </fieldset>
-    <!-- recaptcha -->
-    <div class="g-recaptcha" data-sitekey="6LfDp8oUAAAAACzQ4PPl8nuXwmmJMTnpi9mXa-N3"></div>
-    <br/>
-    <!-- Button -->
-    <div class="tc">
-      <button type="submit" class="btn w-100 w-auto-ns raise">Submit</button>
-    </div>
-  </form>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="phone">Phone</label>
+          <input type="tel" id="phone" name="phone" placeholder="(123) 456-7890">
+        </div>
+        <div class="form-group">
+          <label for="subject">Subject</label>
+          <select id="subject" name="subject" required>
+            <option value="">Select a subject</option>
+            <option value="General Inquiry">General Inquiry</option>
+            <option value="Vehicle Inquiry">Vehicle Inquiry</option>
+            <option value="Schedule Test Drive">Schedule Test Drive</option>
+            <option value="Service Appointment">Service Appointment</option>
+            <option value="Parts Request">Parts Request</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group full-width">
+          <label for="message">Message</label>
+          <textarea id="message" name="message" rows="5" required placeholder="How can we help you?"></textarea>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group full-width checkbox-group">
+          <label class="checkbox-label">
+            <input type="checkbox" name="consent" required>
+            I consent to having my submitted data collected and stored as per the <a href="/privacy-policy">Privacy Policy</a>.
+          </label>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group full-width">
+          <button type="submit" class="cta-button">Submit</button>
+        </div>
+      </div>
+    </form>
+  </div>
 </div>

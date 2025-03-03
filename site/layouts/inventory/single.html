@@ -1,0 +1,89 @@
+{{ define "main" }}
+<section class="inventory-header">
+  <div class="container">
+    <h1>{{ .Title }}</h1>
+    {{ with .Params.description }}<p class="lead">{{ . }}</p>{{ end }}
+  </div>
+</section>
+
+<section class="inventory-filter-section">
+  <div class="container">
+    <form class="inventory-filter">
+      <div class="filter-grid">
+        <div class="filter-item">
+          <label for="model">Model</label>
+          <select name="model" id="model">
+            <option value="">All Models</option>
+            <option value="Escalade">Escalade</option>
+            <option value="XT4">XT4</option>
+            <option value="XT5">XT5</option>
+            <option value="XT6">XT6</option>
+            <option value="CT4">CT4</option>
+            <option value="CT5">CT5</option>
+            <option value="Lyriq">Lyriq</option>
+          </select>
+        </div>
+
+        <div class="filter-item">
+          <label for="year">Year</label>
+          <select name="year" id="year">
+            <option value="">All Years</option>
+            <option value="2024">2024</option>
+            <option value="2023">2023</option>
+            <option value="2022">2022</option>
+            <option value="2021">2021</option>
+          </select>
+        </div>
+
+        <div class="filter-item">
+          <label for="price">Price Range</label>
+          <select name="price" id="price">
+            <option value="">Any Price</option>
+            <option value="30000-40000">$30,000 - $40,000</option>
+            <option value="40000-50000">$40,000 - $50,000</option>
+            <option value="50000-60000">$50,000 - $60,000</option>
+            <option value="60000-70000">$60,000 - $70,000</option>
+            <option value="70000-9999999">$70,000+</option>
+          </select>
+        </div>
+
+        <div class="filter-item">
+          <label for="sort">Sort By</label>
+          <select name="sort" id="sort">
+            <option value="price_asc">Price: Low to High</option>
+            <option value="price_desc">Price: High to Low</option>
+            <option value="year_desc">Year: Newest First</option>
+            <option value="mileage_asc">Mileage: Low to High</option>
+          </select>
+        </div>
+
+        <div class="filter-btn">
+          <button type="submit" class="btn btn-primary">Filter Results</button>
+          <button type="reset" class="btn btn-outline">Reset</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</section>
+
+<section class="inventory-results-section">
+  <div class="container">
+    <div class="inventory-results">
+      <!-- Results will be loaded dynamically via JS -->
+      <div class="loading">Loading inventory from Cadillac of South Charlotte...</div>
+    </div>
+  </div>
+</section>
+
+<section class="cta-section">
+  <div class="container">
+    <div class="cta-card animate-on-scroll">
+      <h2>Can't find what you're looking for?</h2>
+      <p>I can help you locate the perfect Cadillac for your needs and preferences.</p>
+      <a href="/contact" class="btn btn-primary">Contact Me</a>
+    </div>
+  </div>
+</section>
+
+{{ partial "testimonials" . }}
+{{ end }}

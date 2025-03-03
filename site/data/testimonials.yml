@@ -1,0 +1,24 @@
+- name: "James Wilson"
+  quote: "Ed made my car buying experience the best I've ever had. No pressure, just helpful information and a great deal on my new Cadillac XT5."
+  rating: 5
+  vehicle: "Cadillac XT5"
+
+- name: "Sarah Johnson"
+  quote: "I was hesitant about buying a luxury vehicle, but Ed walked me through all my options and found the perfect Escalade that fit my budget."
+  rating: 5
+  vehicle: "Cadillac Escalade"
+
+- name: "Robert Martinez"
+  quote: "Ed's knowledge of Cadillacs is impressive. He answered all my technical questions and made sure the CT4 I purchased had all the features I wanted."
+  rating: 5
+  vehicle: "Cadillac CT4"
+
+- name: "Lisa Thompson"
+  quote: "This was my third purchase from Ed, and each time has been a pleasure. He remembers my preferences and always finds me exactly what I'm looking for."
+  rating: 5
+  vehicle: "Cadillac CT5"
+
+- name: "Michael Davis"
+  quote: "The follow-up service after my purchase has been outstanding. Ed checked in to make sure everything was perfect with my new Cadillac."
+  rating: 5
+  vehicle: "Cadillac Lyriq"

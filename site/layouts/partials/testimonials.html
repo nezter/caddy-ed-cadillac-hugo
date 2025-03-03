@@ -1,0 +1,32 @@
+<section class="testimonials-section">
+  <div class="container">
+    <h2 class="section-title animate-on-scroll">What My Customers Say</h2>
+    
+    <div class="testimonials-carousel">
+      {{ range .Site.Data.testimonials }}
+      <div class="testimonial-card animate-on-scroll">
+        <div class="testimonial-content">
+          <div class="quote-mark">&ldquo;</div>
+          <blockquote>{{ .quote }}</blockquote>
+          <div class="testimonial-author">
+            <div class="testimonial-name">{{ .name }}</div>
+            {{ if .vehicle }}
+            <div class="testimonial-vehicle">{{ .vehicle }}</div>
+            {{ end }}
+            <div class="testimonial-stars">
+              {{ $rating := int .rating }}
+              {{ range seq 5 }}
+                {{ if le . $rating }}
+                <span class="star filled">★</span>
+                {{ else }}
+                <span class="star">★</span>
+                {{ end }}
+              {{ end }}
+            </div>
+          </div>
+        </div>
+      </div>
+      {{ end }}
+    </div>
+  </div>
+</section>

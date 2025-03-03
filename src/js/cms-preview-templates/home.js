@@ -72,14 +72,49 @@ export default class PostPreview extends React.Component {
 
 export default function HomePreview({ entry, getAsset }) {
   const data = entry.getIn(["data"]).toJS();
-  const image = getAsset(data.image);
-  
+  let image = getAsset(data.image);
+
+  // Bit of a nasty hack to make relative paths work as expected as a background image here
+  if (image && !image.fileObj) {
+    image = window.parent.location.protocol + "//" + window.parent.location.host + image;
+  }
+
   return (
     <div>
-      <h1>{data.title}</h1>
-      <img src={image.toString()} alt={data.title} />
-      <div>{data.subtitle}</div>
-      {data.blurb && <p>{data.blurb.text}</p>}
+      <div className="hero">
+        <h1>{data.title}</h1>
+        <img src={image} alt={data.title} />
+        <div className="subtitle">{data.subtitle}</div>
+        {data.blurb && <p className="blurb">{data.blurb.text}</p>}
+      </div>
+      
+      <div className="featured-vehicles">
+        <h2>Featured Vehicles</h2>
+        {(data.featured_vehicles || []).map((vehicle, i) => (
+          <div key={i} className="vehicle-card">
+            <img src={getAsset(vehicle.image)} alt={vehicle.title} />
+            <h3>{vehicle.title} - ${vehicle.price.toLocaleString()}</h3>
+            <p>{vehicle.description}</p>
+          </div>
+        ))}
+      </div>
+      
+      {data.testimonials && data.testimonials.length > 0 && (
+        <div className="testimonials">
+          <h2>What Our Customers Say</h2>
+          {data.testimonials.map((testimonial, i) => (
+            <blockquote key={i}>
+              <p>"{testimonial.quote}"</p>
+              <cite>— {testimonial.author}</cite>
+            </blockquote>
+          ))}
+        </div>
+      )}
+      
+      <div className="cta-section">
+        <h2>{data.cta_heading || "Ready for a test drive?"}</h2>
+        <a href="/contact" className="cta-button">Contact Us Now</a>
+      </div>
     </div>
   );
 }

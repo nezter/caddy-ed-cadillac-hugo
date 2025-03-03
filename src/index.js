@@ -1,28 +1,22 @@
-// Main entry point for the application
+import './css/main.css';
+import 'lazysizes';
+import './js/cms';
+import VehicleComparison from './js/vehicleComparison';
+import FinancingCalculator from './js/financingCalculator';
+import './js/leadCapture';
+import './js/inventoryFilter';
+import './js/salesDashboard';
+import './js/testimonialSlider';
+import './js/appointmentScheduler';
+import { registerSW } from './sw-register';
 
-// Import main CSS
-import "./css/main.css";
-
-// Import JS dependencies
-import "lazysizes";
-import "./js/cms";
-
-// Register service worker
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').then(registration => {
-      console.log('SW registered: ', registration);
-    }).catch(registrationError => {
-      console.log('SW registration failed: ', registrationError);
-    });
-  });
+// Initialize service worker
+if (process.env.NODE_ENV === 'production') {
+  registerSW();
 }
 
-// Your main application code here
-console.log("App initialized");
+// Expose components to global scope for usage in templates
+window.VehicleComparison = VehicleComparison;
+window.FinancingCalculator = FinancingCalculator;
 
-// Add any other frontend logic here
-document.addEventListener('DOMContentLoaded', () => {
-  // This is just a placeholder for any additional code
-  console.log('DOM fully loaded and parsed');
-});
+console.log("Cadillac website initialized");

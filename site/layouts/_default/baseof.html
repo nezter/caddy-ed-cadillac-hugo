@@ -1,17 +1,70 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="{{ $.Site.Language.Lang }}">
-  {{ partial "head" . }}
-  <body class="sans-serif">
-
-    {{ block "header" . }}{{ partial "nav" . }}{{end}}
-
-    {{ block "main" . }}{{ end }}
-
-    {{ block "footer" . }}{{ partial "footer" . }}{{end}}
-
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width,minimum-scale=1">
+    <title>{{ block "title" . }}{{ .Site.Title }} {{ with .Params.Title }} | {{ . }}{{ end }}{{ end }}</title>
+    <meta name="description" content="{{ with .Description }}{{ . }}{{ else }}{{ with .Site.Params.description }}{{ . }}{{ end }}{{ end }}">
+    {{ with .Site.Params.author }}<meta name="author" content="{{ . }}">{{ end }}
+    {{ $stylesheet := .Site.Data.webpack.main }}
+    {{ with $stylesheet.css }}
+      <link href="{{ relURL . }}" rel="stylesheet">
+    {{ end }}
+    {{ block "favicon" . }}
+      {{ partialCached "site-favicon.html" . }}
+    {{ end }}
+    {{ if .OutputFormats.Get "RSS" }}
+    {{ with .OutputFormats.Get "RSS" }}
+      <link href="{{ .RelPermalink }}" rel="alternate" type="application/rss+xml" title="{{ $.Site.Title }}" />
+      <link href="{{ .RelPermalink }}" rel="feed" type="application/rss+xml" title="{{ $.Site.Title }}" />
+    {{ end }}
+    {{ end }}
+    {{ if .IsHome }}
+      <script type="application/ld+json">
+        {
+          "@context": "https://schema.org",
+          "@type": "AutoDealer",
+          "name": "Caddy Ed's Cadillac Dealership",
+          "image": "{{ .Site.BaseURL }}images/logo.png",
+          "url": "{{ .Site.BaseURL }}",
+          "telephone": "{{ .Site.Params.phone }}",
+          "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "{{ .Site.Params.address.street }}",
+            "addressLocality": "{{ .Site.Params.address.city }}",
+            "addressRegion": "{{ .Site.Params.address.state }}",
+            "postalCode": "{{ .Site.Params.address.zip }}",
+            "addressCountry": "US"
+          },
+          "openingHoursSpecification": [
+            {
+              "@type": "OpeningHoursSpecification",
+              "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday"],
+              "opens": "09:00",
+              "closes": "19:00"
+            },
+            {
+              "@type": "OpeningHoursSpecification",
+              "dayOfWeek": ["Saturday"],
+              "opens": "09:00",
+              "closes": "17:00"
+            }
+          ]
+        }
+      </script>
+    {{ end }}
+  </head>
+  <body class="{{ with .Params.bodyClass }}{{ . }}{{ end }}">
+    {{ block "header" . }}{{ partial "site-header.html" .}}{{ end }}
+    <main class="main-content" role="main">
+      {{ block "main" . }}{{ end }}
+    </main>
+    {{ block "footer" . }}{{ partial "site-footer.html" . }}{{ end }}
     {{ $script := .Site.Data.webpack.main }}
     {{ with $script.js }}
       <script src="{{ relURL . }}"></script>
     {{ end }}
+    {{ block "scripts" . }}{{ end }}
   </body>
 </html>

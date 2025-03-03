@@ -1,0 +1,64 @@
+<section class="inventory-section">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-title">New Cadillac Vehicles</h2>
+      <p class="section-subtitle">Explore our selection of new Cadillac models</p>
+    </div>
+
+    <div class="inventory-controls">
+      <form id="inventory-filter-form" class="inventory-filter">
+        <div class="filter-group">
+          <label for="model-filter">Model</label>
+          <select id="model-filter" name="model">
+            <option value="">All Models</option>
+            <!-- Options populated by JS -->
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="year-filter">Year</label>
+          <select id="year-filter" name="year">
+            <option value="">All Years</option>
+            <!-- Options populated by JS -->
+          </select>
+        </div>
+
+        <div class="filter-group price-range">
+          <label>Price Range</label>
+          <div class="range-inputs">
+            <input type="number" name="minPrice" placeholder="Min" min="0" step="1000">
+            <span class="range-separator">to</span>
+            <input type="number" name="maxPrice" placeholder="Max" min="0" step="1000">
+          </div>
+        </div>
+
+        <button type="button" class="button reset-filters">Reset Filters</button>
+      </form>
+
+      <div class="sort-container">
+        <label for="inventory-sort">Sort By:</label>
+        <select id="inventory-sort">
+          <option value="price-asc">Price (Low to High)</option>
+          <option value="price-desc">Price (High to Low)</option>
+          <option value="year-desc">Year (Newest First)</option>
+          <option value="year-asc">Year (Oldest First)</option>
+          <option value="model-asc">Model (A-Z)</option>
+          <option value="model-desc">Model (Z-A)</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="vehicle-inventory" class="vehicle-container">
+      <!-- Inventory will be loaded by JS -->
+    </div>
+
+    <div id="inventory-pagination" class="pagination-container">
+      <!-- Pagination will be added by JS -->
+    </div>
+
+    <div class="inventory-cta">
+      <a href="/inventory/" class="button primary-button">View All Inventory</a>
+      <a href="/contact/" class="button outline-button">Contact Sales</a>
+    </div>
+  </div>
+</section>

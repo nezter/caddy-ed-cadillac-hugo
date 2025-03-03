@@ -1,0 +1,113 @@
+{{ define "main" }}
+<section class="contact-header">
+  <div class="container">
+    <h1 class="animate-on-scroll">{{ .Title }}</h1>
+    {{ with .Params.description }}<p class="lead animate-on-scroll">{{ . }}</p>{{ end }}
+  </div>
+</section>
+
+<section class="contact-form-section">
+  <div class="container">
+    <div class="contact-grid">
+      <div class="contact-form-container animate-on-scroll">
+        <h2>Send Me a Message</h2>
+        <p>I'll get back to you within 24 hours</p>
+        
+        <form name="contact" method="POST" data-validate data-netlify="true" netlify-honeypot="bot-field" class="contact-form">
+          <p class="hidden">
+            <label>Don't fill this out if you're human: <input name="bot-field" /></label>
+          </p>
+          
+          <div class="form-group">
+            <label for="name">Name</label>
+            <input type="text" name="name" id="name" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" name="email" id="email" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="phone">Phone</label>
+            <input type="tel" name="phone" id="phone">
+          </div>
+          
+          <div class="form-group">
+            <label for="interest">I'm interested in</label>
+            <select name="interest" id="interest">
+              <option value="New Cadillac">New Cadillac</option>
+              <option value="Certified Pre-Owned">Certified Pre-Owned</option>
+              <option value="Trade-in Value">Trade-in Value</option>
+              <option value="Financing Options">Financing Options</option>
+              <option value="Test Drive">Test Drive</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          
+          <div class="form-group full-width">
+            <label for="message">Message</label>
+            <textarea name="message" id="message" rows="4" required></textarea>
+          </div>
+          
+          <div class="form-group full-width">
+            <button type="submit" class="btn btn-primary">Send Message</button>
+          </div>
+        </form>
+      </div>
+      
+      <div class="contact-info animate-on-scroll">
+        <div class="contact-card">
+          <h3>Contact Information</h3>
+          <ul class="contact-list">
+            <li>
+              <i class="icon icon-phone"></i>
+              <div>
+                <strong>Phone</strong>
+                <a href="tel:{{ .Site.Data.contact.phone }}">{{ .Site.Data.contact.phone }}</a>
+              </div>
+            </li>
+            <li>
+              <i class="icon icon-email"></i>
+              <div>
+                <strong>Email</strong>
+                <a href="mailto:{{ .Site.Data.contact.email }}">{{ .Site.Data.contact.email }}</a>
+              </div>
+            </li>
+            <li>
+              <i class="icon icon-location"></i>
+              <div>
+                <strong>Dealership</strong>
+                <address>
+                  {{ .Site.Data.contact.dealership }}<br>
+                  {{ .Site.Data.contact.address }}
+                </address>
+              </div>
+            </li>
+            <li>
+              <i class="icon icon-clock"></i>
+              <div>
+                <strong>Working Hours</strong>
+                <p>{{ .Site.Data.contact.hours }}</p>
+              </div>
+            </li>
+          </ul>
+        </div>
+        
+        <div class="map-container">
+          <iframe 
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3272.638034139395!2d-80.8274089!3d34.90109!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x885684245d3e58b3%3A0xe17c6e7d310ec272!2sCadillac%20of%20South%20Charlotte!5e0!3m2!1sen!2sus!4v1653656546360!5m2!1sen!2sus" 
+            width="100%" 
+            height="300" 
+            style="border:0;" 
+            allowfullscreen="" 
+            loading="lazy">
+          </iframe>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{{ partial "testimonials" . }}
+{{ end }}

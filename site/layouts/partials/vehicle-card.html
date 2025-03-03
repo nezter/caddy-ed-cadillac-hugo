@@ -1,0 +1,27 @@
+<div class="vehicle-card">
+  <div class="vehicle-image">
+    {{ if .Params.image }}
+      <img src="{{ .Params.image }}" alt="{{ .Title }}">
+    {{ else }}
+      <img src="/images/vehicle-placeholder.jpg" alt="{{ .Title }}">
+    {{ end }}
+  </div>
+  <div class="vehicle-details">
+    <h3><a href="{{ .Permalink }}">{{ .Title }}</a></h3>
+    {{ if .Params.price }}
+      <div class="vehicle-price">${{ lang.NumFmt 0 .Params.price "," }}</div>
+    {{ end }}
+    <div class="vehicle-meta">
+      {{ if .Params.year }}<span>{{ .Params.year }}</span>{{ end }}
+      {{ if .Params.mileage }}<span>{{ lang.NumFmt 0 .Params.mileage "," }} miles</span>{{ end }}
+    </div>
+    <div class="vehicle-features">
+      {{ if .Params.features }}
+        {{ range first 3 .Params.features }}
+          <span class="vehicle-feature">{{ . }}</span>
+        {{ end }}
+      {{ end }}
+    </div>
+    <a href="{{ .Permalink }}" class="cta-button">View Details</a>
+  </div>
+</div>
