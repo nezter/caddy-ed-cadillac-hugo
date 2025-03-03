@@ -2,7 +2,7 @@ baseURL = "/"
 languageCode = "en-us"
 title = "Caddy Ed Cadillac"
 enableRobotsTXT = true
-disableKinds = ["RSS", "taxonomy", "taxonomyTerm"]
+disableKinds = ["taxonomy", "taxonomyTerm"]
 
 [params]
   description = "Your trusted Cadillac dealership in South Charlotte."

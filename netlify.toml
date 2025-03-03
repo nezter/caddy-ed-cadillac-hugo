@@ -19,6 +19,24 @@
 [context.branch-deploy]
   command = "npm run build:preview"
 
+# Redirects and rewrites
+[[redirects]]
+  from = "/api/inventory/*"
+  to = "/.netlify/functions/inventory-proxy/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+# Handle 404 errors
+[[redirects]]
+  from = "/*"
+  to = "/404/"
+  status = 404
+
 [[headers]]
   for = "/*"
   [headers.values]
@@ -26,9 +44,8 @@
     X-XSS-Protection = "1; mode=block"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
-    Content-Security-Policy = "default-src 'self' 'unsafe-inline' 'unsafe-eval' *.netlify.app netlify-cdp-loader.netlify.app;"
+    Content-Security-Policy = "default-src 'self' 'unsafe-inline' 'unsafe-eval' *.netlify.app netlify-cdp-loader.netlify.app; img-src 'self' data: *.cloudfront.net; connect-src 'self' *.netlify.app;"
     Permissions-Policy = "camera=(), microphone=(), geolocation=()"
-    Cache-Control = "public, max-age=31536000"
     Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
 
 [[headers]]
@@ -42,9 +59,15 @@
     Cache-Control = "public, max-age=31536000, immutable"
 
 [[headers]]
-  for = "/*.gif"
+  for = "/*.(?:jpg|jpeg|gif|png|svg|webp)"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
 [[plugins]]
   package = "@netlify/plugin-lighthouse"
+
+[[plugins]]
+  package = "netlify-plugin-submit-sitemap"
+  [plugins.inputs]
+    baseUrl = "https://caddyed.netlify.app"
+    sitemapPath = "/sitemap.xml"

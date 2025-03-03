@@ -379,3 +379,134 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 export default InventoryManager;
+
+document.addEventListener('DOMContentLoaded', () => {
+  const inventoryContainer = document.getElementById('inventory-listing');
+  const filterForm = document.getElementById('inventory-filter');
+  const loadingSpinner = document.getElementById('loading-spinner');
+  
+  if (!inventoryContainer) return;
+
+  // Initialize filters from URL params
+  const urlParams = new URLSearchParams(window.location.search);
+  const filters = {
+    make: urlParams.get('make') || 'Cadillac',
+    model: urlParams.get('model') || '',
+    year: urlParams.get('year') || '',
+    priceMin: urlParams.get('priceMin') || '',
+    priceMax: urlParams.get('priceMax') || '',
+    condition: urlParams.get('condition') || 'new'
+  };
+
+  // Populate filter form if it exists
+  if (filterForm) {
+    Object.keys(filters).forEach(key => {
+      const input = filterForm.querySelector(`[name="${key}"]`);
+      if (input && filters[key]) {
+        input.value = filters[key];
+      }
+    });
+
+    filterForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      
+      // Update filters from form
+      const formData = new FormData(filterForm);
+      formData.forEach((value, key) => {
+        filters[key] = value;
+      });
+      
+      // Update URL with filter params
+      const newParams = new URLSearchParams();
+      Object.keys(filters).forEach(key => {
+        if (filters[key]) {
+          newParams.set(key, filters[key]);
+        }
+      });
+      
+      window.history.replaceState({}, '', `${window.location.pathname}?${newParams.toString()}`);
+      
+      // Fetch new results
+      fetchInventory();
+    });
+  }
+
+  function fetchInventory() {
+    if (loadingSpinner) loadingSpinner.style.display = 'block';
+    if (inventoryContainer) inventoryContainer.innerHTML = '';
+    
+    // Build API URL with filters
+    const apiParams = new URLSearchParams();
+    Object.keys(filters).forEach(key => {
+      if (filters[key]) {
+        apiParams.set(key, filters[key]);
+      }
+    });
+    
+    fetch(`/api/inventory?${apiParams.toString()}`)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.json();
+      })
+      .then(data => {
+        renderInventory(data);
+        if (loadingSpinner) loadingSpinner.style.display = 'none';
+      })
+      .catch(error => {
+        console.error('Error fetching inventory:', error);
+        inventoryContainer.innerHTML = `
+          <div class="error-message">
+            <p>Sorry, we couldn't load the inventory at this time. Please try again later.</p>
+          </div>
+        `;
+        if (loadingSpinner) loadingSpinner.style.display = 'none';
+      });
+  }
+
+  function renderInventory(vehicles) {
+    if (!vehicles || vehicles.length === 0) {
+      inventoryContainer.innerHTML = `
+        <div class="no-results">
+          <h3>No vehicles found</h3>
+          <p>Try adjusting your filters to see more results.</p>
+        </div>
+      `;
+      return;
+    }
+
+    const html = vehicles.map(vehicle => `
+      <div class="inventory-item" data-id="${vehicle.id}">
+        <div class="inventory-image">
+          <img src="${vehicle.image || '/img/placeholder-car.jpg'}" alt="${vehicle.year} ${vehicle.make} ${vehicle.model}" loading="lazy">
+        </div>
+        <div class="inventory-details">
+          <h3>${vehicle.year} ${vehicle.make} ${vehicle.model}</h3>
+          <p class="inventory-trim">${vehicle.trim}</p>
+          <div class="inventory-specs">
+            <span>${vehicle.mileage} miles</span>
+            <span>${vehicle.transmission}</span>
+            <span>${vehicle.extColor}</span>
+          </div>
+          <div class="inventory-price">
+            <strong>$${formatNumber(vehicle.price)}</strong>
+          </div>
+          <div class="inventory-actions">
+            <a href="/inventory/${vehicle.id}/" class="btn btn-primary">View Details</a>
+            <a href="/contact/?vehicle=${vehicle.id}" class="btn btn-secondary">Inquire</a>
+          </div>
+        </div>
+      </div>
+    `).join('');
+
+    inventoryContainer.innerHTML = html;
+  }
+
+  function formatNumber(num) {
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  }
+
+  // Initial inventory fetch
+  fetchInventory();
+});
