@@ -1,12 +1,45 @@
-baseurl = "/"
+baseURL = "/"
 languageCode = "en-us"
-languageLang = "en"
-title = "Homepage"
-
-# RSS, categories and tags disabled for an easy start
-# See configuration options for more details: 
-# https://gohugo.io/getting-started/configuration/#toml-configuration
+title = "Caddy Ed Cadillac"
+enableRobotsTXT = true
 disableKinds = ["RSS", "taxonomy", "taxonomyTerm"]
+
+[params]
+  description = "Your trusted Cadillac dealership in South Charlotte."
+  og_image = "/img/og-image.jpg"
+  phone = "(704) 555-5555"
+  email = "sales@caddyed.com"
+  address = "123 Luxury Lane<br>Charlotte, NC 28210"
+  facebook = "https://facebook.com/caddyed"
+  instagram = "https://instagram.com/caddyed"
+  twitter = "https://twitter.com/caddyed"
+  youtube = "https://youtube.com/caddyed"
+  
+[menu]
+  [[menu.main]]
+    name = "Home"
+    url = "/"
+    weight = 1
+  [[menu.main]]
+    name = "Inventory"
+    url = "/inventory/"
+    weight = 2
+  [[menu.main]]
+    name = "Financing"
+    url = "/financing/"
+    weight = 3
+  [[menu.main]]
+    name = "Services"
+    url = "/services/"
+    weight = 4
+  [[menu.main]]
+    name = "About"
+    url = "/about/"
+    weight = 5
+  [[menu.main]]
+    name = "Contact"
+    url = "/contact/"
+    weight = 6
 
 [sitemap]
   changefreq = "weekly"

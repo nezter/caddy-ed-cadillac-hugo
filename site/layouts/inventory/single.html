@@ -1,89 +1,374 @@
+{{ define "title" }}{{ .Title }} | {{ .Site.Title }}{{ end }}
+{{ define "description" }}{{ .Params.Year }} {{ .Params.Make }} {{ .Params.Model }} {{ .Params.Trim }} - {{ .Params.Mileage }} miles - {{ .Site.Title }}{{ end }}
+
 {{ define "main" }}
-<section class="inventory-header">
-  <div class="container">
-    <h1>{{ .Title }}</h1>
-    {{ with .Params.description }}<p class="lead">{{ . }}</p>{{ end }}
+<div class="vehicle-detail-page">
+  <div class="breadcrumbs container">
+    <a href="/">Home</a> / <a href="/inventory">Inventory</a> / {{ .Title }}
   </div>
-</section>
 
-<section class="inventory-filter-section">
-  <div class="container">
-    <form class="inventory-filter">
-      <div class="filter-grid">
-        <div class="filter-item">
-          <label for="model">Model</label>
-          <select name="model" id="model">
-            <option value="">All Models</option>
-            <option value="Escalade">Escalade</option>
-            <option value="XT4">XT4</option>
-            <option value="XT5">XT5</option>
-            <option value="XT6">XT6</option>
-            <option value="CT4">CT4</option>
-            <option value="CT5">CT5</option>
-            <option value="Lyriq">Lyriq</option>
-          </select>
+  <div class="vehicle-hero container">
+    <div class="vehicle-detail-grid">
+      <div class="vehicle-gallery">
+        {{ if .Params.gallery }}
+        <div class="gallery-main">
+          <img src="{{ index .Params.gallery 0 }}" alt="{{ .Title }}" id="mainImage" class="main-image">
+        </div>
+        <div class="gallery-thumbnails">
+          {{ range $index, $img := .Params.gallery }}
+          <div class="thumbnail {{ if eq $index 0 }}active{{ end }}">
+            <img src="{{ $img }}" alt="View {{ add $index 1 }}" onclick="setMainImage('{{ $img }}', this)">
+          </div>
+          {{ end }}
+        </div>
+        {{ else if .Params.image }}
+        <div class="gallery-main">
+          <img src="{{ .Params.image }}" alt="{{ .Title }}" class="main-image">
+        </div>
+        {{ else }}
+        <div class="gallery-main">
+          <img src="/img/vehicle-placeholder.jpg" alt="{{ .Title }}" class="main-image">
+        </div>
+        {{ end }}
+      </div>
+
+      <div class="vehicle-info">
+        <h1 class="vehicle-title">{{ .Title }}</h1>
+        {{ if .Params.trim }}<p class="vehicle-trim">{{ .Params.trim }}</p>{{ end }}
+        
+        <div class="vehicle-price-box">
+          {{ if .Params.salePrice }}
+          <div class="price-wrapper">
+            <span class="original-price">${{ lang.NumFmt 0 .Params.price "- . ," }}</span>
+            <span class="sale-price">${{ lang.NumFmt 0 .Params.salePrice "- . ," }}</span>
+          </div>
+          {{ else }}
+          <div class="price-wrapper">
+            <span class="price">${{ lang.NumFmt 0 .Params.price "- . ," }}</span>
+          </div>
+          {{ end }}
+
+          <div class="vehicle-stock">
+            <span><strong>Stock:</strong> {{ .Params.stock }}</span>
+            <span><strong>VIN:</strong> {{ .Params.vin }}</span>
+          </div>
         </div>
 
-        <div class="filter-item">
-          <label for="year">Year</label>
-          <select name="year" id="year">
-            <option value="">All Years</option>
-            <option value="2024">2024</option>
-            <option value="2023">2023</option>
-            <option value="2022">2022</option>
-            <option value="2021">2021</option>
-          </select>
+        <div class="vehicle-cta">
+          <button class="btn btn-primary" id="contactBtn">Contact Us</button>
+          <button class="btn btn-secondary" id="scheduleBtn">Schedule Test Drive</button>
+          <button class="btn btn-outline" id="saveBtn">Save Vehicle</button>
         </div>
 
-        <div class="filter-item">
-          <label for="price">Price Range</label>
-          <select name="price" id="price">
-            <option value="">Any Price</option>
-            <option value="30000-40000">$30,000 - $40,000</option>
-            <option value="40000-50000">$40,000 - $50,000</option>
-            <option value="50000-60000">$50,000 - $60,000</option>
-            <option value="60000-70000">$60,000 - $70,000</option>
-            <option value="70000-9999999">$70,000+</option>
-          </select>
-        </div>
-
-        <div class="filter-item">
-          <label for="sort">Sort By</label>
-          <select name="sort" id="sort">
-            <option value="price_asc">Price: Low to High</option>
-            <option value="price_desc">Price: High to Low</option>
-            <option value="year_desc">Year: Newest First</option>
-            <option value="mileage_asc">Mileage: Low to High</option>
-          </select>
-        </div>
-
-        <div class="filter-btn">
-          <button type="submit" class="btn btn-primary">Filter Results</button>
-          <button type="reset" class="btn btn-outline">Reset</button>
+        <div class="vehicle-key-specs">
+          <div class="spec">
+            <span class="icon">⚙️</span>
+            <div class="spec-detail">
+              <span class="spec-label">Mileage</span>
+              <span class="spec-value">{{ lang.NumFmt 0 .Params.mileage "- . ," }}</span>
+            </div>
+          </div>
+          <div class="spec">
+            <span class="icon">🏁</span>
+            <div class="spec-detail">
+              <span class="spec-label">Exterior</span>
+              <span class="spec-value">{{ .Params.exteriorColor }}</span>
+            </div>
+          </div>
+          <div class="spec">
+            <span class="icon">🚘</span>
+            <div class="spec-detail">
+              <span class="spec-label">Transmission</span>
+              <span class="spec-value">{{ .Params.transmission }}</span>
+            </div>
+          </div>
+          <div class="spec">
+            <span class="icon">⛽</span>
+            <div class="spec-detail">
+              <span class="spec-label">Fuel Type</span>
+              <span class="spec-value">{{ .Params.fuelType }}</span>
+            </div>
+          </div>
         </div>
       </div>
-    </form>
-  </div>
-</section>
-
-<section class="inventory-results-section">
-  <div class="container">
-    <div class="inventory-results">
-      <!-- Results will be loaded dynamically via JS -->
-      <div class="loading">Loading inventory from Cadillac of South Charlotte...</div>
     </div>
   </div>
-</section>
 
-<section class="cta-section">
-  <div class="container">
-    <div class="cta-card animate-on-scroll">
-      <h2>Can't find what you're looking for?</h2>
-      <p>I can help you locate the perfect Cadillac for your needs and preferences.</p>
-      <a href="/contact" class="btn btn-primary">Contact Me</a>
+  <div class="vehicle-details container">
+    <div class="vehicle-tabs">
+      <nav class="tabs-nav">
+        <button class="tab-btn active" data-tab="overview">Overview</button>
+        <button class="tab-btn" data-tab="specs">Specifications</button>
+        <button class="tab-btn" data-tab="features">Features</button>
+        <button class="tab-btn" data-tab="financing">Financing</button>
+      </nav>
+
+      <div class="tab-content">
+        <div class="tab-pane active" id="overview">
+          <div class="vehicle-description">
+            {{ .Content }}
+          </div>
+        </div>
+
+        <div class="tab-pane" id="specs">
+          <div class="specs-grid">
+            <div class="spec-group">
+              <h3>Vehicle Information</h3>
+              <table class="specs-table">
+                <tr>
+                  <th>Year</th>
+                  <td>{{ .Params.year }}</td>
+                </tr>
+                <tr>
+                  <th>Make</th>
+                  <td>{{ .Params.make }}</td>
+                </tr>
+                <tr>
+                  <th>Model</th>
+                  <td>{{ .Params.model }}</td>
+                </tr>
+                <tr>
+                  <th>Trim</th>
+                  <td>{{ .Params.trim }}</td>
+                </tr>
+                <tr>
+                  <th>Body Style</th>
+                  <td>{{ .Params.bodyStyle }}</td>
+                </tr>
+                <tr>
+                  <th>Stock #</th>
+                  <td>{{ .Params.stock }}</td>
+                </tr>
+                <tr>
+                  <th>VIN</th>
+                  <td>{{ .Params.vin }}</td>
+                </tr>
+                <tr>
+                  <th>Mileage</th>
+                  <td>{{ lang.NumFmt 0 .Params.mileage "- . ," }}</td>
+                </tr>
+              </table>
+            </div>
+
+            <div class="spec-group">
+              <h3>Engine & Performance</h3>
+              <table class="specs-table">
+                <tr>
+                  <th>Engine</th>
+                  <td>{{ .Params.engine }}</td>
+                </tr>
+                <tr>
+                  <th>Transmission</th>
+                  <td>{{ .Params.transmission }}</td>
+                </tr>
+                <tr>
+                  <th>Drivetrain</th>
+                  <td>{{ .Params.drivetrain }}</td>
+                </tr>
+                <tr>
+                  <th>Fuel Type</th>
+                  <td>{{ .Params.fuelType }}</td>
+                </tr>
+                {{ if and .Params.mpgCity .Params.mpgHighway }}
+                <tr>
+                  <th>Fuel Economy</th>
+                  <td>{{ .Params.mpgCity }} City / {{ .Params.mpgHighway }} Highway</td>
+                </tr>
+                {{ end }}
+              </table>
+            </div>
+
+            <div class="spec-group">
+              <h3>Design</h3>
+              <table class="specs-table">
+                <tr>
+                  <th>Exterior Color</th>
+                  <td>{{ .Params.exteriorColor }}</td>
+                </tr>
+                <tr>
+                  <th>Interior Color</th>
+                  <td>{{ .Params.interiorColor }}</td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-pane" id="features">
+          <div class="features-list">
+            {{ if .Params.features }}
+            <ul>
+              {{ range .Params.features }}
+              <li>{{ . }}</li>
+              {{ end }}
+            </ul>
+            {{ else }}
+            <p>No additional features listed for this vehicle. Contact us for more information.</p>
+            {{ end }}
+          </div>
+        </div>
+
+        <div class="tab-pane" id="financing">
+          <div class="financing-info">
+            <h3>Financing Options</h3>
+            <p>At Caddy Ed, we offer competitive financing rates and flexible terms to fit your budget.</p>
+            
+            <div class="finance-calculator">
+              <h4>Payment Estimator</h4>
+              <form id="payment-calculator">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="vehicle-price">Vehicle Price</label>
+                    <input type="number" id="vehicle-price" value="{{ .Params.price }}" readonly>
+                  </div>
+                  <div class="form-group">
+                    <label for="down-payment">Down Payment</label>
+                    <input type="number" id="down-payment" value="0">
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="interest-rate">Interest Rate (%)</label>
+                    <input type="number" id="interest-rate" value="4.9" step="0.1">
+                  </div>
+                  <div class="form-group">
+                    <label for="loan-term">Loan Term (months)</label>
+                    <select id="loan-term">
+                      <option value="36">36 months (3 years)</option>
+                      <option value="48">48 months (4 years)</option>
+                      <option value="60" selected>60 months (5 years)</option>
+                      <option value="72">72 months (6 years)</option>
+                      <option value="84">84 months (7 years)</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="form-row">
+                  <button type="button" class="btn btn-primary" id="calculate-btn">Calculate</button>
+                </div>
+                <div class="result-box" id="payment-result" style="display: none;">
+                  <h4>Estimated Monthly Payment:</h4>
+                  <p class="payment-amount" id="monthly-payment"></p>
+                  <p class="disclaimer">*This is only an estimate. Contact us for actual financing details.</p>
+                </div>
+              </form>
+            </div>
+            
+            <div class="apply-financing">
+              <h4>Get Pre-Approved</h4>
+              <p>Apply for financing directly through our secure online form.</p>
+              <a href="/financing/apply" class="btn btn-secondary">Apply Now</a>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
-</section>
+  
+  <div class="contact-form-container" id="contactForm" style="display: none;">
+    <div class="contact-form-wrapper">
+      <button class="close-btn" id="closeContactForm">&times;</button>
+      <h2>Contact Us About This Vehicle</h2>
+      <form id="vehicleContactForm">
+        <input type="hidden" name="vehicle" value="{{ .Title }}">
+        <input type="hidden" name="stock" value="{{ .Params.stock }}">
+        <input type="hidden" name="vin" value="{{ .Params.vin }}">
+        
+        <div class="form-group">
+          <label for="name">Full Name*</label>
+          <input type="text" id="name" name="name" required>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="email">Email Address*</label>
+            <input type="email" id="email" name="email" required>
+          </div>
+          <div class="form-group">
+            <label for="phone">Phone Number*</label>
+            <input type="tel" id="phone" name="phone" required>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="message">Message</label>
+          <textarea id="message" name="message" rows="4">I'm interested in this {{ .Params.year }} {{ .Params.make }} {{ .Params.model }} {{ .Params.trim }}.</textarea>
+        </div>
+        
+        <div class="form-group">
+          <button type="submit" class="btn btn-primary btn-block">Send Message</button>
+        </div>
+        
+        <p class="form-disclaimer">By submitting this form, you agree to be contacted by our team regarding this vehicle.</p>
+      </form>
+    </div>
+  </div>
 
-{{ partial "testimonials" . }}
+  <script>
+    function setMainImage(src, thumbnail) {
+      document.getElementById('mainImage').src = src;
+      document.querySelectorAll('.thumbnail').forEach(thumb => {
+        thumb.classList.remove('active');
+      });
+      thumbnail.parentNode.classList.add('active');
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+      // Tab functionality
+      const tabButtons = document.querySelectorAll('.tab-btn');
+      const tabPanes = document.querySelectorAll('.tab-pane');
+      
+      tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+          const tabId = button.getAttribute('data-tab');
+          
+          // Deactivate all tabs
+          tabButtons.forEach(btn => btn.classList.remove('active'));
+          tabPanes.forEach(pane => pane.classList.remove('active'));
+          
+          // Activate selected tab
+          button.classList.add('active');
+          document.getElementById(tabId).classList.add('active');
+        });
+      });
+      
+      // Contact form
+      const contactBtn = document.getElementById('contactBtn');
+      const scheduleBtn = document.getElementById('scheduleBtn');
+      const contactForm = document.getElementById('contactForm');
+      const closeContactForm = document.getElementById('closeContactForm');
+      
+      contactBtn.addEventListener('click', () => {
+        contactForm.style.display = 'flex';
+      });
+      
+      scheduleBtn.addEventListener('click', () => {
+        document.getElementById('message').value = "I would like to schedule a test drive for this {{ .Params.year }} {{ .Params.make }} {{ .Params.model }} {{ .Params.trim }}.";
+        contactForm.style.display = 'flex';
+      });
+      
+      closeContactForm.addEventListener('click', () => {
+        contactForm.style.display = 'none';
+      });
+      
+      // Payment calculator
+      const calculateBtn = document.getElementById('calculate-btn');
+      
+      calculateBtn.addEventListener('click', () => {
+        const vehiclePrice = parseFloat(document.getElementById('vehicle-price').value);
+        const downPayment = parseFloat(document.getElementById('down-payment').value) || 0;
+        const interestRate = parseFloat(document.getElementById('interest-rate').value) / 100;
+        const loanTerm = parseInt(document.getElementById('loan-term').value);
+        
+        const loanAmount = vehiclePrice - downPayment;
+        const monthlyInterest = interestRate / 12;
+        
+        // PMT formula
+        const monthlyPayment = (loanAmount * monthlyInterest) / (1 - Math.pow(1 + monthlyInterest, -loanTerm));
+        
+        document.getElementById('monthly-payment').textContent = '$' + monthlyPayment.toFixed(2);
+        document.getElementById('payment-result').style.display = 'block';
+      });
+    });
+  </script>
+</div>
 {{ end }}

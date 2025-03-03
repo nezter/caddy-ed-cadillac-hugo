@@ -2,8 +2,64 @@
 import "lazysizes";
 import "./carousel";
 
-// Mobile menu functionality
-document.addEventListener('DOMContentLoaded', () => {
+// Main JS file for site functionality
+
+document.addEventListener("DOMContentLoaded", function() {
+  // Handle mobile navigation toggle
+  const menuToggle = document.querySelector('.mobile-nav-toggle');
+  const mainNav = document.querySelector('.main-nav');
+  
+  if (menuToggle) {
+    menuToggle.addEventListener('click', function() {
+      this.classList.toggle('is-active');
+      mainNav.classList.toggle('is-active');
+    });
+  }
+
+  // Handle vehicle inventory filtering
+  const filterForms = document.querySelectorAll('.vehicle-filter-form');
+  filterForms.forEach(form => {
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const formData = new FormData(this);
+      const params = new URLSearchParams(formData);
+      window.location.href = `/inventory/?${params.toString()}`;
+    });
+  });
+
+  // Handle lazy loaded images with fade-in effect
+  document.addEventListener('lazyloaded', function(e) {
+    e.target.parentNode.classList.add('loaded');
+  });
+
+  // Initialize contact form validation
+  const contactForm = document.getElementById('contact-form');
+  if (contactForm) {
+    contactForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const formData = new FormData(this);
+      
+      fetch('/.netlify/functions/contact-submission', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          contactForm.reset();
+          document.getElementById('contact-success').style.display = 'block';
+        } else {
+          document.getElementById('contact-error').style.display = 'block';
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        document.getElementById('contact-error').style.display = 'block';
+      });
+    });
+  }
+
+  // Mobile menu functionality
   const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
   const nav = document.querySelector('nav');
   

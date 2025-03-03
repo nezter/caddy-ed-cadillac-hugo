@@ -1,17 +1,43 @@
 {{ define "main" }}
-
-{{ partial "jumbotron" (dict "imageUrl" "/img/blog-index.jpg" "title" "Latest stories") }}
-
-<div class="mw7 center">
-  <ul class="flex-ns flex-wrap mhn1-ns pa3">
-      {{ $paginator := .Paginate (where .Site.RegularPages "Type" "post") 4 }}
-      {{ range $paginator.Pages }}
-          <div class="w-50-ns ph1-ns flex">
-            {{ .Render "li"}}
-          </div>
+<div class="page-content">
+  <div class="page-header">
+    <div class="container">
+      <h1 class="page-title">{{ .Title }}</h1>
+      {{ if .Description }}
+      <div class="page-description">
+        {{ .Description }}
+      </div>
       {{ end }}
-  </ul>
-  {{ partial "pagination" . }}
-</div>
+    </div>
+  </div>
 
+  <div class="container">
+    <div class="content-wrapper">
+      {{ .Content }}
+      
+      {{ if eq .Type "inventory" }}
+        <div id="inventory-filters" class="inventory-filters">
+          <form class="filter-form" id="inventory-filters">
+            <div class="filter-section">
+              <h3>Price Range</h3>
+              <div class="range-filter">
+                <div class="range-inputs">
+                  <div class="input-group">
+                    <label for="minPrice">Min</label>
+                    <input type="number" id="minPrice" name="minPrice" min="0" step="1000" placeholder="Min">
+                  </div>
+                  <div class="range-separator">-</div>
+                  <div class="input-group">
+                    <label for="maxPrice">Max</label>
+                    <input type="number" id="maxPrice" name="maxPrice" min="0" step="1000" placeholder="Max">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+      {{ end }}
+    </div>
+  </div>
+</div>
 {{end}}

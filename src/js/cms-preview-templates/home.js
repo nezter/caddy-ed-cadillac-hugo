@@ -69,52 +69,47 @@ export default class PostPreview extends React.Component {
     </div>
   }
 }
-
-export default function HomePreview({ entry, getAsset }) {
-  const data = entry.getIn(["data"]).toJS();
-  let image = getAsset(data.image);
-
-  // Bit of a nasty hack to make relative paths work as expected as a background image here
-  if (image && !image.fileObj) {
-    image = window.parent.location.protocol + "//" + window.parent.location.host + image;
-  }
-
-  return (
-    <div>
-      <div className="hero">
-        <h1>{data.title}</h1>
-        <img src={image} alt={data.title} />
-        <div className="subtitle">{data.subtitle}</div>
-        {data.blurb && <p className="blurb">{data.blurb.text}</p>}
-      </div>
-      
-      <div className="featured-vehicles">
-        <h2>Featured Vehicles</h2>
-        {(data.featured_vehicles || []).map((vehicle, i) => (
-          <div key={i} className="vehicle-card">
-            <img src={getAsset(vehicle.image)} alt={vehicle.title} />
-            <h3>{vehicle.title} - ${vehicle.price.toLocaleString()}</h3>
-            <p>{vehicle.description}</p>
+export default class HomePreview extends React.Component {
+  render() {
+    const {entry, getAsset} = this.props;
+    const data = entry.getIn(["data"]).toJS();
+    
+    const heroImage = getAsset(data.hero_image);
+    
+    return (
+      <div className="page home">
+        <div className="hero" style={{backgroundImage: `url(${heroImage?.toString()})`}}>
+          <div className="container">
+            <div className="hero-content">
+              <h1>{data.title}</h1>
+              <p className="subtitle">{data.subtitle}</p>
+              {data.cta_button_text && data.cta_button_link && (
+                <a href={data.cta_button_link} className="btn btn-primary">{data.cta_button_text}</a>
+              )}
+            </div>
           </div>
-        ))}
-      </div>
-      
-      {data.testimonials && data.testimonials.length > 0 && (
-        <div className="testimonials">
-          <h2>What Our Customers Say</h2>
-          {data.testimonials.map((testimonial, i) => (
-            <blockquote key={i}>
-              <p>"{testimonial.quote}"</p>
-              <cite>— {testimonial.author}</cite>
-            </blockquote>
-          ))}
         </div>
-      )}
-      
-      <div className="cta-section">
-        <h2>{data.cta_heading || "Ready for a test drive?"}</h2>
-        <a href="/contact" className="cta-button">Contact Us Now</a>
+        
+        {data.features && (
+          <section className="features">
+            <div className="container">
+              <div className="feature-grid">
+                {data.features.map((feature, i) => (
+                  <div className="feature-item" key={i}>
+                    <div className="icon">{feature.icon}</div>
+                    <h3>{feature.heading}</h3>
+                    <p>{feature.text}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+        
+        <section className="content">
+          <div className="container" dangerouslySetInnerHTML={{ __html: data.body || "" }} />
+        </section>
       </div>
-    </div>
-  );
+    );
+  }
 }

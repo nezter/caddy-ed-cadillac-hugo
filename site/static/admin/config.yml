@@ -1,36 +1,11 @@
 backend:
   name: git-gateway
-  branch: main # Specify main branch
+  branch: main
 
-media_folder: "site/static/img" # Folder where user uploaded files should go
-public_folder: "img"
-media_library:
-  name: "default"
-  max_file_size: 512000 # Size in KB
+media_folder: "site/static/img"
+public_folder: "/img"
 
-collections: # A list of collections the CMS should be able to edit
-  - name: "post" # Used in routes, ie.: /admin/collections/:slug/edit
-    label: "Post" # Used in the UI, ie.: "New Post"
-    folder: "site/content/post" # The path to the folder where the documents are stored
-    create: true # Allow users to create new documents in this collection
-    fields: # The fields each document in this collection have
-      - {label: "Title", name: "title", widget: "string"}
-      - {label: "Publish Date", name: "date", widget: "datetime"}
-      - {label: "Intro Blurb", name: "description", widget: "text"}
-      - {label: "Image", name: "image", widget: "image", required: false}
-      - {label: "Body", name: "body", widget: "markdown"}
-      - {label: "SEO Title", name: "seo_title", widget: "string", required: true, pattern: ['.{10,70}', "Must be between 10 and 70 characters"], hint: "Optimal length 50-60 characters. Include 'Cadillac Restoration' where relevant"}
-      - {label: "SEO Description", name: "seo_description", widget: "text", required: true, pattern: ['.{50,160}', "Must be between 50 and 160 characters"], hint: "Optimal length 150-160 characters. Describe the Cadillac restoration content"}
-      - {label: "Meta Keywords", name: "meta_keywords", widget: "list", required: false, hint: "Add relevant Cadillac and restoration related keywords"}
-      - {label: "Featured", name: "featured", widget: "boolean", default: false}
-      - label: "Categories"
-        name: "categories"
-        widget: "list"
-        required: false
-      - label: "Tags"
-        name: "tags"
-        widget: "list"
-        required: false
+collections:
   - name: "pages"
     label: "Pages"
     files:
@@ -38,41 +13,104 @@ collections: # A list of collections the CMS should be able to edit
         label: "Home Page"
         name: "home"
         fields:
-          - {label: Background Image, name: image, widget: image}
-          - {label: Center Title Image, name: centerlogo, widget: image}
-          - {label: Testimonials, name: testimonials, widget: list, fields: [{label: Quote, name: quote, widget: string}, {label: Author, name: author, widget: string}]}
-          - {label: Logo, name: logo, widget: image}
-          - {label: Body, name: body, widget: markdown}
-          - {label: "SEO Title", name: "seo_title", widget: "string", required: true, default: "Ed's Classic Cadillac Restoration | Expert Vintage Cadillac Restoration Services", pattern: ['.{10,70}', "Must be between 10 and 70 characters"]}
-          - {label: "SEO Description", name: "seo_description", widget: "text", required: true, default: "Expert vintage Cadillac restoration services by Ed. Specializing in classic Cadillac repairs, restoration, and maintenance. Quality craftsmanship with decades of experience.", pattern: ['.{50,160}', "Must be between 50 and 160 characters"]}
-          - {label: "Meta Keywords", name: "meta_keywords", widget: "list", required: false, default: ["Cadillac restoration", "classic Cadillac repair", "vintage Cadillac restoration", "Cadillac expert", "classic car restoration"]}
-          - label: Contact Entries
-            name: contact_entries
-            widget: list
+          - {label: "Title", name: "title", widget: "string"}
+          - {label: "Hero Image", name: "image", widget: "image"}
+          - {label: "Hero Heading", name: "heading", widget: "string"}
+          - {label: "Hero Subheading", name: "subheading", widget: "string"}
+          - {label: "Featured Vehicles", name: "featured_vehicles", widget: "list", fields: [
+              {label: "Image", name: "image", widget: "image"},
+              {label: "Title", name: "title", widget: "string"},
+              {label: "Description", name: "text", widget: "text"},
+              {label: "Link", name: "link", widget: "string"}
+            ]}
+          - {label: "About Section", name: "about", widget: "object", fields: [
+              {label: "Heading", name: "heading", widget: "string"},
+              {label: "Text", name: "text", widget: "text"}
+            ]}
+          - {label: "Contact Info", name: "contact_info", widget: "object", fields: [
+              {label: "Phone", name: "phone", widget: "string"},
+              {label: "Email", name: "email", widget: "string"},
+              {label: "Address", name: "address", widget: "text"}
+            ]}
+          - {label: "Subtitle", name: "subtitle", widget: "string"}
+          - {label: "CTA Button Text", name: "cta_button_text", widget: "string", required: false}
+          - {label: "CTA Button Link", name: "cta_button_link", widget: "string", required: false}
+          - {label: "Body", name: "body", widget: "markdown"}
+          - label: "Features"
+            name: "features"
+            widget: "list"
+            required: false
             fields:
-              - label: Heading
-                name: heading
-                widget: string
-              - label: Text
-                name: text
-                widget: text
+              - {label: "Icon", name: "icon", widget: "string"}
+              - {label: "Heading", name: "heading", widget: "string"}
+              - {label: "Text", name: "text", widget: "text"}
+
+      - file: "site/content/about/_index.md"
+        label: "About Page"
+        name: "about"
+        fields:
+          - {label: "Title", name: "title", widget: "string"}
+          - {label: "Image", name: "image", widget: "image", required: false}
+          - {label: "Body", name: "body", widget: "markdown"}
+
       - file: "site/content/contact/_index.md"
         label: "Contact Page"
         name: "contact"
         fields:
-          - {label: Title, name: title, widget: string}
-          - {label: Logo, name: logo, widget: image}
-          - {label: Body, name: body, widget: markdown}
-          - {label: "SEO Title", name: "seo_title", widget: "string", required: true, default: "Contact Ed's Classic Cadillac Restoration | Book Your Consultation", pattern: ['.{10,70}', "Must be between 10 and 70 characters"]}
-          - {label: "SEO Description", name: "seo_description", widget: "text", required: true, default: "Contact Ed's Classic Cadillac Restoration for expert vintage Cadillac restoration services. Get in touch for consultations, quotes, and professional advice.", pattern: ['.{50,160}', "Must be between 50 and 160 characters"]}
-          - {label: "Meta Keywords", name: "meta_keywords", widget: "list", required: false, default: ["contact Cadillac restoration", "Cadillac restoration quote", "classic car consultation"]}
-          - label: Contact Entries
-            name: contact_entries
-            widget: list
-            fields:
-              - label: Heading
-                name: heading
-                widget: string
-              - label: Text
-                name: text
-                widget: text
+          - {label: "Title", name: "title", widget: "string"}
+          - {label: "Body", name: "body", widget: "markdown"}
+          - {label: "Map Location", name: "map_coordinates", widget: "string", required: false}
+
+  - name: "inventory"
+    label: "Vehicle Inventory"
+    folder: "site/content/inventory"
+    create: true
+    slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
+    fields:
+      - {label: "Title", name: "title", widget: "string"}
+      - {label: "Publish Date", name: "date", widget: "datetime"}
+      - {label: "Featured Image", name: "image", widget: "image", required: false}
+      - {label: "Make", name: "make", widget: "string", default: "Cadillac"}
+      - {label: "Model", name: "model", widget: "string"}
+      - {label: "Year", name: "year", widget: "number"}
+      - {label: "Price", name: "price", widget: "number"}
+      - {label: "VIN", name: "vin", widget: "string"}
+      - {label: "Color", name: "color", widget: "string"}
+      - {label: "Mileage", name: "mileage", widget: "number"}
+      - {label: "Features", name: "features", widget: "list"}
+      - {label: "Description", name: "description", widget: "text"}
+      - {label: "Body", name: "body", widget: "markdown"}
+      - {label: "Stock Number", name: "stock", widget: "string"}
+      - {label: "Trim", name: "trim", widget: "string", required: false}
+      - {label: "Sale Price", name: "salePrice", widget: "number", required: false}
+      - {label: "Exterior Color", name: "exteriorColor", widget: "string"}
+      - {label: "Interior Color", name: "interiorColor", widget: "string"}
+      - {label: "Transmission", name: "transmission", widget: "string"}
+      - {label: "Drivetrain", name: "drivetrain", widget: "string"}
+      - {label: "Engine", name: "engine", widget: "string"}
+      - {label: "Fuel Type", name: "fuelType", widget: "string"}
+      - {label: "MPG City", name: "mpgCity", widget: "number", required: false}
+      - {label: "MPG Highway", name: "mpgHighway", widget: "number", required: false}
+      - {label: "Body Style", name: "bodyStyle", widget: "string"}
+      - {label: "Certified", name: "isCertified", widget: "boolean", default: false}
+      - label: "Gallery Images"
+        name: "gallery"
+        widget: "list"
+        required: false
+        field: {label: Image, name: image, widget: image}
+
+  - name: "blog"
+    label: "Blog"
+    folder: "site/content/blog"
+    create: true
+    fields:
+      - {label: "Title", name: "title", widget: "string"}
+      - {label: "Publish Date", name: "date", widget: "datetime"}
+      - {label: "Featured Image", name: "image", widget: "image", required: false}
+      - {label: "Author", name: "author", widget: "string", required: false}
+      - {label: "Description", name: "description", widget: "text"}
+      - {label: "Body", name: "body", widget: "markdown"}
+      - label: "Tags"
+        name: "tags"
+        widget: "list"
+        required: false
