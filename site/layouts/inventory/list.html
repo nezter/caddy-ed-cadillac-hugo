@@ -2,32 +2,116 @@
 {{ define "description" }}Browse our extensive inventory of Cadillac vehicles at competitive prices.{{ end }}
 
 {{ define "main" }}
-<section class="inventory-section">
+
+<section class="inventory-header">
   <div class="container">
     <h1>{{ .Title }}</h1>
-    
     {{ with .Content }}
-      <div class="intro-content">
-        {{ . }}
-      </div>
+      <div class="page-intro">{{ . }}</div>
     {{ end }}
-    
-    <div id="inventory-container">
-      <!-- Will be populated via JavaScript -->
+  </div>
+</section>
+
+<section class="inventory-section">
+  <div class="container">
+    <div class="inventory-filter-wrapper">
+      <form class="inventory-filter">
+        <div class="filter-group">
+          <label for="make">Make</label>
+          <select name="make" id="make">
+            <option value="">All Makes</option>
+            {{ range .Site.Taxonomies.make }}
+            <option value="{{ .Page.Title }}">{{ .Page.Title }}</option>
+            {{ end }}
+          </select>
+        </div>
+        
+        <div class="filter-group">
+          <label for="model">Model</label>
+          <select name="model" id="model">
+            <option value="">All Models</option>
+            {{ range .Site.Taxonomies.model }}
+            <option value="{{ .Page.Title }}">{{ .Page.Title }}</option>
+            {{ end }}
+          </select>
+        </div>
+        
+        <div class="filter-group">
+          <label for="year">Year</label>
+          <select name="year" id="year">
+            <option value="">All Years</option>
+            {{ $years := slice }}
+            {{ range (where .Site.RegularPages "Section" "inventory") }}
+              {{ $years = $years | append .Params.year }}
+            {{ end }}
+            {{ range (sort $years "value" "desc") | uniq }}
+            <option value="{{ . }}">{{ . }}</option>
+            {{ end }}
+          </select>
+        </div>
+        
+        <div class="filter-group price-range">
+          <label>Price Range</label>
+          <div class="price-inputs">
+            <input type="number" name="price-min" id="price-min" placeholder="Min" min="0">
+            <span class="price-separator">-</span>
+            <input type="number" name="price-max" id="price-max" placeholder="Max" min="0">
+          </div>
+        </div>
+        
+        <button type="reset" class="btn btn-sm">Reset</button>
+      </form>
     </div>
     
-    <div class="inventory-cta">
-      <div class="cta-content">
-        <h2>Can't find what you're looking for?</h2>
-        <p>Let us help you find your perfect vehicle.</p>
-        <div class="cta-buttons">
-          <a href="/contact" class="btn btn-primary">Contact Us</a>
-          <a href="/custom-order" class="btn btn-secondary">Custom Order</a>
+    <div class="inventory-results">
+      {{ $paginator := .Paginate (where .Site.RegularPages "Section" "inventory") }}
+      
+      <div class="inventory-grid">
+        {{ range $paginator.Pages }}
+        <div class="inventory-item" 
+            data-make="{{ .Params.make }}"
+            data-model="{{ .Params.model }}"
+            data-year="{{ .Params.year }}"
+            data-price="{{ .Params.price }}">
+          <a href="{{ .RelPermalink }}" class="inventory-link">
+            <div class="inventory-image">
+              {{ with index .Params.images 0 }}
+              <img src="{{ . }}" alt="{{ $.Params.title }}" loading="lazy">
+              {{ else }}
+              <img src="/img/vehicle-placeholder.jpg" alt="{{ .Params.title }}" loading="lazy">
+              {{ end }}
+              <div class="inventory-status {{ lower .Params.status }}">{{ .Params.status }}</div>
+            </div>
+            
+            <div class="inventory-details">
+              <h3 class="inventory-title">{{ .Params.year }} {{ .Params.make }} {{ .Params.model }}</h3>
+              <p class="inventory-trim">{{ .Params.trim }}</p>
+              
+              <div class="inventory-meta">
+                <span class="inventory-price">${{ lang.NumFmt 0 .Params.price "," }}</span>
+                <span class="inventory-mileage">{{ lang.NumFmt 0 .Params.mileage "," }} mi</span>
+              </div>
+              
+              <div class="inventory-specs">
+                <span>{{ .Params.exteriorColor }}</span>
+                <span>{{ .Params.transmission }}</span>
+                <span>{{ .Params.drivetrain }}</span>
+              </div>
+              
+              <div class="inventory-cta">
+                <span class="btn btn-sm">View Details</span>
+              </div>
+            </div>
+          </a>
         </div>
+        {{ end }}
       </div>
+      
+      {{ template "_internal/pagination.html" . }}
     </div>
   </div>
 </section>
+
 {{ end }}
 
 {{ define "scripts" }}

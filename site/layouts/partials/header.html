@@ -42,30 +42,47 @@
 <body class="{{ if .IsHome }}home{{ else }}page{{ end }}">
   <header class="site-header">
     <div class="container">
-      <div class="header-inner">
+      <div class="header-content">
         <div class="logo">
           <a href="/">
-            <img src="/img/logo.svg" alt="{{ .Site.Title }}" width="180" height="60">
+            <img src="/img/logo.png" alt="{{ .Site.Title }}" width="200" height="80">
           </a>
         </div>
         
         <nav class="main-nav">
-          <button class="mobile-nav-toggle" aria-label="Toggle Menu">
+          <ul>
+            <li><a href="/" class="{{ if .IsHome }}active{{ end }}">Home</a></li>
+            <li><a href="/inventory" class="{{ if eq .Section "inventory" }}active{{ end }}">Inventory</a></li>
+            <li><a href="/specials" class="{{ if eq .Section "specials" }}active{{ end }}">Specials</a></li>
+            <li><a href="/service" class="{{ if eq .Section "service" }}active{{ end }}">Service</a></li>
+            <li><a href="/about" class="{{ if eq .Section "about" }}active{{ end }}">About</a></li>
+            <li><a href="/contact" class="{{ if eq .Section "contact" }}active{{ end }}">Contact</a></li>
+          </ul>
+        </nav>
+        
+        <div class="header-actions">
+          <a href="tel:{{ .Site.Params.phone }}" class="phone-link">
+            <span class="icon">📞</span>
+            <span class="phone-number">{{ .Site.Params.phone }}</span>
+          </a>
+          
+          <button class="mobile-menu-toggle" aria-label="Toggle Menu">
             <span></span>
             <span></span>
             <span></span>
           </button>
-          
-          <ul class="nav-menu">
-            {{ $currentPage := . }}
-            {{ range .Site.Menus.main }}
-              <li class="nav-item{{ if $currentPage.IsMenuCurrent "main" . }} active{{ end }}">
-                <a class="nav-link" href="{{ .URL }}">{{ .Name }}</a>
-              </li>
-            {{ end }}
-            <li class="nav-item nav-cta">
-              <a href="/contact/" class="btn btn-primary">Contact Us</a>
-            </li>
+        </div>
+      </div>
+      
+      <div class="mobile-menu">
+        <nav>
+          <ul>
+            <li><a href="/" class="{{ if .IsHome }}active{{ end }}">Home</a></li>
+            <li><a href="/inventory" class="{{ if eq .Section "inventory" }}active{{ end }}">Inventory</a></li>
+            <li><a href="/specials" class="{{ if eq .Section "specials" }}active{{ end }}">Specials</a></li>
+            <li><a href="/service" class="{{ if eq .Section "service" }}active{{ end }}">Service</a></li>
+            <li><a href="/about" class="{{ if eq .Section "about" }}active{{ end }}">About</a></li>
+            <li><a href="/contact" class="{{ if eq .Section "contact" }}active{{ end }}">Contact</a></li>
           </ul>
         </nav>
       </div>

@@ -730,3 +730,154 @@ async function loadInventory(options, container, loadingElement) {
     console.error('Failed to load inventory:', error);
   }
 }
+
+/**
+ * Inventory management functionality
+ */
+
+// Load inventory data from API or cached data
+async function loadInventory(filters = {}) {
+  const cacheKey = `inventory-${JSON.stringify(filters)}`;
+  const cachedData = sessionStorage.getItem(cacheKey);
+  
+  // Use cached data if available and not expired
+  if (cachedData) {
+    try {
+      const { data, timestamp } = JSON.parse(cachedData);
+      // Cache valid for 15 minutes
+      if (Date.now() - timestamp < 15 * 60 * 1000) {
+        return data;
+      }
+    } catch (e) {
+      console.error('Error parsing cached inventory data', e);
+    }
+  }
+  
+  // Build query parameters for API request
+  const queryParams = new URLSearchParams();
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value) queryParams.append(key, value);
+  });
+  
+  try {
+    // Use our Netlify function to proxy the inventory request
+    const response = await fetch(`/.netlify/functions/inventory-proxy?${queryParams.toString()}`);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    
+    const data = await response.json();
+    
+    // Cache the fresh data
+    sessionStorage.setItem(cacheKey, JSON.stringify({
+      data,
+      timestamp: Date.now()
+    }));
+    
+    return data;
+  } catch (error) {
+    console.error('Error fetching inventory:', error);
+    return null;
+  }
+}
+
+// Render inventory items to the DOM
+function renderInventory(vehicles, container) {
+  if (!container || !vehicles || !vehicles.length) return;
+  
+  // Clear container
+  container.innerHTML = '';
+  
+  vehicles.forEach(vehicle => {
+    const card = document.createElement('div');
+    card.className = 'vehicle-card';
+    card.setAttribute('data-id', vehicle.id);
+    
+    const imageUrl = vehicle.images && vehicle.images.length > 0 
+      ? vehicle.images[0] 
+      : '/images/placeholder-vehicle.jpg';
+    
+    card.innerHTML = `
+      <a href="/inventory/${vehicle.id}" class="vehicle-link">
+        <div class="vehicle-image">
+          <img class="lazyload" data-src="${imageUrl}" alt="${vehicle.year} ${vehicle.make} ${vehicle.model}" />
+        </div>
+        <div class="vehicle-info">
+          <h3>${vehicle.year} ${vehicle.make} ${vehicle.model}</h3>
+          <div class="vehicle-price">$${vehicle.price.toLocaleString()}</div>
+          <div class="vehicle-meta">
+            <span>${vehicle.mileage.toLocaleString()} mi</span>
+            <span>${vehicle.exteriorColor}</span>
+          </div>
+        </div>
+      </a>
+      <div class="vehicle-actions">
+        <a href="/test-drive?vehicle=${vehicle.id}" class="btn btn-sm">Test Drive</a>
+        <a href="/inventory/${vehicle.id}" class="btn btn-outline-sm">Details</a>
+      </div>
+    `;
+    
+    container.appendChild(card);
+  });
+}
+
+// Handle inventory filtering
+function setupInventoryFilters() {
+  const filterForm = document.getElementById('inventory-filters');
+  if (!filterForm) return;
+  
+  filterForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData = new FormData(filterForm);
+    const filters = {};
+    
+    formData.forEach((value, key) => {
+      if (value) filters[key] = value;
+    });
+    
+    const inventoryContainer = document.getElementById('inventory-listing');
+    if (inventoryContainer) {
+      // Show loading state
+      inventoryContainer.innerHTML = '<div class="loading-spinner">Loading inventory...</div>';
+      
+      const vehicles = await loadInventory(filters);
+      renderInventory(vehicles, inventoryContainer);
+      
+      // Update URL with filters
+      const queryString = new URLSearchParams(filters).toString();
+      const newUrl = `${window.location.pathname}${queryString ? '?' + queryString : ''}`;
+      window.history.pushState({ filters }, '', newUrl);
+    }
+  });
+  
+  // Handle sort changes
+  const sortSelect = document.getElementById('sort');
+  if (sortSelect) {
+    sortSelect.addEventListener('change', () => {
+      filterForm.dispatchEvent(new Event('submit'));
+    });
+  }
+}
+
+// Initialize on page load if on inventory page
+document.addEventListener('DOMContentLoaded', () => {
+  const inventoryContainer = document.getElementById('inventory-listing');
+  if (inventoryContainer) {
+    setupInventoryFilters();
+    
+    // Load initial inventory
+    loadInventory().then(vehicles => {
+      renderInventory(vehicles, inventoryContainer);
+    });
+  }
+  
+  // Handle featured inventory sections on home page
+  const featuredInventory = document.getElementById('featured-inventory');
+  if (featuredInventory) {
+    loadInventory({ featured: true, limit: 6 }).then(vehicles => {
+      renderInventory(vehicles, featuredInventory);
+    });
+  }
+});
+
+// Export functions for use in other files
+export { loadInventory, renderInventory };

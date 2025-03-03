@@ -1,23 +1,25 @@
-baseURL = "https://caddyed.com"
+baseURL = "https://caddyed.com/"
 languageCode = "en-us"
-title = "Caddy Ed Cadillac | South Charlotte Cadillac Dealership"
+title = "Caddy Ed Cadillac - South Charlotte Cadillac Dealer"
 enableRobotsTXT = true
 disableKinds = ["taxonomy", "taxonomyTerm"]
 
 [params]
-  description = "Caddy Ed Cadillac is your premier Cadillac dealership in South Charlotte, offering the latest Cadillac models, certified pre-owned vehicles, and exceptional service."
-  images = ["img/social-share.jpg"]
-  mainSections = ["inventory", "blog"]
-  address = "123 Cadillac Drive, South Charlotte, NC 28210"
+  description = "Caddy Ed is your trusted Cadillac dealer in South Charlotte. Browse our inventory of new and used Cadillac vehicles, schedule service, or contact our dealership today."
+  author = "Caddy Ed"
   phone = "(704) 555-1234"
+  address = "1234 Cadillac Drive, Charlotte, NC 28210"
   email = "sales@caddyed.com"
-  hours = "Monday-Friday: 9am-8pm, Saturday: 9am-6pm, Sunday: Closed"
+  hours = "Monday-Friday: 9AM-8PM, Saturday: 9AM-6PM, Sunday: Closed"
   
-  # Social media links
-  facebook = "https://facebook.com/caddyedcadillac"
-  instagram = "https://instagram.com/caddyedcadillac"
-  twitter = "https://twitter.com/caddyedcadillac"
-  youtube = "https://youtube.com/caddyedcadillac"
+  # Social Media Links
+  facebook = "https://facebook.com/caddyed"
+  instagram = "https://instagram.com/caddyed"
+  twitter = "https://twitter.com/caddyed"
+  youtube = "https://youtube.com/caddyed"
+  
+  # Google Maps API Key
+  mapsApiKey = ""
 
 [menu]
   [[menu.main]]
@@ -25,29 +27,35 @@ disableKinds = ["taxonomy", "taxonomyTerm"]
     url = "/"
     weight = 1
   [[menu.main]]
-    name = "New Inventory"
-    url = "/inventory/new/"
+    name = "Inventory"
+    url = "/inventory/"
     weight = 2
+  [[menu.main]]
+    name = "New Vehicles"
+    url = "/inventory/new/"
+    parent = "Inventory"
+    weight = 1
   [[menu.main]]
     name = "Pre-Owned"
     url = "/inventory/used/"
+    parent = "Inventory"
+    weight = 2
+  [[menu.main]]
+    name = "Services"
+    url = "/services/"
     weight = 3
   [[menu.main]]
-    name = "Specials"
-    url = "/specials/"
+    name = "Financing"
+    url = "/financing/"
     weight = 4
-  [[menu.main]]
-    name = "Service"
-    url = "/service/"
-    weight = 5
   [[menu.main]]
     name = "About Us"
     url = "/about/"
-    weight = 6
+    weight = 5
   [[menu.main]]
     name = "Contact"
     url = "/contact/"
-    weight = 7
+    weight = 6
 
 [taxonomies]
   tag = "tags"
@@ -61,9 +69,9 @@ disableKinds = ["taxonomy", "taxonomyTerm"]
     baseName = "feed"
 
 [outputs]
-  home = ["HTML", "RSS"]
+  home = ["HTML", "RSS", "JSON"]
   page = ["HTML"]
-  section = ["HTML"]
+  section = ["HTML", "RSS", "JSON"]
   taxonomy = ["HTML"]
   term = ["HTML"]
 

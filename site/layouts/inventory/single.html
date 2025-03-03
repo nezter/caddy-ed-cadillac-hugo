@@ -2,105 +2,202 @@
 {{ define "description" }}{{ .Params.Year }} {{ .Params.Make }} {{ .Params.Model }} {{ .Params.Trim }} - {{ .Params.Mileage }} miles - {{ .Site.Title }}{{ end }}
 
 {{ define "main" }}
+
 <section class="vehicle-detail">
   <div class="container">
-    <div class="vehicle-header">
-      <h1>{{ .Title }}</h1>
-      <div class="vehicle-price">${{ .Params.price }}</div>
+    <div class="breadcrumbs">
+      <a href="/">Home</a> &gt;
+      <a href="/inventory">Inventory</a> &gt;
+      <span>{{ .Title }}</span>
     </div>
     
-    <div class="vehicle-content">
+    <div class="vehicle-layout">
       <div class="vehicle-gallery">
-        {{ with .Params.images }}
-          <div class="main-image">
-            <img src="{{ index . 0 }}" alt="{{ $.Title }}" class="img-fluid">
-          </div>
-          {{ if gt (len .) 1 }}
-          <div class="thumbnail-gallery">
-            {{ range . }}
-              <div class="thumbnail"></div>
-                <img src="{{ . }}" alt="{{ $.Title }}" class="img-fluid lazyload">
-              </div>
-            {{ end }}
+        <div class="gallery-main">
+          {{ with index .Params.images 0 }}
+          <img src="{{ . }}" alt="{{ $.Title }}" id="main-image">
+          {{ else }}
+          <img src="/img/vehicle-placeholder.jpg" alt="{{ .Title }}" id="main-image">
+          {{ end }}
+        </div>
+        
+        {{ if gt (len .Params.images) 1 }}
+        <div class="gallery-thumbs">
+          {{ range .Params.images }}
+          <div class="thumb">
+            <img src="{{ . }}" alt="" class="thumbnail" onclick="document.getElementById('main-image').src='{{ . }}'">
           </div>
           {{ end }}
+        </div>
         {{ end }}
       </div>
       
       <div class="vehicle-info">
-        <div class="vehicle-specs">
-          <div class="spec-group">
-            <div class="spec-item">
-              <span class="label">Year</span>
-              <span class="value">{{ .Params.year }}</span>
-            </div>
-            <div class="spec-item">
-              <span class="label">Make</span>
-              <span class="value">{{ .Params.make }}</span>
-            </div>
-            <div class="spec-item">
-              <span class="label">Model</span>
-              <span class="value">{{ .Params.model }}</span>
-            </div>
-          </div>
-          <div class="spec-group">
-            <div class="spec-item">
-              <span class="label">Mileage</span>
-              <span class="value">{{ .Params.mileage }} mi</span>
-            </div>
-            <div class="spec-item">
-              <span class="label">Exterior</span>
-              <span class="value">{{ .Params.exteriorColor }}</span>
-            </div>
-            <div class="spec-item">
-              <span class="label">Interior</span>
-              <span class="value">{{ .Params.interiorColor }}</span>
-            </div>
-          </div>
-          <div class="spec-group">
-            <div class="spec-item">
-              <span class="label">Transmission</span>
-              <span class="value">{{ .Params.transmission }}</span>
-            </div>
-            <div class="spec-item">
-              <span class="label">VIN</span>
-              <span class="value">{{ .Params.vin }}</span>
-            </div>
-            <div class="spec-item">
-              <span class="label">Stock #</span>
-              <span class="value">{{ .Params.stockNumber }}</span>
-            </div>
-          </div>
+        <div class="vehicle-header">
+          <h1>{{ .Title }}</h1>
+          <div class="vehicle-price">${{ lang.NumFmt 0 .Params.price "," }}</div>
+          <div class="vehicle-status {{ lower .Params.status }}">{{ .Params.status }}</div>
         </div>
         
         <div class="vehicle-actions">
-          <a href="/test-drive?vehicle={{ .Params.id }}" class="btn btn-primary">Schedule Test Drive</a>
-          <a href="/contact?vehicle={{ .Params.id }}" class="btn btn-secondary">Ask About This Vehicle</a>
-          <button class="btn btn-outline calculate-payment" 
-                  data-price="{{ .Params.price }}" 
-                  data-year="{{ .Params.year }}" 
-                  data-make="{{ .Params.make }}"
-                  data-model="{{ .Params.model }}">
-            Calculate Payment
+          <a href="#schedule-test-drive" class="btn btn-primary">Schedule Test Drive</a>
+          <a href="#contact-us" class="btn btn-secondary">Contact Us</a>
+          <button class="btn btn-outline share-btn" data-vehicle="{{ .Title }}" data-url="{{ .Permalink }}">
+            Share <span class="icon">🔗</span>
           </button>
         </div>
         
-        <div class="vehicle-description">
-          <h2>Description</h2>
-          <div class="description-content">
-            {{ .Params.description | markdownify }}
+        <div class="vehicle-specs">
+          <div class="spec-group">
+            <h3>Details</h3>
+            <table class="specs-table">
+              <tr>
+                <th>Stock #:</th>
+                <td>{{ .Params.stockNumber }}</td>
+              </tr>
+              <tr>
+                <th>VIN:</th>
+                <td>{{ .Params.vin }}</td>
+              </tr>
+              <tr>
+                <th>Mileage:</th>
+                <td>{{ lang.NumFmt 0 .Params.mileage "," }} mi</td>
+              </tr>
+              <tr>
+                <th>Exterior:</th>
+                <td>{{ .Params.exteriorColor }}</td>
+              </tr>
+              <tr>
+                <th>Interior:</th>
+                <td>{{ .Params.interiorColor }}</td>
+              </tr>
+              <tr>
+                <th>MPG:</th>
+                <td>{{ .Params.mpg }}</td>
+              </tr>
+              <tr>
+                <th>Transmission:</th>
+                <td>{{ .Params.transmission }}</td>
+              </tr>
+              <tr>
+                <th>Engine:</th>
+                <td>{{ .Params.engine }}</td>
+              </tr>
+              <tr>
+                <th>Drivetrain:</th>
+                <td>{{ .Params.drivetrain }}</td>
+              </tr>
+              <tr>
+                <th>Fuel Type:</th>
+                <td>{{ .Params.fuelType }}</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="vehicle-description">
+      <h3>Description</h3>
+      {{ .Content | markdownify }}
+    </div>
+    
+    {{ if .Params.features }}
+    <div class="vehicle-features">
+      <h3>Features</h3>
+      <ul class="features-list">
+        {{ range .Params.features }}
+        <li>{{ . }}</li>
+        {{ end }}
+      </ul>
+    </div>
+    {{ end }}
+    
+    <div id="schedule-test-drive" class="test-drive-form">
+      <h3>Schedule a Test Drive</h3>
+      <form data-ajax="true" id="testDrive">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="name">Full Name *</label>
+            <input type="text" id="name" name="name" required>
+          </div>
+          <div class="form-group">
+            <label for="email">Email Address *</label>
+            <input type="email" id="email" name="email" required>
           </div>
         </div>
         
-        <div class="vehicle-features">
-          <h2>Features</h2>
-          <ul class="features-list">
-            {{ range .Params.features }}
-              <li>{{ . }}</li>
-            {{ end }}
-          </ul>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="phone">Phone Number</label>
+            <input type="tel" id="phone" name="phone">
+          </div>
+          <div class="form-group">
+            <label for="preferredDate">Preferred Date</label>
+            <input type="date" id="preferredDate" name="preferredDate">
+          </div>
         </div>
-      </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="preferredTime">Preferred Time</label>
+            <select id="preferredTime" name="preferredTime">
+              <option value="">Select a time</option>
+              <option value="9:00 AM">9:00 AM</option>
+              <option value="10:00 AM">10:00 AM</option>
+              <option value="11:00 AM">11:00 AM</option>
+              <option value="12:00 PM">12:00 PM</option>
+              <option value="1:00 PM">1:00 PM</option>
+              <option value="2:00 PM">2:00 PM</option>
+              <option value="3:00 PM">3:00 PM</option>
+              <option value="4:00 PM">4:00 PM</option>
+              <option value="5:00 PM">5:00 PM</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group full-width">
+            <label for="comments">Comments</label>
+            <textarea id="comments" name="comments" rows="4">
+            </textarea>
+          </div>
+        </div>
+        
+        <button type="submit" class="btn btn-primary">Submit</button>
+      </form>
+    </div>
+    
+    <div id="contact-us" class="contact-form">
+      <h3>Contact Us</h3>
+      <form data-ajax="true" id="contactForm">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="name">Full Name *</label>
+            <input type="text" id="name" name="name" required>
+          </div>
+          <div class="form-group">
+            <label for="email">Email Address *</label>
+            <input type="email" id="email" name="email" required>
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="phone">Phone Number</label>
+            <input type="tel" id="phone" name="phone">
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group full-width">
+            <label for="message">Message</label>
+            <textarea id="message" name="message" rows="4"></textarea>
+          </div>
+        </div>
+        
+        <button type="submit" class="btn btn-primary">Submit</button>
+      </form>
     </div>
     
     <div class="related-vehicles">

@@ -14,29 +14,35 @@ collections:
     label: "Inventory"
     folder: "site/content/inventory"
     create: true
-    slug: "{{year}}-{{make}}-{{model}}-{{slug}}"
-    editor:
-      preview: true
+    slug: "{{year}}-{{make}}-{{model}}-{{id}}"
     fields:
       - {label: "Title", name: "title", widget: "string"}
       - {label: "Publish Date", name: "date", widget: "datetime"}
+      - {label: "Vehicle ID", name: "id", widget: "string"}
+      - {label: "Stock Number", name: "stockNumber", widget: "string"}
       - {label: "VIN", name: "vin", widget: "string"}
+      - {label: "Year", name: "year", widget: "number"}
       - {label: "Make", name: "make", widget: "string"}
       - {label: "Model", name: "model", widget: "string"}
-      - {label: "Year", name: "year", widget: "number"}
-      - {label: "Trim", name: "trim", widget: "string"}
+      - {label: "Trim", name: "trim", widget: "string", required: false}
       - {label: "Price", name: "price", widget: "number"}
+      - {label: "Status", name: "status", widget: "select", options: ["Available", "Sold", "Coming Soon", "Hold"], default: "Available"}
+      - {label: "Type", name: "type", widget: "select", options: ["New", "Used", "Certified Pre-Owned"], default: "New"}
       - {label: "Mileage", name: "mileage", widget: "number"}
       - {label: "Exterior Color", name: "exteriorColor", widget: "string"}
       - {label: "Interior Color", name: "interiorColor", widget: "string"}
-      - {label: "Engine", name: "engine", widget: "string"}
       - {label: "Transmission", name: "transmission", widget: "string"}
-      - {label: "Drivetrain", name: "drivetrain", widget: "string"}
-      - {label: "Fuel Type", name: "fuelType", widget: "string"}
-      - {label: "Stock Number", name: "stockNumber", widget: "string"}
-      - {label: "Images", name: "images", widget: "list", field: {label: Image URL, name: url, widget: string}}
-      - {label: "Features", name: "features", widget: "list", field: {label: Feature, name: feature, widget: string}}
-      - {label: "Description", name: "body", widget: "markdown"}
+      - {label: "Engine", name: "engine", widget: "string", required: false}
+      - {label: "Drivetrain", name: "drivetrain", widget: "string", required: false}
+      - {label: "MPG", name: "mpg", widget: "string", required: false}
+      - {label: "Fuel Type", name: "fuelType", widget: "string", required: false}
+      - {label: "Description", name: "description", widget: "markdown"}
+      - {label: "Features", name: "features", widget: "list", required: false}
+      - label: "Images"
+        name: "images"
+        widget: "list"
+        field: {label: Image, name: image, widget: image}
+      - {label: "Featured", name: "featured", widget: "boolean", default: false}
       
   - name: "pages"
     label: "Pages"
@@ -47,23 +53,49 @@ collections:
         fields:
           - {label: "Title", name: "title", widget: "string"}
           - {label: "Subtitle", name: "subtitle", widget: "string"}
-          - {label: "Hero Image", name: "image", widget: "image"}
-          - {label: "Hero Heading", name: "heading", widget: "string"}
-          - {label: "Hero Subheading", name: "subheading", widget: "string"}
-          - {label: "Featured Models", name: "featured", widget: "list", fields: [
-              {label: "Model", name: "model", widget: "string"},
-              {label: "Image", name: "image", widget: "image"},
-              {label: "Description", name: "description", widget: "text"}
-            ]}
-          - {label: "Intro", name: "intro", widget: "object", fields: [
-              {label: "Heading", name: "heading", widget: "string"},
-              {label: "Text", name: "text", widget: "text"}
-            ]}
-          - {label: "Testimonials", name: "testimonials", widget: "list", fields: [
-              {label: "Quote", name: "quote", widget: "string"},
-              {label: "Author", name: "author", widget: "string"}
-            ]}
-      
+          - {label: "Image", name: "image", widget: "image"}
+          - label: "Hero Section"
+            name: "hero"
+            widget: "object"
+            fields:
+              - {label: "Heading", name: "heading", widget: "string"}
+              - {label: "Subheading", name: "subheading", widget: "string"}
+              - {label: "Background Image", name: "image", widget: "image"}
+              - label: "Buttons"
+                name: "buttons"
+                widget: "list"
+                fields:
+                  - {label: "Text", name: "text", widget: "string"}
+                  - {label: "URL", name: "url", widget: "string"}
+                  - {label: "Is Primary", name: "primary", widget: "boolean", default: false}
+          - label: "Featured Vehicles"
+            name: "featuredVehicles"
+            widget: "object"
+            fields:
+              - {label: "Heading", name: "heading", widget: "string"}
+              - {label: "Subheading", name: "subheading", widget: "string"}
+              - label: "Vehicles"
+                name: "vehicles"
+                widget: "list"
+                summary: "{{fields.year}} {{fields.make}} {{fields.model}}"
+                fields:
+                  - {label: "ID", name: "id", widget: "string"}
+                  - {label: "Year", name: "year", widget: "number"}
+                  - {label: "Make", name: "make", widget: "string"}
+                  - {label: "Model", name: "model", widget: "string"}
+                  - {label: "Price", name: "price", widget: "number"}
+                  - {label: "Image", name: "image", widget: "image"}
+                  - {label: "URL", name: "url", widget: "string"}
+          - label: "CTA Blocks"
+            name: "ctaBlocks"
+            widget: "list"
+            fields:
+              - {label: "Heading", name: "heading", widget: "string"}
+              - {label: "Text", name: "text", widget: "markdown"}
+              - {label: "Button Text", name: "buttonText", widget: "string"}
+              - {label: "Button URL", name: "buttonUrl", widget: "string"}
+              - {label: "Image", name: "image", widget: "image"}
+
       - file: "site/content/about/_index.md"
         label: "About Page"
         name: "about"
@@ -71,15 +103,35 @@ collections:
           - {label: "Title", name: "title", widget: "string"}
           - {label: "Image", name: "image", widget: "image"}
           - {label: "Body", name: "body", widget: "markdown"}
-      
+          - label: "Team Members"
+            name: "team"
+            widget: "list"
+            fields:
+              - {label: "Name", name: "name", widget: "string"}
+              - {label: "Position", name: "position", widget: "string"}
+              - {label: "Image", name: "image", widget: "image"}
+              - {label: "Bio", name: "bio", widget: "text"}
+
       - file: "site/content/contact/_index.md"
         label: "Contact Page"
         name: "contact"
         fields:
           - {label: "Title", name: "title", widget: "string"}
-          - {label: "Logo", name: "logo", widget: "image"}
           - {label: "Body", name: "body", widget: "markdown"}
-          - {label: "Contact Email", name: "email", widget: "string"}
+          - label: "Contact Info"
+            name: "contact_info"
+            widget: "object"
+            fields:
+              - {label: "Address", name: "address", widget: "string"}
+              - {label: "Phone", name: "phone", widget: "string"}
+              - {label: "Email", name: "email", widget: "string"}
+              - label: "Hours"
+                name: "hours"
+                widget: "list"
+                fields:
+                  - {label: "Day", name: "day", widget: "string"}
+                  - {label: "Open Time", name: "open", widget: "string"}
+                  - {label: "Close Time", name: "close", widget: "string"}
       
       - file: "site/content/service/_index.md"
         label: "Service Page"
