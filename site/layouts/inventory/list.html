@@ -2,148 +2,27 @@
 {{ define "description" }}Browse our extensive inventory of Cadillac vehicles at competitive prices.{{ end }}
 
 {{ define "main" }}
-<section class="inventory-hero">
+<section class="inventory-section">
   <div class="container">
-    <h1>Vehicle Inventory</h1>
-    <p class="lead">Discover your perfect Cadillac today</p>
-  </div>
-</section>
-
-<section class="inventory-section" id="vehicle-inventory">
-  <div class="container">
-    <div class="inventory-layout">
-      <aside class="inventory-sidebar">
-        <div class="filter-container">
-          <h2>Refine Results</h2>
-          <form id="inventory-filters" class="filter-form">
-            <div class="filter-group">
-              <h3>Price Range</h3>
-              <div class="range-inputs">
-                <div class="form-group">
-                  <label for="minPrice">Min Price</label>
-                  <input type="number" id="minPrice" name="minPrice" min="0" step="1000">
-                </div>
-                <div class="form-group">
-                  <label for="maxPrice">Max Price</label>
-                  <input type="number" id="maxPrice" name="maxPrice" min="0" step="1000">
-                </div>
-              </div>
-            </div>
-            
-            <div class="filter-group">
-              <h3>Year Range</h3>
-              <div class="range-inputs">
-                <div class="form-group">
-                  <label for="minYear">Min Year</label>
-                  <input type="number" id="minYear" name="minYear" min="2000" max="2023">
-                </div>
-                <div class="form-group">
-                  <label for="maxYear">Max Year</label>
-                  <input type="number" id="maxYear" name="maxYear" min="2000" max="2023">
-                </div>
-              </div>
-            </div>
-            
-            <div class="filter-group">
-              <h3>Mileage</h3>
-              <div class="range-inputs">
-                <div class="form-group">
-                  <label for="minMileage">Min Mileage</label>
-                  <input type="number" id="minMileage" name="minMileage" min="0" step="1000">
-                </div>
-                <div class="form-group">
-                  <label for="maxMileage">Max Mileage</label>
-                  <input type="number" id="maxMileage" name="maxMileage" min="0" step="1000">
-                </div>
-              </div>
-            </div>
-            
-            <div class="filter-group">
-              <h3>Body Style</h3>
-              <select name="bodyStyle" id="bodyStyle">
-                <option value="">All Body Styles</option>
-                <option value="Sedan">Sedan</option>
-                <option value="SUV">SUV</option>
-                <option value="Coupe">Coupe</option>
-                <option value="Convertible">Convertible</option>
-                <option value="Wagon">Wagon</option>
-              </select>
-            </div>
-            
-            <div class="filter-group">
-              <h3>Drivetrain</h3>
-              <select name="drivetrain" id="drivetrain">
-                <option value="">All Drivetrains</option>
-                <option value="FWD">Front Wheel Drive</option>
-                <option value="RWD">Rear Wheel Drive</option>
-                <option value="AWD">All Wheel Drive</option>
-                <option value="4WD">4 Wheel Drive</option>
-              </select>
-            </div>
-            
-            <div class="filter-group">
-              <h3>Features</h3>
-              <div class="checkbox-group">
-                <div class="form-check">
-                  <input type="checkbox" id="hasLeatherSeats" name="hasLeatherSeats" value="true">
-                  <label for="hasLeatherSeats">Leather Seats</label>
-                </div>
-                <div class="form-check">
-                  <input type="checkbox" id="hasNavigation" name="hasNavigation" value="true">
-                  <label for="hasNavigation">Navigation</label>
-                </div>
-                <div class="form-check">
-                  <input type="checkbox" id="hasSunroof" name="hasSunroof" value="true">
-                  <label for="hasSunroof">Sunroof</label>
-                </div>
-                <div class="form-check">
-                  <input type="checkbox" id="hasHeatedSeats" name="hasHeatedSeats" value="true">
-                  <label for="hasHeatedSeats">Heated Seats</label>
-                </div>
-              </div>
-            </div>
-            
-            <div class="filter-actions">
-              <button type="button" class="btn btn-secondary reset-filters">Reset Filters</button>
-            </div>
-          </form>
-        </div>
-      </aside>
-      
-      <div class="inventory-content">
-        <div class="inventory-controls">
-          <div class="inventory-search">
-            <input type="text" id="inventory-search" placeholder="Search inventory...">
-          </div>
-          
-          <div class="inventory-sort">
-            <label for="inventory-sort">Sort By:</label>
-            <select id="inventory-sort">
-              <option value="year-desc">Newest First</option>
-              <option value="year-asc">Oldest First</option>
-              <option value="price-asc">Price: Low to High</option>
-              <option value="price-desc">Price: High to Low</option>
-              <option value="mileage-asc">Mileage: Low to High</option>
-              <option value="mileage-desc">Mileage: High to Low</option>
-            </select>
-          </div>
-          
-          <div class="inventory-count" id="inventory-count">
-            0 vehicles
-          </div>
-        </div>
-        
-        <div id="inventory-loading" class="loading-indicator">
-          <div class="spinner"></div>
-          <p>Loading inventory...</p>
-        </div>
-        
-        <div id="inventory-results" class="inventory-results">
-          <!-- Vehicle results will be dynamically loaded here -->
-        </div>
-        
-        <div id="inventory-pagination" class="inventory-pagination">
-          <!-- Pagination will be dynamically generated here -->
+    <h1>{{ .Title }}</h1>
+    
+    {{ with .Content }}
+      <div class="intro-content">
+        {{ . }}
+      </div>
+    {{ end }}
+    
+    <div id="inventory-container">
+      <!-- Will be populated via JavaScript -->
+    </div>
+    
+    <div class="inventory-cta">
+      <div class="cta-content">
+        <h2>Can't find what you're looking for?</h2>
+        <p>Let us help you find your perfect vehicle.</p>
+        <div class="cta-buttons">
+          <a href="/contact" class="btn btn-primary">Contact Us</a>
+          <a href="/custom-order" class="btn btn-secondary">Custom Order</a>
         </div>
       </div>
     </div>

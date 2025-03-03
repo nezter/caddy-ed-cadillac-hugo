@@ -2,280 +2,149 @@
 {{ define "description" }}{{ .Params.Year }} {{ .Params.Make }} {{ .Params.Model }} {{ .Params.Trim }} - {{ .Params.Mileage }} miles - {{ .Site.Title }}{{ end }}
 
 {{ define "main" }}
-<div class="vehicle-detail-page">
+<section class="vehicle-detail">
   <div class="container">
     <div class="vehicle-header">
-      <h1 class="vehicle-title">{{ .Title }}</h1>
-      <div class="vehicle-price">
-        {{ if gt .Params.price 0 }}
-          <span class="price">${{ lang.NumFmt 0 .Params.price }}</span>
-        {{ else }}
-          <span class="price">Call for Price</span>
-        {{ end }}
-      </div>
-      <div class="vehicle-meta">
-        <span class="stock">Stock# {{ .Params.stockNumber }}</span>
-        <span class="vin">VIN: {{ .Params.vin }}</span>
-      </div>
+      <h1>{{ .Title }}</h1>
+      <div class="vehicle-price">${{ .Params.price }}</div>
     </div>
-
+    
     <div class="vehicle-content">
       <div class="vehicle-gallery">
-        {{ if .Params.images }}
+        {{ with .Params.images }}
           <div class="main-image">
-            <img src="{{ index .Params.images 0 }}" alt="{{ .Title }}" class="img-fluid lazyload">
+            <img src="{{ index . 0 }}" alt="{{ $.Title }}" class="img-fluid">
           </div>
-          {{ if gt (len .Params.images) 1 }}
-            <div class="thumbnails">
-              {{ range .Params.images }}
-                <div class="thumbnail">
-                  <img src="{{ . }}" alt="" class="img-fluid lazyload">
-                </div>
-              {{ end }}
-            </div>
+          {{ if gt (len .) 1 }}
+          <div class="thumbnail-gallery">
+            {{ range . }}
+              <div class="thumbnail"></div>
+                <img src="{{ . }}" alt="{{ $.Title }}" class="img-fluid lazyload">
+              </div>
+            {{ end }}
+          </div>
           {{ end }}
-        {{ else }}
-          <div class="no-image">
-            <img src="/img/no-image-available.jpg" alt="No image available" class="img-fluid">
-          </div>
         {{ end }}
       </div>
-
-      <div class="vehicle-details">
+      
+      <div class="vehicle-info">
         <div class="vehicle-specs">
-          <h2>Specifications</h2>
-          <table class="specs-table">
-            <tr>
-              <th>Year:</th>
-              <td>{{ .Params.year }}</td>
-            </tr>
-            <tr>
-              <th>Make:</th>
-              <td>{{ .Params.make }}</td>
-            </tr>
-            <tr>
-              <th>Model:</th>
-              <td>{{ .Params.model }}</td>
-            </tr>
-            <tr>
-              <th>Trim:</th>
-              <td>{{ .Params.trim }}</td>
-            </tr>
-            <tr>
-              <th>Mileage:</th>
-              <td>{{ with .Params.mileage }}{{ lang.NumFmt 0 . }} mi{{ else }}N/A{{ end }}</td>
-            </tr>
-            <tr>
-              <th>Exterior Color:</th>
-              <td>{{ .Params.exteriorColor }}</td>
-            </tr>
-            <tr>
-              <th>Interior Color:</th>
-              <td>{{ .Params.interiorColor }}</td>
-            </tr>
-            <tr>
-              <th>Engine:</th>
-              <td>{{ .Params.engine }}</td>
-            </tr>
-            <tr>
-              <th>Transmission:</th>
-              <td>{{ .Params.transmission }}</td>
-            </tr>
-            <tr>
-              <th>Drivetrain:</th>
-              <td>{{ .Params.drivetrain }}</td>
-            </tr>
-            <tr>
-              <th>Fuel Type:</th>
-              <td>{{ .Params.fuelType }}</td>
-            </tr>
-          </table>
+          <div class="spec-group">
+            <div class="spec-item">
+              <span class="label">Year</span>
+              <span class="value">{{ .Params.year }}</span>
+            </div>
+            <div class="spec-item">
+              <span class="label">Make</span>
+              <span class="value">{{ .Params.make }}</span>
+            </div>
+            <div class="spec-item">
+              <span class="label">Model</span>
+              <span class="value">{{ .Params.model }}</span>
+            </div>
+          </div>
+          <div class="spec-group">
+            <div class="spec-item">
+              <span class="label">Mileage</span>
+              <span class="value">{{ .Params.mileage }} mi</span>
+            </div>
+            <div class="spec-item">
+              <span class="label">Exterior</span>
+              <span class="value">{{ .Params.exteriorColor }}</span>
+            </div>
+            <div class="spec-item">
+              <span class="label">Interior</span>
+              <span class="value">{{ .Params.interiorColor }}</span>
+            </div>
+          </div>
+          <div class="spec-group">
+            <div class="spec-item">
+              <span class="label">Transmission</span>
+              <span class="value">{{ .Params.transmission }}</span>
+            </div>
+            <div class="spec-item">
+              <span class="label">VIN</span>
+              <span class="value">{{ .Params.vin }}</span>
+            </div>
+            <div class="spec-item">
+              <span class="label">Stock #</span>
+              <span class="value">{{ .Params.stockNumber }}</span>
+            </div>
+          </div>
         </div>
-
+        
+        <div class="vehicle-actions">
+          <a href="/test-drive?vehicle={{ .Params.id }}" class="btn btn-primary">Schedule Test Drive</a>
+          <a href="/contact?vehicle={{ .Params.id }}" class="btn btn-secondary">Ask About This Vehicle</a>
+          <button class="btn btn-outline calculate-payment" 
+                  data-price="{{ .Params.price }}" 
+                  data-year="{{ .Params.year }}" 
+                  data-make="{{ .Params.make }}"
+                  data-model="{{ .Params.model }}">
+            Calculate Payment
+          </button>
+        </div>
+        
         <div class="vehicle-description">
           <h2>Description</h2>
-          {{ .Content }}
+          <div class="description-content">
+            {{ .Params.description | markdownify }}
+          </div>
         </div>
-
-        {{ if .Params.features }}
-          <div class="vehicle-features">
-            <h2>Features & Options</h2>
-            <ul class="features-list">
-              {{ range .Params.features }}
-                <li>{{ . }}</li>
-              {{ end }}
-            </ul>
-          </div>
-        {{ end }}
-
-        <div class="vehicle-actions">
-          <h2>Interested in this vehicle?</h2>
-          <div class="action-buttons">
-            <button class="btn btn-primary" data-toggle="modal" data-target="#contactModal" data-vehicle="{{ .Title }}">
-              Contact Us
-            </button>
-            <button class="btn btn-secondary" data-toggle="modal" data-target="#testDriveModal" data-vehicle="{{ .Title }}">
-              Schedule Test Drive
-            </button>
-            <button class="btn btn-outline" data-toggle="modal" data-target="#tradeInModal">
-              Value Your Trade
-            </button>
-          </div>
+        
+        <div class="vehicle-features">
+          <h2>Features</h2>
+          <ul class="features-list">
+            {{ range .Params.features }}
+              <li>{{ . }}</li>
+            {{ end }}
+          </ul>
         </div>
       </div>
     </div>
-  </div>
-</div>
-
-<!-- Contact Modal -->
-<div class="modal fade" id="contactModal" tabindex="-1" role="dialog" aria-labelledby="contactModalLabel" aria-hidden="true">
-  <div class="modal-dialog" role="document">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="contactModalLabel">Contact Us</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-      <div class="modal-body">
-        <form id="contactForm" class="vehicle-form" data-form-type="contact">
-          <input type="hidden" name="formType" value="contact">
-          <input type="hidden" name="vehicle" id="contactVehicle" value="{{ .Title }}">
-          
-          <div class="form-group">
-            <label for="contactName">Name*</label>
-            <input type="text" class="form-control" id="contactName" name="name" required>
-          </div>
-          
-          <div class="form-group">
-            <label for="contactEmail">Email*</label>
-            <input type="email" class="form-control" id="contactEmail" name="email" required>
-          </div>
-          
-          <div class="form-group">
-            <label for="contactPhone">Phone</label>
-            <input type="tel" class="form-control" id="contactPhone" name="phone">
-          </div>
-          
-          <div class="form-group">
-            <label for="contactMessage">Message*</label>
-            <textarea class="form-control" id="contactMessage" name="message" rows="4" required></textarea>
-          </div>
-          
-          <button type="submit" class="btn btn-primary">Submit</button>
-        </form>
+    
+    <div class="related-vehicles">
+      <h2>Similar Vehicles</h2>
+      <div id="related-inventory" class="vehicle-carousel">
+        <!-- Will be populated via JavaScript -->
       </div>
     </div>
   </div>
-</div>
-
-<!-- Test Drive Modal -->
-<div class="modal fade" id="testDriveModal" tabindex="-1" role="dialog" aria-labelledby="testDriveModalLabel" aria-hidden="true">
-  <div class="modal-dialog" role="document">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="testDriveModalLabel">Schedule Test Drive</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-      <div class="modal-body">
-        <form id="testDriveForm" class="vehicle-form" data-form-type="testDrive">
-          <input type="hidden" name="formType" value="testDrive">
-          <input type="hidden" name="vehicle" id="testDriveVehicle" value="{{ .Title }}">
-          
-          <div class="form-group">
-            <label for="testDriveName">Name*</label>
-            <input type="text" class="form-control" id="testDriveName" name="name" required>
-          </div>
-          
-          <div class="form-group">
-            <label for="testDriveEmail">Email*</label>
-            <input type="email" class="form-control" id="testDriveEmail" name="email" required>
-          </div>
-          
-          <div class="form-group">
-            <label for="testDrivePhone">Phone*</label>
-            <input type="tel" class="form-control" id="testDrivePhone" name="phone" required>
-          </div>
-          
-          <div class="form-group">
-            <label for="preferredDate">Preferred Date</label>
-            <input type="date" class="form-control" id="preferredDate" name="preferredDate">
-          </div>
-          
-          <div class="form-group">
-            <label for="preferredTime">Preferred Time</label>
-            <select class="form-control" id="preferredTime" name="preferredTime">
-              <option value="">Select a time</option>
-              <option value="morning">Morning (9am-12pm)</option>
-              <option value="afternoon">Afternoon (12pm-5pm)</option>
-              <option value="evening">Evening (5pm-8pm)</option>
-            </select>
-          </div>
-          
-          <div class="form-group">
-            <label for="testDriveComments">Comments</label>
-            <textarea class="form-control" id="testDriveComments" name="comments" rows="3"></textarea>
-          </div>
-          
-          <button type="submit" class="btn btn-primary">Schedule</button>
-        </form>
-      </div>
-    </div>
-  </div>
-</div>
-
-{{ partial "trade-in-modal.html" . }}
+</section>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-  // Handle form submissions
-  document.querySelectorAll('.vehicle-form').forEach(form => {
-    form.addEventListener('submit', function(e) {
-      e.preventDefault();
+  document.addEventListener('DOMContentLoaded', () => {
+    // Initialize payment calculator
+    document.querySelector('.calculate-payment')?.addEventListener('click', function() {
+      const vehicle = {
+        price: this.dataset.price,
+        year: this.dataset.year,
+        make: this.dataset.make,
+        model: this.dataset.model
+      };
       
-      const formData = new FormData(this);
-      const formType = this.dataset.formType;
-      const jsonData = {};
-      
-      for (let [key, value] of formData.entries()) {
-        jsonData[key] = value;
-      }
-      
-      // Send form data to Netlify function
-      fetch('/.netlify/functions/lead-management', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(jsonData)
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          alert(data.message);
-          this.reset();
-          // Close the modal
-          $(`#${formType}Modal`).modal('hide');
-        } else {
-          alert(data.message || 'There was an error submitting the form. Please try again.');
-        }
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        alert('There was an error submitting the form. Please try again later.');
-      });
+      showPaymentCalculator(vehicle);
     });
+    
+    // Load related inventory
+    const relatedContainer = document.getElementById('related-inventory');
+    if (relatedContainer) {
+      loadRelatedVehicles({
+        make: "{{ .Params.make }}",
+        model: "{{ .Params.model }}",
+        excludeId: "{{ .Params.id }}"
+      }, relatedContainer);
+    }
   });
   
-  // Set vehicle info when modal opens
-  $('#contactModal, #testDriveModal').on('show.bs.modal', function (event) {
-    const button = $(event.relatedTarget);
-    const vehicle = button.data('vehicle');
-    const modal = $(this);
-    modal.find('.modal-body input[name="vehicle"]').val(vehicle);
-  });
-});
+  // Payment calculator modal
+  function showPaymentCalculator(vehicle) {
+    // Implementation will be added
+  }
+  
+  // Load related vehicles based on current vehicle
+  async function loadRelatedVehicles(params, container) {
+    // Implementation will fetch from inventory API
+  }
 </script>
 {{ end }}

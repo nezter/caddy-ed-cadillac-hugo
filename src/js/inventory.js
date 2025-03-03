@@ -510,3 +510,223 @@ document.addEventListener('DOMContentLoaded', () => {
   // Initial inventory fetch
   fetchInventory();
 });
+
+// Inventory management component for Caddy Ed website
+
+const CACHE_DURATION = 3600 * 1000; // 1 hour in milliseconds
+let cachedInventory = null;
+let lastFetchTime = 0;
+
+/**
+ * Fetch inventory data from the Netlify function
+ * @param {Object} options - Search filter options
+ * @returns {Promise<Array>} - Array of inventory items
+ */
+export async function fetchInventory(options = {}) {
+  const now = Date.now();
+  
+  // Use cached data if available and not expired
+  if (cachedInventory && now - lastFetchTime < CACHE_DURATION) {
+    return filterInventory(cachedInventory, options);
+  }
+  
+  try {
+    // Build query parameters
+    const params = new URLSearchParams();
+    if (options.status) params.append('search', options.status); // new, used, certified
+    if (options.make) params.append('make', options.make);
+    if (options.model) params.append('model', options.model);
+    if (options.year) params.append('year', options.year);
+    if (options.priceRange) {
+      params.append('minPrice', options.priceRange[0]);
+      params.append('maxPrice', options.priceRange[1]);
+    }
+    
+    // Fetch data from Netlify function
+    const response = await fetch(`/.netlify/functions/inventory-proxy?${params.toString()}`);
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch inventory: ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    
+    // Update cache
+    cachedInventory = data;
+    lastFetchTime = now;
+    
+    return filterInventory(data, options);
+  } catch (error) {
+    console.error('Error fetching inventory:', error);
+    // Return cached data as fallback even if expired
+    return cachedInventory ? filterInventory(cachedInventory, options) : [];
+  }
+}
+
+/**
+ * Filter inventory based on user-selected options
+ * @param {Array} inventory - Full inventory data
+ * @param {Object} options - Filter options
+ * @returns {Array} - Filtered inventory
+ */
+function filterInventory(inventory, options) {
+  if (!inventory || !Array.isArray(inventory)) {
+    return [];
+  }
+  
+  return inventory.filter(item => {
+    // Apply all filters
+    if (options.bodyType && item.bodyType !== options.bodyType) return false;
+    if (options.color && item.exteriorColor !== options.color) return false;
+    if (options.minMileage && item.mileage < options.minMileage) return false;
+    if (options.maxMileage && item.mileage > options.maxMileage) return false;
+    
+    return true;
+  });
+}
+
+/**
+ * Renders inventory item to DOM
+ * @param {Object} item - Vehicle inventory item
+ * @param {HTMLElement} container - Container element
+ */
+export function renderInventoryItem(item, container) {
+  const itemElement = document.createElement('div');
+  itemElement.className = 'inventory-item';
+  
+  itemElement.innerHTML = `
+    <div class="inventory-image">
+      <img src="${item.images[0] || '/images/no-image.jpg'}" alt="${item.year} ${item.make} ${item.model}">
+    </div>
+    <div class="inventory-details">
+      <h3>${item.year} ${item.make} ${item.model}</h3>
+      <p class="price">$${item.price.toLocaleString()}</p>
+      <p class="specs">
+        <span>${item.mileage.toLocaleString()} mi</span> | 
+        <span>${item.exteriorColor}</span> | 
+        <span>${item.transmission}</span>
+      </p>
+      <div class="inventory-actions">
+        <a href="/inventory/${item.id}" class="btn btn-primary">View Details</a>
+        <button class="btn btn-secondary test-drive-btn" data-vehicle="${item.id}">Schedule Test Drive</button>
+      </div>
+    </div>
+  `;
+  
+  // Add event listener for test drive button
+  const testDriveBtn = itemElement.querySelector('.test-drive-btn');
+  testDriveBtn.addEventListener('click', () => {
+    window.location.href = `/test-drive?vehicle=${item.id}`;
+  });
+  
+  container.appendChild(itemElement);
+}
+
+/**
+ * Initialize inventory display on the page
+ * @param {string} containerId - HTML ID of container element
+ * @param {Object} defaultOptions - Default filter options
+ */
+export function initInventory(containerId = 'inventory-container', defaultOptions = {}) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  
+  // Create filter form
+  const filterForm = document.createElement('form');
+  filterForm.className = 'inventory-filters';
+  filterForm.innerHTML = `
+    <div class="filter-group">
+      <label for="status-filter">Status</label>
+      <select id="status-filter" name="status">
+        <option value="new" ${defaultOptions.status === 'new' ? 'selected' : ''}>New</option>
+        <option value="used" ${defaultOptions.status === 'used' ? 'selected' : ''}>Used</option>
+        <option value="certified" ${defaultOptions.status === 'certified' ? 'selected' : ''}>Certified Pre-Owned</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label for="model-filter">Model</label>
+      <select id="model-filter" name="model">
+        <option value="">All Models</option>
+        <option value="Escalade">Escalade</option>
+        <option value="CT4">CT4</option>
+        <option value="CT5">CT5</option>
+        <option value="XT4">XT4</option>
+        <option value="XT5">XT5</option>
+        <option value="XT6">XT6</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <button type="submit" class="btn btn-primary">Apply Filters</button>
+      <button type="reset" class="btn btn-secondary">Reset</button>
+    </div>
+  `;
+  
+  // Create inventory results container
+  const resultsContainer = document.createElement('div');
+  resultsContainer.className = 'inventory-results';
+  
+  // Loading indicator
+  const loadingElement = document.createElement('div');
+  loadingElement.className = 'loading-indicator';
+  loadingElement.textContent = 'Loading inventory...';
+  
+  // Add elements to container
+  container.appendChild(filterForm);
+  container.appendChild(loadingElement);
+  container.appendChild(resultsContainer);
+  
+  // Load initial inventory
+  loadInventory(defaultOptions, resultsContainer, loadingElement);
+  
+  // Add event listeners
+  filterForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const formData = new FormData(filterForm);
+    const options = {
+      status: formData.get('status'),
+      model: formData.get('model')
+    };
+    
+    loadInventory(options, resultsContainer, loadingElement);
+  });
+  
+  filterForm.addEventListener('reset', () => {
+    setTimeout(() => {
+      loadInventory(defaultOptions, resultsContainer, loadingElement);
+    }, 0);
+  });
+}
+
+/**
+ * Load inventory with specified options
+ * @param {Object} options - Filter options
+ * @param {HTMLElement} container - Results container
+ * @param {HTMLElement} loadingElement - Loading indicator element
+ */
+async function loadInventory(options, container, loadingElement) {
+  // Show loading
+  loadingElement.style.display = 'block';
+  container.innerHTML = '';
+  
+  try {
+    const inventory = await fetchInventory(options);
+    
+    // Hide loading
+    loadingElement.style.display = 'none';
+    
+    if (inventory.length === 0) {
+      container.innerHTML = '<div class="no-results">No vehicles found matching your criteria.</div>';
+      return;
+    }
+    
+    // Render each item
+    inventory.forEach(item => {
+      renderInventoryItem(item, container);
+    });
+    
+  } catch (error) {
+    loadingElement.style.display = 'none';
+    container.innerHTML = '<div class="error-message">Failed to load inventory. Please try again later.</div>';
+    console.error('Failed to load inventory:', error);
+  }
+}
