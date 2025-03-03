@@ -1,27 +1,44 @@
+{{ $vehicle := . }}
+
 <div class="vehicle-card">
   <div class="vehicle-image">
-    {{ if .Params.image }}
-      <img src="{{ .Params.image }}" alt="{{ .Title }}">
+    {{ if $vehicle.image }}
+      <img class="lazyload blur-up" 
+           src="{{ replace $vehicle.image "/upload/" "/upload/w_20,q_10/" }}" 
+           data-src="{{ replace $vehicle.image "/upload/" "/upload/w_600,q_80/" }}" 
+           alt="{{ $vehicle.year }} {{ $vehicle.make }} {{ $vehicle.model }}">
     {{ else }}
-      <img src="/images/vehicle-placeholder.jpg" alt="{{ .Title }}">
+      <div class="placeholder-image">Image Coming Soon</div>
     {{ end }}
   </div>
+  
   <div class="vehicle-details">
-    <h3><a href="{{ .Permalink }}">{{ .Title }}</a></h3>
-    {{ if .Params.price }}
-      <div class="vehicle-price">${{ lang.NumFmt 0 .Params.price "," }}</div>
+    <h3 class="vehicle-title">{{ $vehicle.year }} {{ $vehicle.make }} {{ $vehicle.model }}</h3>
+    {{ if $vehicle.trim }}
+      <p class="vehicle-trim">{{ $vehicle.trim }}</p>
     {{ end }}
-    <div class="vehicle-meta">
-      {{ if .Params.year }}<span>{{ .Params.year }}</span>{{ end }}
-      {{ if .Params.mileage }}<span>{{ lang.NumFmt 0 .Params.mileage "," }} miles</span>{{ end }}
+    
+    <div class="vehicle-price">
+      {{ $formattedPrice := lang.NumFmt 0 $vehicle.price "- , ." }}
+      ${{ $formattedPrice }}
     </div>
-    <div class="vehicle-features">
-      {{ if .Params.features }}
-        {{ range first 3 .Params.features }}
-          <span class="vehicle-feature">{{ . }}</span>
-        {{ end }}
+    
+    <div class="vehicle-specs">
+      {{ $formattedMileage := lang.NumFmt 0 $vehicle.mileage "- , ." }}
+      <span class="vehicle-mileage">{{ $formattedMileage }} miles</span>
+      
+      {{ if $vehicle.exteriorColor }}
+        <span class="vehicle-color">{{ $vehicle.exteriorColor }}</span>
+      {{ end }}
+      
+      {{ if $vehicle.transmission }}
+        <span class="vehicle-transmission">{{ $vehicle.transmission }}</span>
       {{ end }}
     </div>
-    <a href="{{ .Permalink }}" class="cta-button">View Details</a>
+    
+    <div class="vehicle-actions">
+      <a href="/inventory/{{ $vehicle.id | default $vehicle.vin }}" class="btn btn-primary">View Details</a>
+      <button class="btn btn-secondary schedule-test-drive" data-vehicle-id="{{ $vehicle.id | default $vehicle.vin }}">Schedule Test Drive</button>
+    </div>
   </div>
 </div>

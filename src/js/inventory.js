@@ -1,704 +1,381 @@
 /**
- * Inventory Management
- * Handles inventory display, filtering, and search functionality
+ * Inventory Management System
+ * Handles fetching, filtering, and displaying vehicle inventory
  */
+
 class InventoryManager {
   constructor() {
-    this.inventoryElement = document.getElementById('vehicle-inventory');
+    this.vehicles = [];
+    this.filteredVehicles = [];
+    this.currentPage = 1;
+    this.vehiclesPerPage = 12;
+    this.filters = {};
+    this.sortOrder = 'year-desc';
     
-    if (!this.inventoryElement) return;
-    
-    // Elements
-    this.filterForm = document.getElementById('inventory-filters');
+    // DOM elements
+    this.inventoryResults = document.getElementById('inventory-results');
+    this.inventoryLoading = document.getElementById('inventory-loading');
+    this.inventoryCount = document.getElementById('inventory-count');
+    this.inventoryPagination = document.getElementById('inventory-pagination');
     this.searchInput = document.getElementById('inventory-search');
     this.sortSelect = document.getElementById('inventory-sort');
-    this.resultsContainer = document.getElementById('inventory-results');
-    this.paginationContainer = document.getElementById('inventory-pagination');
-    this.loadingIndicator = document.getElementById('inventory-loading');
+    this.filterForm = document.getElementById('inventory-filters');
+    this.resetBtn = document.querySelector('.reset-filters');
     
-    // State
-    this.currentPage = 1;
-    this.itemsPerPage = 12;
-    this.totalPages = 0;
-    this.currentFilters = {};
-    this.inventoryData = [];
-    this.filteredData = [];
-    
-    // Initialize
-    this.init();
+    this.initEventListeners();
   }
-  
-  init() {
-    this.showLoading();
+
+  initEventListeners() {
+    // Only initialize if we're on the inventory page
+    if (!this.inventoryResults) return;
     
-    // Load inventory data from our proxy function
-    this.fetchInventory()
-      .then(data => {
-        this.inventoryData = data;
-        this.filteredData = [...data];
-        this.setupEventListeners();
-        this.applyFiltersAndSort();
-      })
-      .catch(error => {
-        console.error('Failed to fetch inventory:', error);
-        this.showError('Unable to load inventory. Please try again later.');
-      })
-      .finally(() => {
-        this.hideLoading();
-      });
-  }
-  
-  fetchInventory() {
-    const url = '/.netlify/functions/inventory-proxy';
-    
-    return fetch(url)
-      .then(response => {
-        if (!response.ok) {
-          throw new Error('Failed to fetch inventory data');
-        }
-        
-        return response.json();
-      })
-      .then(data => {
-        // Process the data if needed
-        return data.vehicles || [];
-      });
-  }
-  
-  setupEventListeners() {
-    // Search input
-    if (this.searchInput) {
-      this.searchInput.addEventListener('input', this.debounce(() => {
-        this.currentPage = 1;
-        this.applyFiltersAndSort();
-      }, 300));
-    }
-    
-    // Filter form
-    if (this.filterForm) {
-      this.filterForm.addEventListener('change', () => {
-        this.currentPage = 1;
-        this.applyFiltersAndSort();
-      });
-      
-      // Reset filters button
-      const resetButton = this.filterForm.querySelector('.reset-filters');
-      if (resetButton) {
-        resetButton.addEventListener('click', (e) => {
-          e.preventDefault();
-          this.resetFilters();
-        });
-      }
-    }
-    
-    // Sort select
+    // Sort change
     if (this.sortSelect) {
       this.sortSelect.addEventListener('change', () => {
-        this.applyFiltersAndSort();
+        this.sortOrder = this.sortSelect.value;
+        this.currentPage = 1;
+        this.renderVehicles();
       });
     }
     
-    // URL params on load
-    this.applyUrlParams();
+    // Search input
+    if (this.searchInput) {
+      this.searchInput.addEventListener('input', () => {
+        this.currentPage = 1;
+        this.applyFilters();
+      });
+    }
     
-    // Handle browser back/forward
-    window.addEventListener('popstate', () => {
-      this.applyUrlParams();
-    });
-  }
-  
-  debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-      const later = () => {
-        timeout = null;
-        func(...args);
-      };
-      clearTimeout(timeout);
-      timeout = setTimeout(later, wait);
-    };
-  }
-  
-  applyUrlParams() {
-    const params = new URLSearchParams(window.location.search);
+    // Reset filters
+    if (this.resetBtn) {
+      this.resetBtn.addEventListener('click', () => {
+        this.filterForm.reset();
+        this.filters = {};
+        this.currentPage = 1;
+        this.applyFilters();
+      });
+    }
     
-    // Reset form first
+    // Filter form inputs
     if (this.filterForm) {
-      this.filterForm.reset();
+      const inputs = this.filterForm.querySelectorAll('input, select');
+      inputs.forEach(input => {
+        input.addEventListener('change', () => {
+          this.currentPage = 1;
+          this.applyFilters();
+        });
+      });
     }
     
-    // Apply params to form controls
-    for (const [key, value] of params) {
-      const element = this.filterForm?.elements[key];
+    // Initialize
+    this.fetchInventory();
+  }
+  
+  async fetchInventory() {
+    if (!this.inventoryLoading) return;
+    
+    this.inventoryLoading.style.display = 'flex';
+    
+    try {
+      // Fetch from Netlify function proxy to avoid CORS issues
+      const response = await fetch('/.netlify/functions/inventory-proxy');
       
-      if (element) {
-        if (element.type === 'checkbox') {
-          element.checked = value === 'true';
-        } else {
-          element.value = value;
+      if (!response.ok) {
+        throw new Error('Failed to fetch inventory');
+      }
+      
+      const data = await response.json();
+      this.vehicles = data.vehicles || [];
+      this.applyFilters();
+      
+    } catch (error) {
+      console.error('Error fetching inventory:', error);
+      this.showErrorMessage('Failed to load inventory. Please try again later.');
+    } finally {
+      this.inventoryLoading.style.display = 'none';
+    }
+  }
+  
+  applyFilters() {
+    // Get current filter values
+    if (this.filterForm) {
+      const formData = new FormData(this.filterForm);
+      
+      // Build filters object
+      this.filters = {
+        minPrice: formData.get('minPrice') ? Number(formData.get('minPrice')) : null,
+        maxPrice: formData.get('maxPrice') ? Number(formData.get('maxPrice')) : null,
+        minYear: formData.get('minYear') ? Number(formData.get('minYear')) : null,
+        maxYear: formData.get('maxYear') ? Number(formData.get('maxYear')) : null,
+        minMileage: formData.get('minMileage') ? Number(formData.get('minMileage')) : null,
+        maxMileage: formData.get('maxMileage') ? Number(formData.get('maxMileage')) : null,
+        bodyStyle: formData.get('bodyStyle') || null,
+        drivetrain: formData.get('drivetrain') || null,
+        features: {
+          leatherSeats: formData.get('hasLeatherSeats') === 'true',
+          navigation: formData.get('hasNavigation') === 'true',
+          sunroof: formData.get('hasSunroof') === 'true',
+          heatedSeats: formData.get('hasHeatedSeats') === 'true'
         }
-      }
-      
-      if (key === 'page') {
-        this.currentPage = parseInt(value) || 1;
-      }
-      
-      if (key === 'search' && this.searchInput) {
-        this.searchInput.value = value;
-      }
-      
-      if (key === 'sort' && this.sortSelect) {
-        this.sortSelect.value = value;
-      }
+      };
     }
     
-    this.applyFiltersAndSort(false);
-  }
-  
-  getFormFilters() {
-    if (!this.filterForm) return {};
+    // Apply search filter
+    const searchTerm = this.searchInput ? this.searchInput.value.toLowerCase() : '';
     
-    const filters = {};
-    const formData = new FormData(this.filterForm);
-    
-    for (const [key, value] of formData.entries()) {
-      if (value) {
-        filters[key] = value;
-      }
-    }
-    
-    return filters;
-  }
-  
-  applyFiltersAndSort(updateUrl = true) {
-    this.showLoading();
-    
-    // Get search term
-    const searchTerm = this.searchInput?.value?.toLowerCase().trim() || '';
-    
-    // Get form filters
-    const formFilters = this.getFormFilters();
-    
-    // Update current filters
-    this.currentFilters = {
-      ...formFilters,
-      search: searchTerm,
-    };
-    
-    // Filter data
-    this.filteredData = this.inventoryData.filter(vehicle => {
+    // Filter vehicles
+    this.filteredVehicles = this.vehicles.filter(vehicle => {
       // Search filter
       if (searchTerm) {
-        const searchFields = [
-          vehicle.make,
-          vehicle.model,
-          vehicle.trim,
-          vehicle.year,
-          vehicle.stockNumber,
-          vehicle.exteriorColor,
-          vehicle.interiorColor,
-          vehicle.vin
-        ].map(field => String(field || '').toLowerCase());
+        const searchMatch = 
+          vehicle.title?.toLowerCase().includes(searchTerm) || 
+          vehicle.description?.toLowerCase().includes(searchTerm) ||
+          vehicle.vin?.toLowerCase().includes(searchTerm) ||
+          vehicle.stockNumber?.toLowerCase().includes(searchTerm);
         
-        const matchesSearch = searchFields.some(field => field.includes(searchTerm));
-        if (!matchesSearch) return false;
+        if (!searchMatch) return false;
       }
       
-      // Year range
-      if (formFilters.minYear && parseInt(vehicle.year) < parseInt(formFilters.minYear)) {
-        return false;
-      }
+      // Price filters
+      if (this.filters.minPrice && vehicle.price < this.filters.minPrice) return false;
+      if (this.filters.maxPrice && vehicle.price > this.filters.maxPrice) return false;
       
-      if (formFilters.maxYear && parseInt(vehicle.year) > parseInt(formFilters.maxYear)) {
-        return false;
-      }
+      // Year filters
+      if (this.filters.minYear && vehicle.year < this.filters.minYear) return false;
+      if (this.filters.maxYear && vehicle.year > this.filters.maxYear) return false;
       
-      // Price range
-      if (formFilters.minPrice && vehicle.price < parseInt(formFilters.minPrice)) {
-        return false;
-      }
+      // Mileage filters
+      if (this.filters.minMileage && vehicle.mileage < this.filters.minMileage) return false;
+      if (this.filters.maxMileage && vehicle.mileage > this.filters.maxMileage) return false;
       
-      if (formFilters.maxPrice && vehicle.price > parseInt(formFilters.maxPrice)) {
-        return false;
-      }
+      // Body style filter
+      if (this.filters.bodyStyle && vehicle.bodyStyle !== this.filters.bodyStyle) return false;
       
-      // Mileage range
-      if (formFilters.minMileage && vehicle.mileage < parseInt(formFilters.minMileage)) {
-        return false;
-      }
+      // Drivetrain filter
+      if (this.filters.drivetrain && vehicle.drivetrain !== this.filters.drivetrain) return false;
       
-      if (formFilters.maxMileage && vehicle.mileage > parseInt(formFilters.maxMileage)) {
-        return false;
-      }
-      
-      // Body style
-      if (formFilters.bodyStyle && vehicle.bodyStyle !== formFilters.bodyStyle) {
-        return false;
-      }
-      
-      // Exterior color
-      if (formFilters.exteriorColor && vehicle.exteriorColor !== formFilters.exteriorColor) {
-        return false;
-      }
-      
-      // Drivetrain
-      if (formFilters.drivetrain && vehicle.drivetrain !== formFilters.drivetrain) {
-        return false;
-      }
-      
-      // Fuel type
-      if (formFilters.fuelType && vehicle.fuelType !== formFilters.fuelType) {
-        return false;
-      }
-      
-      // Additional features as checkboxes
-      if (formFilters.hasHeatedSeats === 'true' && !vehicle.features?.includes('Heated Seats')) {
-        return false;
-      }
-      
-      if (formFilters.hasNavigation === 'true' && !vehicle.features?.includes('Navigation')) {
-        return false;
-      }
-      
-      if (formFilters.hasLeatherSeats === 'true' && !vehicle.features?.includes('Leather Seats')) {
-        return false;
-      }
-      
-      if (formFilters.hasSunroof === 'true' && !vehicle.features?.includes('Sunroof')) {
-        return false;
-      }
+      // Features filters
+      if (this.filters.features.leatherSeats && !vehicle.features?.includes('Leather Seats')) return false;
+      if (this.filters.features.navigation && !vehicle.features?.includes('Navigation')) return false;
+      if (this.filters.features.sunroof && !vehicle.features?.includes('Sunroof')) return false;
+      if (this.filters.features.heatedSeats && !vehicle.features?.includes('Heated Seats')) return false;
       
       return true;
     });
     
-    // Apply sorting
-    if (this.sortSelect?.value) {
-      const sortOption = this.sortSelect.value;
-      
-      switch (sortOption) {
-        case 'price-asc':
-          this.filteredData.sort((a, b) => a.price - b.price);
-          break;
-        case 'price-desc':
-          this.filteredData.sort((a, b) => b.price - a.price);
-          break;
-        case 'year-asc':
-          this.filteredData.sort((a, b) => a.year - b.year);
-          break;
-        case 'year-desc':
-          this.filteredData.sort((a, b) => b.year - a.year);
-          break;
-        case 'mileage-asc':
-          this.filteredData.sort((a, b) => a.mileage - b.mileage);
-          break;
-        case 'mileage-desc':
-          this.filteredData.sort((a, b) => b.mileage - a.mileage);
-          break;
-        default:
-          // Default sorting (newest)
-          this.filteredData.sort((a, b) => b.year - a.year);
+    this.renderVehicles();
+  }
+  
+  sortVehicles() {
+    const [sortBy, direction] = this.sortOrder.split('-');
+    
+    this.filteredVehicles.sort((a, b) => {
+      if (sortBy === 'year') {
+        return direction === 'asc' ? a.year - b.year : b.year - a.year;
+      } else if (sortBy === 'price') {
+        return direction === 'asc' ? a.price - b.price : b.price - a.price;
+      } else if (sortBy === 'mileage') {
+        return direction === 'asc' ? a.mileage - b.mileage : b.mileage - a.mileage;
       }
-    }
-    
-    // Update URL if needed
-    if (updateUrl) {
-      this.updateUrl();
-    }
-    
-    // Update pagination
-    this.totalPages = Math.ceil(this.filteredData.length / this.itemsPerPage);
-    if (this.currentPage > this.totalPages) {
-      this.currentPage = 1;
-    }
-    
-    // Render results
-    this.renderResults();
-    this.renderPagination();
-    this.updateResultCount();
-    
-    this.hideLoading();
+      return 0;
+    });
   }
   
-  updateUrl() {
-    const params = new URLSearchParams();
+  renderVehicles() {
+    if (!this.inventoryResults) return;
     
-    // Add filters to URL
-    for (const [key, value] of Object.entries(this.currentFilters)) {
-      if (value) {
-        params.set(key, value);
-      }
+    // Sort vehicles
+    this.sortVehicles();
+    
+    // Update count
+    if (this.inventoryCount) {
+      const count = this.filteredVehicles.length;
+      this.inventoryCount.textContent = `${count} vehicle${count !== 1 ? 's' : ''}`;
     }
     
-    // Add sort to URL
-    if (this.sortSelect?.value) {
-      params.set('sort', this.sortSelect.value);
-    }
+    // Get paginated subset
+    const startIndex = (this.currentPage - 1) * this.vehiclesPerPage;
+    const endIndex = startIndex + this.vehiclesPerPage;
+    const paginatedVehicles = this.filteredVehicles.slice(startIndex, endIndex);
     
-    // Add page to URL
-    if (this.currentPage > 1) {
-      params.set('page', this.currentPage);
-    }
+    // Clear previous results
+    this.inventoryResults.innerHTML = '';
     
-    // Update browser URL
-    const newUrl = `${window.location.pathname}${params.toString() ? '?' + params.toString() : ''}`;
-    history.pushState({}, '', newUrl);
-  }
-  
-  resetFilters() {
-    // Reset form
-    if (this.filterForm) {
-      this.filterForm.reset();
-    }
-    
-    // Reset search
-    if (this.searchInput) {
-      this.searchInput.value = '';
-    }
-    
-    // Reset sort
-    if (this.sortSelect) {
-      this.sortSelect.value = 'year-desc';
-    }
-    
-    // Reset to first page
-    this.currentPage = 1;
-    
-    // Apply changes
-    this.applyFiltersAndSort();
-  }
-  
-  renderResults() {
-    if (!this.resultsContainer) return;
-    
-    // Calculate page slice
-    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
-    const endIndex = startIndex + this.itemsPerPage;
-    const pageItems = this.filteredData.slice(startIndex, endIndex);
-    
-    if (pageItems.length === 0) {
-      this.resultsContainer.innerHTML = `
+    if (paginatedVehicles.length === 0) {
+      this.inventoryResults.innerHTML = `
         <div class="no-results">
-          <h2>No vehicles found</h2>
-          <p>Please try adjusting your search criteria.</p>
-          <button class="reset-filters">Reset Filters</button>
+          <h3>No vehicles match your criteria</h3>
+          <p>Try adjusting your filters or search term.</p>
         </div>
       `;
-      
-      const resetButton = this.resultsContainer.querySelector('.reset-filters');
-      if (resetButton) {
-        resetButton.addEventListener('click', () => {
-          this.resetFilters();
-        });
-      }
-      
+      this.inventoryPagination.innerHTML = '';
       return;
     }
     
-    let html = '<div class="vehicle-grid">';
+    // Create vehicle cards
+    paginatedVehicles.forEach(vehicle => {
+      const vehicleCard = this.createVehicleCard(vehicle);
+      this.inventoryResults.appendChild(vehicleCard);
+    });
     
-    pageItems.forEach(vehicle => {
-      const formattedPrice = new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        maximumFractionDigits: 0
-      }).format(vehicle.price);
-      
-      const formattedMileage = new Intl.NumberFormat('en-US').format(vehicle.mileage);
-      
-      html += `
-        <div class="vehicle-card">
-          <div class="vehicle-image">
-            ${vehicle.image 
-              ? `<img src="${vehicle.image}" alt="${vehicle.year} ${vehicle.make} ${vehicle.model}">`
-              : `<div class="placeholder-image">Image Coming Soon</div>`
-            }
-          </div>
-          <div class="vehicle-details">
-            <h3 class="vehicle-title">${vehicle.year} ${vehicle.make} ${vehicle.model}</h3>
-            ${vehicle.trim ? `<p class="vehicle-trim">${vehicle.trim}</p>` : ''}
-            <div class="vehicle-price">${formattedPrice}</div>
-            <div class="vehicle-specs">
-              <span class="vehicle-mileage">${formattedMileage} miles</span>
-              ${vehicle.exteriorColor ? `<span class="vehicle-color">${vehicle.exteriorColor}</span>` : ''}
-              ${vehicle.transmission ? `<span class="vehicle-transmission">${vehicle.transmission}</span>` : ''}
-            </div>
-            <div class="vehicle-actions">
-              <a href="/inventory/${vehicle.id || vehicle.vin}" class="btn btn-primary">View Details</a>
-              <button class="btn btn-secondary schedule-test-drive" data-vehicle-id="${vehicle.id || vehicle.vin}">Schedule Test Drive</button>
-            </div>
-          </div>
+    // Render pagination
+    this.renderPagination();
+  }
+  
+  createVehicleCard(vehicle) {
+    const card = document.createElement('div');
+    card.className = 'vehicle-card';
+    
+    const formattedPrice = new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      maximumFractionDigits: 0
+    }).format(vehicle.price);
+    
+    const formattedMileage = new Intl.NumberFormat('en-US').format(vehicle.mileage);
+    
+    card.innerHTML = `
+      <div class="vehicle-image">
+        <img src="${vehicle.imageUrl || '/img/vehicle-placeholder.jpg'}" alt="${vehicle.year} ${vehicle.make} ${vehicle.model}" loading="lazy">
+        ${vehicle.isCertified ? '<span class="certified-badge">Certified</span>' : ''}
+      </div>
+      <div class="vehicle-info">
+        <h3 class="vehicle-title">${vehicle.year} ${vehicle.make} ${vehicle.model}</h3>
+        <p class="vehicle-trim">${vehicle.trim || ''}</p>
+        <div class="vehicle-specs">
+          <span class="spec"><i class="icon-gauge"></i> ${formattedMileage} mi</span>
+          <span class="spec"><i class="icon-gearshift"></i> ${vehicle.transmission || 'N/A'}</span>
+          <span class="spec"><i class="icon-gas"></i> ${vehicle.fuelType || 'N/A'}</span>
+          <span class="spec"><i class="icon-color"></i> ${vehicle.exteriorColor || 'N/A'}</span>
         </div>
-      `;
-    });
+        <div class="vehicle-pricing">
+          <span class="vehicle-price">${formattedPrice}</span>
+          ${vehicle.salePrice ? `<span class="vehicle-sale-price">${new Intl.NumberFormat('en-US', {style: 'currency', currency: 'USD', maximumFractionDigits: 0}).format(vehicle.salePrice)}</span>` : ''}
+        </div>
+      </div>
+      <div class="vehicle-actions">
+        <a href="/inventory/${vehicle.id || vehicle.vin}" class="btn btn-primary">View Details</a>
+        <button class="btn btn-secondary save-vehicle" data-vehicle-id="${vehicle.id || vehicle.vin}">Save</button>
+      </div>
+    `;
     
-    html += '</div>';
-    
-    this.resultsContainer.innerHTML = html;
-    
-    // Setup test drive buttons
-    const testDriveButtons = this.resultsContainer.querySelectorAll('.schedule-test-drive');
-    testDriveButtons.forEach(button => {
-      button.addEventListener('click', () => {
-        this.openTestDriveModal(button.dataset.vehicleId);
-      });
-    });
+    return card;
   }
   
   renderPagination() {
-    if (!this.paginationContainer) return;
+    if (!this.inventoryPagination) return;
     
-    if (this.totalPages <= 1) {
-      this.paginationContainer.innerHTML = '';
+    const totalPages = Math.ceil(this.filteredVehicles.length / this.vehiclesPerPage);
+    
+    if (totalPages <= 1) {
+      this.inventoryPagination.innerHTML = '';
       return;
     }
     
-    let html = '<ul class="pagination">';
+    let paginationHTML = '<ul class="pagination">';
     
     // Previous button
-    html += `
+    paginationHTML += `
       <li class="page-item ${this.currentPage === 1 ? 'disabled' : ''}">
-        <button class="page-link" data-page="${this.currentPage - 1}" ${this.currentPage === 1 ? 'disabled' : ''}>
-          <span aria-hidden="true">&laquo;</span>
-        </button>
+        <button class="page-link" data-page="${this.currentPage - 1}" ${this.currentPage === 1 ? 'disabled' : ''}>Previous</button>
       </li>
     `;
     
     // Page numbers
     const maxVisiblePages = 5;
     let startPage = Math.max(1, this.currentPage - Math.floor(maxVisiblePages / 2));
-    let endPage = Math.min(this.totalPages, startPage + maxVisiblePages - 1);
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
     
-    // Adjust start if we're near the end
     if (endPage - startPage + 1 < maxVisiblePages) {
       startPage = Math.max(1, endPage - maxVisiblePages + 1);
     }
     
-    // First page
     if (startPage > 1) {
-      html += `
+      paginationHTML += `
         <li class="page-item">
           <button class="page-link" data-page="1">1</button>
         </li>
-        ${startPage > 2 ? '<li class="page-item disabled"><span class="page-link">...</span></li>' : ''}
       `;
+      
+      if (startPage > 2) {
+        paginationHTML += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+      }
     }
     
-    // Visible pages
     for (let i = startPage; i <= endPage; i++) {
-      html += `
+      paginationHTML += `
         <li class="page-item ${i === this.currentPage ? 'active' : ''}">
           <button class="page-link" data-page="${i}">${i}</button>
         </li>
       `;
     }
     
-    // Last page
-    if (endPage < this.totalPages) {
-      html += `
-        ${endPage < this.totalPages - 1 ? '<li class="page-item disabled"><span class="page-link">...</span></li>' : ''}
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) {
+        paginationHTML += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+      }
+      
+      paginationHTML += `
         <li class="page-item">
-          <button class="page-link" data-page="${this.totalPages}">${this.totalPages}</button>
+          <button class="page-link" data-page="${totalPages}">${totalPages}</button>
         </li>
       `;
     }
     
     // Next button
-    html += `
-      <li class="page-item ${this.currentPage === this.totalPages ? 'disabled' : ''}">
-        <button class="page-link" data-page="${this.currentPage + 1}" ${this.currentPage === this.totalPages ? 'disabled' : ''}>
-          <span aria-hidden="true">&raquo;</span>
-        </button>
+    paginationHTML += `
+      <li class="page-item ${this.currentPage === totalPages ? 'disabled' : ''}">
+        <button class="page-link" data-page="${this.currentPage + 1}" ${this.currentPage === totalPages ? 'disabled' : ''}>Next</button>
       </li>
     `;
     
-    html += '</ul>';
+    paginationHTML += '</ul>';
     
-    this.paginationContainer.innerHTML = html;
+    this.inventoryPagination.innerHTML = paginationHTML;
     
-    // Setup pagination buttons
-    const pageLinks = this.paginationContainer.querySelectorAll('.page-link');
-    pageLinks.forEach(link => {
-      if (!link.hasAttribute('disabled') && link.dataset.page) {
-        link.addEventListener('click', () => {
-          this.currentPage = parseInt(link.dataset.page);
-          this.applyFiltersAndSort();
+    // Add event listeners to pagination buttons
+    const pageButtons = this.inventoryPagination.querySelectorAll('.page-link');
+    pageButtons.forEach(button => {
+      if (!button.hasAttribute('disabled') && button.dataset.page) {
+        button.addEventListener('click', () => {
+          this.currentPage = parseInt(button.dataset.page);
+          this.renderVehicles();
           // Scroll to top of results
-          this.resultsContainer.scrollIntoView({ behavior: 'smooth' });
+          this.inventoryResults.scrollIntoView({ behavior: 'smooth' });
         });
       }
     });
   }
   
-  updateResultCount() {
-    const resultCount = document.getElementById('inventory-count');
-    if (!resultCount) return;
+  showErrorMessage(message) {
+    if (!this.inventoryResults) return;
     
-    resultCount.textContent = `${this.filteredData.length} vehicles`;
-  }
-  
-  openTestDriveModal(vehicleId) {
-    const vehicle = this.inventoryData.find(v => (v.id || v.vin) === vehicleId);
-    
-    if (!vehicle) return;
-    
-    // Find or create modal
-    let modal = document.getElementById('test-drive-modal');
-    
-    if (!modal) {
-      modal = document.createElement('div');
-      modal.id = 'test-drive-modal';
-      modal.className = 'modal';
-      document.body.appendChild(modal);
-    }
-    
-    modal.innerHTML = `
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2>Schedule a Test Drive</h2>
-          <button class="close-modal">&times;</button>
-        </div>
-        <div class="modal-body">
-          <p class="vehicle-info">
-            ${vehicle.year} ${vehicle.make} ${vehicle.model} ${vehicle.trim || ''}
-          </p>
-          <form id="test-drive-form">
-            <input type="hidden" name="vehicleId" value="${vehicleId}">
-            <div class="form-group">
-              <label for="fullName">Full Name</label>
-              <input type="text" id="fullName" name="fullName" required>
-            </div>
-            <div class="form-group">
-              <label for="email">Email</label>
-              <input type="email" id="email" name="email" required>
-            </div>
-            <div class="form-group">
-              <label for="phone">Phone</label>
-              <input type="tel" id="phone" name="phone" required>
-            </div>
-            <div class="form-group">
-              <label for="preferredDate">Preferred Date</label>
-              <input type="date" id="preferredDate" name="preferredDate" required min="${new Date().toISOString().split('T')[0]}">
-            </div>
-            <div class="form-group">
-              <label for="preferredTime">Preferred Time</label>
-              <select id="preferredTime" name="preferredTime" required>
-                <option value="">Select a time</option>
-                <option value="morning">Morning (9AM - 12PM)</option>
-                <option value="afternoon">Afternoon (12PM - 4PM)</option>
-                <option value="evening">Evening (4PM - 7PM)</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="comments">Comments (Optional)</label>
-              <textarea id="comments" name="comments"></textarea>
-            </div>
-            <div class="form-actions">
-              <button type="submit" class="btn btn-primary">Schedule Test Drive</button>
-            </div>
-          </form>
-        </div>
+    this.inventoryResults.innerHTML = `
+      <div class="error-message">
+        <h3>Error</h3>
+        <p>${message}</p>
+        <button class="btn btn-primary retry-btn">Try Again</button>
       </div>
     `;
     
-    // Show modal
-    modal.style.display = 'block';
-    
-    // Close button
-    const closeButton = modal.querySelector('.close-modal');
-    closeButton.addEventListener('click', () => {
-      modal.style.display = 'none';
-    });
-    
-    // Close when clicking outside
-    window.addEventListener('click', (event) => {
-      if (event.target === modal) {
-        modal.style.display = 'none';
-      }
-    });
-    
-    // Form submission
-    const form = modal.querySelector('#test-drive-form');
-    form.addEventListener('submit', (event) => {
-      event.preventDefault();
-      
-      const formData = new FormData(form);
-      const data = Object.fromEntries(formData.entries());
-      
-      // Submit form data to backend
-      fetch('/.netlify/functions/schedule-test-drive', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      })
-      .then(response => response.json())
-      .then(result => {
-        if (result.success) {
-          // Show success message
-          modal.querySelector('.modal-body').innerHTML = `
-            <div class="success-message">
-              <h3>Test Drive Scheduled!</h3>
-              <p>Thank you for scheduling a test drive. A sales representative will contact you shortly to confirm your appointment.</p>
-              <button class="btn btn-secondary close-modal">Close</button>
-            </div>
-          `;
-          
-          // Setup close button
-          modal.querySelector('.close-modal').addEventListener('click', () => {
-            modal.style.display = 'none';
-          });
-        } else {
-          throw new Error(result.message || 'Failed to schedule test drive');
-        }
-      })
-      .catch(error => {
-        console.error('Test drive scheduling error:', error);
-        
-        // Show error message
-        const errorMsg = document.createElement('div');
-        errorMsg.className = 'error-message';
-        errorMsg.textContent = 'An error occurred. Please try again or call us directly.';
-        
-        form.prepend(errorMsg);
-      });
-    });
-  }
-  
-  showLoading() {
-    if (this.loadingIndicator) {
-      this.loadingIndicator.style.display = 'block';
+    const retryBtn = this.inventoryResults.querySelector('.retry-btn');
+    if (retryBtn) {
+      retryBtn.addEventListener('click', () => this.fetchInventory());
     }
-  }
-  
-  hideLoading() {
-    if (this.loadingIndicator) {
-      this.loadingIndicator.style.display = 'none';
+    
+    if (this.inventoryCount) {
+      this.inventoryCount.textContent = '0 vehicles';
     }
-  }
-  
-  showError(message) {
-    if (this.resultsContainer) {
-      this.resultsContainer.innerHTML = `
-        <div class="error-message">
-          <p>${message}</p>
-          <button class="btn btn-primary reload-button">Reload</button>
-        </div>
-      `;
-      
-      const reloadButton = this.resultsContainer.querySelector('.reload-button');
-      if (reloadButton) {
-        reloadButton.addEventListener('click', () => {
-          window.location.reload();
-        });
-      }
+    
+    if (this.inventoryPagination) {
+      this.inventoryPagination.innerHTML = '';
     }
   }
 }
 
-// Initialize
+// Initialize inventory manager when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-  new InventoryManager();
+  const inventoryManager = new InventoryManager();
 });
 
 export default InventoryManager;
