@@ -1,25 +1,40 @@
 ---
-title: "Caddy Ed - Your Cadillac Specialist"
-subtitle: "Premium Cadillac Sales Professional in South Charlotte"
-image: "/img/hero-background.jpg"
-cta:
-  text: "Browse Inventory"
-  link: "/inventory/"
-intro:
-  heading: "Welcome to Caddy Ed's Personal Service"
-  text: "With over 15 years of experience specializing in Cadillac vehicles, I provide personalized service to make your car buying experience simple and enjoyable. I'm here to assist you with all your Cadillac needs."
-inventory:
-  heading: "Featured Vehicles"
-  text: "Browse through my personally selected Cadillac inventory. Each vehicle has been carefully inspected to ensure the highest quality."
-testimonials:
-  heading: "Customer Testimonials"
+title: Caddy Ed Cadillac | Luxury Vehicles & Service
+hero:
+  image: /img/hero-cadillac.jpg
+  title: Experience Luxury
+  subtitle: Premium Cadillac Vehicles & Expert Service
+  cta:
+    text: Browse Inventory
+    link: /inventory/
+about:
+  heading: About Caddy Ed Cadillac
+  text: >
+    Welcome to Caddy Ed Cadillac, your premier destination for luxury vehicles. 
+    With decades of experience and a commitment to excellence, we provide top-tier 
+    Cadillac sales and service. Our team of professionals is dedicated to ensuring 
+    your experience with us exceeds expectations.
+featured:
+  heading: Featured Vehicles
   items:
-    - quote: "Ed made buying my new Escalade the easiest car purchase I've ever experienced. His knowledge and no-pressure approach was refreshing."
-      author: "Michael S."
-    - quote: "I was unsure about what model would best fit my needs, but Ed took the time to understand my requirements and helped me find the perfect CT5."
-      author: "Jennifer T."
-    - quote: "The personalized service from Ed was outstanding. He followed up after the sale and made sure everything was perfect with my new Cadillac."
-      author: "Robert L."
+    - image: /img/featured/escalade.jpg
+      title: Cadillac Escalade
+      description: The pinnacle of luxury SUVs, combining power, presence, and sophisticated technology.
+    - image: /img/featured/ct5.jpg
+      title: Cadillac CT5
+      description: A perfect blend of performance and refinement in a sleek sedan package.
+    - image: /img/featured/xt5.jpg
+      title: Cadillac XT5
+      description: Versatile luxury crossover with cutting-edge features and elegant design.
+testimonials:
+  heading: Customer Testimonials
+  items:
+    - quote: Caddy Ed provided exceptional service from test drive to financing. I couldn't be happier with my new Escalade!
+      author: Michael Thompson
+    - quote: The team at Caddy Ed Cadillac went above and beyond to find me exactly the CT5 I wanted. Their attention to detail is unmatched.
+      author: Sarah Johnson
+    - quote: Best car buying experience I've ever had. The staff is knowledgeable and attentive without being pushy.
+      author: Robert Davis
 ---
 
 ## Welcome to Caddy Ed Cadillac

@@ -1,32 +1,38 @@
 import React from "react";
-import format from "date-fns/format";
+import { format } from "date-fns";
 
 export default class PostPreview extends React.Component {
   render() {
-    const {entry, widgetFor, getAsset} = this.props;
+    const {entry, getAsset} = this.props;
     const image = getAsset(entry.getIn(["data", "image"]));
+    const date = entry.getIn(["data", "date"]);
+    const formattedDate = date ? format(new Date(date), "MMMM dd, yyyy") : "";
     
     return (
-      <article className="post">
-        <header className="post-header">
-          {image && (
-            <div className="post-image">
-              <img src={image} alt={entry.getIn(["data", "title"])} />
-            </div>
-          )}
-          <h1>{entry.getIn(["data", "title"])}</h1>
-          <div className="post-meta">
-            <time>{format(entry.getIn(["data", "date"]), "MMMM dd, yyyy")}</time>
-            {entry.getIn(["data", "author"]) && (
-              <span className="post-author">By {entry.getIn(["data", "author"])}</span>
-            )}
-          </div>
-        </header>
+      <div className="post-preview">
+        <h1>{entry.getIn(["data", "title"])}</h1>
         
-        <div className="post-content">
-          {widgetFor("body")}
+        <div className="post-meta">
+          {formattedDate && <span className="post-date">{formattedDate}</span>}
+          {entry.getIn(["data", "author"]) && (
+            <span className="post-author">by {entry.getIn(["data", "author"])}</span>
+          )}
         </div>
-      </article>
+        
+        {image && (
+          <div className="post-featured-image">
+            <img src={image} alt={entry.getIn(["data", "title"])} />
+          </div>
+        )}
+        
+        <div className="post-description">
+          {entry.getIn(["data", "description"])}
+        </div>
+        
+        <div className="post-body">
+          <div dangerouslySetInnerHTML={{ __html: entry.getIn(["data", "body"]) }} />
+        </div>
+      </div>
     );
   }
 }

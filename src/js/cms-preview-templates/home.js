@@ -96,7 +96,7 @@ export default class HomePreview extends React.Component {
         
         <div className="home-sections">
           {/* About Section */}
-          <section className="home-section about"></section>
+          <section className="home-section about">
             <div className="container">
               <h2>{entry.getIn(["data", "about", "heading"])}</h2>
               <div dangerouslySetInnerHTML={{ __html: entry.getIn(["data", "about", "text"]) }} />

@@ -2,20 +2,16 @@ import React from "react";
 
 export default class Jumbotron extends React.Component {
   render() {
-    const { image, title, subtitle, cta } = this.props;
+    const {image, title, subtitle, cta} = this.props;
     
     return (
-      <div className="jumbotron" style={{ backgroundImage: image && `url(${image})` }}>
-        <div className="container">
-          <div className="jumbotron-content">
-            {title && <h1>{title}</h1>}
-            {subtitle && <div className="subtitle">{subtitle}</div>}
-            {cta && (
-              <div className="cta">
-                <a href={cta.link} className="btn">{cta.text}</a>
-              </div>
-            )}
-          </div>
+      <div className="hero" style={image ? {backgroundImage: `url(${image})`} : {}}>
+        <div className="hero-content">
+          <h1 className="hero-title">{title}</h1>
+          {subtitle && <h2 className="hero-subtitle">{subtitle}</h2>}
+          {cta && (
+            <a href={cta.link} className="hero-cta btn">{cta.text}</a>
+          )}
         </div>
       </div>
     );
