@@ -71,54 +71,73 @@ export default class PostPreview extends React.Component {
 }
 
 import React from "react";
+import Jumbotron from "./components/jumbotron";
 
-export default function HomePreview({ entry, getAsset }) {
-  const data = entry.getIn(["data"]).toJS();
-  const image = getAsset(data.image);
-  
-  return (
-    <div className="home-preview">
-      <header className="hero" style={{ backgroundImage: `url(${image})` }}>
-        <div className="container">
-          <h1>{data.title}</h1>
-          <div className="subtitle">{data.subtitle}</div>
-          {data.cta && (
-            <div className="cta-button">
-              <a href={data.cta.link}>{data.cta.text}</a>
+export default class HomePreview extends React.Component {
+  render() {
+    const {entry, getAsset} = this.props;
+    
+    const jumbotronImage = getAsset(entry.getIn(["data", "hero", "image"]));
+    const heroTitle = entry.getIn(["data", "hero", "title"]);
+    const heroSubtitle = entry.getIn(["data", "hero", "subtitle"]);
+    const heroCta = entry.getIn(["data", "hero", "cta"]) ? {
+      text: entry.getIn(["data", "hero", "cta", "text"]),
+      link: entry.getIn(["data", "hero", "cta", "link"])
+    } : null;
+    
+    return (
+      <div>
+        <Jumbotron 
+          image={jumbotronImage} 
+          title={heroTitle} 
+          subtitle={heroSubtitle} 
+          cta={heroCta}
+        />
+        
+        <div className="home-sections">
+          {/* About Section */}
+          <section className="home-section about"></section>
+            <div className="container">
+              <h2>{entry.getIn(["data", "about", "heading"])}</h2>
+              <div dangerouslySetInnerHTML={{ __html: entry.getIn(["data", "about", "text"]) }} />
             </div>
-          )}
-        </div>
-      </header>
-      
-      <section className="intro-section">
-        <div className="container">
-          <h2>{data.intro.heading}</h2>
-          <p>{data.intro.text}</p>
-        </div>
-      </section>
-      
-      <section className="featured-inventory">
-        <div className="container">
-          <h2>{data.inventory.heading}</h2>
-          <div className="inventory-placeholder">
-            <p>[Featured Inventory Items Will Appear Here]</p>
-          </div>
-        </div>
-      </section>
-      
-      <section className="testimonial-section">
-        <div className="container">
-          <h2>{data.testimonials.heading}</h2>
-          <div className="testimonials">
-            {data.testimonials.items && data.testimonials.items.map((item, i) => (
-              <div className="testimonial" key={i}>
-                <blockquote>"{item.quote}"</blockquote>
-                <div className="author">- {item.author}</div>
+          </section>
+          
+          {/* Featured Section */}
+          <section className="home-section featured">
+            <div className="container">
+              <h2>{entry.getIn(["data", "featured", "heading"])}</h2>
+              <div className="featured-items">
+                {(entry.getIn(["data", "featured", "items"]) || []).map((item, i) => {
+                  const image = getAsset(item.get("image"));
+                  return (
+                    <div key={i} className="featured-item">
+                      {image && <img src={image} alt={item.get("title")} />}
+                      <h3>{item.get("title")}</h3>
+                      <p>{item.get("description")}</p>
+                    </div>
+                  );
+                })}
               </div>
-            ))}
-          </div>
+            </div>
+          </section>
+          
+          {/* Testimonials Section */}
+          <section className="home-section testimonials">
+            <div className="container">
+              <h2>{entry.getIn(["data", "testimonials", "heading"])}</h2>
+              <div className="testimonial-items">
+                {(entry.getIn(["data", "testimonials", "items"]) || []).map((item, i) => (
+                  <div key={i} className="testimonial">
+                    <blockquote>"{item.get("quote")}"</blockquote>
+                    <cite>— {item.get("author")}</cite>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
         </div>
-      </section>
-    </div>
-  );
+      </div>
+    );
+  }
 }

@@ -6,52 +6,58 @@ export default class ContactPreview extends React.Component {
     
     return (
       <div className="contact-page">
-        <div className="container">
-          <div className="contact-content">
-            <div className="contact-info">
-              <h1>{entry.getIn(["data", "title"])}</h1>
-              <div className="contact-text">{entry.getIn(["data", "intro"])}</div>
-              
-              <div className="contact-details">
-                <div className="contact-item">
-                  <strong>Address:</strong>
-                  <p dangerouslySetInnerHTML={{ __html: entry.getIn(["data", "address"]) }}></p>
-                </div>
-                
-                <div className="contact-item">
-                  <strong>Hours:</strong>
-                  <p dangerouslySetInnerHTML={{ __html: entry.getIn(["data", "hours"]) }}></p>
-                </div>
-                
-                <div className="contact-item">
-                  <strong>Phone:</strong>
-                  <p>{entry.getIn(["data", "phone"])}</p>
-                </div>
-                
-                <div className="contact-item">
-                  <strong>Email:</strong>
-                  <p>{entry.getIn(["data", "email"])}</p>
-                </div>
+        <header>
+          <h1>{entry.getIn(["data", "title"])}</h1>
+          <p>{entry.getIn(["data", "description"])}</p>
+        </header>
+        
+        <div className="contact-content">
+          <div className="contact-info">
+            {entry.getIn(["data", "phone"]) && (
+              <div className="contact-item">
+                <h4>Phone</h4>
+                <p>{entry.getIn(["data", "phone"])}</p>
               </div>
-            </div>
+            )}
             
-            <div className="contact-form">
-              <h2>Send us a message</h2>
-              <form className="contact-form">
-                <div className="form-group">
-                  <label htmlFor="name">Name</label>
-                  <input type="text" id="name" placeholder="Your Name" />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="email">Email</label>
-                  <input type="email" id="email" placeholder="Your Email" />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="message">Message</label>
-                  <textarea id="message" rows="5" placeholder="Your Message"></textarea>
-                </div>
-                <button type="submit" className="btn btn-primary">Send Message</button>
-              </form>
+            {entry.getIn(["data", "email"]) && (
+              <div className="contact-item">
+                <h4>Email</h4>
+                <p>{entry.getIn(["data", "email"])}</p>
+              </div>
+            )}
+            
+            {entry.getIn(["data", "address"]) && (
+              <div className="contact-item">
+                <h4>Address</h4>
+                <p>{entry.getIn(["data", "address"])}</p>
+              </div>
+            )}
+            
+            {entry.getIn(["data", "hours"]) && (
+              <div className="contact-item">
+                <h4>Business Hours</h4>
+                <p>{entry.getIn(["data", "hours"])}</p>
+              </div>
+            )}
+          </div>
+          
+          <div className="contact-form-preview">
+            <h3>Contact Form</h3>
+            <div className="form-preview">
+              <div className="form-group">
+                <label>Name</label>
+                <input type="text" disabled placeholder="Your name" />
+              </div>
+              <div className="form-group">
+                <label>Email</label>
+                <input type="email" disabled placeholder="Your email" />
+              </div>
+              <div className="form-group">
+                <label>Message</label>
+                <textarea disabled placeholder="Your message"></textarea>
+              </div>
+              <button disabled>Send Message</button>
             </div>
           </div>
         </div>

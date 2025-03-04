@@ -1,70 +1,110 @@
-// Main JS entry point
+// CSS
 import "./css/main.css";
 
-// Lazy loading for images
+// JS
 import "lazysizes";
 
-// Service worker registration
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').then(registration => {
-      console.log('SW registered: ', registration);
-    }).catch(registrationError => {
-      console.log('SW registration failed: ', registrationError);
+// Register service worker
+if (navigator.serviceWorker) {
+  navigator.serviceWorker.register('/sw.js')
+    .then(registration => {
+      console.log('Service Worker registered with scope:', registration.scope);
+    })
+    .catch(error => {
+      console.error('Service Worker registration failed:', error);
     });
+}
+
+// DOM Ready
+document.addEventListener("DOMContentLoaded", function() {
+  // Mobile menu toggle
+  const menuToggle = document.querySelector('.navbar-burger');
+  const menu = document.querySelector('.navbar-menu');
+  
+  if (menuToggle && menu) {
+    menuToggle.addEventListener('click', () => {
+      menuToggle.classList.toggle('is-active');
+      menu.classList.toggle('is-active');
+    });
+  }
+  
+  // Handle responsive images
+  const images = document.querySelectorAll(".content img");
+  images.forEach(img => {
+    img.classList.add("lazyload");
+    
+    // Add responsive image class
+    if (!img.classList.contains("inline")) {
+      img.classList.add("responsive-img");
+    }
+  });
+  
+  // Initialize any interactive elements
+  initializeSliders();
+  initializeModals();
+});
+
+// Slider initialization
+function initializeSliders() {
+  const sliders = document.querySelectorAll('.slider');
+  
+  if (sliders.length === 0) return;
+  
+  // Basic slider functionality
+  sliders.forEach(slider => {
+    const slides = slider.querySelectorAll('.slide');
+    const prevBtn = slider.querySelector('.slider-prev');
+    const nextBtn = slider.querySelector('.slider-next');
+    
+    let currentSlide = 0;
+    
+    function showSlide(n) {
+      slides.forEach(slide => slide.style.display = 'none');
+      currentSlide = (n + slides.length) % slides.length;
+      slides[currentSlide].style.display = 'block';
+    }
+    
+    if (prevBtn) {
+      prevBtn.addEventListener('click', () => showSlide(currentSlide - 1));
+    }
+    
+    if (nextBtn) {
+      nextBtn.addEventListener('click', () => showSlide(currentSlide + 1));
+    }
+    
+    // Initialize first slide
+    showSlide(0);
   });
 }
 
-// Lead form handling
-document.addEventListener('DOMContentLoaded', () => {
-  const leadForms = document.querySelectorAll('.lead-form');
+// Modal initialization
+function initializeModals() {
+  const modalTriggers = document.querySelectorAll('[data-toggle="modal"]');
   
-  leadForms.forEach(form => {
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
+  modalTriggers.forEach(trigger => {
+    const targetId = trigger.getAttribute('data-target');
+    const modal = document.querySelector(targetId);
+    
+    if (modal) {
+      const closeBtn = modal.querySelector('.modal-close');
       
-      const submitBtn = form.querySelector('button[type="submit"]');
-      const originalBtnText = submitBtn.textContent;
-      submitBtn.textContent = 'Sending...';
-      submitBtn.disabled = true;
-      
-      const formData = new FormData(form);
-      const formObject = {};
-      
-      formData.forEach((value, key) => {
-        formObject[key] = value;
+      trigger.addEventListener('click', (e) => {
+        e.preventDefault();
+        modal.classList.add('is-active');
       });
       
-      try {
-        const response = await fetch('/.netlify/functions/lead-management', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(formObject)
+      if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+          modal.classList.remove('is-active');
         });
-        
-        const result = await response.json();
-        
-        if (response.ok) {
-          form.reset();
-          form.innerHTML = `<div class="success-message"><p>${result.message}</p></div>`;
-        } else {
-          throw new Error(result.message || 'Form submission failed');
-        }
-      } catch (error) {
-        console.error('Error submitting form:', error);
-        const errorElement = form.querySelector('.form-error') || document.createElement('div');
-        errorElement.className = 'form-error';
-        errorElement.textContent = error.message || 'Something went wrong. Please try again later.';
-        
-        if (!form.querySelector('.form-error')) {
-          form.appendChild(errorElement);
-        }
-        
-        submitBtn.textContent = originalBtnText;
-        submitBtn.disabled = false;
       }
-    });
+      
+      // Close modal when clicking background
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          modal.classList.remove('is-active');
+        });
+      });
+    }
   });
-});
+}

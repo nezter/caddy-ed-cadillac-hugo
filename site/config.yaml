@@ -1,22 +1,42 @@
-baseURL: "https://caddyed.com"
+baseURL: "/"
 languageCode: "en-us"
-title: "Caddy Ed - Cadillac of South Charlotte"
+title: "Caddy Ed Cadillac | Luxury Vehicles & Service"
 theme: "cadillac"
 enableGitInfo: true
 enableRobotsTXT: true
 
 params:
-  description: "Your trusted Cadillac dealer in Charlotte NC. Meet Caddy Ed, your personal Cadillac expert with over 20 years of experience."
+  description: "Caddy Ed Cadillac offers premium Cadillac vehicles and expert service. Visit our showroom today!"
   images: ["img/og-image.jpg"]
-  social:
-    facebook: "https://facebook.com/caddyedcharlotte"
-    instagram: "https://instagram.com/caddyed"
-    youtube: "https://youtube.com/channel/caddyed"
+  
+  # Contact Information
   contact:
-    email: "ed@caddyed.com"
-    phone: "(704) 555-1234"
-    address: "9315 E Independence Blvd, Matthews, NC 28105"
-  googleAnalytics: "G-XXXXXXXXXX"
+    phone: "(555) 123-4567"
+    email: "info@caddyed.com"
+    address: "123 Luxury Drive, Anytown, USA 12345"
+    hours: "Monday-Friday: 9am-8pm, Saturday: 10am-6pm, Sunday: Closed"
+    
+  # Social Media
+  social:
+    facebook: "https://facebook.com/caddyed"
+    instagram: "https://instagram.com/caddyed"
+    twitter: "https://twitter.com/caddyed"
+    youtube: "https://youtube.com/caddyed"
+    
+  # Google Analytics
+  googleAnalytics: ""
+  
+  # Featured Models
+  featuredModels:
+    - name: "Escalade"
+      image: "img/models/escalade.jpg"
+      url: "/models/escalade/"
+    - name: "CT5"
+      image: "img/models/ct5.jpg"
+      url: "/models/ct5/"
+    - name: "XT5"
+      image: "img/models/xt5.jpg"
+      url: "/models/xt5/"
   dealershipAPI: 
     baseURL: "https://www.cadillacofsouthcharlotte.com/apis"
     inventoryEndpoint: "/inventory"
@@ -62,7 +82,7 @@ sitemap:
   priority: 0.5
 
 # Disable unwanted sections
-disableKinds: ["RSS", "taxonomy", "taxonomyTerm"]
+disableKinds: ["taxonomy", "taxonomyTerm"]
 
 # Set up asset handling
 build:
