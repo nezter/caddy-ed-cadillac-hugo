@@ -2,227 +2,112 @@
 {{ define "description" }}{{ .Params.Year }} {{ .Params.Make }} {{ .Params.Model }} {{ .Params.Trim }} - {{ .Params.Mileage }} miles - {{ .Site.Title }}{{ end }}
 
 {{ define "main" }}
-<section class="section vehicle-detail">
+
+<div class="vehicle-detail">
   <div class="container">
-    <div class="columns">
-      <div class="column is-7">
-        <!-- Vehicle gallery -->
-        <div class="vehicle-gallery">
-          <div class="main-image">
-            <img src="{{ .Params.featured_image }}" alt="{{ .Title }}" id="main-vehicle-image">
-          </div>
-          
-          {{ if .Params.gallery }}
-          <div class="thumbnails">
-            {{ range .Params.gallery }}
-            <div class="thumbnail">
-              <img src="{{ . }}" alt="{{ $.Title }}" class="lazyload" onclick="document.getElementById('main-vehicle-image').src='{{ . }}'">
-            </div>
-            {{ end }}
-          </div>
-          {{ end }}
-        </div>
-      </div>
-      
-      <div class="column is-5">
-        <!-- Vehicle info -->
-        <div class="vehicle-info">
-          <h1 class="title is-2">{{ .Title }}</h1>
-          <p class="subtitle">{{ .Params.trim }}</p>
-          
-          <div class="price-container">
-            <span class="price">${{ .Params.price | lang.NumFmt 0 }}</span>
-            {{ if .Params.msrp }}
-            <span class="msrp">MSRP: ${{ .Params.msrp | lang.NumFmt 0 }}</span>
-            {{ end }}
-          </div>
-          
-          <div class="vehicle-meta">
-            <div class="meta-item">
-              <strong>Stock #:</strong> {{ .Params.stock }}
-            </div>
-            <div class="meta-item">
-              <strong>VIN:</strong> {{ .Params.vin }}
-            </div>
-            <div class="meta-item">
-              <strong>Mileage:</strong> {{ .Params.mileage | lang.NumFmt 0 }}
-            </div>
-            <div class="meta-item">
-              <strong>Exterior Color:</strong> {{ .Params.exterior_color }}
-            </div>
-            <div class="meta-item">
-              <strong>Interior Color:</strong> {{ .Params.interior_color }}
-            </div>
-            <div class="meta-item">
-              <strong>Transmission:</strong> {{ .Params.transmission }}
-            </div>
-            <div class="meta-item">
-              <strong>Engine:</strong> {{ .Params.engine }}
-            </div>
-            <div class="meta-item">
-              <strong>Drivetrain:</strong> {{ .Params.drivetrain }}
-            </div>
-            <div class="meta-item">
-              <strong>Fuel Type:</strong> {{ .Params.fuel_type }}
-            </div>
-          </div>
-          
-          <div class="vehicle-actions">
-            <a href="#schedule-test-drive" class="button is-primary">Schedule Test Drive</a>
-            <a href="#contact-us" class="button is-secondary">Contact Us</a>
-            <button class="button is-outlined share-btn" data-vehicle="{{ .Title }}" data-url="{{ .Permalink }}">
-              Share <span class="icon">🔗</span>
-            </button>
-          </div>
-        </div>
+    <div class="vehicle-header">
+      <h1>{{ .Title }}</h1>
+      <div class="vehicle-meta">
+        <span class="price">{{ .Params.price }}</span>
+        <span class="year">{{ .Params.year }}</span>
+        <span class="make">{{ .Params.make }}</span>
+        <span class="model">{{ .Params.model }}</span>
+        {{ with .Params.trim }}<span class="trim">{{ . }}</span>{{ end }}
+        <span class="mileage">{{ .Params.mileage }} miles</span>
       </div>
     </div>
     
+    <div class="vehicle-gallery">
+      <div class="featured-image">
+        <img src="{{ .Params.featured_image }}" alt="{{ .Title }}" class="lazyload">
+      </div>
+      
+      {{ if .Params.gallery }}
+      <div class="gallery-images">
+        {{ range .Params.gallery }}
+          <div class="gallery-item">
+            <img src="{{ .image }}" alt="{{ $.Title }}" class="lazyload">
+          </div>
+        {{ end }}
+      </div>
+      {{ end }}
+    </div>
+    
     <div class="vehicle-description">
-      <h3>Description</h3>
-      {{ .Content | markdownify }}
+      <h2>Description</h2>
+      {{ .Content }}
     </div>
     
     {{ if .Params.features }}
     <div class="vehicle-features">
-      <h3>Features</h3>
-      <ul class="features-list">
+      <h2>Features</h2>
+      <ul>
         {{ range .Params.features }}
-        <li>{{ . }}</li>
+          <li>{{ . }}</li>
         {{ end }}
       </ul>
     </div>
     {{ end }}
     
-    <div id="schedule-test-drive" class="test-drive-form">
-      <h3>Schedule a Test Drive</h3>
-      <form data-ajax="true" id="testDrive">
-        <div class="form-row">
-          <div class="form-group">
-            <label for="name">Full Name *</label>
-            <input type="text" id="name" name="name" required>
-          </div>
-          <div class="form-group">
-            <label for="email">Email Address *</label>
-            <input type="email" id="email" name="email" required>
-          </div>
-        </div>
-        
-        <div class="form-row">
-          <div class="form-group">
-            <label for="phone">Phone Number</label>
-            <input type="tel" id="phone" name="phone">
-          </div>
-          <div class="form-group">
-            <label for="preferredDate">Preferred Date</label>
-            <input type="date" id="preferredDate" name="preferredDate">
-          </div>
-        </div>
-        
-        <div class="form-row">
-          <div class="form-group">
-            <label for="preferredTime">Preferred Time</label>
-            <select id="preferredTime" name="preferredTime">
-              <option value="">Select a time</option>
-              <option value="9:00 AM">9:00 AM</option>
-              <option value="10:00 AM">10:00 AM</option>
-              <option value="11:00 AM">11:00 AM</option>
-              <option value="12:00 PM">12:00 PM</option>
-              <option value="1:00 PM">1:00 PM</option>
-              <option value="2:00 PM">2:00 PM</option>
-              <option value="3:00 PM">3:00 PM</option>
-              <option value="4:00 PM">4:00 PM</option>
-              <option value="5:00 PM">5:00 PM</option>
-            </select>
-          </div>
-        </div>
-        
-        <div class="form-row">
-          <div class="form-group full-width">
-            <label for="comments">Comments</label>
-            <textarea id="comments" name="comments" rows="4">
-            </textarea>
-          </div>
-        </div>
-        
-        <button type="submit" class="btn btn-primary">Submit</button>
-      </form>
-    </div>
-    
-    <div id="contact-us" class="contact-form">
-      <h3>Contact Us</h3>
-      <form data-ajax="true" id="contactForm">
-        <div class="form-row">
-          <div class="form-group">
-            <label for="name">Full Name *</label>
-            <input type="text" id="name" name="name" required>
-          </div>
-          <div class="form-group">
-            <label for="email">Email Address *</label>
-            <input type="email" id="email" name="email" required>
-          </div>
-        </div>
-        
-        <div class="form-row">
-          <div class="form-group">
-            <label for="phone">Phone Number</label>
-            <input type="tel" id="phone" name="phone">
-          </div>
-        </div>
-        
-        <div class="form-row">
-          <div class="form-group full-width">
-            <label for="message">Message</label>
-            <textarea id="message" name="message" rows="4"></textarea>
-          </div>
-        </div>
-        
-        <button type="submit" class="btn btn-primary">Submit</button>
-      </form>
-    </div>
-    
-    <div class="related-vehicles">
-      <h2>Similar Vehicles</h2>
-      <div id="related-inventory" class="vehicle-carousel">
-        <!-- Will be populated via JavaScript -->
+    <div class="cta-section">
+      <h2>Interested in this vehicle?</h2>
+      <div class="cta-buttons">
+        <a href="/contact/?vehicle={{ .Title }}" class="button contact-btn">Contact Me About This Vehicle</a>
+        <button class="button test-drive-btn" data-vehicle="{{ .Title }}">Schedule Test Drive</button>
       </div>
     </div>
+    
+    <div class="test-drive-form" style="display: none;">
+      <h3>Schedule a Test Drive</h3>
+      <form class="lead-form" data-form-type="testDrive">
+        <input type="hidden" name="formType" value="testDrive">
+        <input type="hidden" name="vehicle" value="{{ .Title }}">
+        
+        <div class="form-group">
+          <label for="name">Full Name</label>
+          <input type="text" id="name" name="name" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="email">Email Address</label>
+          <input type="email" id="email" name="email" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="phone">Phone Number</label>
+          <input type="tel" id="phone" name="phone" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="date">Preferred Date</label>
+          <input type="date" id="date" name="preferredDate" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="time">Preferred Time</label>
+          <input type="time" id="time" name="preferredTime" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="comments">Comments (Optional)</label>
+          <textarea id="comments" name="comments"></textarea>
+        </div>
+        
+        <button type="submit" class="button">Request Test Drive</button>
+      </form>
+    </div>
   </div>
-</section>
+</div>
 
 <script>
-  document.addEventListener('DOMContentLoaded', () => {
-    // Initialize payment calculator
-    document.querySelector('.calculate-payment')?.addEventListener('click', function() {
-      const vehicle = {
-        price: this.dataset.price,
-        year: this.dataset.year,
-        make: this.dataset.make,
-        model: this.dataset.model
-      };
-      
-      showPaymentCalculator(vehicle);
-    });
+  document.addEventListener('DOMContentLoaded', function() {
+    const testDriveBtn = document.querySelector('.test-drive-btn');
+    const testDriveForm = document.querySelector('.test-drive-form');
     
-    // Load related inventory
-    const relatedContainer = document.getElementById('related-inventory');
-    if (relatedContainer) {
-      loadRelatedVehicles({
-        make: "{{ .Params.make }}",
-        model: "{{ .Params.model }}",
-        excludeId: "{{ .Params.id }}"
-      }, relatedContainer);
-    }
+    testDriveBtn.addEventListener('click', function() {
+      testDriveForm.style.display = testDriveForm.style.display === 'none' ? 'block' : 'none';
+    });
   });
-  
-  // Payment calculator modal
-  function showPaymentCalculator(vehicle) {
-    // Implementation will be added
-  }
-  
-  // Load related vehicles based on current vehicle
-  async function loadRelatedVehicles(params, container) {
-    // Implementation will fetch from inventory API
-  }
 </script>
+
 {{ end }}

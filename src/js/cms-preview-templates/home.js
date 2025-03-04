@@ -72,70 +72,53 @@ export default class PostPreview extends React.Component {
 
 import React from "react";
 
-export default class HomePreview extends React.Component {
-  render() {
-    const { entry, getAsset } = this.props;
-    const data = entry.getIn(["data"]).toJS();
-    
-    // Get hero image
-    const heroImage = getAsset(data.hero_image);
-    
-    // Get featured vehicles
-    const featuredVehicles = data.featured_vehicles || [];
-    
-    return (
-      <div className="preview-content">
-        <div className="hero-section">
-          <div className="hero-image">
-            {heroImage && <img src={heroImage.toString()} alt={data.hero_heading} />}
-          </div>
-          <div className="hero-content">
-            <h1>{data.hero_heading}</h1>
-            <p>{data.hero_subheading}</p>
-            {data.hero_cta_text && 
-              <div className="hero-cta">
-                <button className="btn btn-primary">{data.hero_cta_text}</button>
-              </div>
-            }
+export default function HomePreview({ entry, getAsset }) {
+  const data = entry.getIn(["data"]).toJS();
+  const image = getAsset(data.image);
+  
+  return (
+    <div className="home-preview">
+      <header className="hero" style={{ backgroundImage: `url(${image})` }}>
+        <div className="container">
+          <h1>{data.title}</h1>
+          <div className="subtitle">{data.subtitle}</div>
+          {data.cta && (
+            <div className="cta-button">
+              <a href={data.cta.link}>{data.cta.text}</a>
+            </div>
+          )}
+        </div>
+      </header>
+      
+      <section className="intro-section">
+        <div className="container">
+          <h2>{data.intro.heading}</h2>
+          <p>{data.intro.text}</p>
+        </div>
+      </section>
+      
+      <section className="featured-inventory">
+        <div className="container">
+          <h2>{data.inventory.heading}</h2>
+          <div className="inventory-placeholder">
+            <p>[Featured Inventory Items Will Appear Here]</p>
           </div>
         </div>
-        
-        <div className="featured-section">
-          <h2>{data.featured_heading || "Featured Vehicles"}</h2>
-          <div className="featured-vehicles">
-            {featuredVehicles.map((vehicle, i) => (
-              <div className="vehicle-card" key={i}>
-                <div className="vehicle-image">
-                  {vehicle.image && 
-                    <img src={getAsset(vehicle.image).toString()} alt={vehicle.title} />
-                  }
-                </div>
-                <div className="vehicle-details">
-                  <h3>{vehicle.title}</h3>
-                  <div className="vehicle-price">${vehicle.price}</div>
-                  <div className="vehicle-meta">
-                    <span>{vehicle.mileage} miles</span>
-                    <span>{vehicle.color}</span>
-                  </div>
-                </div>
+      </section>
+      
+      <section className="testimonial-section">
+        <div className="container">
+          <h2>{data.testimonials.heading}</h2>
+          <div className="testimonials">
+            {data.testimonials.items && data.testimonials.items.map((item, i) => (
+              <div className="testimonial" key={i}>
+                <blockquote>"{item.quote}"</blockquote>
+                <div className="author">- {item.author}</div>
               </div>
             ))}
           </div>
         </div>
-        
-        <div className="cta-section">
-          <h2>{data.cta_heading}</h2>
-          <p>{data.cta_text}</p>
-          <button className="btn btn-primary">{data.cta_button_text}</button>
-        </div>
-        
-        <div className="about-section">
-          <h2>{data.about_heading || "About Caddy Ed"}</h2>
-          <div className="about-content">
-            <p>{data.about_content}</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+      </section>
+    </div>
+  );
 }

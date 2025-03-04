@@ -9,8 +9,8 @@ backend:
     deleteMedia: 'Delete "{{path}}"'
 
 local_backend: true
-media_folder: site/static/img
-public_folder: /img
+media_folder: "site/static/img"
+public_folder: "/img"
 
 collections:
   - name: "pages"
@@ -20,39 +20,29 @@ collections:
         label: "Home Page"
         name: "home"
         fields:
-          - {label: "Title", name: "title", widget: "string"}
-          - {label: "Subtitle", name: "subtitle", widget: "string"}
-          - {label: "Hero Image", name: "image", widget: "image"}
-          - {label: "Hero Heading", name: "heading", widget: "string"}
-          - {label: "Hero Subheading", name: "subheading", widget: "string"}
-          - {label: "Call to Action Text", name: "cta", widget: "string"}
-          - {label: "Call to Action Link", name: "cta_link", widget: "string"}
-          - {label: "Featured Models Section", name: "featured_models", widget: "object", fields: [
-              {label: "Heading", name: "heading", widget: "string"},
-              {label: "Text", name: "text", widget: "text"},
-              {label: "Models", name: "models", widget: "list", fields: [
-                {label: "Model Name", name: "name", widget: "string"},
-                {label: "Image", name: "image", widget: "image"},
-                {label: "Text", name: "text", widget: "text"},
-                {label: "Link", name: "link", widget: "string"}
+          - {label: Title, name: title, widget: string}
+          - {label: Subtitle, name: subtitle, widget: string}
+          - {label: Image, name: image, widget: image}
+          - {label: "Call to Action", name: cta, widget: object, fields: [
+              {label: Text, name: text, widget: string},
+              {label: Link, name: link, widget: string}
+            ]}
+          - {label: "Introduction", name: intro, widget: object, fields: [
+              {label: Heading, name: heading, widget: string},
+              {label: Text, name: text, widget: text}
+            ]}
+          - {label: "Inventory Section", name: inventory, widget: object, fields: [
+              {label: Heading, name: heading, widget: string},
+              {label: Text, name: text, widget: text}
+            ]}
+          - {label: "Testimonials", name: testimonials, widget: object, fields: [
+              {label: Heading, name: heading, widget: string},
+              {label: Items, name: items, widget: list, fields: [
+                {label: Quote, name: quote, widget: text},
+                {label: Author, name: author, widget: string}
               ]}
             ]}
-          - {label: "Testimonials", name: "testimonials", widget: "list", fields: [
-              {label: "Name", name: "name", widget: "string"},
-              {label: "Position", name: "position", widget: "string", required: false},
-              {label: "Image", name: "image", widget: "image", required: false},
-              {label: "Text", name: "text", widget: "text"}
-            ]}
-          - {label: "Services Section", name: "services", widget: "object", fields: [
-              {label: "Heading", name: "heading", widget: "string"},
-              {label: "Text", name: "text", widget: "text"},
-              {label: "Services List", name: "items", widget: "list", fields: [
-                {label: "Title", name: "title", widget: "string"},
-                {label: "Icon", name: "icon", widget: "string"},
-                {label: "Text", name: "text", widget: "text"}
-              ]}
-            ]}
-      
+
       - file: "site/content/about/_index.md"
         label: "About Page"
         name: "about"
@@ -66,6 +56,11 @@ collections:
               {label: "Position", name: "position", widget: "string"},
               {label: "Image", name: "image", widget: "image"},
               {label: "Bio", name: "bio", widget: "text"}
+            ]}
+          - {label: "Experience", name: "experience", widget: "list", fields: [
+              {label: "Year", name: "year", widget: "string"},
+              {label: "Title", name: "title", widget: "string"},
+              {label: "Description", name: "description", widget: "text"}
             ]}
 
       - file: "site/content/contact/_index.md"
@@ -81,40 +76,80 @@ collections:
           - {label: "Address", name: "address", widget: "text"}
           - {label: "Hours", name: "hours", widget: "text"}
           - {label: "Map Embed", name: "map", widget: "text", required: false}
+          - {label: "Intro", name: "intro", widget: "text"}
 
   - name: "inventory"
-    label: "Featured Inventory"
+    label: "Inventory Items"
     folder: "site/content/inventory"
     create: true
     fields:
-      - {label: "Title", name: "title", widget: "string"}
-      - {label: "Publish Date", name: "date", widget: "datetime"}
-      - {label: "Featured Image", name: "featured_image", widget: "image"}
-      - {label: "Gallery Images", name: "gallery", widget: "list", field: {label: Image, name: image, widget: image}}
-      - {label: "Year", name: "year", widget: "number"}
-      - {label: "Make", name: "make", widget: "string", default: "Cadillac"}
-      - {label: "Model", name: "model", widget: "string"}
-      - {label: "Trim", name: "trim", widget: "string", required: false}
-      - {label: "Price", name: "price", widget: "number"}
-      - {label: "MSRP", name: "msrp", widget: "number", required: false}
-      - {label: "Mileage", name: "mileage", widget: "number"}
-      - {label: "Exterior Color", name: "exterior_color", widget: "string"}
-      - {label: "Interior Color", name: "interior_color", widget: "string"}
-      - {label: "Stock #", name: "stock", widget: "string"}
-      - {label: "VIN", name: "vin", widget: "string"}
-      - {label: "Description", name: "description", widget: "markdown"}
-      - {label: "Features", name: "features", widget: "list"}
-      - {label: "Is Featured", name: "is_featured", widget: "boolean", default: true}
-      - {label: "Body", name: "body", widget: "markdown", required: false}
+      - {label: Title, name: title, widget: string}
+      - {label: "Publish Date", name: date, widget: datetime}
+      - {label: Price, name: price, widget: string}
+      - {label: Year, name: year, widget: number}
+      - {label: Make, name: make, widget: string}
+      - {label: Model, name: model, widget: string}
+      - {label: Trim, name: trim, widget: string, required: false}
+      - {label: Mileage, name: mileage, widget: number}
+      - {label: "Featured Image", name: featured_image, widget: image}
+      - {label: "Gallery Images", name: gallery, widget: list, field: {label: Image, name: image, widget: image}}
+      - {label: Description, name: description, widget: markdown}
+      - {label: Features, name: features, widget: list}
 
   - name: "blog"
     label: "Blog"
     folder: "site/content/blog"
     create: true
     fields:
+      - {label: Title, name: title, widget: string}
+      - {label: "Publish Date", name: date, widget: datetime}
+      - {label: Author, name: author, widget: string, required: false}
+      - {label: "Featured Image", name: featured_image, widget: image, required: false}
+      - {label: Description, name: description, widget: text}
+      - {label: Body, name: body, widget: markdown}
+
+  - name: "testimonials"
+    label: "Testimonials"
+    folder: "site/content/testimonials"
+    create: true
+    fields:
+      - {label: "Customer Name", name: "title", widget: "string"}
+      - {label: "Date", name: "date", widget: "datetime"}
+      - {label: "Customer Image", name: "customerImage", widget: "image", required: false}
+      - {label: "Vehicle Purchased", name: "vehicle", widget: "string"}
+      - {label: "Testimonial", name: "body", widget: "markdown"}
+      - {label: "Featured", name: "featured", widget: "boolean", default: false}
+
+  - name: "specials"
+    label: "Special Offers"
+    folder: "site/content/specials"
+    create: true
+    fields:
       - {label: "Title", name: "title", widget: "string"}
       - {label: "Publish Date", name: "date", widget: "datetime"}
-      - {label: "Featured Image", name: "featured_image", widget: "image"}
+      - {label: "Expiration Date", name: "expirationDate", widget: "datetime"}
+      - {label: "Image", name: "image", widget: "image"}
       - {label: "Description", name: "description", widget: "text"}
       - {label: "Body", name: "body", widget: "markdown"}
-      - {label: "Tags", name: "tags", widget: "list"}
+      - {label: "Terms & Conditions", name: "terms", widget: "markdown"}
+      - {label: "Featured", name: "featured", widget: "boolean", default: false}
+
+  - name: "settings"
+    label: "Settings"
+    files:
+      - file: "site/data/settings.json"
+        label: "Site Settings"
+        name: "settings"
+        fields:
+          - {label: "Site Title", name: "siteTitle", widget: "string"}
+          - {label: "Site Description", name: "siteDescription", widget: "text"}
+          - {label: "Contact Email", name: "contactEmail", widget: "string"}
+          - {label: "Contact Phone", name: "contactPhone", widget: "string"}
+          - {label: "Social Media", name: "socialMedia", widget: "object", fields: [
+              {label: "Facebook", name: "facebook", widget: "string", required: false},
+              {label: "Instagram", name: "instagram", widget: "string", required: false},
+              {label: "Twitter/X", name: "twitter", widget: "string", required: false},
+              {label: "LinkedIn", name: "linkedin", widget: "string", required: false},
+              {label: "YouTube", name: "youtube", widget: "string", required: false}
+            ]}
+          - {label: "Google Maps URL", name: "googleMapsUrl", widget: "string", required: false}

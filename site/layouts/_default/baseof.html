@@ -1,59 +1,82 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <title>{{ if .IsHome }}{{ .Site.Title }}{{ else }}{{ .Title }} | {{ .Site.Title }}{{ end }}</title>
-  <meta name="description" content="{{ with .Description }}{{ . }}{{ else }}{{ with .Site.Params.description }}{{ . }}{{ end }}{{ end }}">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ .Title }} | {{ .Site.Title }}</title>
+  <meta name="description" content="{{ .Description | default .Site.Params.description }}">
   
-  {{ $stylesheet := .Site.Data.webpack.main }}
-  {{ with $stylesheet.css }}
-  <link href="{{ relURL . }}" rel="stylesheet">
-  {{ end }}
+  <!-- Favicon -->
+  <link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16x16.png">
+  <link rel="manifest" href="/site.webmanifest">
   
-  <!-- Open Graph -->
-  <meta property="og:title" content="{{ if .IsHome }}{{ .Site.Title }}{{ else }}{{ .Title }} | {{ .Site.Title }}{{ end }}">
-  <meta property="og:description" content="{{ with .Description }}{{ . }}{{ else }}{{ with .Site.Params.description }}{{ . }}{{ end }}{{ end }}">
-  <meta property="og:type" content="{{ if .IsPage }}article{{ else }}website{{ end }}">
-  <meta property="og:url" content="{{ .Permalink }}">
-  {{ with .Params.image }}
-  <meta property="og:image" content="{{ . | absURL }}">
-  {{ else }}
-  {{ with .Site.Params.images }}
-  <meta property="og:image" content="{{ index . 0 | absURL }}">
-  {{ end }}
-  {{ end }}
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
   
-  <link rel="icon" type="image/png" href="/img/favicon.png">
-  <link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
-  
-  {{ if .Site.Params.googleAnalytics }}
-  <script async src="https://www.googletagmanager.com/gtag/js?id={{ .Site.Params.googleAnalytics }}"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', '{{ .Site.Params.googleAnalytics }}');
-  </script>
-  {{ end }}
-  
+  <!-- Netlify Identity -->
   <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+  
+  <!-- CSS -->
+  {{ $style := resources.Get "main.css" | resources.Fingerprint }}
+  <link rel="stylesheet" href="{{ $style.Permalink }}">
+  
+  <!-- Schema.org data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "AutoDealer",
+    "name": "Caddy Ed",
+    "image": "{{ .Site.BaseURL }}img/caddy-ed-logo.png",
+    "url": "{{ .Site.BaseURL }}",
+    "telephone": "{{ .Site.Data.settings.contactPhone }}",
+    "priceRange": "$$$",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "7432 South Blvd",
+      "addressLocality": "Charlotte",
+      "addressRegion": "NC",
+      "postalCode": "28273",
+      "addressCountry": "US"
+    },
+    "geo": {
+      "@type": "GeoCoordinates",
+      "latitude": 35.1323,
+      "longitude": -80.8871
+    },
+    "openingHoursSpecification": [
+      {
+        "@type": "OpeningHoursSpecification",
+        "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+        "opens": "09:00",
+        "closes": "20:00"
+      },
+      {
+        "@type": "OpeningHoursSpecification",
+        "dayOfWeek": "Saturday",
+        "opens": "09:00",
+        "closes": "18:00"
+      }
+    ]
+  }
+  </script>
 </head>
-<body class="{{ if .IsHome }}home{{ else }}page {{ .Type }}{{ end }}">
-
+<body class="page-{{ .Type | default "page" }}{{ with .Params.bodyClass }} {{ . }}{{ end }}">
+  
   {{ partial "header" . }}
   
-  <main>
+  <main id="main-content">
     {{ block "main" . }}{{ end }}
   </main>
   
   {{ partial "footer" . }}
-
-  {{ $script := .Site.Data.webpack.main }}
-  {{ with $script.js }}
-  <script src="{{ relURL . }}"></script>
-  {{ end }}
   
+  <!-- JavaScript -->
+  {{ $script := resources.Get "main.js" | resources.Fingerprint }}
+  <script src="{{ $script.Permalink }}"></script>
+  
+  <!-- Netlify Identity Script -->
   <script>
     if (window.netlifyIdentity) {
       window.netlifyIdentity.on("init", user => {

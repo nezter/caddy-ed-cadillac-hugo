@@ -3,54 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <title>Caddy Ed - Content Management</title>
-  <link rel="icon" type="image/x-icon" href="/img/favicon.ico">
+  <link rel="stylesheet" href="https://unpkg.com/netlify-cms@^2.0.0/dist/cms.css" />
   <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
 </head>
 <body>
   <!-- Include the script that builds the page and powers Netlify CMS -->
-  <script src="/cms.js"></script>
-  <script src="https://unpkg.com/netlify-cms@^2.0.0/dist/netlify-cms.js"></script>
-  <script src="https://unpkg.com/react@16/umd/react.development.js"></script>
-  <script src="https://unpkg.com/dayjs@1.8.21/dayjs.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script>
-    // YouTube editor component
-    const YouTubePreview = createClass({
-      render: function() {
-        const {value} = this.props;
-        const videoId = value.split('/').pop();
-        return h('div', {}, [
-          h('h4', {}, ['YouTube Video']),
-          h('iframe', {
-            src: `https://www.youtube.com/embed/${videoId}`,
-            height: '400px',
-            width: '100%',
-            frameborder: '0',
-            allowfullscreen: true
-          })
-        ]);
-      }
-    });
-
-    const YouTubeControl = createClass({
-      handleChange: function(e) {
-        this.props.onChange(e.target.value);
-      },
-      render: function() {
-        const {value} = this.props;
-        return h('input', {
-          type: 'text',
-          value: value || '',
-          className: 'nc-controlPane-widget',
-          onChange: this.handleChange,
-          placeholder: 'YouTube URL (e.g. https://www.youtube.com/watch?v=VIDEO_ID)'
-        });
-      }
-    });
-
-    CMS.registerWidget('youtube', YouTubeControl, YouTubePreview);
-  </script>
+  <script src="cms.js"></script>
 </body>
 </html>

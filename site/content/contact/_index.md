@@ -1,16 +1,28 @@
 ---
-title: Contact Ed Portello
-seo_title: "Contact Caddy Ed - Your Charlotte Cadillac Specialist"
-seo_description: "Get in touch with Ed Portello at Cadillac of South Charlotte. Direct line: (803) 431-6180. Your trusted advisor for new and pre-owned Cadillac vehicles."
-contact_entries:
-  - heading: Direct Contact
-    text: "Call Ed Portello: (803) 431-6180"
-  - heading: Location
-    text: "Cadillac of South Charlotte, 10725 Pineville Rd, Pineville, NC 28134"
-  - heading: Dealership Hours
-    text: "Monday-Saturday: 9AM-8PM, Sunday: Closed"
-  - heading: Website
-    text: "www.cadillacofsouthcharlotte.com"
+title: "Contact Caddy Ed"
+subtitle: "I'm here to assist with your Cadillac needs"
+image: "/img/contact-hero.jpg"
+form:
+  heading: "Get in Touch"
+  name_label: "Your Name"
+  email_label: "Email Address"
+  phone_label: "Phone Number (Optional)"
+  message_label: "Your Message"
+  vehicle_label: "Vehicle of Interest (Optional)"
+  submit_button: "Send Message"
+contact_info:
+  heading: "My Information"
+  phone: "(704) 555-1234"
+  email: "ed@caddyed.com"
+  dealership: "Cadillac of South Charlotte"
+  address: "123 Luxury Lane, Charlotte, NC 28277"
+  hours:
+    - day: "Monday-Friday"
+      time: "9:00am - 7:00pm"
+    - day: "Saturday"
+      time: "10:00am - 6:00pm"
+    - day: "Sunday"
+      time: "Closed"
 ---
 
 ## Ready to find your perfect Cadillac?

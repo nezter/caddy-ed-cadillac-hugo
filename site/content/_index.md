@@ -1,46 +1,25 @@
 ---
-title: "Caddy Ed Cadillac - South Charlotte's Premier Cadillac Dealership"
-description: "Visit Caddy Ed Cadillac in South Charlotte for the best selection of new and used Cadillac vehicles, expert service, and financing options."
-hero:
-  heading: "Luxury Defined"
-  subheading: "Experience the pinnacle of automotive excellence at Caddy Ed Cadillac"
-  cta_text: "Browse Inventory"
-  cta_link: "/inventory/"
-  background_image: "/img/hero-cadillac.jpg"
-featured_title: "Featured Vehicles"
-featured_vehicles:
-  - year: 2023
-    make: "Cadillac"
-    model: "Escalade Sport"
-    price: "89,995"
-    image: "/img/escalade-sport.jpg"
-    link: "/inventory/2023-cadillac-escalade-sport/"
-  - year: 2023
-    make: "Cadillac"
-    model: "CT5-V Blackwing"
-    price: "92,995"
-    image: "/img/ct5-v-blackwing.jpg"
-    link: "/inventory/2023-cadillac-ct5-v-blackwing/"
-  - year: 2023
-    make: "Cadillac"
-    model: "XT6 Premium Luxury"
-    price: "64,995"
-    image: "/img/xt6-premium.jpg"
-    link: "/inventory/2023-cadillac-xt6-premium-luxury/"
-services_title: "Our Services"
-services:
-  - name: "Sales"
-    description: "Find your perfect new or pre-owned Cadillac with the help of our expert sales team."
-    icon: "/img/icon-sales.svg"
-    link: "/inventory/"
-  - name: "Financing"
-    description: "Flexible financing options tailored to your needs with competitive rates."
-    icon: "/img/icon-financing.svg"
-    link: "/financing/"
-  - name: "Service & Parts"
-    description: "Factory-trained technicians and genuine Cadillac parts to keep your vehicle at its best."
-    icon: "/img/icon-service.svg"
-    link: "/service/"
+title: "Caddy Ed - Your Cadillac Specialist"
+subtitle: "Premium Cadillac Sales Professional in South Charlotte"
+image: "/img/hero-background.jpg"
+cta:
+  text: "Browse Inventory"
+  link: "/inventory/"
+intro:
+  heading: "Welcome to Caddy Ed's Personal Service"
+  text: "With over 15 years of experience specializing in Cadillac vehicles, I provide personalized service to make your car buying experience simple and enjoyable. I'm here to assist you with all your Cadillac needs."
+inventory:
+  heading: "Featured Vehicles"
+  text: "Browse through my personally selected Cadillac inventory. Each vehicle has been carefully inspected to ensure the highest quality."
+testimonials:
+  heading: "Customer Testimonials"
+  items:
+    - quote: "Ed made buying my new Escalade the easiest car purchase I've ever experienced. His knowledge and no-pressure approach was refreshing."
+      author: "Michael S."
+    - quote: "I was unsure about what model would best fit my needs, but Ed took the time to understand my requirements and helped me find the perfect CT5."
+      author: "Jennifer T."
+    - quote: "The personalized service from Ed was outstanding. He followed up after the sale and made sure everything was perfect with my new Cadillac."
+      author: "Robert L."
 ---
 
 ## Welcome to Caddy Ed Cadillac
