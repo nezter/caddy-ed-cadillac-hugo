@@ -1,47 +1,69 @@
-<!doctype html>
-<html lang="{{ $.Site.Language.Lang }}">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <base href="{{ $.Site.BaseURL }}">
-    <title>{{ $.Site.Title }} {{ with .Title }} - {{ . }}{{ end }}</title>
-    
-    {{ $stylesheet := .Site.Data.webpack.main }}
-    {{ with $stylesheet.css }}
-    <link href="{{ relURL . }}" rel="stylesheet">
-    {{ end }}
-    
-    <meta name="description" content="{{ with .Description }}{{ . }}{{ else }}{{ .Site.Params.description }}{{ end }}">
-    <link rel="icon" type="image/png" href="/favicon.png">
-    
-    {{ range .Site.Params.custom_css }}
-    <link rel="stylesheet" href="{{ . | absURL }}">
-    {{ end }}
-    
-    {{ block "head" . }}{{ end }}
-  </head>
-  <body class="{{ with .Section }}section-{{ . | urlize }}{{ end }}{{ with .Params.body_class }} {{ . }}{{ end }}">
-    {{ block "header" . }}
-    {{ partial "header" . }}
-    {{ end }}
-    
-    <main class="main-content">
-      {{ block "main" . }}{{ end }}
-    </main>
-    
-    {{ block "footer" . }}
-    {{ partial "footer" . }}
-    {{ end }}
-    
-    {{ $script := .Site.Data.webpack.main }}
-    {{ with $script.js }}
-    <script src="{{ relURL . }}"></script>
-    {{ end }}
-    
-    {{ range .Site.Params.custom_js }}
-    <script src="{{ . | absURL }}"></script>
-    {{ end }}
-    
-    {{ block "scripts" . }}{{ end }}
-  </body>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <title>{{ if .IsHome }}{{ .Site.Title }}{{ else }}{{ .Title }} | {{ .Site.Title }}{{ end }}</title>
+  <meta name="description" content="{{ with .Description }}{{ . }}{{ else }}{{ with .Site.Params.description }}{{ . }}{{ end }}{{ end }}">
+  
+  {{ $stylesheet := .Site.Data.webpack.main }}
+  {{ with $stylesheet.css }}
+  <link href="{{ relURL . }}" rel="stylesheet">
+  {{ end }}
+  
+  <!-- Open Graph -->
+  <meta property="og:title" content="{{ if .IsHome }}{{ .Site.Title }}{{ else }}{{ .Title }} | {{ .Site.Title }}{{ end }}">
+  <meta property="og:description" content="{{ with .Description }}{{ . }}{{ else }}{{ with .Site.Params.description }}{{ . }}{{ end }}{{ end }}">
+  <meta property="og:type" content="{{ if .IsPage }}article{{ else }}website{{ end }}">
+  <meta property="og:url" content="{{ .Permalink }}">
+  {{ with .Params.image }}
+  <meta property="og:image" content="{{ . | absURL }}">
+  {{ else }}
+  {{ with .Site.Params.images }}
+  <meta property="og:image" content="{{ index . 0 | absURL }}">
+  {{ end }}
+  {{ end }}
+  
+  <link rel="icon" type="image/png" href="/img/favicon.png">
+  <link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
+  
+  {{ if .Site.Params.googleAnalytics }}
+  <script async src="https://www.googletagmanager.com/gtag/js?id={{ .Site.Params.googleAnalytics }}"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', '{{ .Site.Params.googleAnalytics }}');
+  </script>
+  {{ end }}
+  
+  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+</head>
+<body class="{{ if .IsHome }}home{{ else }}page {{ .Type }}{{ end }}">
+
+  {{ partial "header" . }}
+  
+  <main>
+    {{ block "main" . }}{{ end }}
+  </main>
+  
+  {{ partial "footer" . }}
+
+  {{ $script := .Site.Data.webpack.main }}
+  {{ with $script.js }}
+  <script src="{{ relURL . }}"></script>
+  {{ end }}
+  
+  <script>
+    if (window.netlifyIdentity) {
+      window.netlifyIdentity.on("init", user => {
+        if (!user) {
+          window.netlifyIdentity.on("login", () => {
+            document.location.href = "/admin/";
+          });
+        }
+      });
+    }
+  </script>
+</body>
 </html>

@@ -2,96 +2,77 @@
 {{ define "description" }}{{ .Params.Year }} {{ .Params.Make }} {{ .Params.Model }} {{ .Params.Trim }} - {{ .Params.Mileage }} miles - {{ .Site.Title }}{{ end }}
 
 {{ define "main" }}
-
-<section class="vehicle-detail">
+<section class="section vehicle-detail">
   <div class="container">
-    <div class="breadcrumbs">
-      <a href="/">Home</a> &gt;
-      <a href="/inventory">Inventory</a> &gt;
-      <span>{{ .Title }}</span>
-    </div>
-    
-    <div class="vehicle-layout">
-      <div class="vehicle-gallery">
-        <div class="gallery-main">
-          {{ with index .Params.images 0 }}
-          <img src="{{ . }}" alt="{{ $.Title }}" id="main-image">
-          {{ else }}
-          <img src="/img/vehicle-placeholder.jpg" alt="{{ .Title }}" id="main-image">
-          {{ end }}
-        </div>
-        
-        {{ if gt (len .Params.images) 1 }}
-        <div class="gallery-thumbs">
-          {{ range .Params.images }}
-          <div class="thumb">
-            <img src="{{ . }}" alt="" class="thumbnail" onclick="document.getElementById('main-image').src='{{ . }}'">
+    <div class="columns">
+      <div class="column is-7">
+        <!-- Vehicle gallery -->
+        <div class="vehicle-gallery">
+          <div class="main-image">
+            <img src="{{ .Params.featured_image }}" alt="{{ .Title }}" id="main-vehicle-image">
+          </div>
+          
+          {{ if .Params.gallery }}
+          <div class="thumbnails">
+            {{ range .Params.gallery }}
+            <div class="thumbnail">
+              <img src="{{ . }}" alt="{{ $.Title }}" class="lazyload" onclick="document.getElementById('main-vehicle-image').src='{{ . }}'">
+            </div>
+            {{ end }}
           </div>
           {{ end }}
         </div>
-        {{ end }}
       </div>
       
-      <div class="vehicle-info">
-        <div class="vehicle-header">
-          <h1>{{ .Title }}</h1>
-          <div class="vehicle-price">${{ lang.NumFmt 0 .Params.price "," }}</div>
-          <div class="vehicle-status {{ lower .Params.status }}">{{ .Params.status }}</div>
-        </div>
-        
-        <div class="vehicle-actions">
-          <a href="#schedule-test-drive" class="btn btn-primary">Schedule Test Drive</a>
-          <a href="#contact-us" class="btn btn-secondary">Contact Us</a>
-          <button class="btn btn-outline share-btn" data-vehicle="{{ .Title }}" data-url="{{ .Permalink }}">
-            Share <span class="icon">🔗</span>
-          </button>
-        </div>
-        
-        <div class="vehicle-specs">
-          <div class="spec-group">
-            <h3>Details</h3>
-            <table class="specs-table">
-              <tr>
-                <th>Stock #:</th>
-                <td>{{ .Params.stockNumber }}</td>
-              </tr>
-              <tr>
-                <th>VIN:</th>
-                <td>{{ .Params.vin }}</td>
-              </tr>
-              <tr>
-                <th>Mileage:</th>
-                <td>{{ lang.NumFmt 0 .Params.mileage "," }} mi</td>
-              </tr>
-              <tr>
-                <th>Exterior:</th>
-                <td>{{ .Params.exteriorColor }}</td>
-              </tr>
-              <tr>
-                <th>Interior:</th>
-                <td>{{ .Params.interiorColor }}</td>
-              </tr>
-              <tr>
-                <th>MPG:</th>
-                <td>{{ .Params.mpg }}</td>
-              </tr>
-              <tr>
-                <th>Transmission:</th>
-                <td>{{ .Params.transmission }}</td>
-              </tr>
-              <tr>
-                <th>Engine:</th>
-                <td>{{ .Params.engine }}</td>
-              </tr>
-              <tr>
-                <th>Drivetrain:</th>
-                <td>{{ .Params.drivetrain }}</td>
-              </tr>
-              <tr>
-                <th>Fuel Type:</th>
-                <td>{{ .Params.fuelType }}</td>
-              </tr>
-            </table>
+      <div class="column is-5">
+        <!-- Vehicle info -->
+        <div class="vehicle-info">
+          <h1 class="title is-2">{{ .Title }}</h1>
+          <p class="subtitle">{{ .Params.trim }}</p>
+          
+          <div class="price-container">
+            <span class="price">${{ .Params.price | lang.NumFmt 0 }}</span>
+            {{ if .Params.msrp }}
+            <span class="msrp">MSRP: ${{ .Params.msrp | lang.NumFmt 0 }}</span>
+            {{ end }}
+          </div>
+          
+          <div class="vehicle-meta">
+            <div class="meta-item">
+              <strong>Stock #:</strong> {{ .Params.stock }}
+            </div>
+            <div class="meta-item">
+              <strong>VIN:</strong> {{ .Params.vin }}
+            </div>
+            <div class="meta-item">
+              <strong>Mileage:</strong> {{ .Params.mileage | lang.NumFmt 0 }}
+            </div>
+            <div class="meta-item">
+              <strong>Exterior Color:</strong> {{ .Params.exterior_color }}
+            </div>
+            <div class="meta-item">
+              <strong>Interior Color:</strong> {{ .Params.interior_color }}
+            </div>
+            <div class="meta-item">
+              <strong>Transmission:</strong> {{ .Params.transmission }}
+            </div>
+            <div class="meta-item">
+              <strong>Engine:</strong> {{ .Params.engine }}
+            </div>
+            <div class="meta-item">
+              <strong>Drivetrain:</strong> {{ .Params.drivetrain }}
+            </div>
+            <div class="meta-item">
+              <strong>Fuel Type:</strong> {{ .Params.fuel_type }}
+            </div>
+          </div>
+          
+          <div class="vehicle-actions">
+            <a href="#schedule-test-drive" class="button is-primary">Schedule Test Drive</a>
+            <a href="#contact-us" class="button is-secondary">Contact Us</a>
+            <button class="button is-outlined share-btn" data-vehicle="{{ .Title }}" data-url="{{ .Permalink }}">
+              Share <span class="icon">🔗</span>
+            </button>
           </div>
         </div>
       </div>

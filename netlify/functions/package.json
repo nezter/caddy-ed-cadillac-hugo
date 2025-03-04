@@ -1,0 +1,10 @@
+{
+  "name": "netlify-functions",
+  "version": "1.0.0",
+  "description": "Netlify Functions for Caddy Ed website",
+  "main": "index.js",
+  "dependencies": {
+    "node-fetch": "^2.6.7",
+    "nodemailer": "^6.9.1"
+  }
+}

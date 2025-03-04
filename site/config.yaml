@@ -1,28 +1,30 @@
-baseURL: "/"
+baseURL: "https://caddyed.com"
 languageCode: "en-us"
-title: "Caddy Ed Cadillac"
-theme: "caddy-theme"
+title: "Caddy Ed - Cadillac of South Charlotte"
+theme: "cadillac"
+enableGitInfo: true
+enableRobotsTXT: true
 
-# Site Parameters
 params:
-  description: "Your trusted Cadillac dealership with exceptional service and selection"
-  address: "123 Auto Drive, Charlotte, NC 28210"
-  phone: "(704) 555-1234"
-  email: "sales@caddyed.com"
-  hours:
-    monday: "9:00 AM - 8:00 PM"
-    tuesday: "9:00 AM - 8:00 PM"
-    wednesday: "9:00 AM - 8:00 PM"
-    thursday: "9:00 AM - 8:00 PM"
-    friday: "9:00 AM - 8:00 PM"
-    saturday: "9:00 AM - 6:00 PM"
-    sunday: "Closed"
+  description: "Your trusted Cadillac dealer in Charlotte NC. Meet Caddy Ed, your personal Cadillac expert with over 20 years of experience."
+  images: ["img/og-image.jpg"]
   social:
-    facebook: "https://facebook.com/caddyed"
+    facebook: "https://facebook.com/caddyedcharlotte"
     instagram: "https://instagram.com/caddyed"
-    twitter: "https://twitter.com/caddyed"
-  
-# Menu Configuration
+    youtube: "https://youtube.com/channel/caddyed"
+  contact:
+    email: "ed@caddyed.com"
+    phone: "(704) 555-1234"
+    address: "9315 E Independence Blvd, Matthews, NC 28105"
+  googleAnalytics: "G-XXXXXXXXXX"
+  dealershipAPI: 
+    baseURL: "https://www.cadillacofsouthcharlotte.com/apis"
+    inventoryEndpoint: "/inventory"
+  features:
+    enableLiveInventory: true
+    enableTestDriveBooking: true
+    enableTradeInCalculator: true
+
 menu:
   main:
     - name: "Home"
@@ -31,24 +33,34 @@ menu:
     - name: "Inventory"
       url: "/inventory/"
       weight: 2
+    - name: "About"
+      url: "/about/"
+      weight: 3
     - name: "Services"
       url: "/services/"
-      weight: 3
-    - name: "Financing"
-      url: "/financing/"
       weight: 4
-    - name: "About Us"
-      url: "/about/"
-      weight: 5
     - name: "Contact"
       url: "/contact/"
-      weight: 6
+      weight: 5
 
-# Enable taxonomies
-taxonomies:
-  tag: "tags"
-  category: "categories"
-  
+markup:
+  goldmark:
+    renderer:
+      unsafe: true
+
+caches:
+  getjson:
+    maxAge: "10m"
+  getcsv:
+    maxAge: "10m"
+  images:
+    maxAge: "24h"
+
+sitemap:
+  changefreq: "daily"
+  filename: "sitemap.xml"
+  priority: 0.5
+
 # Disable unwanted sections
 disableKinds: ["RSS", "taxonomy", "taxonomyTerm"]
 

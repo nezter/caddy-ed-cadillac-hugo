@@ -185,3 +185,94 @@ function getResponseContainer(form) {
 
 // Initialize forms on page load
 document.addEventListener('DOMContentLoaded', initForms);
+
+document.addEventListener('DOMContentLoaded', function() {
+  // Find all ajax forms
+  const ajaxForms = document.querySelectorAll('form[data-ajax="true"]');
+  
+  ajaxForms.forEach(form => {
+    form.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      // Get form data
+      const formData = new FormData(form);
+      const formObject = Object.fromEntries(formData.entries());
+      
+      // Add metadata
+      formObject.formType = form.id === 'testDrive' ? 'testDrive' : 
+                            form.id === 'tradeIn' ? 'tradeIn' : 'contact';
+      
+      // Add vehicle info if on vehicle page
+      const vehicleTitle = document.querySelector('.vehicle-header h1');
+      if (vehicleTitle) {
+        formObject.vehicle = vehicleTitle.textContent;
+      }
+      
+      // Show loading state
+      const submitButton = form.querySelector('button[type="submit"]');
+      const originalText = submitButton.textContent;
+      submitButton.textContent = 'Sending...';
+      submitButton.disabled = true;
+      
+      try {
+        // Send data to Netlify function
+        const endpoint = formObject.formType === 'contact' 
+          ? '/.netlify/functions/contact-form' 
+          : '/.netlify/functions/lead-management';
+          
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(formObject)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          // Show success message
+          showFormMessage(form, result.message, 'success');
+          form.reset();
+        } else {
+          // Show error message
+          showFormMessage(form, result.message || 'An error occurred. Please try again.', 'error');
+        }
+      } catch (error) {
+        console.error('Form submission error:', error);
+        showFormMessage(form, 'An error occurred. Please try again later.', 'error');
+      } finally {
+        // Restore button state
+        submitButton.textContent = originalText;
+        submitButton.disabled = false;
+      }
+    });
+  });
+});
+
+// Function to show form messages
+function showFormMessage(form, message, type) {
+  // Remove any existing messages
+  const existingMessage = form.querySelector('.form-message');
+  if (existingMessage) {
+    existingMessage.remove();
+  }
+  
+  // Create new message element
+  const messageElement = document.createElement('div');
+  messageElement.className = `form-message ${type}`;
+  messageElement.textContent = message;
+  
+  // Insert after form
+  form.insertAdjacentElement('afterend', messageElement);
+  
+  // Scroll to message
+  messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  
+  // Remove message after 6 seconds if it's a success message
+  if (type === 'success') {
+    setTimeout(() => {
+      messageElement.remove();
+    }, 6000);
+  }
+}

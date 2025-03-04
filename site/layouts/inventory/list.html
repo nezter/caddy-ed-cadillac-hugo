@@ -2,112 +2,130 @@
 {{ define "description" }}Browse our extensive inventory of Cadillac vehicles at competitive prices.{{ end }}
 
 {{ define "main" }}
-
-<section class="inventory-header">
+<section class="section inventory-header">
   <div class="container">
-    <h1>{{ .Title }}</h1>
-    {{ with .Content }}
-      <div class="page-intro">{{ . }}</div>
-    {{ end }}
+    <h1 class="title is-1">Vehicle Inventory</h1>
+    <p class="subtitle">Browse our selection of premium Cadillac vehicles</p>
   </div>
 </section>
 
-<section class="inventory-section">
+<section class="section">
   <div class="container">
-    <div class="inventory-filter-wrapper">
-      <form class="inventory-filter">
-        <div class="filter-group">
-          <label for="make">Make</label>
-          <select name="make" id="make">
-            <option value="">All Makes</option>
-            {{ range .Site.Taxonomies.make }}
-            <option value="{{ .Page.Title }}">{{ .Page.Title }}</option>
-            {{ end }}
-          </select>
-        </div>
-        
-        <div class="filter-group">
-          <label for="model">Model</label>
-          <select name="model" id="model">
-            <option value="">All Models</option>
-            {{ range .Site.Taxonomies.model }}
-            <option value="{{ .Page.Title }}">{{ .Page.Title }}</option>
-            {{ end }}
-          </select>
-        </div>
-        
-        <div class="filter-group">
-          <label for="year">Year</label>
-          <select name="year" id="year">
-            <option value="">All Years</option>
-            {{ $years := slice }}
-            {{ range (where .Site.RegularPages "Section" "inventory") }}
-              {{ $years = $years | append .Params.year }}
-            {{ end }}
-            {{ range (sort $years "value" "desc") | uniq }}
-            <option value="{{ . }}">{{ . }}</option>
-            {{ end }}
-          </select>
-        </div>
-        
-        <div class="filter-group price-range">
-          <label>Price Range</label>
-          <div class="price-inputs">
-            <input type="number" name="price-min" id="price-min" placeholder="Min" min="0">
-            <span class="price-separator">-</span>
-            <input type="number" name="price-max" id="price-max" placeholder="Max" min="0">
-          </div>
-        </div>
-        
-        <button type="reset" class="btn btn-sm">Reset</button>
-      </form>
-    </div>
-    
-    <div class="inventory-results">
-      {{ $paginator := .Paginate (where .Site.RegularPages "Section" "inventory") }}
-      
-      <div class="inventory-grid">
-        {{ range $paginator.Pages }}
-        <div class="inventory-item" 
-            data-make="{{ .Params.make }}"
-            data-model="{{ .Params.model }}"
-            data-year="{{ .Params.year }}"
-            data-price="{{ .Params.price }}">
-          <a href="{{ .RelPermalink }}" class="inventory-link">
-            <div class="inventory-image">
-              {{ with index .Params.images 0 }}
-              <img src="{{ . }}" alt="{{ $.Params.title }}" loading="lazy">
-              {{ else }}
-              <img src="/img/vehicle-placeholder.jpg" alt="{{ .Params.title }}" loading="lazy">
-              {{ end }}
-              <div class="inventory-status {{ lower .Params.status }}">{{ .Params.status }}</div>
+    <div class="columns">
+      <!-- Filter sidebar -->
+      <div class="column is-3">
+        <div class="box">
+          <h3 class="title is-4">Filter Inventory</h3>
+          <form id="inventory-filter">
+            <div class="field">
+              <label class="label">Vehicle Type</label>
+              <div class="control">
+                <div class="select is-fullwidth">
+                  <select name="category">
+                    <option value="">All Types</option>
+                    <option value="new">New</option>
+                    <option value="used">Pre-Owned</option>
+                    <option value="certified">Certified Pre-Owned</option>
+                  </select>
+                </div>
+              </div>
             </div>
             
-            <div class="inventory-details">
-              <h3 class="inventory-title">{{ .Params.year }} {{ .Params.make }} {{ .Params.model }}</h3>
-              <p class="inventory-trim">{{ .Params.trim }}</p>
-              
-              <div class="inventory-meta">
-                <span class="inventory-price">${{ lang.NumFmt 0 .Params.price "," }}</span>
-                <span class="inventory-mileage">{{ lang.NumFmt 0 .Params.mileage "," }} mi</span>
-              </div>
-              
-              <div class="inventory-specs">
-                <span>{{ .Params.exteriorColor }}</span>
-                <span>{{ .Params.transmission }}</span>
-                <span>{{ .Params.drivetrain }}</span>
-              </div>
-              
-              <div class="inventory-cta">
-                <span class="btn btn-sm">View Details</span>
+            <div class="field">
+              <label class="label">Model</label>
+              <div class="control">
+                <div class="select is-fullwidth">
+                  <select name="model">
+                    <option value="">All Models</option>
+                    <option value="Escalade">Escalade</option>
+                    <option value="CT4">CT4</option>
+                    <option value="CT5">CT5</option>
+                    <option value="XT4">XT4</option>
+                    <option value="XT5">XT5</option>
+                    <option value="XT6">XT6</option>
+                    <option value="LYRIQ">LYRIQ</option>
+                  </select>
+                </div>
               </div>
             </div>
-          </a>
+            
+            <div class="field">
+              <label class="label">Year</label>
+              <div class="control">
+                <div class="select is-fullwidth">
+                  <select name="year">
+                    <option value="">All Years</option>
+                    <option value="2023">2023</option>
+                    <option value="2022">2022</option>
+                    <option value="2021">2021</option>
+                    <option value="2020">2020</option>
+                    <option value="2019">2019</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            
+            <div class="field">
+              <label class="label">Price Range</label>
+              <div class="control">
+                <div class="select is-fullwidth">
+                  <select name="price">
+                    <option value="">All Prices</option>
+                    <option value="30000-40000">$30,000 - $40,000</option>
+                    <option value="40000-50000">$40,000 - $50,000</option>
+                    <option value="50000-60000">$50,000 - $60,000</option>
+                    <option value="60000-70000">$60,000 - $70,000</option>
+                    <option value="70000-9999999">$70,000+</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            
+            <div class="field">
+              <div class="control">
+                <button type="submit" class="button is-primary is-fullwidth">Apply Filters</button>
+              </div>
+            </div>
+          </form>
         </div>
-        {{ end }}
       </div>
       
-      {{ template "_internal/pagination.html" . }}
+      <!-- Inventory results -->
+      <div class="column is-9">
+        <div id="inventory-results" class="inventory-grid">
+          <!-- Results will be dynamically loaded here -->
+          <div class="loading">Loading inventory...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Featured inventory from CMS -->
+<section class="section has-background-light">
+  <div class="container">
+    <h2 class="title is-2">Featured Vehicles</h2>
+    <div class="columns is-multiline">
+      {{ range where .Pages ".Params.is_featured" true }}
+      <div class="column is-4">
+        <div class="card">
+          <div class="card-image">
+            <figure class="image is-16by9">
+              <img src="{{ .Params.featured_image }}" alt="{{ .Title }}" class="lazyload">
+            </figure>
+          </div>
+          <div class="card-content">
+            <h3 class="title is-5">{{ .Title }}</h3>
+            <p class="price has-text-weight-bold">${{ .Params.price | lang.NumFmt 0 }}</p>
+            <p class="specs">
+              <span>Stock: {{ .Params.stock }}</span>
+              <span>Mileage: {{ .Params.mileage | lang.NumFmt 0 }}</span>
+            </p>
+            <a href="{{ .RelPermalink }}" class="button is-primary is-fullwidth">View Details</a>
+          </div>
+        </div>
+      </div>
+      {{ end }}
     </div>
   </div>
 </section>

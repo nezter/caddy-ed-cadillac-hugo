@@ -1,56 +1,47 @@
 const fetch = require('node-fetch');
 
 exports.handler = async function(event, context) {
-  // Get VIN from query string
-  const vin = event.queryStringParameters.vin;
+  // Get vehicle ID from query string
+  const vehicleId = event.queryStringParameters.id;
   
-  if (!vin) {
+  if (!vehicleId) {
     return {
       statusCode: 400,
-      body: JSON.stringify({ error: 'VIN parameter is required' })
+      body: JSON.stringify({ error: 'Vehicle ID is required' })
     };
   }
   
   try {
-    // Base URL for the dealership's API
-    const baseUrl = 'https://www.cadillacofsouthcharlotte.com/apis/vehicle';
+    // Call the dealer's API to get vehicle details
+    const apiUrl = `https://www.cadillacofsouthcharlotte.com/api/vehicle/${vehicleId}`;
     
-    // Build URL with VIN
-    const url = `${baseUrl}?vin=${vin}`;
-    
-    console.log(`Fetching details for VIN: ${vin}`);
-    
-    // Fetch vehicle data
-    const response = await fetch(url, {
+    const response = await fetch(apiUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
       }
     });
     
     if (!response.ok) {
-      throw new Error(`Failed to fetch vehicle details: ${response.status} ${response.statusText}`);
+      throw new Error(`API returned ${response.status} ${response.statusText}`);
     }
     
     const data = await response.json();
     
-    // Process and format the vehicle data
-    const vehicle = processVehicleData(data);
-    
-    // Return the processed data
+    // Cache results for improved performance
     return {
       statusCode: 200,
       headers: {
         'Content-Type': 'application/json',
-        'Cache-Control': 'public, max-age=3600'
+        'Cache-Control': 'public, max-age=300' // Cache for 5 minutes
       },
-      body: JSON.stringify(vehicle)
+      body: JSON.stringify(data)
     };
   } catch (error) {
-    console.log('Error fetching vehicle details:', error);
+    console.error('Error fetching vehicle details:', error);
     
     return {
       statusCode: 500,
-      body: JSON.stringify({ 
-        error: 'Failed to fetch vehicle details',
-        message: error.message
-      })
+      body: JSON.stringify({ error: 'Failed to fetch vehicle details' })
+    };
+  }
+};

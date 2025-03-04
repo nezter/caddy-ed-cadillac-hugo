@@ -72,59 +72,70 @@ export default class PostPreview extends React.Component {
 
 import React from "react";
 
-export default function HomePreview({ entry, getAsset }) {
-  const data = entry.getIn(["data"]).toJS();
-  
-  const image = getAsset(data.image);
-  const featured = data.featured || [];
-  const testimonials = data.testimonials || [];
-  
-  return (
-    <div className="home-preview">
-      <div className="hero" style={{ backgroundImage: `url(${image})` }}>
-        <div className="hero-content">
-          <h1>{data.heading}</h1>
-          <div>{data.subheading}</div>
+export default class HomePreview extends React.Component {
+  render() {
+    const { entry, getAsset } = this.props;
+    const data = entry.getIn(["data"]).toJS();
+    
+    // Get hero image
+    const heroImage = getAsset(data.hero_image);
+    
+    // Get featured vehicles
+    const featuredVehicles = data.featured_vehicles || [];
+    
+    return (
+      <div className="preview-content">
+        <div className="hero-section">
+          <div className="hero-image">
+            {heroImage && <img src={heroImage.toString()} alt={data.hero_heading} />}
+          </div>
+          <div className="hero-content">
+            <h1>{data.hero_heading}</h1>
+            <p>{data.hero_subheading}</p>
+            {data.hero_cta_text && 
+              <div className="hero-cta">
+                <button className="btn btn-primary">{data.hero_cta_text}</button>
+              </div>
+            }
+          </div>
+        </div>
+        
+        <div className="featured-section">
+          <h2>{data.featured_heading || "Featured Vehicles"}</h2>
+          <div className="featured-vehicles">
+            {featuredVehicles.map((vehicle, i) => (
+              <div className="vehicle-card" key={i}>
+                <div className="vehicle-image">
+                  {vehicle.image && 
+                    <img src={getAsset(vehicle.image).toString()} alt={vehicle.title} />
+                  }
+                </div>
+                <div className="vehicle-details">
+                  <h3>{vehicle.title}</h3>
+                  <div className="vehicle-price">${vehicle.price}</div>
+                  <div className="vehicle-meta">
+                    <span>{vehicle.mileage} miles</span>
+                    <span>{vehicle.color}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        
+        <div className="cta-section">
+          <h2>{data.cta_heading}</h2>
+          <p>{data.cta_text}</p>
+          <button className="btn btn-primary">{data.cta_button_text}</button>
+        </div>
+        
+        <div className="about-section">
+          <h2>{data.about_heading || "About Caddy Ed"}</h2>
+          <div className="about-content">
+            <p>{data.about_content}</p>
+          </div>
         </div>
       </div>
-      
-      <div className="content">
-        {data.intro && (
-          <div className="intro">
-            <h2>{data.intro.heading}</h2>
-            <p>{data.intro.text}</p>
-          </div>
-        )}
-        
-        {featured.length > 0 && (
-          <div className="featured-models">
-            <h2>Featured Models</h2>
-            <div className="featured-grid">
-              {featured.map((item, i) => (
-                <div key={i} className="featured-item">
-                  <img src={getAsset(item.image)} alt={item.model} />
-                  <h3>{item.model}</h3>
-                  <p>{item.description}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-        
-        {testimonials.length > 0 && (
-          <div className="testimonials">
-            <h2>Testimonials</h2>
-            <div className="testimonials-list">
-              {testimonials.map((item, i) => (
-                <div key={i} className="testimonial">
-                  <blockquote>"{item.quote}"</blockquote>
-                  <cite>— {item.author}</cite>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
+    );
+  }
 }

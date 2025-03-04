@@ -1,89 +1,65 @@
-baseURL = "https://caddyed.com/"
+baseURL = "/"
 languageCode = "en-us"
-title = "Caddy Ed Cadillac - South Charlotte Cadillac Dealer"
+title = "Caddy Ed - Cadillac Sales Specialist"
 enableRobotsTXT = true
-disableKinds = ["taxonomy", "taxonomyTerm"]
+disableKinds = ["RSS"]
 
 [params]
-  description = "Caddy Ed is your trusted Cadillac dealer in South Charlotte. Browse our inventory of new and used Cadillac vehicles, schedule service, or contact our dealership today."
-  author = "Caddy Ed"
-  phone = "(704) 555-1234"
-  address = "1234 Cadillac Drive, Charlotte, NC 28210"
-  email = "sales@caddyed.com"
-  hours = "Monday-Friday: 9AM-8PM, Saturday: 9AM-6PM, Sunday: Closed"
+  description = "Caddy Ed - Your Cadillac Sales Specialist in South Charlotte. New & Pre-Owned Cadillac inventory, test drives, and trade-in valuations."
+  images = ["img/caddy-ed-logo.jpg"]
+  title = "Caddy Ed - Cadillac Sales Specialist"
+  dealer_name = "Cadillac of South Charlotte"
+  phone = "704-555-1234"
+  email = "ed@caddyed.com"
+  address = "123 Cadillac Drive, Charlotte, NC 28210"
+  hours = "Mon-Fri: 9AM-7PM | Sat: 9AM-5PM | Sun: Closed"
   
-  # Social Media Links
-  facebook = "https://facebook.com/caddyed"
-  instagram = "https://instagram.com/caddyed"
-  twitter = "https://twitter.com/caddyed"
-  youtube = "https://youtube.com/caddyed"
-  
-  # Google Maps API Key
-  mapsApiKey = ""
-
 [menu]
   [[menu.main]]
+    identifier = "home"
     name = "Home"
     url = "/"
     weight = 1
   [[menu.main]]
+    identifier = "inventory"
     name = "Inventory"
     url = "/inventory/"
     weight = 2
   [[menu.main]]
-    name = "New Vehicles"
-    url = "/inventory/new/"
-    parent = "Inventory"
-    weight = 1
-  [[menu.main]]
-    name = "Pre-Owned"
-    url = "/inventory/used/"
-    parent = "Inventory"
-    weight = 2
-  [[menu.main]]
-    name = "Services"
-    url = "/services/"
+    identifier = "specials"
+    name = "Specials"
+    url = "/specials/"
     weight = 3
   [[menu.main]]
+    identifier = "financing"
     name = "Financing"
     url = "/financing/"
     weight = 4
   [[menu.main]]
-    name = "About Us"
-    url = "/about/"
+    identifier = "trade-in"
+    name = "Trade-In"
+    url = "/trade-in/"
     weight = 5
   [[menu.main]]
+    identifier = "about"
+    name = "About Ed"
+    url = "/about/"
+    weight = 6
+  [[menu.main]]
+    identifier = "contact"
     name = "Contact"
     url = "/contact/"
-    weight = 6
+    weight = 7
 
 [taxonomies]
   tag = "tags"
   category = "categories"
-  model = "models"
-  year = "years"
-
-[outputFormats]
-  [outputFormats.RSS]
-    mediatype = "application/rss"
-    baseName = "feed"
-
-[outputs]
-  home = ["HTML", "RSS", "JSON"]
-  page = ["HTML"]
-  section = ["HTML", "RSS", "JSON"]
-  taxonomy = ["HTML"]
-  term = ["HTML"]
-
-[sitemap]
-  changefreq = "weekly"
-  priority = 0.5
-  filename = "sitemap.xml"
-
-[minify]
-  minifyOutput = true
 
 [markup]
   [markup.goldmark]
     [markup.goldmark.renderer]
       unsafe = true
+
+[outputs]
+  home = ["HTML", "JSON"]
+  page = ["HTML"]

@@ -96,3 +96,71 @@ async function processDirectory(directory) {
     process.exit(1);
   }
 })();
+
+const { readdirSync, statSync } = require('fs');
+const { join } = require('path');
+
+const DIST_DIR = join(__dirname, '../dist');
+
+// Get all subdirectories recursively
+const getDirectories = (source) => {
+  return [source, ...readdirSync(source)
+    .map(name => join(source, name))
+    .filter(source => statSync(source).isDirectory())
+    .flatMap(dir => getDirectories(dir))];
+}
+
+async function optimizeImages() {
+  console.log('Optimizing images...');
+  
+  try {
+    const directories = getDirectories(DIST_DIR);
+    
+    // Process each directory
+    for (const dir of directories) {
+      console.log(`Processing directory: ${dir}`);
+      
+      // Optimize JPG and PNG images
+      await imagemin([`${dir}/*.{jpg,jpeg,png}`], {
+        destination: dir,
+        plugins: [
+          // Convert to WebP
+          imageminWebp({
+            quality: 80,
+            method: 6,
+          }),
+        ]
+      }).catch(err => {
+        // Don't throw error if no images found
+        if (!err.message.includes('No files matched')) {
+          console.error(`Error optimizing images in ${dir}:`, err);
+        }
+      });
+      
+      // Create responsive images with Sharp
+      const imageFiles = readdirSync(dir)
+        .filter(file => /\.(jpg|jpeg|png)$/i.test(file))
+        .map(file => join(dir, file));
+      
+      for (const file of imageFiles) {
+        try {
+          const sizes = [320, 640, 960, 1280, 1920];
+          for (const width of sizes) {
+            await sharp(file)
+              .resize({ width, withoutEnlargement: true })
+              .toFile(`${file.replace(/\.(jpg|jpeg|png)$/i, '')}-${width}.webp`);
+          }
+        } catch (err) {
+          console.error(`Error creating responsive image from ${file}:`, err);
+        }
+      }
+    }
+    
+    console.log('Image optimization completed successfully');
+  } catch (error) {
+    console.error('Error during image optimization:', error);
+    process.exit(1);
+  }
+}
+
+optimizeImages();
