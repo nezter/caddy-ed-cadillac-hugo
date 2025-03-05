@@ -171,13 +171,32 @@ class VehicleComparison {
     if (!table) return;
     
     // Update vehicle headers
-    this.comparisonList.forEach((id, index) => {
+    this.comparisonList.forEach((id) => {
       const vehicle = vehicleData.find(v => v.id === id);
       if (!vehicle) return;
       
       const column = table.querySelector(`.vehicle-column[data-id="${id}"]`);
       if (column) {
         const thumbnail = column.querySelector('.vehicle-thumbnail');
-        const title = column.querySelector('.vehicle-title');
+                thumbnail.src = vehicle.image;
+              }
+            });
+          }
+          
+          getComparisonList() {
+            return JSON.parse(localStorage.getItem(this.storageKey)) || [];
+          }
         
-        thumbnail.src = vehicle.image;
+          updateComparisonUI() {
+            // Update the UI based on the comparison list
+          }
+        
+          saveComparisonList() {
+            localStorage.setItem(this.storageKey, JSON.stringify(this.comparisonList));
+          }
+        
+          removeFromComparison(vehicleId) {
+            this.comparisonList = this.comparisonList.filter(id => id !== vehicleId);
+            this.saveComparisonList();
+            this.updateComparisonUI();
+          }

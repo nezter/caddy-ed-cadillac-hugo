@@ -48,7 +48,7 @@ class SalesDashboard {
       });
   }
   
-  checkAuth() {
+  async checkAuth() {
     return fetch('/api/sales/auth-check', {
       method: 'GET',
       headers: {
@@ -152,7 +152,7 @@ class SalesDashboard {
     };
   }
   
-  fetchLeads() {
+  async fetchLeads() {
     const searchInput = this.filterControls?.querySelector('#search-input');
     const searchTerm = searchInput?.value || '';
     
@@ -184,7 +184,7 @@ class SalesDashboard {
     });
   }
   
-  fetchAppointments() {
+  async fetchAppointments() {
     const url = new URL('/api/sales/appointments', window.location.origin);
     url.searchParams.append('salesId', this.salesRep.id);
     url.searchParams.append('timeframe', this.filters.timeframe);
@@ -208,7 +208,7 @@ class SalesDashboard {
     });
   }
   
-  fetchSalesMetrics() {
+  async fetchSalesMetrics() {
     const url = new URL('/api/sales/metrics', window.location.origin);
     url.searchParams.append('salesId', this.salesRep.id);
     url.searchParams.append('timeframe', this.filters.timeframe);
@@ -227,7 +227,7 @@ class SalesDashboard {
       return response.json();
     })
     .then(data => {
-      this.renderSalesMetrics(data);
+      this.salesMetrics(data);
       return data;
     });
   }
@@ -398,7 +398,7 @@ class SalesDashboard {
     });
   }
   
-  addLeadNote(leadId, content) {
+  async addLeadNote(leadId, content) {
     return fetch('/api/sales/add-note', {
       method: 'POST',
       headers: {
@@ -423,7 +423,7 @@ class SalesDashboard {
     });
   }
   
-  updateLeadStatus(leadId, status) {
+  async updateLeadStatus(leadId, status) {
     return fetch('/api/sales/update-status', {
       method: 'POST',
       headers: {
@@ -458,4 +458,4 @@ class SalesDashboard {
   }
   
   renderAppointmentsList(appointments) {
-    if (!this.
+    if (!this.dashboardElement) return;
