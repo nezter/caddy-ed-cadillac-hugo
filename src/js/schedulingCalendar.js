@@ -53,6 +53,108 @@ class SchedulingCalendar {
     }
   }
   
+  setupMonthNavigation() {
+    const prevButton = this.element.querySelector('.prev-month');
+    const nextButton = this.element.querySelector('.next-month');
+    
+    if (prevButton) {
+      prevButton.addEventListener('click', () => {
+        this.currentMonth.setMonth(this.currentMonth.getMonth() - 1);
+        this.renderCalendar();
+      });
+    }
+    
+    if (nextButton) {
+      nextButton.addEventListener('click', () => {
+        this.currentMonth.setMonth(this.currentMonth.getMonth() + 1);
+        this.renderCalendar();
+      });
+    }
+  }
+  
+  setupAppointmentType() {
+    // Handle appointment type selection
+    this.appointmentType.addEventListener('change', (e) => {
+      const appointmentType = e.target.value;
+      console.log(`Selected appointment type: ${appointmentType}`);
+      // Additional logic based on appointment type
+    });
+  }
+  
+  setupVehicleSelect() {
+    // Handle vehicle selection
+    this.vehicleSelect.addEventListener('change', (e) => {
+      const vehicleId = e.target.value;
+      console.log(`Selected vehicle: ${vehicleId}`);
+      // Additional logic based on vehicle selection
+    });
+  }
+  
+  setupSalesPersonSelect() {
+    // Handle sales person selection
+    this.salesPersonSelect.addEventListener('change', (e) => {
+      const salesPersonId = e.target.value;
+      console.log(`Selected sales person: ${salesPersonId}`);
+      // Additional logic based on sales person selection
+    });
+  }
+  
+  setupConfirmation() {
+    this.confirmButton.addEventListener('click', () => {
+      this.confirmAppointment();
+    });
+  }
+  
+  setupFormValidation() {
+    this.customerForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      
+      // Basic validation example
+      const nameInput = this.customerForm.querySelector('[name="name"]');
+      const emailInput = this.customerForm.querySelector('[name="email"]');
+      const phoneInput = this.customerForm.querySelector('[name="phone"]');
+      
+      let isValid = true;
+      
+      if (!nameInput.value.trim()) {
+        isValid = false;
+        this.showError(nameInput, 'Name is required');
+      }
+      
+      if (!emailInput.value.trim() || !this.validateEmail(emailInput.value)) {
+        isValid = false;
+        this.showError(emailInput, 'Valid email is required');
+      }
+      
+      if (!phoneInput.value.trim()) {
+        isValid = false;
+        this.showError(phoneInput, 'Phone number is required');
+      }
+      
+      if (isValid) {
+        this.confirmAppointment();
+      }
+    });
+  }
+  
+  validateEmail(email) {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+  }
+  
+  showError(input, message) {
+    const formGroup = input.closest('.form-group');
+    const errorElement = formGroup.querySelector('.error-message') || document.createElement('div');
+    errorElement.classList.add('error-message');
+    errorElement.textContent = message;
+    
+    if (!formGroup.querySelector('.error-message')) {
+      formGroup.appendChild(errorElement);
+    }
+    
+    input.classList.add('error');
+  }
+  
   renderCalendar() {
     if (!this.calendarContainer) return;
     
@@ -135,14 +237,6 @@ class SchedulingCalendar {
           dateCell.classList.add('available');
           dateCell.addEventListener('click', () => {
             this.selectDate(new Date(year, month, day));
-            
-            // Remove selected class from all cells
-            document.querySelectorAll('.calendar-day.selected').forEach(cell => {
-              cell.classList.remove('selected');
-            });
-            
-            // Add selected class to this cell
-            dateCell.classList.add('selected');
           });
         } else {
           dateCell.classList.add('unavailable');
@@ -152,6 +246,9 @@ class SchedulingCalendar {
       }
       
       this.calendarContainer.appendChild(calendarGrid);
+      
+      // Reattach month navigation events
+      this.setupMonthNavigation();
     });
   }
   
@@ -190,10 +287,27 @@ class SchedulingCalendar {
   selectDate(date) {
     this.selectedDate = date;
     
+    // Highlight selected date
+    document.querySelectorAll('.calendar-day.selected').forEach(day => {
+      day.classList.remove('selected');
+    });
+    
+    const selectedElement = document.querySelector(`.calendar-day:not(.empty):not(.past):nth-child(${date.getDate() + this.getFirstDayOffset()})`);
+    if (selectedElement) {
+      selectedElement.classList.add('selected');
+    }
+    
     // Fetch and display available time slots for this date
     this.getTimeSlots(date).then(timeSlots => {
       this.renderTimeSlots(timeSlots);
     });
+  }
+  
+  getFirstDayOffset() {
+    // Calculate offset for selecting the proper date element
+    const year = this.currentMonth.getFullYear();
+    const month = this.currentMonth.getMonth();
+    return new Date(year, month, 1).getDay();
   }
   
   async getTimeSlots(date) {
@@ -244,4 +358,128 @@ class SchedulingCalendar {
       const message = document.createElement('p');
       message.textContent = 'No available time slots for this date.';
       this.timeSlotContainer.appendChild(message);
-      return
+      return;
+    }
+    
+    // Create time slot elements
+    timeSlots.forEach(time => {
+      const timeSlot = document.createElement('div');
+      timeSlot.classList.add('time-slot');
+      timeSlot.textContent = time;
+      timeSlot.addEventListener('click', (event) => {
+        this.selectTimeSlot(time, event);
+      });
+      this.timeSlotContainer.appendChild(timeSlot);
+    });
+  }
+  
+  selectTimeSlot(time, event) {
+    this.selectedTime = time;
+    
+    // Remove selected class from all time slots
+    document.querySelectorAll('.time-slot.selected').forEach(slot => {
+      slot.classList.remove('selected');
+    });
+    
+    // Add selected class to clicked time slot
+    if (event && event.currentTarget) {
+      event.currentTarget.classList.add('selected');
+    }
+    
+    // Show customer info form
+    if (this.customerForm) {
+      this.customerForm.classList.add('visible');
+    }
+  }
+  
+  confirmAppointment() {
+    if (!this.selectedDate || !this.selectedTime) {
+      alert('Please select a date and time for your appointment.');
+      return;
+    }
+    
+    // In a real implementation, this would send data to the server
+    // For demo purposes, just show confirmation
+    
+    const formData = new FormData(this.customerForm);
+    const customerData = {};
+    
+    formData.forEach((value, key) => {
+      customerData[key] = value;
+    });
+    
+    const appointmentData = {
+      date: this.selectedDate.toLocaleDateString(),
+      time: this.selectedTime,
+      customer: customerData,
+      appointmentType: this.appointmentType ? this.appointmentType.value : 'consultation',
+      vehicle: this.vehicleSelect ? this.vehicleSelect.value : null,
+      salesPerson: this.salesPersonSelect ? this.salesPersonSelect.value : null
+    };
+    
+    console.log('Appointment confirmed:', appointmentData);
+    
+    // Show confirmation message
+    if (this.confirmationContainer) {
+      this.confirmationContainer.innerHTML = `
+        <h3>Appointment Confirmed!</h3>
+        <p>Date: ${appointmentData.date}</p>
+        <p>Time: ${appointmentData.time}</p>
+        <p>We look forward to seeing you!</p>
+        <button class="new-appointment">Schedule Another</button>
+      `;
+      
+      this.confirmationContainer.classList.add('visible');
+      
+      // Hide other elements
+      if (this.calendarContainer) this.calendarContainer.style.display = 'none';
+      if (this.timeSlotContainer) this.timeSlotContainer.style.display = 'none';
+      if (this.customerForm) this.customerForm.style.display = 'none';
+      
+      // Add event listener for scheduling another appointment
+      const newAppointmentButton = this.confirmationContainer.querySelector('.new-appointment');
+      if (newAppointmentButton) {
+        newAppointmentButton.addEventListener('click', () => {
+          this.resetScheduler();
+        });
+      }
+    }
+  }
+  
+  resetScheduler() {
+    // Reset selected date and time
+    this.selectedDate = null;
+    this.selectedTime = null;
+    
+    // Reset form
+    if (this.customerForm) {
+      this.customerForm.reset();
+      this.customerForm.classList.remove('visible');
+      this.customerForm.style.display = '';
+    }
+    
+    // Hide confirmation
+    if (this.confirmationContainer) {
+      this.confirmationContainer.classList.remove('visible');
+    }
+    
+    // Show calendar again
+    if (this.calendarContainer) {
+      this.calendarContainer.style.display = '';
+    }
+    
+    if (this.timeSlotContainer) {
+      this.timeSlotContainer.innerHTML = '';
+      this.timeSlotContainer.style.display = '';
+    }
+    
+    // Reset current month to today's month
+    this.currentMonth = new Date();
+    
+    // Render calendar again
+    this.renderCalendar();
+  }
+}
+
+// Export the class for use in other files
+export default SchedulingCalendar;

@@ -93,7 +93,6 @@
       "bing"
     ]
 
-# Improved build performance with caching
 [[plugins]]
   package = "netlify-plugin-cache"
   [plugins.inputs]
