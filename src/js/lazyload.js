@@ -1,6 +1,8 @@
 import lazySizes from "lazysizes";
 
 // Initialize lazySizes
+lazySizes.init();
+
 document.addEventListener('DOMContentLoaded', function() {
   // Add lazyload class to all images that don't have it
   const images = document.querySelectorAll('img:not(.lazyload):not([data-src])');

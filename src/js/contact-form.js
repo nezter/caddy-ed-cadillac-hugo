@@ -56,12 +56,14 @@ class ContactForm {
     
     // Get form data
     const formData = new FormData(form);
-    const data = Object.fromEntries(formData.entries());
     
     // Remove honeypot data
-    if (data['website'] !== undefined) {
-      delete data['website'];
+    if (formData.has('website')) {
+      formData.delete('website');
     }
+
+    // Check if form has file inputs
+    const hasFileInputs = Array.from(form.querySelectorAll('input[type="file"]')).some(input => input.files.length > 0);
 
     // Check reCAPTCHA if enabled
     if (this.recaptchaEnabled && window.grecaptcha) {
@@ -77,16 +79,16 @@ class ContactForm {
         return;
       }
       
-      data['g-recaptcha-response'] = recaptchaResponse;
+      formData.append('g-recaptcha-response', recaptchaResponse);
     }
     
     // Submit the form data using fetch API
     fetch(this.endpoint, {
       method: 'POST',
-      headers: {
+      headers: hasFileInputs ? undefined : {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(data)
+      body: hasFileInputs ? formData : JSON.stringify(Object.fromEntries(formData.entries()))
     })
     .then(response => {
       if (!response.ok) {
@@ -94,7 +96,7 @@ class ContactForm {
       }
       return response.json();
     })
-    .then(result => {
+    .then(() => {
       this.showSuccess(form);
     })
     .catch(error => {
@@ -452,6 +454,15 @@ class ContactForm {
   initializeCustomDropdowns() {
     const customDropdowns = document.querySelectorAll('.custom-dropdown');
     
+    // Add a single document click handler to close all dropdowns
+    if (customDropdowns.length > 0) {
+      document.addEventListener('click', () => {
+        document.querySelectorAll('.dropdown-options.show').forEach(dropdown => {
+          dropdown.classList.remove('show');
+        });
+      });
+    }
+    
     customDropdowns.forEach(dropdown => {
       const select = dropdown.querySelector('select');
       if (!select) return;
@@ -492,11 +503,6 @@ class ContactForm {
         dropdownOptions.classList.toggle('show');
       });
       
-      // Close dropdown when clicking outside
-      document.addEventListener('click', () => {
-        dropdownOptions.classList.remove('show');
-      });
-      
       // Hide the original select
       select.style.display = 'none';
       
@@ -515,7 +521,7 @@ class ContactForm {
       
       const label = document.createElement('label');
       label.className = 'file-upload-label';
-      label.htmlFor = input.id || `file-${Math.random().toString(36).substr(2, 9)}`;
+      label.htmlFor = input.id || `file-${Math.random().toString(36).substring(2, 11)}`;
       
       const button = document.createElement('span');
       button.className = 'file-upload-button';

@@ -227,7 +227,7 @@ class SalesDashboard {
       return response.json();
     })
     .then(data => {
-      this.salesMetrics(data);
+      this.renderSalesMetrics(data);
       return data;
     });
   }
@@ -458,4 +458,194 @@ class SalesDashboard {
   }
   
   renderAppointmentsList(appointments) {
-    if (!this.dashboardElement) return;
+    if (!this.appointmentsList) return;
+    
+    if (appointments.length === 0) {
+      this.appointmentsList.innerHTML = `
+        <div class="empty-state">
+          <p>No upcoming appointments scheduled.</p>
+        </div>
+      `;
+      return;
+    }
+    
+    let html = '';
+    
+    appointments.forEach(appointment => {
+      const appointmentDate = new Date(appointment.date);
+      const formattedDate = appointmentDate.toLocaleDateString('en-US', { 
+        weekday: 'short', month: 'short', day: 'numeric'
+      });
+      const formattedTime = appointmentDate.toLocaleTimeString('en-US', {
+        hour: '2-digit', minute: '2-digit'
+      });
+      
+      html += `
+        <div class="appointment-card">
+          <div class="appointment-header">
+            <h3>${appointment.customerName}</h3>
+            <span class="appointment-datetime">${formattedDate} at ${formattedTime}</span>
+          </div>
+          <div class="appointment-details">
+            ${appointment.phone ? `<p><strong>Phone:</strong> <a href="tel:${appointment.phone}">${appointment.phone}</a></p>` : ''}
+            ${appointment.email ? `<p><strong>Email:</strong> <a href="mailto:${appointment.email}">${appointment.email}</a></p>` : ''}
+            ${appointment.notes ? `<div class="appointment-notes">${appointment.notes}</div>` : ''}
+          </div>
+          <div class="appointment-actions">
+            <button class="reschedule-btn" data-appointment-id="${appointment.id}">Reschedule</button>
+            <button class="complete-btn" data-appointment-id="${appointment.id}">Mark Complete</button>
+          </div>
+        </div>
+      `;
+    });
+    
+    this.appointmentsList.innerHTML = html;
+    
+    // Setup action button handlers
+    const rescheduleButtons = this.appointmentsList.querySelectorAll('.reschedule-btn');
+    rescheduleButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        this.showRescheduleModal(button.dataset.appointmentId);
+      });
+    });
+    
+    const completeButtons = this.appointmentsList.querySelectorAll('.complete-btn');
+    completeButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        this.markAppointmentComplete(button.dataset.appointmentId);
+      });
+    });
+  }
+  
+    renderSalesMetrics(data) {
+      if (!this.salesMetrics) return;
+      
+      // Implementation for rendering sales metrics would go here
+      this.salesMetrics.innerHTML = `
+        <div class="metrics-container">
+          <div class="metric-card">
+            <h4>New Leads</h4>
+            <div class="metric-value">${data.newLeads || 0}</div>
+          </div>
+          <div class="metric-card">
+            <h4>Appointments</h4>
+            <div class="metric-value">${data.appointments || 0}</div>
+          </div>
+          <div class="metric-card">
+            <h4>Sales</h4>
+            <div class="metric-value">${data.sales || 0}</div>
+          </div>
+          <div class="metric-card">
+            <h4>Conversion Rate</h4>
+            <div class="metric-value">${data.conversionRate || '0%'}</div>
+          </div>
+        </div>
+      `;
+    }
+    
+    refreshDashboard() {
+      this.showLoading();
+      
+      Promise.all([
+        this.fetchLeads(),
+        this.fetchAppointments(),
+        this.fetchSalesMetrics()
+      ])
+      .then(() => {
+        this.hideLoading();
+      })
+      .catch(error => {
+        console.error('Error refreshing dashboard:', error);
+        this.hideLoading();
+        this.showError('Failed to refresh dashboard data.');
+      });
+    }
+    
+    setupAutoRefresh() {
+      // Auto refresh every 5 minutes
+      setInterval(() => {
+        this.refreshDashboard();
+      }, 300000);
+    }
+    
+    showLoading() {
+      const loader = document.createElement('div');
+      loader.className = 'dashboard-loader';
+      loader.innerHTML = '<div class="spinner"></div><p>Loading...</p>';
+      
+      this.dashboardElement.appendChild(loader);
+    }
+    
+    hideLoading() {
+      const loader = this.dashboardElement.querySelector('.dashboard-loader');
+      if (loader) {
+        this.dashboardElement.removeChild(loader);
+      }
+    }
+    
+    showError(message) {
+      const errorEl = document.createElement('div');
+      errorEl.className = 'dashboard-error';
+      errorEl.innerHTML = `<p>${message}</p>`;
+      
+      this.dashboardElement.appendChild(errorEl);
+      
+      // Auto-remove after 5 seconds
+      setTimeout(() => {
+        if (errorEl.parentNode) {
+          errorEl.parentNode.removeChild(errorEl);
+        }
+      }, 5000);
+    }
+    
+    showLoginPrompt() {
+      this.dashboardElement.innerHTML = `
+        <div class="login-prompt">
+          <h3>Authentication Required</h3>
+          <p>Please log in to access the sales dashboard.</p>
+          <a href="/login" class="login-button">Login</a>
+        </div>
+      `;
+    }
+    
+    showRescheduleModal(appointmentId) {
+      // Implementation for appointment rescheduling modal
+      console.log('Reschedule appointment:', appointmentId);
+      alert('Appointment rescheduling feature coming soon');
+    }
+    
+    markAppointmentComplete(appointmentId) {
+      // Implementation for marking appointment as complete
+      console.log('Mark appointment complete:', appointmentId);
+      
+      return fetch('/api/sales/complete-appointment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+          appointmentId: appointmentId,
+          salesId: this.salesRep.id
+        })
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Failed to update appointment');
+        }
+        return response.json();
+      })
+      .then(() => {
+        this.refreshDashboard();
+      })
+      .catch(error => {
+        console.error('Error completing appointment:', error);
+        alert('Failed to update appointment status. Please try again.');
+      });
+    }
+  }
+  
+  // Initialize the dashboard when the DOM is fully loaded
+  document.addEventListener('DOMContentLoaded', () => {
+    new SalesDashboard();
+  });

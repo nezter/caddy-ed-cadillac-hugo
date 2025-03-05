@@ -41,23 +41,21 @@ class CustomerRelationship {
       });
   }
   
-  checkAuth() {
-    return fetch('/api/sales/auth-check', {
+  async checkAuth() {
+    const response = await fetch('/api/sales/auth-check', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'
       },
       credentials: 'same-origin'
-    })
-    .then(response => {
-      if (!response.ok) {
-        throw new Error('Authentication check failed');
-      }
-      return response.json();
-    })
-    .then(data => {
-      return data.authenticated;
     });
+    
+    if (!response.ok) {
+      throw new Error('Authentication check failed');
+    }
+    
+    const data = await response.json();
+    return data.authenticated;
   }
   
   setupCRM() {
@@ -122,7 +120,7 @@ class CustomerRelationship {
     };
   }
   
-  fetchCustomers() {
+  async fetchCustomers() {
     const searchTerm = this.searchInput?.value || '';
     const filter = this.filterSelect?.value || 'all';
     
@@ -131,75 +129,71 @@ class CustomerRelationship {
     url.searchParams.append('search', searchTerm);
     url.searchParams.append('filter', filter);
     
-    return fetch(url, {
+    const response = await fetch(url, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'
       },
       credentials: 'same-origin'
-    })
-    .then(response => {
-      if (!response.ok) {
-        throw new Error('Failed to fetch customers');
-      }
-      return response.json();
-    })
-    .then(data => {
-      this.renderCustomerList(data.customers);
-      return data;
     });
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch customers');
+    }
+    
+    const data = await response.json();
+    this.renderCustomerList(data.customers);
+    return data;
   }
   
-  fetchFollowups() {
+  async fetchFollowups() {
     const url = new URL('/api/sales/followups', window.location.origin);
     url.searchParams.append('salesId', this.salesRep.id);
     
-    return fetch(url, {
+    const response = await fetch(url, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'
       },
       credentials: 'same-origin'
-    })
-    .then(response => {
-      if (!response.ok) {
-        throw new Error('Failed to fetch followups');
-      }
-      return response.json();
-    })
-    .then(data => {
-      this.renderFollowupList(data.followups);
-      return data;
     });
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch followups');
+    }
+    
+    const data = await response.json();
+    this.renderFollowupList(data.followups);
+    return data;
   }
   
-  fetchActivity() {
+  async fetchActivity() {
     const url = new URL('/api/sales/activity', window.location.origin);
     url.searchParams.append('salesId', this.salesRep.id);
     
-    return fetch(url, {
+    const response = await fetch(url, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'
       },
       credentials: 'same-origin'
-    })
-    .then(response => {
-      if (!response.ok) {
-        throw new Error('Failed to fetch activity');
-      }
-      return response.json();
-    })
-    .then(data => {
-      this.renderActivityLog(data.activities);
-      return data;
     });
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch activity');
+    }
+    
+    const data = await response.json();
+    if (typeof this.renderActivityLog === 'function') {
+      this.renderActivityLog(data.activities);
+    }
+    return data;
   }
   
   renderCustomerList(customers) {
     if (!this.customerList) return;
     
-    if (customers.length === 0) {
+    if (!customers || customers.length === 0) {
       this.customerList.innerHTML = `
         <div class="empty-state">
           <p>No customers found matching your criteria.</p>
@@ -219,12 +213,8 @@ class CustomerRelationship {
     }
     
     let html = '';
-    
     customers.forEach(customer => {
-      const lastContactDate = customer.lastContact ? new Date(customer.lastContact) : null;
-      const formattedDate = lastContactDate ? lastContactDate.toLocaleDateString('en-US', { 
-        month: 'short', day: 'numeric', year: 'numeric' 
-      }) : 'Never';
+      const formattedDate = customer.lastContact ? new Date(customer.lastContact).toLocaleDateString() : 'Never';
       
       html += `
         <div class="customer-card" data-customer-id="${customer.id}">
@@ -239,8 +229,6 @@ class CustomerRelationship {
             </div>
             <div class="customer-info">
               <p><strong>Last Contact:</strong> ${formattedDate}</p>
-              ${customer.interests ? `<p><strong>Interests:</strong> ${customer.interests}</p>` : ''}
-              ${customer.status ? `<p><strong>Status:</strong> <span class="status-${customer.status.toLowerCase()}">${customer.status}</span></p>` : ''}
             </div>
           </div>
           <div class="customer-actions">
@@ -282,7 +270,7 @@ class CustomerRelationship {
   renderFollowupList(followups) {
     if (!this.followupList) return;
     
-    if (followups.length === 0) {
+    if (!followups || followups.length === 0) {
       this.followupList.innerHTML = `
         <div class="empty-state">
           <p>No follow-ups scheduled.</p>
@@ -294,14 +282,71 @@ class CustomerRelationship {
     // Sort followups by date
     followups.sort((a, b) => new Date(a.date) - new Date(b.date));
     
-    let html = '';
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
     // Group followups by timeframe
-    const overdue = followups.filter(f => new Date(f.date) < today);
-    const todayFollowups = followups.filter(f => {
-      const followupDate = new Date(f.date);
+    const overdue = followups.filter(followup => new Date(followup.date) < today);
+    const todayFollowups = followups.filter(followup => {
+      const followupDate = new Date(followup.date);
       return followupDate.toDateString() === today.toDateString();
     });
-    const upcoming = followups.filter(f => new Date
+    const upcoming = followups.filter(followup => new Date(followup.date) > today && 
+      new Date(followup.date).toDateString() !== today.toDateString());
+    
+    let html = this.generateFollowupHTML(overdue, todayFollowups, upcoming);
+    this.followupList.innerHTML = html;
+  }
+  
+  generateFollowupHTML(overdue, todayFollowups, upcoming) {
+    let html = '';
+    
+    if (overdue.length > 0) {
+      html += '<div class="followup-group overdue"><h4>Overdue</h4>';
+      overdue.forEach(followup => {
+        html += this.createFollowupItem(followup);
+      });
+      html += '</div>';
+    }
+    
+    if (todayFollowups.length > 0) {
+      html += '<div class="followup-group today"><h4>Today</h4>';
+      todayFollowups.forEach(followup => {
+        html += this.createFollowupItem(followup);
+      });
+      html += '</div>';
+    }
+    
+    if (upcoming.length > 0) {
+      html += '<div class="followup-group upcoming"><h4>Upcoming</h4>';
+      upcoming.forEach(followup => {
+        html += this.createFollowupItem(followup);
+      });
+      html += '</div>';
+    }
+    
+    return html;
+  }
+  
+    createFollowupItem(followup) {
+      const followupDate = new Date(followup.date);
+      const formattedDate = followupDate.toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short', 
+        day: 'numeric'
+      });
+      
+      return `
+        <div class="followup-item" data-followup-id="${followup.id}">
+          <div class="followup-date">${formattedDate}</div>
+          <div class="followup-customer">${followup.customerName}</div>
+          <div class="followup-type">${followup.type}</div>
+          <div class="followup-notes">${followup.notes || ''}</div>
+          <div class="followup-actions">
+            <button class="complete-followup-btn" data-followup-id="${followup.id}">Complete</button>
+            <button class="reschedule-followup-btn" data-followup-id="${followup.id}">Reschedule</button>
+          </div>
+        </div>
+      `;
+    }
+  }

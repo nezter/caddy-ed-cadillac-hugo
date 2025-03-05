@@ -214,6 +214,9 @@ class FinanceCalculator {
   }
 }
 
+// Export the FinanceCalculator class
+export default FinanceCalculator;
+
 // Initialize the calculator if it's on the page
 document.addEventListener('DOMContentLoaded', () => {
   const calculatorElement = document.querySelector('.finance-calculator');
@@ -227,5 +230,3 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
-
-export default FinanceCalculator;

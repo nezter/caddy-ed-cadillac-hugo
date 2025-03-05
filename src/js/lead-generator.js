@@ -45,7 +45,7 @@ class LeadGenerator {
     const leadForms = document.querySelectorAll('.lead-form, .newsletter-form, .contact-form');
     
     leadForms.forEach(form => {
-      form.addEventListener('submit', (e) => {
+      form.addEventListener('submit', () => {
         // Form validation is handled by contact-form.js
         // Here we just track the submission
         this.trackFormSubmission(form.id || form.classList[0]);
@@ -61,7 +61,7 @@ class LeadGenerator {
     });
     
     // For mobile, detect back button press
-    window.addEventListener('popstate', (e) => {
+    window.addEventListener('popstate', () => {
       if (!this.popupShown) {
         this.showPopup('exit');
         history.pushState(null, document.title, window.location.href);
@@ -74,7 +74,7 @@ class LeadGenerator {
   
   initializeScrollTrigger() {
     window.addEventListener('scroll', () => {
-      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      const scrollTop = window.scrollY || document.documentElement.scrollTop;
       const scrollHeight = document.documentElement.scrollHeight;
       const clientHeight = document.documentElement.clientHeight;
       
@@ -164,15 +164,20 @@ class LeadGenerator {
     });
     
     // Close on escape key
-    document.addEventListener('keydown', (e) => {
+    const escapeKeyHandler = (e) => {
       if (e.key === 'Escape') {
         this.closePopup(popup);
+        document.removeEventListener('keydown', escapeKeyHandler);
       }
-    });
+    };
+    
+    // Add escape key event listener
+    document.addEventListener('keydown', escapeKeyHandler);
   }
   
   closePopup(popup) {
     popup.classList.remove('active');
+    this.popupShown = false;
     
     // Set cookie to prevent popups for a period
     this.setCookie('popup_dismissed', 'true', this.cookieDuration);

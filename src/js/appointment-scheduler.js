@@ -88,17 +88,52 @@ class AppointmentScheduler {
     });
   }
   
-  populateSalesReps() {
-    if (!this.salesRepSelector) return;
+    populateSalesReps() {
+      if (!this.salesRepSelector) return;
+      
+      let options = '<option value="">Select a Sales Representative</option>';
+      options += '<option value="any">Any Available Representative</option>';
+      
+      this.salesReps.forEach(rep => {
+        options += `<option value="${rep.id}">${rep.name} - ${rep.position}</option>`;
+      });
+      
+      this.salesRepSelector.innerHTML = options;
+      
+      // Check if there's a pre-selected rep (from URL)
+      const urlParams = new URLSearchParams(window.location.search);
+      const preSelectedRep = urlParams.get('rep');
+      
+      if (preSelectedRep) {
+        this.salesRepSelector.value = preSelectedRep;
+        this.selectedRep = preSelectedRep;
+      }
+    }
+  
+    setupEventListeners() {
+      // Add event listeners for form elements
+      if (this.salesRepSelector) {
+        this.salesRepSelector.addEventListener('change', (e) => {
+          this.selectedRep = e.target.value;
+          this.updateAvailableTimes();
+        });
+      }
+      
+      if (this.dateSelector) {
+        this.dateSelector.addEventListener('change', (e) => {
+          this.selectedDate = new Date(e.target.value);
+          this.updateAvailableTimes();
+        });
+      }
+    }
     
-    let options = '<option value="">Select a Sales Representative</option>';
-    options += '<option value="any">Any Available Representative</option>';
+    showError(message) {
+      console.error(message);
+      // Display error to the user
+    }
     
-    this.salesReps.forEach(rep => {
-      options += `<option value="${rep.id}">${rep.name} - ${rep.position}</option>`;
-    });
-    
-    this.salesRepSelector.innerHTML = options;
-    
-    // Check if there's a pre-selected rep (from URL)
-    const urlParams = new URLSearchParams(window
+    updateAvailableTimes() {
+      // Implementation for updating available times based on selected rep and date
+      console.log(`Updating times for rep: ${this.selectedRep} on date: ${this.selectedDate}`);
+    }
+  }

@@ -29,7 +29,6 @@ document.addEventListener('DOMContentLoaded', function() {
     toggle.addEventListener('click', function(e) {
       e.preventDefault();
       const parent = this.parentElement;
-      const dropdown = parent.querySelector('.dropdown-menu');
       
       // Close all other dropdowns
       document.querySelectorAll('.dropdown.active').forEach(item => {

@@ -134,6 +134,80 @@
 
 {{ define "scripts" }}
 <script>
-  // Any page-specific JavaScript can go here
+  document.addEventListener('DOMContentLoaded', function() {
+    // Initialize the inventory display
+    loadInventory();
+    
+    // Set up filter form submission handler
+    document.getElementById('inventory-filter').addEventListener('submit', function(e) {
+      e.preventDefault();
+      loadInventory();
+    });
+    
+    function loadInventory() {
+      const form = document.getElementById('inventory-filter');
+      const resultsContainer = document.getElementById('inventory-results');
+      
+      // Show loading message
+      resultsContainer.innerHTML = '<div class="loading">Loading inventory...</div>';
+      
+      // Get filter values
+      const category = form.querySelector('[name="category"]').value;
+      const model = form.querySelector('[name="model"]').value;
+      const year = form.querySelector('[name="year"]').value;
+      const price = form.querySelector('[name="price"]').value;
+      
+      // In a real implementation, this would be an API call
+      // For demo purposes, we'll simulate a delay then show sample content
+      setTimeout(function() {
+        resultsContainer.innerHTML = generateSampleInventory(category, model, year, price);
+      }, 500);
+    }
+    
+    function generateSampleInventory(category, model, year, price) {
+      // This would typically fetch data from an API based on filters
+      // For now, return sample HTML
+      return `
+        <div class="columns is-multiline">
+          <div class="column is-4">
+            <div class="card">
+              <div class="card-image">
+                <figure class="image is-16by9">
+                  <img src="/images/inventory/sample-1.jpg" alt="2023 Cadillac Escalade">
+                </figure>
+              </div>
+              <div class="card-content">
+                <h3 class="title is-5">2023 Cadillac Escalade</h3>
+                <p class="price has-text-weight-bold">$92,500</p>
+                <p class="specs">
+                  <span>Stock: CAD12345</span>
+                  <span>Mileage: 0</span>
+                </p>
+                <a href="/inventory/2023-cadillac-escalade" class="button is-primary is-fullwidth">View Details</a>
+              </div>
+            </div>
+          </div>
+          <div class="column is-4">
+            <div class="card">
+              <div class="card-image">
+                <figure class="image is-16by9">
+                  <img src="/images/inventory/sample-2.jpg" alt="2022 Cadillac CT5">
+                </figure>
+              </div>
+              <div class="card-content">
+                <h3 class="title is-5">2022 Cadillac CT5</h3>
+                <p class="price has-text-weight-bold">$45,800</p>
+                <p class="specs">
+                  <span>Stock: CAD54321</span>
+                  <span>Mileage: 12,500</span>
+                </p>
+                <a href="/inventory/2022-cadillac-ct5" class="button is-primary is-fullwidth">View Details</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+  });
 </script>
 {{ end }}

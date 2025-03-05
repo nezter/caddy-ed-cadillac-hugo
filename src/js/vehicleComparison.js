@@ -126,15 +126,14 @@ class VehicleComparison {
       });
   }
   
-  fetchVehicleData(vehicleId) {
-    return fetch(`/api/vehicle/${vehicleId}`)
-      .then(response => response.json())
-      .then(data => {
-        this.vehicleData[vehicleId] = data;
-        if (!this.compareList.includes(vehicleId)) {
-          this.compareList.push(vehicleId);
-        }
-      });
+  async fetchVehicleData(vehicleId) {
+    const response = await fetch(`/api/vehicle/${vehicleId}`);
+    const data = await response.json();
+    this.vehicleData[vehicleId] = data;
+    if (!this.compareList.includes(vehicleId)) {
+      this.compareList.push(vehicleId);
+    }
+    return data;
   }
   
   removeVehicle(vehicleId) {
@@ -173,14 +172,18 @@ class VehicleComparison {
         .catch(error => console.log('Error sharing:', error));
       } else {
         // Fallback for browsers that don't support the Web Share API
-        const tempInput = document.createElement('input');
-        document.body.appendChild(tempInput);
-        tempInput.value = url;
-        tempInput.select();
-        document.execCommand('copy');
-        document.body.removeChild(tempInput);
-        
-        alert('Comparison link copied to clipboard!');
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(url)
+            .then(() => {
+              alert('Comparison link copied to clipboard!');
+            })
+            .catch(err => {
+              console.error('Failed to copy: ', err);
+              alert('Failed to copy URL. Please copy it manually.');
+            });
+        } else {
+          prompt('Copy this URL to share your comparison:', url);
+        }
       }
     });
   }
@@ -223,13 +226,16 @@ class VehicleComparison {
       
     this.compareList.forEach(vehicleId => {
       const vehicle = this.vehicleData[vehicleId];
+      const imageUrl = vehicle.images && vehicle.images.length > 0 ? vehicle.images[0] : '';
+      const price = vehicle.price ? vehicle.price.toLocaleString() : 'N/A';
+      
       html += `
         <th class="vehicle-column">
           <div class="vehicle-header">
             <button class="remove-vehicle" data-vehicle-id="${vehicleId}">&times;</button>
-            <img src="${vehicle.images[0]}" alt="${vehicle.year} ${vehicle.make} ${vehicle.model}">
-            <h3>${vehicle.year} ${vehicle.make}<br>${vehicle.model} ${vehicle.trim}</h3>
-            <div class="vehicle-price">$${vehicle.price.toLocaleString()}</div>
+            <img src="${imageUrl}" alt="${vehicle.year || ''} ${vehicle.make || ''} ${vehicle.model || ''}">
+            <h3>${vehicle.year || ''} ${vehicle.make || ''}<br>${vehicle.model || ''} ${vehicle.trim || ''}</h3>
+            <div class="vehicle-price">${price !== 'N/A' ? '$' + price : price}</div>
           </div>
         </th>`;
     });
@@ -321,6 +327,8 @@ class VehicleComparison {
         this.removeVehicle(vehicleId);
       });
     });
+    
+    return html;
   }
   
   renderComparisonSection(title, fields) {
@@ -336,14 +344,20 @@ class VehicleComparison {
         <td class="feature-name">${field.label}</td>`;
       
       this.compareList.forEach(vehicleId => {
-        const vehicle = this.vehicleData[vehicleId];
+        const vehicle = this.vehicleData[vehicleId] || {};
         let value = vehicle[field.field];
         
-        if (field.format && value !== undefined) {
-          value = field.format(value);
+        // Handle numeric values that might be 0
+        if (field.format && (value !== undefined && value !== null)) {
+          try {
+            value = field.format(value);
+          } catch (error) {
+            console.error(`Error formatting value for ${field.field}:`, error);
+            value = '-';
+          }
         }
         
-        html += `<td class="feature-value">${value !== undefined ? value : '-'}</td>`;
+        html += `<td class="feature-value">${value !== undefined && value !== null ? value : '-'}</td>`;
       });
       
       html += `</tr>`;

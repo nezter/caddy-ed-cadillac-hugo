@@ -106,7 +106,6 @@ class FormHandler {
     event.preventDefault();
     
     const form = event.target;
-    const formId = form.id;
     const submitBtn = form.querySelector('button[type="submit"]');
     const formData = new FormData(form);
     const formType = form.dataset.formType || 'contact';

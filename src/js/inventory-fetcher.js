@@ -58,9 +58,19 @@ class InventoryFetcher {
    */
   parseInventoryHTML(html) {
     // Create a DOM parser
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
-
+    let doc;
+    
+    if (typeof window === 'undefined') {
+      // Server-side environment
+      const { JSDOM } = require('jsdom');
+      const dom = new JSDOM(html);
+      doc = dom.window.document;
+    } else {
+      // Browser environment
+      const parser = new DOMParser();
+      doc = parser.parseFromString(html, 'text/html');
+    }
+  
     // Find all vehicle listings
     const vehicleCards = doc.querySelectorAll('.inventory-card, .vehicle-card, .srp-vehicle');
     

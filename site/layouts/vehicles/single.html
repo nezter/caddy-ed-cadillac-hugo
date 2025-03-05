@@ -87,9 +87,10 @@
         
         <div class="vehicle-contact">
           <h3 class="f4 b mb3">Interested in this vehicle?</h3>
-          <form name="vehicle-inquiry" method="POST" data-form-type="contact" class="mb3">
+          <form name="vehicle-inquiry" method="POST" data-netlify="true" netlify-honeypot="bot-field" action="/thank-you/" class="mb3">
             <input type="hidden" name="form-name" value="vehicle-inquiry">
             <input type="hidden" name="vehicle" value="{{ .Params.year }} {{ .Params.make }} {{ .Params.model }}">
+            <p class="dn" hidden><label>Don't fill this out if you're human: <input name="bot-field"></label></p>
             
             <div class="mb3">
               <label for="name" class="db mb1 f6 b">Name *</label>

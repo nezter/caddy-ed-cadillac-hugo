@@ -1,6 +1,7 @@
 // Import required libraries
 import "lazysizes";
 import "./carousel";
+import Splide from '@splidejs/splide';
 
 // Main JS file for site functionality
 
@@ -223,10 +224,9 @@ function smoothScroll(e) {
   e.preventDefault();
   const targetId = this.getAttribute('href');
   const targetElement = document.querySelector(targetId);
-  
   if (targetElement) {
     const headerHeight = document.querySelector('header').offsetHeight;
-    const targetPosition = targetElement.getBoundingClientRect().top + window.pageYOffset - headerHeight;
+    const targetPosition = targetElement.getBoundingClientRect().top + window.scrollY - headerHeight;
     
     window.scrollTo({
       top: targetPosition,

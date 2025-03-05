@@ -2,7 +2,7 @@
 
 {{ define "main" }}
 
-<div class="hero" style="background-image: url('{{ .Params.hero.image }}')">
+<div class="hero" style="background-image: url('{{ .Params.hero.image }}')" role="banner" aria-label="{{ .Params.hero.title }}">
   <div class="hero-content container">
     <h1>{{ .Params.hero.title }}</h1>
     <h2>{{ .Params.hero.subtitle }}</h2>
@@ -10,23 +10,23 @@
   </div>
 </div>
 
-<section class="about section">
+<section class="about section" aria-labelledby="about-heading">
   <div class="container">
-    <h2 class="section-title">{{ .Params.about.heading }}</h2>
+    <h2 id="about-heading" class="section-title">{{ .Params.about.heading }}</h2>
     <div class="content">
       {{ .Params.about.text | markdownify }}
     </div>
   </div>
 </section>
 
-<section class="featured-vehicles section bg-light">
+<section class="featured-vehicles section bg-light" aria-labelledby="featured-heading">
   <div class="container">
-    <h2 class="section-title">{{ .Params.featured.heading }}</h2>
+    <h2 id="featured-heading" class="section-title">{{ .Params.featured.heading }}</h2>
     <div class="vehicle-grid">
       {{ range .Params.featured.items }}
         <div class="vehicle-card">
           <div class="vehicle-image">
-            <img src="{{ .image }}" alt="{{ .title }}" class="img-fluid lazyload">
+            <img data-src="{{ .image }}" alt="{{ .title }}" class="img-fluid lazyload">
           </div>
           <div class="vehicle-details">
             <h3>{{ .title }}</h3>
@@ -39,10 +39,10 @@
   </div>
 </section>
 
-<section class="testimonials section">
+<section class="testimonials section" aria-labelledby="testimonials-heading">
   <div class="container">
-    <h2 class="section-title">{{ .Params.testimonials.heading }}</h2>
-    <div class="testimonial-slider">
+    <h2 id="testimonials-heading" class="section-title">{{ .Params.testimonials.heading }}</h2>
+    <div class="testimonial-slider" role="region" aria-label="Customer testimonials">
       {{ range .Params.testimonials.items }}
         <div class="testimonial-item">
           <blockquote>
@@ -55,10 +55,10 @@
   </div>
 </section>
 
-<section class="cta-section bg-primary">
+<section class="cta-section bg-primary" aria-labelledby="cta-heading">
   <div class="container">
     <div class="cta-content">
-      <h2>Ready to find your dream Cadillac?</h2>
+      <h2 id="cta-heading">Ready to find your dream Cadillac?</h2>
       <p>Browse our inventory or contact us today for personalized assistance.</p>
       <div class="cta-buttons">
         <a href="/inventory/" class="btn btn-light">View Inventory</a>

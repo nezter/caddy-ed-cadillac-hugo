@@ -216,7 +216,7 @@ class InventoryDisplay {
             <p class="vehicle-price">${vehicle.priceRaw || `$${vehicle.price.toLocaleString()}`}</p>
             <div class="vehicle-specs">
               <span class="vehicle-year">${vehicle.year}</span>
-              <span class="vehicle-mileage">${vehicle.mileageRaw || `${vehicle.mileage.toLocaleString()} miles`}</span>
+              <span class="vehicle-mileage">${vehicle.mileageRaw || (vehicle.mileage ? `${vehicle.mileage.toLocaleString()} miles` : 'N/A')}</span>
             </div>
             <div class="vehicle-features">
               ${(vehicle.features || []).slice(0, 3).map(feature => `<span class="feature">${feature}</span>`).join('')}
@@ -337,10 +337,14 @@ class InventoryDisplay {
         const isActive = button.classList.contains('active');
         button.setAttribute('aria-checked', isActive ? 'true' : 'false');
         
+        // Get latest favorites from localStorage
+        const currentSavedFavorites = localStorage.getItem('favoriteVehicles');
+        const currentFavorites = currentSavedFavorites ? JSON.parse(currentSavedFavorites) : [];
+        
         // Update favorites in localStorage
         const updatedFavorites = isActive 
-          ? [...favorites, vehicleId] 
-          : favorites.filter(id => id !== vehicleId);
+          ? [...currentFavorites, vehicleId] 
+          : currentFavorites.filter(id => id !== vehicleId);
         
         localStorage.setItem('favoriteVehicles', JSON.stringify(updatedFavorites));
       });

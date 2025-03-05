@@ -49,6 +49,8 @@ class InventoryManager {
   handleFilterChange(event) {
     const { name, value } = event.target;
     this.filters[name] = value;
+    this.currentPage = 1; // Reset to first page when filters change
+    this.loadInventory(); // Reload inventory when filters change
   }
 
   async loadInventory() {
@@ -173,21 +175,23 @@ class InventoryManager {
       </li>
     `;
     
-    paginationHtml += '</ul>';
     this.paginationEl.innerHTML = paginationHtml;
     
     // Add event listeners to pagination links
-    this.paginationEl.querySelectorAll('a[data-page]').forEach(link => {
-      link.addEventListener('click', (e) => {
-        e.preventDefault();
-        const page = parseInt(e.currentTarget.dataset.page);
-        if (page > 0 && page <= totalPages) {
-          this.currentPage = page;
-          this.loadInventory();
-          window.scrollTo({ top: this.inventoryEl.offsetTop - 100, behavior: 'smooth' });
-        }
+    const paginationLinks = this.paginationEl.querySelectorAll('a[data-page]');
+    if (paginationLinks && paginationLinks.length > 0) {
+      paginationLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          const page = parseInt(e.currentTarget.dataset.page);
+          if (page > 0 && page <= totalPages) {
+            this.currentPage = page;
+            this.loadInventory();
+            window.scrollTo({ top: this.inventoryEl.offsetTop - 100, behavior: 'smooth' });
+          }
+        });
       });
-    });
+    }
   }
 
   formatNumber(number) {
