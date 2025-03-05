@@ -1,53 +1,62 @@
-const fetch = require('node-fetch');
+const axios = require('axios');
 
 exports.handler = async function(event, context) {
-  const baseUrl = 'https://www.cadillacofsouthcharlotte.com/VehicleSearchResults';
-  
   try {
-    // Parse query params from the request
-    const params = event.queryStringParameters || {};
+    // Get the path parameter from the request
+    const pathSegments = event.path.split('/inventory-api/');
+    const endpoint = pathSegments.length > 1 ? pathSegments[1] : '';
     
-    // Build the URL with query params
-    const url = new URL(baseUrl);
-    Object.entries(params).forEach(([key, value]) => {
-      url.searchParams.append(key, value);
-    });
+    // Base API URL for the dealer inventory system
+    const baseUrl = process.env.INVENTORY_API_URL || 'https://api.cadillacofsouthcharlotte.com';
+    const apiKey = process.env.INVENTORY_API_KEY;
     
-    // Set default parameters if not provided
-    if (!url.searchParams.has('search')) {
-      url.searchParams.append('search', 'new');
-    }
-    if (!url.searchParams.has('make')) {
-      url.searchParams.append('make', 'Cadillac');
-    }
-    
-    console.log(`Proxying request to: ${url.toString()}`);
-    
-    // Fetch the data from the target URL
-    const response = await fetch(url.toString(), {
+    // Set up request configuration
+    const config = {
+      method: event.httpMethod,
+      url: `${baseUrl}/${endpoint}`,
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
       }
-    });
+    };
     
-    const data = await response.text();
+    // Pass through query parameters
+    if (event.queryStringParameters) {
+      config.params = event.queryStringParameters;
+    }
     
-    // Return the response
+    // Pass through body data for POST/PUT/PATCH requests
+    if (['POST', 'PUT', 'PATCH'].includes(event.httpMethod) && event.body) {
+      config.data = JSON.parse(event.body);
+    }
+    
+    // Make the API request
+    const response = await axios(config);
+    
+    // Return the proxied response
     return {
-      statusCode: 200,
+      statusCode: response.status,
       headers: {
-        'Content-Type': 'text/html',
-        'Cache-Control': 'public, max-age=3600'
+        'Content-Type': 'application/json',
+        'Cache-Control': 'public, max-age=300'
       },
-      body: data
+      body: JSON.stringify(response.data)
     };
   } catch (error) {
-    console.log('Error proxying inventory request:', error);
+    console.error('Error proxying inventory request:', error);
     
-    // Return error response
+    // Properly handle different error types
+    const statusCode = error.response?.status || 500;
+    const errorMessage = error.response?.data || error.message;
+    
     return {
-      statusCode: 500,
-      body: JSON.stringify({ error: 'Failed to fetch inventory data' })
+      statusCode: statusCode,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        error: errorMessage,
+        message: 'Error fetching inventory data'
+      })
     };
   }
 };

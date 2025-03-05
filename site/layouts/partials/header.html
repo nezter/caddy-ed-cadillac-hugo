@@ -42,52 +42,26 @@
 <body class="{{ if .IsHome }}home{{ else }}page{{ end }}">
   <header class="site-header">
     <div class="container">
-      <div class="header-inner">
-        <a href="/" class="logo">
-          <img src="/img/caddy-ed-logo.png" alt="Caddy Ed" width="180" height="60">
-        </a>
-        
-        <button class="nav-toggle" aria-expanded="false" aria-label="Toggle navigation">
-          <span class="nav-toggle-icon"></span>
-        </button>
-        
-        <nav class="main-nav">
-          <ul>
-            <li><a href="/" class="{{ if .IsHome }}active{{ end }}">Home</a></li>
-            <li><a href="/inventory" class="{{ if eq .Section "inventory" }}active{{ end }}">Inventory</a></li>
-            <li><a href="/specials" class="{{ if eq .Section "specials" }}active{{ end }}">Specials</a></li>
-            <li><a href="/service" class="{{ if eq .Section "service" }}active{{ end }}">Service</a></li>
-            <li><a href="/about" class="{{ if eq .Section "about" }}active{{ end }}">About</a></li>
-            <li><a href="/contact" class="{{ if eq .Section "contact" }}active{{ end }}">Contact</a></li>
-          </ul>
-        </nav>
-        
-        <div class="header-actions">
-          <a href="tel:{{ .Site.Params.phone }}" class="phone-link">
-            <span class="icon">📞</span>
-            <span class="phone-number">{{ .Site.Params.phone }}</span>
+      <nav class="navbar">
+        <div class="navbar-brand">
+          <a class="navbar-logo" href="/">
+            <img src="/img/logo.svg" alt="Caddy Ed Cadillac" width="180" height="60">
           </a>
-          
-          <button class="mobile-menu-toggle" aria-label="Toggle Menu">
+          <div class="navbar-burger" data-target="navMenu">
             <span></span>
             <span></span>
             <span></span>
-          </button>
+          </div>
         </div>
-      </div>
-      
-      <div class="mobile-menu">
-        <nav>
-          <ul>
-            <li><a href="/" class="{{ if .IsHome }}active{{ end }}">Home</a></li>
-            <li><a href="/inventory" class="{{ if eq .Section "inventory" }}active{{ end }}">Inventory</a></li>
-            <li><a href="/specials" class="{{ if eq .Section "specials" }}active{{ end }}">Specials</a></li>
-            <li><a href="/service" class="{{ if eq .Section "service" }}active{{ end }}">Service</a></li>
-            <li><a href="/about" class="{{ if eq .Section "about" }}active{{ end }}">About</a></li>
-            <li><a href="/contact" class="{{ if eq .Section "contact" }}active{{ end }}">Contact</a></li>
-          </ul>
-        </nav>
-      </div>
+
+        <div id="navMenu" class="navbar-menu">
+          <div class="navbar-start">
+            <a class="navbar-item" href="/about">About</a>
+            <a class="navbar-item" href="/inventory">Inventory</a>
+            <a class="navbar-item" href="/services">Services</a>
+          </div>
+        </div>
+      </nav>
     </div>
   </header>
 

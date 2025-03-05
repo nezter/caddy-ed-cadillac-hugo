@@ -3,125 +3,66 @@ import format from "date-fns/format";
 
 import Jumbotron from "./components/jumbotron";
 
-export default class PostPreview extends React.Component {
+export default class HomePreview extends React.Component {
   render() {
     const {entry, getAsset} = this.props;
-    let image = getAsset(entry.getIn(["data", "image"]));
-
-    // Bit of a nasty hack to make relative paths work as expected as a background image here
-    if (image && !image.fileObj) {
-        image = window.parent.location.protocol + "//" + window.parent.location.host + image;
-    }
+    
+    // Prepare data from the entry
+    const image = getAsset(entry.getIn(["data", "image"]));
+    const title = entry.getIn(["data", "title"]);
+    const subtitle = entry.getIn(["data", "subtitle"]);
+    
+    // Get entries for featured vehicles and posts
+    const featuredVehicles = entry.getIn(["data", "featured_vehicles"]) || [];
+    const latestPosts = entry.getIn(["data", "latest_posts"]) || [];
 
     return <div>
-        <Jumbotron image={image} title={entry.getIn(["data", "title"])}/>
-
-        <div className="pb4">
-        {(entry.getIn(['data', 'testimonials']) || []).map((testimonial, index) => <div className="center mb3 ph3" key={index}>
-        	<blockquote className="bg-grey-1 primary pa3 mb3 br1 b mw6 center">
-        		<p className="f4 mb0">“{testimonial.get('quote')}”</p>
-        		<cite className="tr db grey-3">{testimonial.get('author')}</cite>
-        	</blockquote>
-        </div>)}
+      <Jumbotron image={image} title={title} subtitle={subtitle} />
+      
+      <div className="bg-grey-1 pv4">
+        <div className="ph3 mw7 center">
+          <h2 className="f2 b lh-title mb2">{entry.getIn(["data", "featured_heading"])}</h2>
+          <p className="mw6">{entry.getIn(["data", "featured_text"])}</p>
+          
+          <div className="flex-ns flex-wrap mhn1-ns mb3">
+            {featuredVehicles && featuredVehicles.map((vehicle, i) => {
+              const vehicleImg = getAsset(vehicle.get("image"));
+              return (
+                <div className="w-33-ns ph1-ns" key={i}>
+                  <div className="relative pb3">
+                    <img src={vehicleImg.toString()} alt={vehicle.get("model")} className="db mb2" />
+                    <h3>{vehicle.get("model")}</h3>
+                    <p>{vehicle.get("year")} - ${vehicle.get("price")}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
-        <div className="bg-off-white pv4">
-          <div className="ph3 mw7 center">
-            <h2 className="f2 b lh-title mb2">{entry.getIn(["data", "intro", "heading"])}</h2>
-            <p className="mb4 mw6">{entry.getIn(["data", "intro", "text"])}</p>
-
-            <div className="flex-ns mhn2-ns mb3">
-              {(entry.getIn(["data", "products"]) || []).map((product, i) => <div className="ph2-ns w-50-ns" key={i}>
-                <img src={getAsset(product.get("image"))} alt="" className="center db mb3" style={{width: "240px"}}/>
-                <p>{product.get("text")}</p>
-              </div>)}
-            </div>
-
-            <div className="tc">
-              <a href="#" className="btn raise">See all products</a>
-            </div>
+      
+      <div className="bg-off-white pv4">
+        <div className="ph3 mw7 center">
+          <h2 className="f2 b lh-title mb2">{entry.getIn(["data", "blog_heading"])}</h2>
+          <p className="mw6">{entry.getIn(["data", "blog_text"])}</p>
+          
+          <div className="w-100 flex-ns mhn1-ns flex-wrap mb3">
+            {latestPosts && latestPosts.map((post, i) => {
+              const postImg = getAsset(post.get("image"));
+              return (
+                <div className="ph1-ns w-50-ns flex" key={i}>
+                  <div className="bg-white br1 pa3 mr2 mb2 w-100">
+                    <div className="f6 mb2">{format(new Date(post.get("date")), "MMM dd, yyyy")}</div>
+                    <h2 className="f3 b lh-title mb1">{post.get("title")}</h2>
+                    <img src={postImg.toString()} alt={post.get("title")} className="db mb2" />
+                    <p>{post.get("excerpt")}</p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
-
-        <div className="bg-grey-1 pv4">
-          <div className="ph3 mw7 center">
-
-            <div className="flex-l mhn2-l">
-              <div className="w-40-l ph2-l">
-                <h2 className="f2 b lh-title mb2">{entry.getIn(["data", "values", "heading"])}</h2>
-
-                <p>{entry.getIn(["data", "values", "text"])}</p>
-              </div>
-
-              <div className="w-60-l ph2-l">
-                <img src="/img/home-about-section.jpg" alt="" className="mb3"/>
-              </div>
-            </div>
-
-            <div className="tc">
-              <a href="{{.buttonLink}}" className="btn raise">Read more</a>
-            </div>
-
-          </div>
-        </div>
-
-
-
-    </div>
+      </div>
+    </div>;
   }
-}
-
-import React from "react";
-
-export default function HomePreview({ entry, getAsset }) {
-  const data = entry.getIn(["data"]).toJS();
-  
-  const heroImage = getAsset(data.hero.image);
-  
-  return (
-    <div>
-      <div className="hero" style={{ backgroundImage: `url(${heroImage.toString()})` }}>
-        <div className="hero-content">
-          <h1>{data.hero.title}</h1>
-          <h2>{data.hero.subtitle}</h2>
-          <a className="btn" href={data.hero.cta.link}>{data.hero.cta.text}</a>
-        </div>
-      </div>
-      
-      <div className="about section">
-        <div className="container">
-          <h2 className="section-title">{data.about.heading}</h2>
-          <div className="content" dangerouslySetInnerHTML={{ __html: data.about.text }}></div>
-        </div>
-      </div>
-      
-      <div className="featured-vehicles section">
-        <div className="container">
-          <h2 className="section-title">{data.featured.heading}</h2>
-          <div className="vehicle-list">
-            {data.featured.items && data.featured.items.map((item, i) => (
-              <div key={i} className="vehicle-card">
-                <img src={getAsset(item.image).toString()} alt={item.title} />
-                <h3>{item.title}</h3>
-                <p>{item.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-      
-      <div className="testimonials section">
-        <div className="container">
-          <h2 className="section-title">{data.testimonials.heading}</h2>
-          <div className="testimonial-list">
-            {data.testimonials.items && data.testimonials.items.map((item, i) => (
-              <div key={i} className="testimonial-item">
-                <blockquote>"{item.quote}"</blockquote>
-                <p className="author">— {item.author}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
 }

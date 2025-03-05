@@ -2,53 +2,64 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta http-equiv="x-ua-compatible" content="ie=edge">
-    <title>{{ $.Site.Title }} | {{ .Title }}</title>
-    <meta name="description" content="{{ .Description | default $.Site.Params.description }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ block "title" . }}{{ .Site.Title }} {{ with .Title }} | {{ . }}{{ end }}{{ end }}</title>
+    <meta name="description" content="{{ with .Description }}{{ . }}{{ else }}{{ with .Summary }}{{ . }}{{ else }}{{ .Site.Params.description }}{{ end }}{{ end }}">
     
-    <!-- Favicons -->
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="{{ .Title }}">
+    <meta property="og:description" content="{{ with .Description }}{{ . }}{{ else }}{{ with .Summary }}{{ . }}{{ else }}{{ .Site.Params.description }}{{ end }}{{ end }}">
+    <meta property="og:url" content="{{ .Permalink }}">
+    <meta property="og:image" content="{{ with .Params.image }}{{ . | absURL }}{{ else }}{{ "/img/og-image.jpg" | absURL }}{{ end }}">
+    
+    <!-- Favicon -->
     <link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16x16.png">
     <link rel="manifest" href="/site.webmanifest">
-    <meta name="msapplication-TileColor" content="#da532c">
-    <meta name="theme-color" content="#ffffff">
+    
+    {{ if eq (getenv "HUGO_ENV") "production" | or (eq .Site.Params.env "production") }}
+    <!-- Service worker and PWA -->
+    <meta name="theme-color" content="#000000">
+    <link rel="manifest" href="/manifest.json">
+    {{ end }}
     
     {{ $stylesheet := .Site.Data.webpack.main }}
     {{ with $stylesheet.css }}
-      <link href="{{ relURL . }}" rel="stylesheet">
+    <link href="{{ relURL . }}" rel="stylesheet">
     {{ end }}
 
-    <!-- Netlify Identity Widget -->
-    <script defer src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+    {{ block "headStyles" . }}{{ end }}
+    {{ block "headScripts" . }}{{ end }}
   </head>
+  
   <body>
-
     {{ block "header" . }}{{ partial "header" . }}{{ end }}
-
-    <main>
+    
+    <main role="main">
       {{ block "main" . }}{{ end }}
     </main>
-
+    
     {{ block "footer" . }}{{ partial "footer" . }}{{ end }}
     
     {{ $script := .Site.Data.webpack.main }}
     {{ with $script.js }}
-      <script src="{{ relURL . }}"></script>
+    <script src="{{ relURL . }}"></script>
     {{ end }}
-
-    <!-- Netlify Identity redirects -->
+    
+    {{ if eq (getenv "HUGO_ENV") "production" | or (eq .Site.Params.env "production") }}
     <script>
-    if (window.netlifyIdentity) {
-      window.netlifyIdentity.on("init", user => {
-        if (!user) {
-          window.netlifyIdentity.on("login", () => {
-            document.location.href = "/admin/";
-          });
-        }
-      });
-    }
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js').then(function() {
+          console.log('Service Worker registered successfully');
+        }).catch(function(error) {
+          console.error('Service Worker registration failed:', error);
+        });
+      }
     </script>
+    {{ end }}
+    
+    {{ block "scripts" . }}{{ end }}
   </body>
 </html>
