@@ -1,83 +1,45 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{ .Title }} | {{ .Site.Title }}</title>
-  <meta name="description" content="{{ .Description | default .Site.Params.description }}">
-  
-  <!-- Favicon -->
-  <link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32x32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16x16.png">
-  <link rel="manifest" href="/site.webmanifest">
-  
-  <!-- Font Awesome -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-  
-  <!-- Netlify Identity -->
-  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
-  
-  <!-- CSS -->
-  {{ $style := resources.Get "main.css" | resources.Fingerprint }}
-  <link rel="stylesheet" href="{{ $style.Permalink }}">
-  
-  <!-- Schema.org data -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "AutoDealer",
-    "name": "Caddy Ed",
-    "image": "{{ .Site.BaseURL }}img/caddy-ed-logo.png",
-    "url": "{{ .Site.BaseURL }}",
-    "telephone": "{{ .Site.Data.settings.contactPhone }}",
-    "priceRange": "$$$",
-    "address": {
-      "@type": "PostalAddress",
-      "streetAddress": "7432 South Blvd",
-      "addressLocality": "Charlotte",
-      "addressRegion": "NC",
-      "postalCode": "28273",
-      "addressCountry": "US"
-    },
-    "geo": {
-      "@type": "GeoCoordinates",
-      "latitude": 35.1323,
-      "longitude": -80.8871
-    },
-    "openingHoursSpecification": [
-      {
-        "@type": "OpeningHoursSpecification",
-        "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
-        "opens": "09:00",
-        "closes": "20:00"
-      },
-      {
-        "@type": "OpeningHoursSpecification",
-        "dayOfWeek": "Saturday",
-        "opens": "09:00",
-        "closes": "18:00"
-      }
-    ]
-  }
-  </script>
-</head>
-<body class="page-{{ .Type | default "page" }}{{ with .Params.bodyClass }} {{ . }}{{ end }}">
-  
-  {{ partial "header" . }}
-  
-  <main id="main-content">
-    {{ block "main" . }}{{ end }}
-  </main>
-  
-  {{ partial "footer" . }}
-  
-  <!-- JavaScript -->
-  {{ $script := resources.Get "main.js" | resources.Fingerprint }}
-  <script src="{{ $script.Permalink }}"></script>
-  
-  <!-- Netlify Identity Script -->
-  <script>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <title>{{ $.Site.Title }} | {{ .Title }}</title>
+    <meta name="description" content="{{ .Description | default $.Site.Params.description }}">
+    
+    <!-- Favicons -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <meta name="msapplication-TileColor" content="#da532c">
+    <meta name="theme-color" content="#ffffff">
+    
+    {{ $stylesheet := .Site.Data.webpack.main }}
+    {{ with $stylesheet.css }}
+      <link href="{{ relURL . }}" rel="stylesheet">
+    {{ end }}
+
+    <!-- Netlify Identity Widget -->
+    <script defer src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+  </head>
+  <body>
+
+    {{ block "header" . }}{{ partial "header" . }}{{ end }}
+
+    <main>
+      {{ block "main" . }}{{ end }}
+    </main>
+
+    {{ block "footer" . }}{{ partial "footer" . }}{{ end }}
+    
+    {{ $script := .Site.Data.webpack.main }}
+    {{ with $script.js }}
+      <script src="{{ relURL . }}"></script>
+    {{ end }}
+
+    <!-- Netlify Identity redirects -->
+    <script>
     if (window.netlifyIdentity) {
       window.netlifyIdentity.on("init", user => {
         if (!user) {
@@ -87,6 +49,6 @@
         }
       });
     }
-  </script>
-</body>
+    </script>
+  </body>
 </html>

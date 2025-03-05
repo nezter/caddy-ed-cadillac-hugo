@@ -71,73 +71,57 @@ export default class PostPreview extends React.Component {
 }
 
 import React from "react";
-import Jumbotron from "./components/jumbotron";
 
-export default class HomePreview extends React.Component {
-  render() {
-    const {entry, getAsset} = this.props;
-    
-    const jumbotronImage = getAsset(entry.getIn(["data", "hero", "image"]));
-    const heroTitle = entry.getIn(["data", "hero", "title"]);
-    const heroSubtitle = entry.getIn(["data", "hero", "subtitle"]);
-    const heroCta = entry.getIn(["data", "hero", "cta"]) ? {
-      text: entry.getIn(["data", "hero", "cta", "text"]),
-      link: entry.getIn(["data", "hero", "cta", "link"])
-    } : null;
-    
-    return (
-      <div>
-        <Jumbotron 
-          image={jumbotronImage} 
-          title={heroTitle} 
-          subtitle={heroSubtitle} 
-          cta={heroCta}
-        />
-        
-        <div className="home-sections">
-          {/* About Section */}
-          <section className="home-section about">
-            <div className="container">
-              <h2>{entry.getIn(["data", "about", "heading"])}</h2>
-              <div dangerouslySetInnerHTML={{ __html: entry.getIn(["data", "about", "text"]) }} />
-            </div>
-          </section>
-          
-          {/* Featured Section */}
-          <section className="home-section featured">
-            <div className="container">
-              <h2>{entry.getIn(["data", "featured", "heading"])}</h2>
-              <div className="featured-items">
-                {(entry.getIn(["data", "featured", "items"]) || []).map((item, i) => {
-                  const image = getAsset(item.get("image"));
-                  return (
-                    <div key={i} className="featured-item">
-                      {image && <img src={image} alt={item.get("title")} />}
-                      <h3>{item.get("title")}</h3>
-                      <p>{item.get("description")}</p>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </section>
-          
-          {/* Testimonials Section */}
-          <section className="home-section testimonials">
-            <div className="container">
-              <h2>{entry.getIn(["data", "testimonials", "heading"])}</h2>
-              <div className="testimonial-items">
-                {(entry.getIn(["data", "testimonials", "items"]) || []).map((item, i) => (
-                  <div key={i} className="testimonial">
-                    <blockquote>"{item.get("quote")}"</blockquote>
-                    <cite>— {item.get("author")}</cite>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
+export default function HomePreview({ entry, getAsset }) {
+  const data = entry.getIn(["data"]).toJS();
+  
+  const heroImage = getAsset(data.hero.image);
+  
+  return (
+    <div>
+      <div className="hero" style={{ backgroundImage: `url(${heroImage.toString()})` }}>
+        <div className="hero-content">
+          <h1>{data.hero.title}</h1>
+          <h2>{data.hero.subtitle}</h2>
+          <a className="btn" href={data.hero.cta.link}>{data.hero.cta.text}</a>
         </div>
       </div>
-    );
-  }
+      
+      <div className="about section">
+        <div className="container">
+          <h2 className="section-title">{data.about.heading}</h2>
+          <div className="content" dangerouslySetInnerHTML={{ __html: data.about.text }}></div>
+        </div>
+      </div>
+      
+      <div className="featured-vehicles section">
+        <div className="container">
+          <h2 className="section-title">{data.featured.heading}</h2>
+          <div className="vehicle-list">
+            {data.featured.items && data.featured.items.map((item, i) => (
+              <div key={i} className="vehicle-card">
+                <img src={getAsset(item.image).toString()} alt={item.title} />
+                <h3>{item.title}</h3>
+                <p>{item.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+      
+      <div className="testimonials section">
+        <div className="container">
+          <h2 className="section-title">{data.testimonials.heading}</h2>
+          <div className="testimonial-list">
+            {data.testimonials.items && data.testimonials.items.map((item, i) => (
+              <div key={i} className="testimonial-item">
+                <blockquote>"{item.quote}"</blockquote>
+                <p className="author">— {item.author}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }

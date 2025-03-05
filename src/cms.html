@@ -3,9 +3,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Content Manager</title>
+    <title>Content Management System | Caddy Ed</title>
     <link rel="icon" type="image/x-icon" href="/img/favicon.ico">
     <link rel="stylesheet" href="https://unpkg.com/netlify-cms@^2.0.0/dist/cms.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Playfair+Display:400,700|Open+Sans:400,600,700">
     <style>
       /* Custom admin styles */
       .nc-app {
@@ -34,6 +35,6 @@
       }
     </script>
     <!-- Include the script that builds the page and powers Netlify CMS -->
-    <script src="<%= htmlWebpackPlugin.files.chunks.cms.entry %>"></script>
+    <script src="/cms.js"></script>
   </body>
 </html>

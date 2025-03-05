@@ -2,110 +2,68 @@
 
 {{ define "main" }}
 
-<section class="hero is-large is-primary" style="background-image: url('{{ .Params.image }}');">
-  <div class="hero-overlay"></div>
-  <div class="hero-body">
-    <div class="container">
-      <h1 class="title is-1">{{ .Params.heading }}</h1>
-      <h2 class="subtitle is-3">{{ .Params.subheading }}</h2>
-      <a href="{{ .Params.cta_link }}" class="button is-primary is-large">{{ .Params.cta }}</a>
+<div class="hero" style="background-image: url('{{ .Params.hero.image }}')">
+  <div class="hero-content container">
+    <h1>{{ .Params.hero.title }}</h1>
+    <h2>{{ .Params.hero.subtitle }}</h2>
+    <a href="{{ .Params.hero.cta.link }}" class="btn btn-primary">{{ .Params.hero.cta.text }}</a>
+  </div>
+</div>
+
+<section class="about section">
+  <div class="container">
+    <h2 class="section-title">{{ .Params.about.heading }}</h2>
+    <div class="content">
+      {{ .Params.about.text | markdownify }}
     </div>
   </div>
 </section>
 
-<section class="section featured-models">
+<section class="featured-vehicles section bg-light">
   <div class="container">
-    <div class="columns">
-      <div class="column is-10 is-offset-1">
-        <h2 class="title is-2 has-text-centered">{{ .Params.featured_models.heading }}</h2>
-        <p class="subtitle has-text-centered">{{ .Params.featured_models.text }}</p>
-        
-        <div class="columns is-multiline">
-          {{ range .Params.featured_models.models }}
-          <div class="column is-4">
-            <div class="card model-card">
-              <div class="card-image">
-                <figure class="image is-16by9">
-                  <img src="{{ .image }}" alt="{{ .name }}" class="lazyload">
-                </figure>
-              </div>
-              <div class="card-content">
-                <h3 class="title is-4">{{ .name }}</h3>
-                <p>{{ .text }}</p>
-                <a href="{{ .link }}" class="button is-primary is-fullwidth">Learn More</a>
-              </div>
-            </div>
+    <h2 class="section-title">{{ .Params.featured.heading }}</h2>
+    <div class="vehicle-grid">
+      {{ range .Params.featured.items }}
+        <div class="vehicle-card">
+          <div class="vehicle-image">
+            <img src="{{ .image }}" alt="{{ .title }}" class="img-fluid lazyload">
           </div>
-          {{ end }}
+          <div class="vehicle-details">
+            <h3>{{ .title }}</h3>
+            <p>{{ .description }}</p>
+            <a href="/inventory/" class="btn btn-outline">Learn More</a>
+          </div>
         </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section class="section services has-background-light">
-  <div class="container">
-    <h2 class="title is-2 has-text-centered">{{ .Params.services.heading }}</h2>
-    <p class="subtitle has-text-centered">{{ .Params.services.text }}</p>
-    
-    <div class="columns is-multiline">
-      {{ range .Params.services.items }}
-      <div class="column is-3">
-        <div class="box service-box has-text-centered">
-          <span class="icon is-large">
-            <i class="fas fa-{{ .icon }} fa-3x"></i>
-          </span>
-          <h3 class="title is-5">{{ .title }}</h3>
-          <p>{{ .text }}</p>
-        </div>
-      </div>
       {{ end }}
     </div>
   </div>
 </section>
 
-<section class="section testimonials">
+<section class="testimonials section">
   <div class="container">
-    <h2 class="title is-2 has-text-centered">What Our Customers Say</h2>
-    
-    <div class="columns is-multiline">
-      {{ range .Params.testimonials }}
-      <div class="column is-4">
-        <div class="card testimonial-card">
-          <div class="card-content">
-            <div class="media">
-              {{ if .image }}
-              <div class="media-left">
-                <figure class="image is-48x48">
-                  <img src="{{ .image }}" alt="{{ .name }}" class="is-rounded">
-                </figure>
-              </div>
-              {{ end }}
-              <div class="media-content">
-                <p class="title is-5">{{ .name }}</p>
-                {{ if .position }}
-                <p class="subtitle is-6">{{ .position }}</p>
-                {{ end }}
-              </div>
-            </div>
-            <div class="content">
-              <p>"{{ .text }}"</p>
-            </div>
-          </div>
+    <h2 class="section-title">{{ .Params.testimonials.heading }}</h2>
+    <div class="testimonial-slider">
+      {{ range .Params.testimonials.items }}
+        <div class="testimonial-item">
+          <blockquote>
+            <p>"{{ .quote }}"</p>
+            <footer>— {{ .author }}</footer>
+          </blockquote>
         </div>
-      </div>
       {{ end }}
     </div>
   </div>
 </section>
 
-<section class="section cta has-background-primary">
-  <div class="container has-text-centered">
-    <h2 class="title is-2 has-text-white">Ready to Find Your New Cadillac?</h2>
-    <p class="subtitle has-text-white">Contact Caddy Ed today for personalized assistance with your vehicle search.</p>
-    <div class="buttons is-centered">
-      <a href="/inventory" class="button is-large is-white">Browse Inventory</a>
-      <a href="/contact" class="button is-large is-outlined is-white">Contact Me</a>
+<section class="cta-section bg-primary">
+  <div class="container">
+    <div class="cta-content">
+      <h2>Ready to find your dream Cadillac?</h2>
+      <p>Browse our inventory or contact us today for personalized assistance.</p>
+      <div class="cta-buttons">
+        <a href="/inventory/" class="btn btn-light">View Inventory</a>
+        <a href="/contact/" class="btn btn-outline-light">Contact Us</a>
+      </div>
     </div>
   </div>
 </section>

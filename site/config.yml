@@ -1,0 +1,136 @@
+backend:
+  name: git-gateway
+  branch: main
+
+media_folder: "site/static/img" # Folder where user uploaded files should go
+public_folder: "img"
+
+collections:
+  - name: "pages"
+    label: "Pages"
+    files:
+      - file: "site/content/_index.md"
+        label: "Home Page"
+        name: "home"
+        fields:
+          - {label: Title, name: title, widget: string}
+          - label: Hero
+            name: hero
+            widget: object
+            fields:
+              - {label: Image, name: image, widget: image}
+              - {label: Title, name: title, widget: string}
+              - {label: Subtitle, name: subtitle, widget: string}
+              - label: Call to Action
+                name: cta
+                widget: object
+                fields:
+                  - {label: Text, name: text, widget: string}
+                  - {label: Link, name: link, widget: string}
+          - label: About
+            name: about
+            widget: object
+            fields:
+              - {label: Heading, name: heading, widget: string}
+              - {label: Text, name: text, widget: markdown}
+          - label: Featured Vehicles
+            name: featured
+            widget: object
+            fields:
+              - {label: Heading, name: heading, widget: string}
+              - label: Items
+                name: items
+                widget: list
+                fields:
+                  - {label: Image, name: image, widget: image}
+                  - {label: Title, name: title, widget: string}
+                  - {label: Description, name: description, widget: string}
+          - label: Testimonials
+            name: testimonials
+            widget: object
+            fields:
+              - {label: Heading, name: heading, widget: string}
+              - label: Items
+                name: items
+                widget: list
+                fields:
+                  - {label: Quote, name: quote, widget: string}
+                  - {label: Author, name: author, widget: string}
+                  
+      - file: "site/content/inventory/_index.md"
+        label: "Inventory Page"
+        name: "inventory"
+        fields:
+          - {label: Title, name: title, widget: string}
+          - {label: Image, name: image, widget: image}
+          - {label: Heading, name: heading, widget: string}
+          - {label: Description, name: description, widget: markdown}
+          
+      - file: "site/content/services/_index.md"
+        label: "Services Page"
+        name: "services"
+        fields:
+          - {label: Title, name: title, widget: string}
+          - {label: Image, name: image, widget: image}
+          - {label: Heading, name: heading, widget: string}
+          - {label: Description, name: description, widget: markdown}
+          - label: Service List
+            name: services
+            widget: list
+            fields:
+              - {label: Name, name: name, widget: string}
+              - {label: Description, name: description, widget: text}
+              - {label: Icon, name: icon, widget: string, required: false}
+
+      - file: "site/content/about/_index.md"
+        label: "About Page"
+        name: "about"
+        fields:
+          - {label: Title, name: title, widget: string}
+          - {label: Image, name: image, widget: image}
+          - {label: Heading, name: heading, widget: string}
+          - {label: Description, name: description, widget: markdown}
+          - label: Team Members
+            name: team
+            widget: list
+            fields:
+              - {label: Name, name: name, widget: string}
+              - {label: Position, name: position, widget: string}
+              - {label: Image, name: image, widget: image, required: false}
+              - {label: Bio, name: bio, widget: text}
+
+      - file: "site/content/contact/_index.md"
+        label: "Contact Page"
+        name: "contact"
+        fields:
+          - {label: Title, name: title, widget: string}
+          - {label: Logo, name: logo, widget: image}
+          - {label: Body, name: body, widget: markdown}
+          - label: Contact Entries
+            name: contact_entries
+            widget: list
+            fields:
+              - label: Heading
+                name: heading
+                widget: string
+              - label: Text
+                name: text
+                widget: text
+
+  - name: "vehicles"
+    label: "Vehicles"
+    folder: "site/content/vehicles"
+    create: true
+    fields:
+      - {label: "Title", name: "title", widget: "string"}
+      - {label: "Publish Date", name: "date", widget: "datetime"}
+      - {label: "Featured Image", name: "image", widget: "image"}
+      - {label: "Model", name: "model", widget: "string"}
+      - {label: "Year", name: "year", widget: "number"}
+      - {label: "Price", name: "price", widget: "number"}
+      - {label: "Features", name: "features", widget: "list"}
+      - {label: "Description", name: "description", widget: "markdown"}
+      - label: "Gallery"
+        name: "gallery"
+        widget: "list"
+        field: {label: Image, name: image, widget: image}

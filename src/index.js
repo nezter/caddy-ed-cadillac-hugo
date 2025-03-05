@@ -1,33 +1,73 @@
-// CSS
+// Import main CSS
 import "./css/main.css";
 
-// JS
+// Import JavaScript dependencies
 import "lazysizes";
 
-// Register service worker
-if (navigator.serviceWorker) {
-  navigator.serviceWorker.register('/sw.js')
-    .then(registration => {
-      console.log('Service Worker registered with scope:', registration.scope);
-    })
-    .catch(error => {
-      console.error('Service Worker registration failed:', error);
+// Service worker registration
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').then(registration => {
+      console.log('SW registered: ', registration);
+    }).catch(registrationError => {
+      console.log('SW registration failed: ', registrationError);
     });
+  });
 }
 
-// DOM Ready
-document.addEventListener("DOMContentLoaded", function() {
+// Custom scripts
+document.addEventListener("DOMContentLoaded", () => {
   // Mobile menu toggle
-  const menuToggle = document.querySelector('.navbar-burger');
-  const menu = document.querySelector('.navbar-menu');
+  const mobileMenuToggle = document.querySelector('.navbar-burger');
+  const mobileMenu = document.querySelector('.navbar-menu');
   
-  if (menuToggle && menu) {
-    menuToggle.addEventListener('click', () => {
-      menuToggle.classList.toggle('is-active');
-      menu.classList.toggle('is-active');
+  if (mobileMenuToggle && mobileMenu) {
+    mobileMenuToggle.addEventListener('click', () => {
+      mobileMenuToggle.classList.toggle('is-active');
+      mobileMenu.classList.toggle('is-active');
     });
   }
-  
+
+  // Contact form handling
+  const contactForm = document.querySelector('#contact-form');
+  if (contactForm) {
+    contactForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      
+      const formData = new FormData(contactForm);
+      const formObject = {};
+      formData.forEach((value, key) => {
+        formObject[key] = value;
+      });
+
+      try {
+        const response = await fetch('/.netlify/functions/contact-form', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(formObject)
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+          // Show success message
+          document.querySelector('#form-success').classList.remove('hidden');
+          contactForm.reset();
+        } else {
+          // Show error message
+          document.querySelector('#form-error').textContent = result.message;
+          document.querySelector('#form-error').classList.remove('hidden');
+        }
+      } catch (error) {
+        console.error('Form submission error:', error);
+        document.querySelector('#form-error').textContent = 'An unexpected error occurred. Please try again.';
+        document.querySelector('#form-error').classList.remove('hidden');
+      }
+    });
+  }
+
   // Handle responsive images
   const images = document.querySelectorAll(".content img");
   images.forEach(img => {

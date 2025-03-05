@@ -1,0 +1,72 @@
+// Colors
+$primary-color: #B8A97E;
+$secondary-color: #333333;
+$highlight-color: #D8C8A0;
+$white: #FFFFFF;
+$off-white: #F7F7F7;
+$grey-1: #F3F3F3;
+$grey-2: #E0E0E0;
+$grey-3: #9E9E9E;
+$grey-4: #606060;
+$black: #1E1E1E;
+
+// Typography
+$font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+$title-font: 'Playfair Display', serif;
+
+// Font sizes
+$font-size-1: 3rem;    // 48px
+$font-size-2: 2.25rem; // 36px
+$font-size-3: 1.5rem;  // 24px
+$font-size-4: 1.25rem; // 20px
+$font-size-5: 1rem;    // 16px 
+$font-size-6: 0.875rem; // 14px
+$font-size-7: 0.75rem; // 12px
+
+// Line heights
+$line-height-1: 1.25;
+$line-height-2: 1.5;
+
+// Spacing
+$spacing-none: 0;
+$spacing-extra-small: .25rem;
+$spacing-small: .5rem;
+$spacing-medium: 1rem;
+$spacing-large: 2rem;
+$spacing-extra-large: 4rem;
+$spacing-extra-extra-large: 8rem;
+$spacing-extra-extra-extra-large: 16rem;
+
+// Sizing
+$width-1: 1rem;
+$width-2: 2rem;
+$width-3: 4rem;
+$width-4: 8rem;
+$width-5: 16rem;
+
+// Borders
+$border-radius: .25rem;
+$border-width: 1px;
+
+// Focus shadow
+$focus-shadow: 0 0 5px rgba(184, 169, 126, 0.5);
+$button-focus: 0 0 0 2px $white, 0 0 0 4px rgba(184, 169, 126, 0.5);
+
+// Transitions
+$transition-default: all 0.15s ease-in-out;
+$transition-slow: all 0.3s ease-in-out;
+
+// Z-Index
+$z-index-0: 0;
+$z-index-1: 1;
+$z-index-2: 2;
+$z-index-3: 3;
+$z-index-4: 4;
+$z-index-5: 5;
+$z-index-max: 9999;
+
+// Breakpoints
+$breakpoint-sm: 576px;
+$breakpoint-md: 768px;
+$breakpoint-lg: 992px;
+$breakpoint-xl: 1200px;
