@@ -1,15 +1,38 @@
 {{ define "main" }}
-
   <div class="mw6 center ph3 pv4">
     <h1 class="f2 lh-title b mb3">{{.Title}}</h1>
     <div class="flex justify-between grey-3">
       <p>{{ .Date.Format "Mon, Jan 2, 2006" }}</p>
-      <p>Read in {{ .ReadingTime }} minutes</p>
+      <p>By {{ .Params.author | default "Editor" }}</p>
     </div>
+    
+    {{ if .Params.featured_image }}
+    <div class="featured-image mb4">
+      <img src="{{ .Params.featured_image }}" alt="{{ .Title }}" class="w-100">
+      {{ if .Params.image_caption }}
+      <small class="i">{{ .Params.image_caption }}</small>
+      {{ end }}
+    </div>
+    {{ end }}
+    
     <div class="cms mw6">
-      <p>{{ .Description }}</p>
-      {{ if .Params.image }}<img src="{{ .Params.image }}" alt="{{ .Title }}" />{{ end }}
+      <p class="f4 b lh-title mb2 primary">{{ .Description }}</p>
       {{ .Content }}
+    </div>
+    
+    {{ if .Params.tags }}
+    <div class="mt4">
+      <h4 class="f5 b lh-title mb3">Tags</h4>
+      <div class="flex flex-wrap">
+      {{ range .Params.tags }}
+        <a href="{{ "/tags/" | relLangURL }}{{ . | urlize }}" class="bg-grey-1 ph2 pv1 mr2 mb2 dib br1 no-underline">{{ . }}</a>
+      {{ end }}
+      </div>
+    </div>
+    {{ end }}
+    
+    <div class="mt5 mb3">
+      <a href="/post" class="btn">← Back to Blog</a>
     </div>
   </div>
 {{ end }}

@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://caddyed.com/sitemap.xml
+
+Disallow: /admin/
+Disallow: /404.html
+Disallow: /offline/

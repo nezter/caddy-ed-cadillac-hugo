@@ -1,0 +1,155 @@
+{{ define "main" }}
+<div class="mw8 center ph3 pv4">
+  <div class="flex flex-wrap">
+    <div class="w-100 w-60-l pr4-l">
+      {{ if .Params.images }}
+      <div class="vehicle-images mb4">
+        <div class="main-image mb2">
+          <img src="{{ index .Params.images 0 }}" alt="{{ .Title }}" class="w-100">
+        </div>
+        {{ if gt (len .Params.images) 1 }}
+        <div class="thumbnails flex flex-wrap">
+          {{ range .Params.images }}
+          <div class="w-20 pa1">
+            <img src="{{ . }}" alt="" class="w-100 pointer vehicle-thumb">
+          </div>
+          {{ end }}
+        </div>
+        {{ end }}
+      </div>
+      {{ else if .Params.featured_image }}
+      <div class="mb4">
+        <img src="{{ .Params.featured_image }}" alt="{{ .Title }}" class="w-100">
+      </div>
+      {{ end }}
+      
+      <div class="vehicle-description cms">
+        <h2 class="f3 b lh-title mb3">Description</h2>
+        {{ .Content }}
+      </div>
+      
+      {{ if .Params.features }}
+      <div class="mt4">
+        <h2 class="f3 b lh-title mb3">Features</h2>
+        <ul class="feature-list flex flex-wrap nl2 nr2 list">
+          {{ range .Params.features }}
+          <li class="w-100 w-50-m w-33-l ph2 mb2">
+            <div class="pa2 bg-off-white br1">{{ . }}</div>
+          </li>
+          {{ end }}
+        </ul>
+      </div>
+      {{ end }}
+    </div>
+    
+    <div class="w-100 w-40-l pl4-l">
+      <div class="bg-off-white pa3 mb3">
+        <h1 class="f2 b lh-title mb2">{{ .Params.year }} {{ .Params.make }} {{ .Params.model }}</h1>
+        {{ if .Params.trim }}<p class="f4 mb3">{{ .Params.trim }}</p>{{ end }}
+        
+        <div class="mb3">
+          <div class="f2 b gold">{{ if .Params.price }}${{ .Params.price | lang.NumFmt 0 }}{{ else }}Call for Price{{ end }}</div>
+          {{ if .Params.msrp }}<div class="f6">MSRP: ${{ .Params.msrp | lang.NumFmt 0 }}</div>{{ end }}
+        </div>
+        
+        {{ if not .Params.available }}
+        <div class="pa2 mb3 bg-washed-red tc b red">SOLD</div>
+        {{ end }}
+        
+        <div class="vehicle-meta mb4">
+          <div class="flex justify-between mb2 pb2 bb b--light-gray">
+            <span>Stock #:</span>
+            <span class="b">{{ .Params.stock_number | default "Contact us" }}</span>
+          </div>
+          <div class="flex justify-between mb2 pb2 bb b--light-gray">
+            <span>VIN:</span>
+            <span class="b">{{ .Params.vin | default "Contact us" }}</span>
+          </div>
+          {{ if .Params.mileage }}
+          <div class="flex justify-between mb2 pb2 bb b--light-gray">
+            <span>Mileage:</span>
+            <span class="b">{{ .Params.mileage | lang.NumFmt 0 }}</span>
+          </div>
+          {{ end }}
+          {{ if .Params.exterior_color }}
+          <div class="flex justify-between mb2 pb2 bb b--light-gray">
+            <span>Exterior Color:</span>
+            <span class="b">{{ .Params.exterior_color }}</span>
+          </div>
+          {{ end }}
+          {{ if .Params.interior_color }}
+          <div class="flex justify-between mb2 pb2 bb b--light-gray">
+            <span>Interior Color:</span>
+            <span class="b">{{ .Params.interior_color }}</span>
+          </div>
+          {{ end }}
+        </div>
+        
+        <div class="vehicle-contact">
+          <h3 class="f4 b mb3">Interested in this vehicle?</h3>
+          <form name="vehicle-inquiry" method="POST" data-form-type="contact" class="mb3">
+            <input type="hidden" name="form-name" value="vehicle-inquiry">
+            <input type="hidden" name="vehicle" value="{{ .Params.year }} {{ .Params.make }} {{ .Params.model }}">
+            
+            <div class="mb3">
+              <label for="name" class="db mb1 f6 b">Name *</label>
+              <input type="text" id="name" name="name" class="input-reset ba b--black-20 pa2 mb2 db w-100" required>
+            </div>
+            
+            <div class="mb3">
+              <label for="email" class="db mb1 f6 b">Email *</label>
+              <input type="email" id="email" name="email" class="input-reset ba b--black-20 pa2 mb2 db w-100" required>
+            </div>
+            
+            <div class="mb3">
+              <label for="phone" class="db mb1 f6 b">Phone *</label>
+              <input type="tel" id="phone" name="phone" class="input-reset ba b--black-20 pa2 mb2 db w-100" required>
+            </div>
+            
+            <div class="mb3">
+              <label for="message" class="db mb1 f6 b">Message</label>
+              <textarea id="message" name="message" rows="4" class="input-reset ba b--black-20 pa2 mb2 db w-100"></textarea>
+            </div>
+            
+            <button type="submit" class="btn w-100">Request Information</button>
+          </form>
+          
+          <p class="tc">Or call us: <a href="tel:+17045551234" class="link b gold">(704) 555-1234</a></p>
+        </div>
+      </div>
+      
+      {{ if .Params.specifications }}
+      <div class="bg-off-white pa3">
+        <h3 class="f4 b mb3">Specifications</h3>
+        <div class="vehicle-specs">
+          {{ range $key, $value := .Params.specifications }}
+          {{ if $value }}
+          <div class="flex justify-between mb2 pb2 bb b--light-gray">
+            <span>{{ $key | humanize }}:</span>
+            <span class="b">{{ $value }}</span>
+          </div>
+          {{ end }}
+          {{ end }}
+        </div>
+      </div>
+      {{ end }}
+    </div>
+  </div>
+</div>
+
+<!-- Vehicle image gallery script -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const mainImg = document.querySelector('.main-image img');
+    const thumbs = document.querySelectorAll('.vehicle-thumb');
+    
+    if (mainImg && thumbs.length > 0) {
+      thumbs.forEach(thumb => {
+        thumb.addEventListener('click', function() {
+          mainImg.src = this.src;
+        });
+      });
+    }
+  });
+</script>
+{{ end }}

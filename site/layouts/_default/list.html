@@ -1,43 +1,31 @@
 {{ define "main" }}
-<div class="page-content">
-  <div class="page-header">
-    <div class="container">
-      <h1 class="page-title">{{ .Title }}</h1>
-      {{ if .Description }}
-      <div class="page-description">
-        {{ .Description }}
-      </div>
-      {{ end }}
-    </div>
-  </div>
-
-  <div class="container">
-    <div class="content-wrapper">
-      {{ .Content }}
-      
-      {{ if eq .Type "inventory" }}
-        <div id="inventory-filters" class="inventory-filters">
-          <form class="filter-form" id="inventory-filters">
-            <div class="filter-section">
-              <h3>Price Range</h3>
-              <div class="range-filter">
-                <div class="range-inputs">
-                  <div class="input-group">
-                    <label for="minPrice">Min</label>
-                    <input type="number" id="minPrice" name="minPrice" min="0" step="1000" placeholder="Min">
-                  </div>
-                  <div class="range-separator">-</div>
-                  <div class="input-group">
-                    <label for="maxPrice">Max</label>
-                    <input type="number" id="maxPrice" name="maxPrice" min="0" step="1000" placeholder="Max">
-                  </div>
-                </div>
-              </div>
-            </div>
-          </form>
+<div class="mw7 center">
+  <h1 class="f2 lh-title b mb3 tc">{{.Title}}</h1>
+  <div class="ph3 mw7 center">
+    {{ range (.Paginator 10).Pages.ByPublishDate.Reverse }}
+      <div class="w-100 flex-ns mb4">
+        {{ if .Params.featured_image }}
+        <div class="pr3-ns mb3 mb0-ns w-40-ns">
+          <a href="{{ .RelPermalink }}" class="db grow">
+            <img src="{{ .Params.featured_image }}" class="img" alt="{{ .Title }}">
+          </a>
         </div>
-      {{ end }}
-    </div>
+        {{ end }}
+        <div class="w-100{{ if .Params.featured_image }} w-60-ns pl3-ns{{ end }}">
+          <h2 class="f3 b lh-title mb1 primary"><a href="{{ .RelPermalink }}" class="link primary">{{ .Title }}</a></h2>
+          <div class="gray f6 mb2">{{ .Date.Format "January 2, 2006" }}</div>
+          <p>{{ .Description }}</p>
+          <a href="{{ .RelPermalink }}" class="ba b--black bg-animate black hover-bg-black hover-white inline-flex items-center no-underline pa2 mt2">
+            <span class="pr1">Read more</span>
+            <svg class="w1" data-icon="chevronRight" viewBox="0 0 32 32" style="fill:currentcolor">
+              <title>chevronRight icon</title>
+              <path d="M12 1 L26 16 L12 31 L8 27 L18 16 L8 5 z"></path>
+            </svg>
+          </a>
+        </div>
+      </div>
+    {{ end }}
   </div>
+  {{ partial "pagination" . }}
 </div>
-{{end}}
+{{ end }}
