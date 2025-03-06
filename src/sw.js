@@ -2,26 +2,26 @@
 
 const CACHE_VERSION = 'v1';
 const CACHE_NAME = `caddy-ed-cache-${CACHE_VERSION}`;
-
 const OFFLINE_URL = '/offline/';
-const CACHED_ASSETS = [
+
+// Assets to cache immediately on service worker install
+const PRECACHE_ASSETS = [
   '/',
   '/offline/',
   '/css/main.css',
   '/js/main.js',
   '/img/logo.svg',
-  '/img/favicon.ico',
   '/img/vehicle-placeholder.jpg',
-  '/fonts/cadillac-gothic.woff2'
+  '/img/hero-background.jpg'
 ];
 
-// Install event - cache the essential files
+// Install event - precache key resources
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
         console.log('Opened cache');
-        return cache.addAll(CACHED_ASSETS);
+        return cache.addAll(PRECACHE_ASSETS);
       })
       .then(() => self.skipWaiting())
   );
@@ -35,7 +35,7 @@ self.addEventListener('activate', event => {
         cacheNames.filter(cacheName => {
           return cacheName.startsWith('caddy-ed-cache-') && cacheName !== CACHE_NAME;
         }).map(cacheName => {
-          console.log(`Deleting old cache: ${cacheName}`);
+          console.log('Deleting old cache:', cacheName);
           return caches.delete(cacheName);
         })
       );
@@ -43,54 +43,98 @@ self.addEventListener('activate', event => {
   );
 });
 
-// Fetch event - respond with cache then network strategy
+// Fetch event - serve from cache, falling back to network
 self.addEventListener('fetch', event => {
-  // Skip non-GET requests and those that aren't for our domain
+  // Skip non-GET requests and browser extensions
   if (event.request.method !== 'GET' || 
-      !(event.request.url.indexOf(self.location.origin) === 0)) {
+      !event.request.url.startsWith('http')) {
     return;
   }
 
-  // Skip requests to API endpoints
-  if (event.request.url.includes('/api/') || 
-      event.request.url.includes('/.netlify/functions/')) {
+  // For HTML requests - network-first strategy
+  if (event.request.headers.get('Accept').includes('text/html')) {
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          // If successful, clone the response and store in cache
+          if (response.status === 200) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME)
+              .then(cache => cache.put(event.request, clone));
+          }
+          return response;
+        })
+        .catch(() => {
+          // If network fails, try cache first
+          return caches.match(event.request)
+            .then(cachedResponse => {
+              // Return cached response or offline page
+              return cachedResponse || caches.match(OFFLINE_URL);
+            });
+        })
+    );
     return;
   }
-  
+
+  // For images and static assets - cache-first strategy
+  if (event.request.url.match(/\.(jpg|jpeg|png|gif|svg|webp|js|css)$/)) {
+    event.respondWith(
+      caches.match(event.request)
+        .then(cachedResponse => {
+          // Return cached response or fetch from network
+          return cachedResponse || fetch(event.request)
+            .then(response => {
+              // Cache the fetched response
+              const responseToCache = response.clone();
+              caches.open(CACHE_NAME)
+                .then(cache => cache.put(event.request, responseToCache));
+              return response;
+            });
+        })
+    );
+    return;
+  }
+
+  // For API requests - network-only with timeout
+  if (event.request.url.includes('/api/') || event.request.url.includes('/.netlify/functions/')) {
+    const TIMEOUT_SECONDS = 10;
+    
+    event.respondWith(
+      Promise.race([
+        fetch(event.request.clone())
+          .then(response => {
+            // Don't cache API responses
+            return response;
+          }),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Request timeout')), TIMEOUT_SECONDS * 1000)
+        )
+      ])
+      .catch(() => {
+        // If network fails, try cache as fallback
+        return caches.match(event.request);
+      })
+    );
+    return;
+  }
+
+  // Default strategy - stale-while-revalidate
   event.respondWith(
     caches.match(event.request)
-      .then(response => {
-        // Return cached response if found
-        if (response) {
-          return response;
-        }
-
-        // If not in cache, fetch from network
-        return fetch(event.request)
+      .then(cachedResponse => {
+        // Return cached response immediately
+        const fetchPromise = fetch(event.request)
           .then(response => {
-            // Check if valid response
-            if (!response || response.status !== 200 || response.type !== 'basic') {
-              return response;
+            // Update the cache
+            if (response.status === 200) {
+              const responseToCache = response.clone();
+              caches.open(CACHE_NAME)
+                .then(cache => cache.put(event.request, responseToCache));
             }
-
-            // Clone the response
-            const responseToCache = response.clone();
-
-            // Cache the fetched response for future use
-            caches.open(CACHE_NAME)
-              .then(cache => {
-                cache.put(event.request, responseToCache);
-              });
-
             return response;
-          })
-          .catch(error => {
-            console.log('Fetch failed:', error);
-            // If HTML page request fails, return the offline page
-            if (event.request.headers.get('Accept').includes('text/html')) {
-              return caches.match(OFFLINE_URL);
-            }
           });
+        
+        return cachedResponse || fetchPromise;
       })
   );
 });

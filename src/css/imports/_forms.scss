@@ -1,0 +1,194 @@
+@import "./_variables";
+
+// Form container
+.form-container {
+  margin-bottom: $spacing-lg;
+}
+
+// Form groups
+.form-group {
+  margin-bottom: $spacing-md;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+// Form labels
+label {
+  display: block;
+  margin-bottom: $spacing-xs;
+  font-weight: 600;
+  color: $secondary-color;
+  
+  .required {
+    color: $error;
+  }
+}
+
+// Form controls - inputs, selects, textareas
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="tel"],
+input[type="number"],
+input[type="date"],
+input[type="time"],
+select,
+textarea {
+  display: block;
+  width: 100%;
+  padding: $spacing-sm;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: $secondary-color;
+  background-color: $white;
+  border: 1px solid $light-gray;
+  border-radius: $border-radius-sm;
+  transition: border-color $transition-speed-fast ease-in-out, box-shadow $transition-speed-fast ease-in-out;
+  
+  &:focus {
+    border-color: $primary-color;
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba($primary-color, 0.25);
+  }
+  
+  &.error {
+    border-color: $error;
+    
+    &:focus {
+      box-shadow: 0 0 0 0.2rem rgba($error, 0.25);
+    }
+  }
+  
+  &:disabled,
+  &[readonly] {
+    background-color: $off-white;
+    opacity: 1;
+  }
+}
+
+// Select styling
+select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333333' d='M6 9L0 3h12z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 12px;
+  padding-right: 2rem;
+}
+
+// Textarea styling
+textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+// Checkbox and radio styling
+.checkbox-container,
+.radio-container {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: $spacing-sm;
+  
+  input[type="checkbox"],
+  input[type="radio"] {
+    margin-right: $spacing-xs;
+    margin-top: 0.25em;
+  }
+  
+  label {
+    margin-bottom: 0;
+    font-weight: normal;
+  }
+}
+
+// Form feedback messages
+.error-message {
+  color: $error;
+  font-size: 0.875rem;
+  margin-top: $spacing-xs;
+}
+
+.success-message {
+  color: $success;
+  padding: $spacing-md;
+  background-color: lighten($success, 50%);
+  border-radius: $border-radius-sm;
+  margin-top: $spacing-md;
+  border: 1px solid lighten($success, 30%);
+}
+
+// Form actions
+.form-actions {
+  margin-top: $spacing-lg;
+  
+  .btn + .btn {
+    margin-left: $spacing-sm;
+  }
+}
+
+// Honeypot field (spam prevention)
+.honeypot-field {
+  display: none !important;
+}
+
+// Form grid
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  margin-right: -$spacing-sm;
+  margin-left: -$spacing-sm;
+  
+  .form-group {
+    flex: 1 0 100%;
+    padding-right: $spacing-sm;
+    padding-left: $spacing-sm;
+    
+    @media (min-width: $bp-medium) {
+      flex: 1 0 50%;
+    }
+  }
+}
+
+// Floating labels (optional enhancement)
+.form-floating {
+  position: relative;
+  
+  > label {
+    position: absolute;
+    top: $spacing-sm;
+    left: $spacing-sm;
+    z-index: 1;
+    height: auto;
+    padding: 0 $spacing-xs;
+    pointer-events: none;
+    border: 1px solid transparent;
+    transform-origin: 0 0;
+    transition: opacity $transition-speed-fast ease-in-out, transform $transition-speed-fast ease-in-out;
+  }
+  
+  input:focus ~ label,
+  input:not(:placeholder-shown) ~ label,
+  textarea:focus ~ label,
+  textarea:not(:placeholder-shown) ~ label {
+    opacity: 0.65;
+    transform: scale(0.85) translateY(-0.5rem) translateX(0.15rem);
+    background-color: $white;
+    border: 1px solid transparent;
+  }
+}
+
+// Range inputs
+.range-filter {
+  display: flex;
+  align-items: center;
+  
+  input {
+    max-width: 45%;
+  }
+  
+  span {
+    margin: 0 $spacing-xs;
+  }
+}
