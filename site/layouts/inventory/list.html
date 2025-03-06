@@ -23,7 +23,7 @@
                 <div class="select is-fullwidth">
                   <select name="category">
                     <option value="">All Types</option>
-                    <option value="new">New</option>
+                    <option value="new" selected>New</option>
                     <option value="used">Pre-Owned</option>
                     <option value="certified">Certified Pre-Owned</option>
                   </select>
@@ -35,7 +35,7 @@
               <label class="label">Model</label>
               <div class="control">
                 <div class="select is-fullwidth">
-                  <select name="model">
+                  <select name="model" id="model-select">
                     <option value="">All Models</option>
                     <option value="Escalade">Escalade</option>
                     <option value="CT4">CT4</option>
@@ -53,13 +53,13 @@
               <label class="label">Year</label>
               <div class="control">
                 <div class="select is-fullwidth">
-                  <select name="year">
+                  <select name="year" id="year-select">
                     <option value="">All Years</option>
+                    <option value="2024">2024</option>
                     <option value="2023">2023</option>
                     <option value="2022">2022</option>
                     <option value="2021">2021</option>
                     <option value="2020">2020</option>
-                    <option value="2019">2019</option>
                   </select>
                 </div>
               </div>
@@ -69,7 +69,7 @@
               <label class="label">Price Range</label>
               <div class="control">
                 <div class="select is-fullwidth">
-                  <select name="price">
+                  <select name="priceRange" id="price-select">
                     <option value="">All Prices</option>
                     <option value="30000-40000">$30,000 - $40,000</option>
                     <option value="40000-50000">$40,000 - $50,000</option>
@@ -92,122 +92,290 @@
       
       <!-- Inventory results -->
       <div class="column is-9">
-        <div id="inventory-results" class="inventory-grid">
-          <!-- Results will be dynamically loaded here -->
-          <div class="loading">Loading inventory...</div>
+        <div class="mb-4">
+          <div class="level">
+            <div class="level-left">
+              <div class="level-item">
+                <p id="results-count" class="has-text-weight-semibold"></p>
+              </div>
+            </div>
+            <div class="level-right">
+              <div class="level-item">
+                <div class="field has-addons">
+                  <div class="control">
+                    <span class="button is-static">Sort By</span>
+                  </div>
+                  <div class="control">
+                    <div class="select">
+                      <select id="sort-select">
+                        <option value="price-asc">Price: Low to High</option>
+                        <option value="price-desc">Price: High to Low</option>
+                        <option value="year-desc" selected>Year: Newest First</option>
+                        <option value="year-asc">Year: Oldest First</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
+        
+        <!-- Loading state -->
+        <div id="loading-indicator" class="has-text-centered py-6">
+          <div class="loader is-loading mb-3"></div>
+          <p>Loading inventory...</p>
+        </div>
+        
+        <!-- Error state -->
+        <div id="error-message" class="notification is-danger is-light has-text-centered py-6" style="display: none;">
+          <p class="mb-3">Unable to load inventory at this time.</p>
+          <button class="button is-danger" onclick="loadInventory()">Try Again</button>
+        </div>
+        
+        <!-- No results state -->
+        <div id="no-results" class="has-text-centered py-6" style="display: none;">
+          <p class="mb-3">No vehicles match your current filters.</p>
+          <button class="button is-primary" onclick="resetFilters()">Reset Filters</button>
+        </div>
+        
+        <!-- Results grid -->
+        <div id="inventory-results" class="columns is-multiline">
+          <!-- Results will be loaded here -->
+        </div>
+        
+        <!-- Pagination -->
+        <div id="pagination-container" class="mt-5"></div>
       </div>
     </div>
   </div>
 </section>
-
-<!-- Featured inventory from CMS -->
-<section class="section has-background-light">
-  <div class="container">
-    <h2 class="title is-2">Featured Vehicles</h2>
-    <div class="columns is-multiline">
-      {{ range where .Pages ".Params.is_featured" true }}
-      <div class="column is-4">
-        <div class="card">
-          <div class="card-image">
-            <figure class="image is-16by9">
-              <img src="{{ .Params.featured_image }}" alt="{{ .Title }}" class="lazyload">
-            </figure>
-          </div>
-          <div class="card-content">
-            <h3 class="title is-5">{{ .Title }}</h3>
-            <p class="price has-text-weight-bold">${{ .Params.price | lang.NumFmt 0 }}</p>
-            <p class="specs">
-              <span>Stock: {{ .Params.stock }}</span>
-              <span>Mileage: {{ .Params.mileage | lang.NumFmt 0 }}</span>
-            </p>
-            <a href="{{ .RelPermalink }}" class="button is-primary is-fullwidth">View Details</a>
-          </div>
-        </div>
-      </div>
-      {{ end }}
-    </div>
-  </div>
-</section>
-
 {{ end }}
 
 {{ define "scripts" }}
 <script>
+  // Global variables
+  let currentPage = 1;
+  let totalPages = 1;
+  let currentFilters = {};
+  let currentSort = 'year-desc';
+  
   document.addEventListener('DOMContentLoaded', function() {
-    // Initialize the inventory display
-    loadInventory();
-    
-    // Set up filter form submission handler
-    document.getElementById('inventory-filter').addEventListener('submit', function(e) {
+    // Setup form submission
+    const filterForm = document.getElementById('inventory-filter');
+    filterForm.addEventListener('submit', function(e) {
       e.preventDefault();
+      currentPage = 1;
       loadInventory();
     });
     
-    function loadInventory() {
-      const form = document.getElementById('inventory-filter');
-      const resultsContainer = document.getElementById('inventory-results');
-      
-      // Show loading message
-      resultsContainer.innerHTML = '<div class="loading">Loading inventory...</div>';
-      
-      // Get filter values
-      const category = form.querySelector('[name="category"]').value;
-      const model = form.querySelector('[name="model"]').value;
-      const year = form.querySelector('[name="year"]').value;
-      const price = form.querySelector('[name="price"]').value;
-      
-      // In a real implementation, this would be an API call
-      // For demo purposes, we'll simulate a delay then show sample content
-      setTimeout(function() {
-        resultsContainer.innerHTML = generateSampleInventory(category, model, year, price);
-      }, 500);
+    // Setup sort change handler
+    const sortSelect = document.getElementById('sort-select');
+    sortSelect.addEventListener('change', function() {
+      currentSort = this.value;
+      loadInventory();
+    });
+    
+    // Load inventory on page load
+    loadInventory();
+  });
+  
+  function loadInventory() {
+    // Show loading indicator
+    document.getElementById('loading-indicator').style.display = 'block';
+    document.getElementById('error-message').style.display = 'none';
+    document.getElementById('no-results').style.display = 'none';
+    document.getElementById('inventory-results').innerHTML = '';
+    document.getElementById('pagination-container').innerHTML = '';
+    
+    // Gather filter values
+    const filterForm = document.getElementById('inventory-filter');
+    const formData = new FormData(filterForm);
+    
+    // Build query parameters
+    const params = new URLSearchParams();
+    params.append('page', currentPage);
+    params.append('perPage', 9); // 9 items per page
+    params.append('sort', currentSort);
+    
+    // Add form filters
+    for (const [key, value] of formData.entries()) {
+      if (value) {
+        if (key === 'priceRange' && value.includes('-')) {
+          // Handle price range
+          const [min, max] = value.split('-');
+          params.append('minPrice', min);
+          params.append('maxPrice', max);
+        } else {
+          params.append(key, value);
+        }
+      }
     }
     
-    function generateSampleInventory(category, model, year, price) {
-      // This would typically fetch data from an API based on filters
-      // For now, return sample HTML
-      return `
-        <div class="columns is-multiline">
-          <div class="column is-4">
-            <div class="card">
-              <div class="card-image">
-                <figure class="image is-16by9">
-                  <img src="/images/inventory/sample-1.jpg" alt="2023 Cadillac Escalade">
-                </figure>
-              </div>
-              <div class="card-content">
-                <h3 class="title is-5">2023 Cadillac Escalade</h3>
-                <p class="price has-text-weight-bold">$92,500</p>
-                <p class="specs">
-                  <span>Stock: CAD12345</span>
-                  <span>Mileage: 0</span>
-                </p>
-                <a href="/inventory/2023-cadillac-escalade" class="button is-primary is-fullwidth">View Details</a>
-              </div>
+    // Make the API call
+    fetch(`/.netlify/functions/inventory-proxy?${params.toString()}`)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Failed to fetch inventory');
+        }
+        return response.json();
+      })
+      .then(data => {
+        // Hide loading indicator
+        document.getElementById('loading-indicator').style.display = 'none';
+        
+        // Check if we have results
+        if (!data.vehicles || data.vehicles.length === 0) {
+          document.getElementById('no-results').style.display = 'block';
+          document.getElementById('results-count').textContent = 'No vehicles found';
+          return;
+        }
+        
+        // Update results count
+        document.getElementById('results-count').textContent = 
+          `Showing ${data.vehicles.length} of ${data.totalCount} vehicles`;
+        
+        // Update pagination
+        totalPages = data.pagination.totalPages;
+        currentPage = data.pagination.page;
+        renderPagination(totalPages, currentPage);
+        
+        // Render vehicles
+        renderVehicles(data.vehicles);
+      })
+      .catch(error => {
+        console.error('Error loading inventory:', error);
+        document.getElementById('loading-indicator').style.display = 'none';
+        document.getElementById('error-message').style.display = 'block';
+      });
+  }
+  
+  function renderVehicles(vehicles) {
+    const resultsContainer = document.getElementById('inventory-results');
+    let html = '';
+    
+    vehicles.forEach(vehicle => {
+      html += `
+        <div class="column is-4 mb-4">
+          <div class="card h-100">
+            <div class="card-image">
+              <figure class="image is-16by9">
+                <img src="${vehicle.image || '/img/placeholder-car.jpg'}" 
+                     alt="${vehicle.year} ${vehicle.make} ${vehicle.model}" 
+                     class="lazyload">
+              </figure>
             </div>
-          </div>
-          <div class="column is-4">
-            <div class="card">
-              <div class="card-image">
-                <figure class="image is-16by9">
-                  <img src="/images/inventory/sample-2.jpg" alt="2022 Cadillac CT5">
-                </figure>
+            <div class="card-content">
+              <h3 class="title is-5">${vehicle.year} ${vehicle.make} ${vehicle.model}</h3>
+              <p class="price has-text-weight-bold is-size-4">${vehicle.priceDisplay || `$${vehicle.price.toLocaleString()}`}</p>
+              <div class="vehicle-specs mb-3">
+                ${vehicle.mileageDisplay ? `<span class="tag is-light mr-1 mb-1">${vehicle.mileageDisplay}</span>` : ''}
+                ${vehicle.exteriorColor ? `<span class="tag is-light mr-1 mb-1">${vehicle.exteriorColor}</span>` : ''}
+                ${vehicle.vin ? `<span class="tag is-light mr-1 mb-1">VIN: ${vehicle.vin.substring(vehicle.vin.length - 6)}</span>` : ''}
               </div>
-              <div class="card-content">
-                <h3 class="title is-5">2022 Cadillac CT5</h3>
-                <p class="price has-text-weight-bold">$45,800</p>
-                <p class="specs">
-                  <span>Stock: CAD54321</span>
-                  <span>Mileage: 12,500</span>
-                </p>
-                <a href="/inventory/2022-cadillac-ct5" class="button is-primary is-fullwidth">View Details</a>
+              <div class="buttons">
+                <a href="${vehicle.detailUrl}" class="button is-primary is-fullwidth">View Details</a>
+                <a href="/contact/?vehicle=${vehicle.vin || ''}" class="button is-light is-fullwidth">Contact Us</a>
               </div>
             </div>
           </div>
         </div>
       `;
+    });
+    
+    resultsContainer.innerHTML = html;
+  }
+  
+  function renderPagination(totalPages, currentPage) {
+    if (totalPages <= 1) return;
+    
+    const paginationContainer = document.getElementById('pagination-container');
+    
+    let html = `<nav class="pagination is-centered" role="navigation" aria-label="pagination">`;
+    
+    // Previous page button
+    html += `
+      <a class="pagination-previous ${currentPage === 1 ? 'is-disabled' : ''}" 
+         ${currentPage === 1 ? '' : 'onclick="changePage(' + (currentPage - 1) + ')"'}>
+        Previous
+      </a>
+    `;
+    
+    // Next page button
+    html += `
+      <a class="pagination-next ${currentPage === totalPages ? 'is-disabled' : ''}" 
+         ${currentPage === totalPages ? '' : 'onclick="changePage(' + (currentPage + 1) + ')"'}>
+        Next
+      </a>
+    `;
+    
+    // Page numbers
+    html += `<ul class="pagination-list">`;
+    
+    // Logic to show appropriate page numbers
+    const maxPageLinks = 5;
+    let startPage = Math.max(1, Math.min(currentPage - Math.floor(maxPageLinks / 2), totalPages - maxPageLinks + 1));
+    const endPage = Math.min(startPage + maxPageLinks - 1, totalPages);
+    
+    // Adjust startPage if we're at the end of the range
+    if (endPage - startPage + 1 < maxPageLinks) {
+      startPage = Math.max(1, endPage - maxPageLinks + 1);
     }
-  });
+    
+    // First page and ellipsis if needed
+    if (startPage > 1) {
+      html += `
+        <li>
+          <a class="pagination-link" aria-label="Goto page 1" onclick="changePage(1)">1</a>
+        </li>
+      `;
+      if (startPage > 2) {
+        html += `<li><span class="pagination-ellipsis">&hellip;</span></li>`;
+      }
+    }
+    
+    // Page numbers
+    for (let i = startPage; i <= endPage; i++) {
+      html += `
+        <li>
+          <a class="pagination-link ${i === currentPage ? 'is-current' : ''}" 
+             aria-label="Goto page ${i}" 
+             aria-current="${i === currentPage ? 'page' : 'false'}" 
+             onclick="changePage(${i})">${i}</a>
+        </li>
+      `;
+    }
+    
+    // Last page and ellipsis if needed
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) {
+        html += `<li><span class="pagination-ellipsis">&hellip;</span></li>`;
+      }
+      html += `
+        <li>
+          <a class="pagination-link" aria-label="Goto page ${totalPages}" onclick="changePage(${totalPages})">${totalPages}</a>
+        </li>
+      `;
+    }
+    
+    html += `</ul></nav>`;
+    
+    paginationContainer.innerHTML = html;
+  }
+  
+  function changePage(page) {
+    if (page < 1 || page > totalPages) return;
+    currentPage = page;
+    loadInventory();
+    
+    // Scroll to top of results
+    document.getElementById('inventory-results').scrollIntoView({ behavior: 'smooth' });
+  }
+  
+  function resetFilters() {
+    document.getElementById('inventory-filter').reset();
+    currentPage = 1;
+    loadInventory();
+  }
 </script>
 {{ end }}

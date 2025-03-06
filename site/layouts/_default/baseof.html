@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ block "title" . }}{{ .Site.Title }} {{ with .Title }} | {{ . }}{{ end }}{{ end }}</title>
+    <title>{{ block "title" . }}{{ with .Title }}{{ . }} | {{ end }}{{ .Site.Title }}{{ end }}</title>
     <meta name="description" content="{{ with .Description }}{{ . }}{{ else }}{{ with .Summary }}{{ . }}{{ else }}{{ .Site.Params.description }}{{ end }}{{ end }}">
     
     <!-- Open Graph -->
@@ -25,16 +25,17 @@
     <link rel="manifest" href="/manifest.json">
     {{ end }}
     
-    {{ $stylesheet := .Site.Data.webpack.main }}
-    {{ with $stylesheet.css }}
+    {{ with .Site.Data.webpack.main }}
+    {{ with .css }}
     <link href="{{ relURL . }}" rel="stylesheet">
+    {{ end }}
     {{ end }}
 
     {{ block "headStyles" . }}{{ end }}
     {{ block "headScripts" . }}{{ end }}
   </head>
   
-  <body>
+  <body class="{{ if .IsHome }}home{{ else }}page{{ end }}{{ with .Type }} {{ . }}{{ end }}{{ with .Params.bodyClass }} {{ . }}{{ end }}">
     {{ block "header" . }}{{ partial "header" . }}{{ end }}
     
     <main role="main">
@@ -43,9 +44,10 @@
     
     {{ block "footer" . }}{{ partial "footer" . }}{{ end }}
     
-    {{ $script := .Site.Data.webpack.main }}
-    {{ with $script.js }}
+    {{ with .Site.Data.webpack.main }}
+    {{ with .js }}
     <script src="{{ relURL . }}"></script>
+    {{ end }}
     {{ end }}
     
     {{ if eq (getenv "HUGO_ENV") "production" | or (eq .Site.Params.env "production") }}
