@@ -1,31 +1,80 @@
 {{ define "main" }}
-<div class="mw7 center">
-  <h1 class="f2 lh-title b mb3 tc">{{.Title}}</h1>
-  <div class="ph3 mw7 center">
-    {{ range (.Paginator 10).Pages.ByPublishDate.Reverse }}
-      <div class="w-100 flex-ns mb4">
-        {{ if .Params.featured_image }}
-        <div class="pr3-ns mb3 mb0-ns w-40-ns">
-          <a href="{{ .RelPermalink }}" class="db grow">
-            <img src="{{ .Params.featured_image }}" class="img" alt="{{ .Title }}">
-          </a>
+<div class="page-container">
+  <div class="container">
+    <div class="page-header">
+      <h1>{{ .Title }}</h1>
+      {{ if .Params.subtitle }}<p class="subtitle">{{ .Params.subtitle }}</p>{{ end }}
+    </div>
+    
+    <div class="page-content">
+      {{ .Content }}
+    </div>
+    
+    {{ if eq .Section "post" }}
+    <div class="post-grid">
+      {{ range .Pages }}
+        <div class="post-card">
+          {{ if .Params.featured_image }}
+          <div class="post-image">
+            <a href="{{ .RelPermalink }}">
+              <img src="{{ .Params.featured_image }}" alt="{{ .Title }}" class="lazyload">
+            </a>
+          </div>
+          {{ end }}
+          <div class="post-content">
+            <p class="post-date">{{ .Date.Format "January 2, 2006" }}</p>
+            <h2><a href="{{ .RelPermalink }}">{{ .Title }}</a></h2>
+            <p>{{ .Description | truncate 150 }}</p>
+            <a href="{{ .RelPermalink }}" class="read-more">Read More</a>
+          </div>
         </div>
-        {{ end }}
-        <div class="w-100{{ if .Params.featured_image }} w-60-ns pl3-ns{{ end }}">
-          <h2 class="f3 b lh-title mb1 primary"><a href="{{ .RelPermalink }}" class="link primary">{{ .Title }}</a></h2>
-          <div class="gray f6 mb2">{{ .Date.Format "January 2, 2006" }}</div>
-          <p>{{ .Description }}</p>
-          <a href="{{ .RelPermalink }}" class="ba b--black bg-animate black hover-bg-black hover-white inline-flex items-center no-underline pa2 mt2">
-            <span class="pr1">Read more</span>
-            <svg class="w1" data-icon="chevronRight" viewBox="0 0 32 32" style="fill:currentcolor">
-              <title>chevronRight icon</title>
-              <path d="M12 1 L26 16 L12 31 L8 27 L18 16 L8 5 z"></path>
-            </svg>
-          </a>
-        </div>
+      {{ end }}
+    </div>
+    
+    {{ template "_internal/pagination.html" . }}
+    {{ end }}
+    
+    {{ if eq .Section "vehicles" }}
+    <div class="vehicle-inventory">
+      <div class="inventory-filters">
+        <form class="vehicle-filter-form">
+          <!-- Filters will be added using JavaScript -->
+        </form>
       </div>
+      
+      <div class="vehicle-listings">
+        {{ range .Pages }}
+          <div class="vehicle-card" data-id="{{ .Params.id }}" data-year="{{ .Params.year }}" data-make="{{ .Params.make }}" 
+               data-model="{{ .Params.model }}" data-price="{{ .Params.price }}" data-mileage="{{ .Params.mileage }}">
+            <div class="vehicle-image">
+              <a href="{{ .RelPermalink }}">
+                {{ if .Params.images }}
+                <img src="{{ index .Params.images 0 }}" alt="{{ .Title }}" class="lazyload">
+                {{ else if .Params.featured_image }}
+                <img src="{{ .Params.featured_image }}" alt="{{ .Title }}" class="lazyload">
+                {{ else }}
+                <img src="/img/vehicle-placeholder.jpg" alt="{{ .Title }}" class="lazyload">
+                {{ end }}
+              </a>
+              <button class="favorite-toggle" aria-label="Add to favorites" aria-checked="false">
+                <span class="heart-icon"></span>
+              </button>
+            </div>
+            <div class="vehicle-details">
+              <h3><a href="{{ .RelPermalink }}">{{ .Params.year }} {{ .Params.make }} {{ .Params.model }}</a></h3>
+              {{ if .Params.trim }}<p class="vehicle-trim">{{ .Params.trim }}</p>{{ end }}
+              <p class="vehicle-price">{{ if .Params.price }}${{ .Params.price | lang.NumFmt 0 }}{{ else }}Call for Price{{ end }}</p>
+              {{ if .Params.mileage }}<p class="vehicle-mileage">{{ .Params.mileage | lang.NumFmt 0 }} miles</p>{{ end }}
+              <div class="vehicle-actions">
+                <a href="{{ .RelPermalink }}" class="btn primary-btn">View Details</a>
+                <button class="compare-button" data-vehicle-id="{{ .Params.id }}">Compare</button>
+              </div>
+            </div>
+          </div>
+        {{ end }}
+      </div>
+    </div>
     {{ end }}
   </div>
-  {{ partial "pagination" . }}
 </div>
 {{ end }}

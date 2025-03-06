@@ -1,12 +1,14 @@
 {{ define "main" }}
-
-{{ partial "jumbotron" (dict "imageUrl" "/img/7.jpg" "title" "This is where the heading goes" "subtitle" "This is where the subtitle goes") }}
-
-<div class="mw6 center ph3 pv4">
-  <h1 class="f2 lh-title b mb3">{{.Title}}</h1>
-  <div class="cms">
-    {{ .Content }}
+<div class="page-container">
+  <div class="container">
+    <div class="page-header">
+      <h1>{{ .Title }}</h1>
+      {{ if .Params.subtitle }}<p class="subtitle">{{ .Params.subtitle }}</p>{{ end }}
+    </div>
+    
+    <div class="page-content">
+      {{ .Content }}
+    </div>
   </div>
 </div>
-
 {{ end }}

@@ -1,5 +1,41 @@
-languageCode = "en-us"
-title = "Caddy Ed"
 baseURL = "/"
+languageCode = "en-us"
+title = "Caddy Ed Cadillac"
 enableRobotsTXT = true
-disableKinds = ["RSS", "taxonomy", "taxonomyTerm"]
+
+[params]
+  description = "Premium Cadillac dealership in South Charlotte offering new and used vehicles, financing, and service."
+  images = ["/img/og-image.jpg"]
+  og_image = "/img/og-image.jpg"
+  env = "production"
+
+[menu]
+  [[menu.main]]
+    name = "Home"
+    url = "/"
+    weight = 1
+  [[menu.main]]
+    name = "Inventory"
+    url = "/inventory/"
+    weight = 2
+  [[menu.main]]
+    name = "Services"
+    url = "/services/"
+    weight = 3
+  [[menu.main]]
+    name = "About"
+    url = "/about/"
+    weight = 4
+  [[menu.main]]
+    name = "Contact"
+    url = "/contact/"
+    weight = 5
+
+[taxonomies]
+  category = "categories"
+  tag = "tags"
+
+[outputs]
+  home = ["HTML", "RSS"]
+  page = ["HTML"]
+  section = ["HTML"]

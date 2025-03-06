@@ -1,8 +1,6 @@
 import CMS from "netlify-cms-app";
 
-// Import main site styles as a string to inject into the CMS preview pane
-import styles from "!to-string-loader!css-loader!postcss-loader!sass-loader!../css/main.css";
-
+// Import CMS preview templates
 import HomePreview from "./cms-preview-templates/home";
 import PostPreview from "./cms-preview-templates/post";
 import ProductsPreview from "./cms-preview-templates/products";
@@ -10,7 +8,10 @@ import ValuesPreview from "./cms-preview-templates/values";
 import ContactPreview from "./cms-preview-templates/contact";
 import InventoryPreview from "./cms-preview-templates/inventory";
 
-CMS.registerPreviewStyle(styles, { raw: true });
+// Initialize Netlify CMS
+CMS.init();
+
+// Register preview templates
 CMS.registerPreviewTemplate("home", HomePreview);
 CMS.registerPreviewTemplate("post", PostPreview);
 CMS.registerPreviewTemplate("products", ProductsPreview);
@@ -18,8 +19,8 @@ CMS.registerPreviewTemplate("values", ValuesPreview);
 CMS.registerPreviewTemplate("contact", ContactPreview);
 CMS.registerPreviewTemplate("inventory", InventoryPreview);
 
-// Initialize the CMS
-CMS.init();
+// Register previews for additional templates as needed
+CMS.registerPreviewStyle("/css/main.css");
 
 // You can add customizations here if needed
 console.log("CMS initialized");

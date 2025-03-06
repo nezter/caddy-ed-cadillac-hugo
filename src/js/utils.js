@@ -34,16 +34,44 @@ export function getUrlParams() {
   );
 }
 
-// Lazy load images (supplement to lazysizes library)
-export function initLazyLoading() {
-  if ('loading' in HTMLImageElement.prototype) {
-    // Use native lazy loading if supported
-    document.querySelectorAll('img.lazyload').forEach(img => {
-      img.src = img.dataset.src;
-      img.loading = 'lazy';
+// Initialize modals
+export function initializeModals() {
+  const modalTriggers = document.querySelectorAll('[data-modal-trigger]');
+  const modalCloseButtons = document.querySelectorAll('.modal-close');
+  const modals = document.querySelectorAll('.modal');
+  
+  modalTriggers.forEach(trigger => {
+    trigger.addEventListener('click', (e) => {
+      e.preventDefault();
+      const targetId = trigger.getAttribute('data-modal-trigger');
+      const targetModal = document.getElementById(targetId);
+      
+      if (targetModal) {
+        targetModal.classList.add('is-active');
+        document.body.classList.add('modal-open');
+      }
     });
-  }
-  // Otherwise lazysizes will handle it
+  });
+  
+  modalCloseButtons.forEach(button => {
+    button.addEventListener('click', () => {
+      const modal = button.closest('.modal');
+      if (modal) {
+        modal.classList.remove('is-active');
+        document.body.classList.remove('modal-open');
+      }
+    });
+  });
+  
+  // Close modal on outside click
+  modals.forEach(modal => {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        modal.classList.remove('is-active');
+        document.body.classList.remove('modal-open');
+      }
+    });
+  });
 }
 
 // Calculate monthly payments for auto loan

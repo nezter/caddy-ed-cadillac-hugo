@@ -2,45 +2,98 @@
   
 <footer class="site-footer">
   <div class="container">
-    <div class="footer-grid">
+    <div class="footer-content">
       <div class="footer-column">
         <div class="footer-logo">
-          <img src="/img/logo.svg" alt="{{ .Site.Title }}" width="180" height="60">
+          <img src="/img/logo.svg" alt="Caddy Ed Cadillac">
         </div>
-        <p class="footer-tagline">Your trusted Cadillac dealership in South Charlotte.</p>
+        <p>Luxury vehicle sales and service in South Charlotte.</p>
+        <div class="footer-social">
+          <a href="#" aria-label="Facebook"><span class="icon icon-facebook"></span></a>
+          <a href="#" aria-label="Twitter"><span class="icon icon-twitter"></span></a>
+          <a href="#" aria-label="Instagram"><span class="icon icon-instagram"></span></a>
+          <a href="#" aria-label="YouTube"><span class="icon icon-youtube"></span></a>
+        </div>
       </div>
       
-      <div class="footer-hours">
-        <h3>Hours of Operation</h3>
-        <ul>
-          <li><span>Monday - Friday:</span> 9:00 AM - 8:00 PM</li>
-          <li><span>Saturday:</span> 9:00 AM - 6:00 PM</li>
-          <li><span>Sunday:</span> Closed</li>
+      <div class="footer-column">
+        <h3>Contact Us</h3>
+        <p>9315 South Boulevard<br>Charlotte, NC 28273</p>
+        <p>Phone: (704) 555-1234</p>
+        <p>Email: info@caddyed.com</p>
+      </div>
+      
+      <div class="footer-column">
+        <h3>Hours</h3>
+        <p><strong>Sales:</strong><br>
+           Mon-Fri: 9AM-8PM<br>
+           Sat: 9AM-6PM<br>
+           Sun: Closed</p>
+        <p><strong>Service:</strong><br>
+           Mon-Fri: 7AM-7PM<br>
+           Sat: 8AM-5PM<br>
+           Sun: Closed</p>
+      </div>
+      
+      <div class="footer-column">
+        <h3>Quick Links</h3>
+        <ul class="footer-links">
+          <li><a href="/inventory/">Inventory</a></li>
+          <li><a href="/financing/">Financing</a></li>
+          <li><a href="/service/">Service</a></li>
+          <li><a href="/about/">About Us</a></li>
+          <li><a href="/contact/">Contact Us</a></li>
+          <li><a href="/privacy-policy/">Privacy Policy</a></li>
         </ul>
-      </div>
-      
-      <div class="footer-social">
-        <h3>Connect With Us</h3>
-        <div class="social-icons">
-          {{ with .Site.Params.facebook }}<a href="{{ . }}" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M18.77 7.46H14.5v-1.9c0-.9.6-1.1 1-1.1h3V.5h-4.33C10.24.5 9.5 3.44 9.5 5.32v2.15h-3v4h3v12h5v-12h3.85l.42-4z"/></svg></a>{{ end }}
-          {{ with .Site.Params.instagram }}<a href="{{ . }}" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg></a>{{ end }}
-          {{ with .Site.Params.twitter }}<a href="{{ . }}" target="_blank" rel="noopener noreferrer" aria-label="Twitter"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M24 4.557a9.83 9.83 0 01-2.828.775 4.932 4.932 0 002.165-2.724 9.864 9.864 0 01-3.127 1.195 4.916 4.916 0 00-8.39 4.482A13.978 13.978 0 011.671 3.15a4.93 4.93 0 001.523 6.574 4.903 4.903 0 01-2.229-.616c-.054 2.281 1.581 4.415 3.949 4.89a4.935 4.935 0 01-2.224.084 4.928 4.928 0 004.6 3.419A9.9 9.9 0 010 19.54a13.94 13.94 0 007.548 2.212c9.142 0 14.307-7.721 13.995-14.646A10.025 10.025 0 0024 4.557z"/></svg></a>{{ end }}
-          {{ with .Site.Params.youtube }}<a href="{{ . }}" target="_blank" rel="noopener noreferrer" aria-label="YouTube"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg></a>{{ end }}
-        </div>
       </div>
     </div>
     
     <div class="footer-bottom">
-      <p>&copy; {{ now.Format "2006" }} Caddy Ed Cadillac. All rights reserved.</p>
-      <ul class="footer-links">
-        <li><a href="/privacy-policy/">Privacy Policy</a></li>
-        <li><a href="/terms-of-service/">Terms of Service</a></li>
-        <li><a href="/sitemap.xml">Sitemap</a></li>
-      </ul>
+      <p>&copy; {{ now.Format "2006" }} Caddy Ed Cadillac. All Rights Reserved.</p>
     </div>
   </div>
 </footer>
 
-{{ partial "svg" . }}
+{{ if .Site.IsServer }}
+  {{ $script := resources.Get "js/main.js" | js.Build }}
+  <script src="{{ $script.RelPermalink }}"></script>
+{{ else }}
+  {{ $script := resources.Get "js/main.js" | js.Build | minify | fingerprint }}
+  <script src="{{ $script.RelPermalink }}" integrity="{{ $script.Data.Integrity }}"></script>
+{{ end }}
 
-<script src="/app.js"></script>
+<script>
+// Initialize specific page components based on page class
+document.addEventListener('DOMContentLoaded', function() {
+  // Detect page type and initialize relevant JS
+  const body = document.body;
+  
+  if (body.classList.contains('inventory-page')) {
+    // Initialize inventory filtering and comparison
+    import('/js/vehicle-inventory.js').then(module => {
+      new module.default();
+    });
+  }
+  
+  if (body.classList.contains('vehicle-detail-page')) {
+    // Initialize vehicle detail functionality
+    import('/js/vehicle-detail.js').then(module => {
+      new module.default();
+    });
+    
+    // Initialize the financing calculator
+    import('/js/finance-calculator.js').then(module => {
+      new module.default({
+        price: document.querySelector('.vehicle-detail')?.dataset.price
+      });
+    });
+  }
+  
+  // Initialize appointment scheduling if element exists
+  if (document.querySelector('.scheduling-calendar')) {
+    import('/js/schedulingCalendar.js').then(module => {
+      new module.default(document.querySelector('.scheduling-calendar'));
+    });
+  }
+});
+</script>
