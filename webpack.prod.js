@@ -18,10 +18,7 @@ module.exports = merge(common, {
       new TerserPlugin({
         parallel: true,
         terserOptions: {
-          compress: {
-            drop_console: true
-          },
-          mangle: true
+          ecma: 6
         }
       }),
       new CssMinimizerPlugin()
