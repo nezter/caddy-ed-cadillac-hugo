@@ -2,15 +2,12 @@
 {{ define "description" }}Browse our extensive inventory of Cadillac vehicles at competitive prices.{{ end }}
 
 {{ define "main" }}
-<div class="inventory-page">
-  <div class="hero-banner" style="background-image: url('/img/inventory-hero.jpg')">
-    <div class="container">
-      <h1>Our Inventory</h1>
-      <p>Explore our selection of premium Cadillac vehicles</p>
-    </div>
-  </div>
-
+<section class="inventory-section">
   <div class="container">
+    <h1 class="inventory-title">{{ .Title }}</h1>
+    
+    {{ .Content }}
+    
     <div class="inventory-filters">
       <div class="filter-controls">
         <form id="inventory-filter" class="filter-form">
@@ -75,23 +72,74 @@
         </form>
       </div>
     </div>
-
-    <div id="inventory-results">
-      <div class="loading-indicator">
-        <div class="spinner"></div>
-        <p>Loading inventory...</p>
+    
+    <div id="inventory-list" class="inventory-grid">
+      {{ range .Paginator.Pages }}
+      <div class="inventory-card">
+        <div class="inventory-image-container image-placeholder-container">
+          {{ $imagePath := .Params.featured_image | default .Params.image | default "/img/inventory/default-vehicle.jpg" }}
+          {{ $placeholderPath := replace $imagePath "/img/" "/img/placeholders/" }}
+          {{ $placeholderPath := replace $placeholderPath (printf "\\.%s" (path.Ext $placeholderPath)) "-placeholder.jpg" }}
+          
+          <a href="{{ .RelPermalink }}">
+            <img class="inventory-image lazyload" 
+                 src="{{ $placeholderPath }}"
+                 data-src="{{ $imagePath }}"
+                 alt="{{ .Title }} - {{ .Params.year }} {{ .Params.make }} {{ .Params.model }}"
+                 width="400"
+                 height="300">
+          </a>
+        </div>
+        
+        <div class="inventory-details">
+          <h2 class="inventory-title"></h2>
+            <a href="{{ .RelPermalink }}">{{ .Title }}</a>
+          </h2>
+          
+          <div class="inventory-meta">
+            {{ if .Params.year }}<span class="year">{{ .Params.year }}</span>{{ end }}
+            {{ if .Params.make }}<span class="make">{{ .Params.make }}</span>{{ end }}
+            {{ if .Params.model }}<span class="model">{{ .Params.model }}</span>{{ end }}
+          </div>
+          
+          {{ if .Params.price }}
+          <div class="inventory-price">${{ lang.NumFmt 0 .Params.price }}</div>
+          {{ end }}
+          
+          <div class="inventory-features">
+            {{ if .Params.mileage }}
+            <div class="feature">
+              <i class="icon-gauge"></i> {{ lang.NumFmt 0 .Params.mileage }} miles
+            </div>
+            {{ end }}
+            
+            {{ if .Params.transmission }}
+            <div class="feature">
+              <i class="icon-gears"></i> {{ .Params.transmission }}
+            </div>
+            {{ end }}
+            
+            {{ if .Params.fuel_type }}
+            <div class="feature">
+              <i class="icon-fuel"></i> {{ .Params.fuel_type }}
+            </div>
+            {{ end }}
+          </div>
+          
+          <div class="inventory-actions">
+            <a href="{{ .RelPermalink }}" class="btn btn-primary">View Details</a>
+            {{ if .Params.status }}
+            <span class="inventory-status {{ lower .Params.status }}">{{ .Params.status }}</span>
+            {{ end }}
+          </div>
+        </div>
       </div>
-      
-      <div class="inventory-grid">
-        <!-- Inventory items will be loaded via JavaScript -->
-      </div>
-      
-      <div class="pagination">
-        <!-- Pagination will be added via JavaScript -->
-      </div>
+      {{ end }}
     </div>
+    
+    {{ template "_internal/pagination.html" . }}
   </div>
-</div>
+</section>
 
 <script>
   document.addEventListener('DOMContentLoaded', function() {

@@ -2,132 +2,60 @@
 {{ define "description" }}{{ .Params.year }} {{ .Params.make }} {{ .Params.model }} {{ .Params.trim }} - {{ .Params.mileage }} miles - {{ .Site.Title }}{{ end }}
 
 {{ define "main" }}
-
-<div class="vehicle-detail">
+<article class="vehicle-detail" id="vehicle-detail">
   <div class="container">
-    <div class="vehicle-header">
-      <h1>{{ .Title }}</h1>
-      <div class="vehicle-meta">
-        <span class="price">{{ .Params.price }}</span>
-        <span class="year">{{ .Params.year }}</span>
-        <span class="make">{{ .Params.make }}</span>
-        <span class="model">{{ .Params.model }}</span>
-        {{ with .Params.trim }}<span class="trim">{{ . }}</span>{{ end }}
-        <span class="mileage">{{ .Params.mileage }} miles</span>
-      </div>
-    </div>
+    <h1 class="vehicle-title">{{ .Title }}</h1>
     
     <div class="vehicle-gallery">
-      <div class="featured-image">
-        <img 
-          src="/img/placeholder-vehicle.jpg" 
-          data-src="{{ .Params.featured_image }}" 
-          alt="{{ .Title }}" 
-          class="lazyload blur-up"
-          loading="lazy"
-          width="800" 
-          height="533">
-        <noscript>
-          <img src="{{ .Params.featured_image }}" alt="{{ .Title }}" width="800" height="533">
-        </noscript>
+      {{ if .Params.gallery }}
+      <div class="gallery-main image-placeholder-container">
+        {{ $mainImage := index .Params.gallery 0 | default .Params.image | default "/img/inventory/default-vehicle.jpg" }}
+        {{ $placeholderPath := replace $mainImage "/img/" "/img/placeholders/" }}
+        {{ $placeholderPath := replace $placeholderPath (printf "\\.%s" (path.Ext $placeholderPath)) "-placeholder.jpg" }}
+        
+        <img class="gallery-featured-image lazyload"
+             src="{{ $placeholderPath }}"
+             data-src="{{ $mainImage }}"
+             alt="{{ .Title }} - Main Image"
+             width="800"
+             height="600">
       </div>
       
-      {{ if .Params.gallery }}
-      <div class="gallery-images">
-        {{ range .Params.gallery }}
-          <div class="gallery-item">
-            <img 
-              src="/img/placeholder-vehicle-thumb.jpg" 
-              data-src="{{ .image }}" 
-              alt="{{ $.Title }}" 
-              class="lazyload"
-              loading="lazy"
-              width="150" 
-              height="100">
-            <noscript>
-              <img src="{{ .image }}" alt="{{ $.Title }}" width="150" height="100">
-            </noscript>
-          </div>
+      <div class="gallery-thumbnails">
+        {{ range $index, $image := .Params.gallery }}
+        {{ $thumbPlaceholder := replace $image "/img/" "/img/placeholders/" }}
+        {{ $thumbPlaceholder := replace $thumbPlaceholder (printf "\\.%s" (path.Ext $thumbPlaceholder)) "-placeholder.jpg" }}
+        
+        <div class="gallery-thumbnail image-placeholder-container">
+          <img class="lazyload"
+               src="{{ $thumbPlaceholder }}"
+               data-src="{{ $image }}"
+               alt="{{ $.Title }} - Image {{ add $index 1 }}"
+               width="120"
+               height="90"
+               data-index="{{ $index }}">
+        </div>
         {{ end }}
+      </div>
+      {{ else if .Params.image }}
+      <div class="gallery-main image-placeholder-container">
+        {{ $mainImage := .Params.image }}
+        {{ $placeholderPath := replace $mainImage "/img/" "/img/placeholders/" }}
+        {{ $placeholderPath := replace $placeholderPath (printf "\\.%s" (path.Ext $placeholderPath)) "-placeholder.jpg" }}
+        
+        <img class="gallery-featured-image lazyload"
+             src="{{ $placeholderPath }}"
+             data-src="{{ $mainImage }}"
+             alt="{{ .Title }}"
+             width="800"
+             height="600">
       </div>
       {{ end }}
     </div>
     
     <div class="vehicle-description">
-      <h2>Description</h2>
       {{ .Content }}
     </div>
-    
-    {{ if .Params.features }}
-    <div class="vehicle-features">
-      <h2>Features</h2>
-      <ul>
-        {{ range .Params.features }}
-          <li>{{ . }}</li>
-        {{ end }}
-      </ul>
-    </div>
-    {{ end }}
-    
-    <div class="cta-section">
-      <h2>Interested in this vehicle?</h2>
-      <div class="cta-buttons">
-        <a href="/contact/?vehicle={{ .Title }}" class="button contact-btn">Contact Me About This Vehicle</a>
-        <button class="button test-drive-btn" data-vehicle="{{ .Title }}">Schedule Test Drive</button>
-      </div>
-    </div>
-    
-    <div class="test-drive-form" style="display: none;">
-      <h3>Schedule a Test Drive</h3>
-      <form class="lead-form" data-form-type="testDrive">
-        <input type="hidden" name="formType" value="testDrive">
-        <input type="hidden" name="vehicle" value="{{ .Title }}">
-        
-        <div class="form-group">
-          <label for="name">Full Name</label>
-          <input type="text" id="name" name="name" required>
-        </div>
-        
-        <div class="form-group">
-          <label for="email">Email Address</label>
-          <input type="email" id="email" name="email" required>
-        </div>
-        
-        <div class="form-group">
-          <label for="phone">Phone Number</label>
-          <input type="tel" id="phone" name="phone" required>
-        </div>
-        
-        <div class="form-group">
-          <label for="date">Preferred Date</label>
-          <input type="date" id="date" name="preferredDate" required>
-        </div>
-        
-        <div class="form-group">
-          <label for="time">Preferred Time</label>
-          <input type="time" id="time" name="preferredTime" required>
-        </div>
-        
-        <div class="form-group">
-          <label for="comments">Comments (Optional)</label>
-          <textarea id="comments" name="comments"></textarea>
-        </div>
-        
-        <button type="submit" class="button">Request Test Drive</button>
-      </form>
-    </div>
   </div>
-</div>
-
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    const testDriveBtn = document.querySelector('.test-drive-btn');
-    const testDriveForm = document.querySelector('.test-drive-form');
-    
-    testDriveBtn.addEventListener('click', function() {
-      testDriveForm.style.display = testDriveForm.style.display === 'none' ? 'block' : 'none';
-    });
-  });
-</script>
-
+</article>
 {{ end }}

@@ -465,7 +465,7 @@ footer {
   margin-top: 0;
   font-size: 1.2rem;
   margin-bottom: 1rem;
-  color: var(--accent-color);
+  color: var (--accent-color);
 }
 
 .footer-section ul {
@@ -1184,3 +1184,46 @@ body.nav-open {
     min-width: 44px;
   }
 }
+
+/* Main CSS file that imports all component styles */
+
+/* Base styles */
+@import "base/reset.css";
+@import "base/typography.css";
+@import "base/variables.css";
+@import "base/global.css";
+
+/* Layout styles */
+@import "layout/header.css";
+@import "layout/footer.css";
+@import "layout/grid.css";
+@import "layout/sidebar.css";
+
+/* Component styles */
+@import "components/buttons.css";
+@import "components/forms.css";
+@import "components/navigation.css";
+@import "components/modal.css";
+@import "components/notification.css";
+@import "components/lazy-loading.css"; /* Add the lazy loading CSS */
+@import "components/carousel.css";
+@import "components/pagination.css";
+
+/* Module styles */
+@import "modules/inventory.css";
+@import "modules/inventory-errors.css";
+@import "modules/hero.css";
+@import "modules/features.css";
+@import "modules/testimonials.css";
+@import "modules/contact.css";
+
+/* Page-specific styles */
+@import "pages/home.css";
+@import "pages/about.css";
+@import "pages/services.css";
+@import "pages/blog.css";
+
+/* Utility styles */
+@import "utilities/helpers.css";
+@import "utilities/animations.css";
+@import "utilities/responsive.css";

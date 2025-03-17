@@ -1,0 +1,112 @@
+/* Styles for lazy loading images with placeholders */
+
+/* Base lazy loading styles */
+.lazyload,
+.lazyloading {
+  opacity: 0;
+}
+
+.lazyloaded {
+  opacity: 1;
+  transition: opacity 0.3s ease-in-out;
+}
+
+/* Image placeholder container */
+.image-placeholder-container {
+  position: relative;
+  overflow: hidden;
+  background-color: #f7f7f7;
+}
+
+/* Make sure image placeholder maintains aspect ratio */
+.image-placeholder-container img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Background image lazy loading support */
+[data-bg] {
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+/* Hero image blur-up effect */
+.hero-image {
+  position: relative;
+}
+
+.hero-image.lazyloading {
+  filter: blur(10px);
+  transform: scale(1.05);
+}
+
+.hero-image.lazyloaded {
+  filter: blur(0);
+  transform: scale(1);
+  transition: filter 0.5s ease-out, transform 0.5s ease-out, opacity 0.5s ease-out;
+}
+
+/* Prevent layout shift during loading */
+.inventory-image-container {
+  position: relative;
+  padding-bottom: 75%; /* 4:3 Aspect Ratio */
+}
+
+.inventory-image-container img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Gallery thumbnails */
+.gallery-thumbnails .gallery-thumbnail {
+  position: relative;
+  padding-bottom: 75%; /* 4:3 Aspect Ratio */
+  cursor: pointer;
+}
+
+.gallery-thumbnails .gallery-thumbnail img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Add a subtle shimmer effect to placeholder containers before image loads */
+@keyframes shimmer {
+  0% {
+    background-position: -100% 0;
+  }
+  100% {
+    background-position: 100% 0;
+  }
+}
+
+.image-placeholder-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  z-index: 1;
+}
+
+.image-placeholder-container.loaded::before {
+  display: none;
+}

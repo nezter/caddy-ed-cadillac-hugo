@@ -8,6 +8,10 @@ import { initializeModals } from './utils';
 import ContactForm from './contact-form';
 import LeadGenerator from './lead-generator';
 
+// Import the global notification system and error event system
+import Notification from './components/notification';
+import ErrorEventSystem from './utils/error-event-system';
+
 // Main site functionality
 document.addEventListener("DOMContentLoaded", function() {
   // Configure lazysizes
@@ -62,7 +66,49 @@ document.addEventListener("DOMContentLoaded", function() {
       }
     });
   }
+
+  // Initialize global error handling
+  initGlobalErrorHandling();
 });
+
+/**
+ * Initialize global error event handlers
+ */
+function initGlobalErrorHandling() {
+  // Listen for uncaught errors
+  window.addEventListener('error', (event) => {
+    ErrorEventSystem.handleError(
+      event.error || { message: event.message }, 
+      'Uncaught exception',
+      { notifyUser: true }
+    );
+  });
+  
+  // Listen for unhandled promise rejections
+  window.addEventListener('unhandledrejection', (event) => {
+    ErrorEventSystem.handleError(
+      event.reason,
+      'Unhandled Promise rejection',
+      { notifyUser: true }
+    );
+  });
+  
+  // Example of handling specific error types
+  ErrorEventSystem.onError(ErrorEventSystem.EVENTS.NETWORK_ERROR, (event) => {
+    // Check if the user is offline
+    if (!navigator.onLine) {
+      Notification.warning('You appear to be offline. Please check your internet connection.', {
+        duration: 0,  // Don't auto-dismiss
+        position: 'top-center'
+      });
+      
+      // Mark the event as handled
+      event.preventDefault();
+    }
+  });
+  
+  console.log('Global error handling initialized');
+}
 
 /**
  * Initialize mobile navigation with improved functionality

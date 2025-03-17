@@ -1,0 +1,131 @@
+/* Global Notification System Styles */
+
+.notification-container {
+  position: fixed;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  pointer-events: none;
+}
+
+.notification-container.top-right {
+  top: 20px;
+  right: 20px;
+}
+
+.notification-container.top-left {
+  top: 20px;
+  left: 20px;
+}
+
+.notification-container.bottom-right {
+  bottom: 20px;
+  right: 20px;
+}
+
+.notification-container.bottom-left {
+  bottom: 20px;
+  left: 20px;
+}
+
+.notification-container.top-center {
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.notification-container.bottom-center {
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.notification {
+  margin-bottom: 10px;
+  padding: 15px 20px 15px 15px;
+  width: 300px;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  color: #fff;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  transition: all 0.3s ease;
+  pointer-events: all;
+  opacity: 0;
+  transform: translateY(-10px);
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.notification-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.notification-removing {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.notification-info {
+  background-color: #2196f3;
+}
+
+.notification-success {
+  background-color: #4caf50;
+}
+
+.notification-warning {
+  background-color: #ff9800;
+}
+
+.notification-error {
+  background-color: #f44336;
+}
+
+.notification-message {
+  flex: 1;
+  padding-right: 10px;
+  line-height: 1.4;
+}
+
+.notification-close {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 20px;
+  line-height: 20px;
+  cursor: pointer;
+  padding: 0;
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+  align-self: flex-start;
+}
+
+.notification-close:hover {
+  opacity: 1;
+}
+
+@media (max-width: 480px) {
+  .notification-container {
+    left: 10px;
+    right: 10px;
+  }
+  
+  .notification-container.top-center,
+  .notification-container.bottom-center,
+  .notification-container.top-right,
+  .notification-container.top-left,
+  .notification-container.bottom-right,
+  .notification-container.bottom-left {
+    left: 10px;
+    right: 10px;
+    transform: none;
+  }
+  
+  .notification {
+    width: 100%;
+  }
+}

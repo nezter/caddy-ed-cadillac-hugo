@@ -18,7 +18,8 @@
     "build:hugo": "hugo -d ./dist -s site -v",
     "build:hugo:preview": "npm run build:hugo -- -D -F",
     "build:webpack": "cross-env NODE_ENV=production webpack --config webpack.prod.js",
-    "postbuild": "node scripts/optimize-images.js"
+    "postbuild": "node scripts/optimize-images.js",
+    "generate-placeholders": "node scripts/generate-image-placeholders.js"
   },
   "author": "Caddy Ed Cadillac",
   "license": "MIT",

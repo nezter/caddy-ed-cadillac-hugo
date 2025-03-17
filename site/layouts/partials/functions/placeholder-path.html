@@ -1,0 +1,7 @@
+{{- define "partials/functions/placeholder-path.html" -}}
+{{- $originalPath := . -}}
+{{- $placeholderType := cond (findRE "(hero|banner|featured)" . 1) "svg" "jpg" -}}
+{{- $placeholderPath := replace $originalPath "/img/" "/img/placeholders/" -}}
+{{- $placeholderPath := replace $placeholderPath (printf "\\.%s$" (path.Ext $placeholderPath)) (printf "-placeholder.%s" $placeholderType) -}}
+{{- return $placeholderPath -}}
+{{- end -}}
