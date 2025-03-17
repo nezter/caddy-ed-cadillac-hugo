@@ -1,14 +1,124 @@
 {{ define "main" }}
-<div class="page-container">
-  <div class="container">
-    <div class="page-header">
+<article class="page-content">
+  <header class="page-header">
+    <div class="container">
       <h1>{{ .Title }}</h1>
       {{ if .Params.subtitle }}<p class="subtitle">{{ .Params.subtitle }}</p>{{ end }}
+      
+      {{ if eq .Section "post" }}
+      <div class="post-meta">
+        <time datetime="{{ .Date.Format "2006-01-02T15:04:05Z07:00" }}">
+          {{ .Date.Format "January 2, 2006" }}
+        </time>
+        {{ if .Params.author }}
+        <span class="author">
+          By {{ .Params.author }}
+        </span>
+        {{ end }}
+      </div>
+      {{ end }}
+    </div>
+  </header>
+  
+  <div class="container">
+    <div class="content-wrapper">
+      <main class="main-content">
+        {{ if .Params.featured_image }}
+        <figure class="featured-image">
+          <img 
+            src="/img/placeholder-blog.jpg" 
+            data-src="{{ .Params.featured_image }}" 
+            alt="{{ .Title }}" 
+            class="lazyload"
+            loading="lazy"
+            width="800" 
+            height="450">
+          <noscript>
+            <img src="{{ .Params.featured_image }}" alt="{{ .Title }}" width="800" height="450">
+          </noscript>
+          {{ if .Params.image_caption }}
+          <figcaption>{{ .Params.image_caption }}</figcaption>
+          {{ end }}
+        </figure>
+        {{ end }}
+        
+        <div class="content">
+          {{ .Content }}
+        </div>
+        
+        {{ if eq .Section "post" }}
+        <footer class="post-footer">
+          {{ if .Params.tags }}
+          <section class="post-tags">
+            <h2>Tagged With:</h2>
+            <ul>
+              {{ range .Params.tags }}
+              <li><a href="{{ "/tags/" | relLangURL }}{{ . | urlize }}">{{ . }}</a></li>
+              {{ end }}
+            </ul>
+          </section>
+          {{ end }}
+          
+          <section class="post-share">
+            <h2>Share This:</h2>
+            <div class="share-buttons">
+              <button class="share-button" data-title="{{ .Title }}" data-url="{{ .Permalink }}" data-text="{{ .Description }}">
+                Share
+                <span class="visually-hidden">{{ .Title }}</span>
+              </button>
+            </div>
+          </section>
+        </footer>
+        {{ end }}
+      </main>
+      
+      {{ if .Params.sidebar }}
+      <aside class="sidebar">
+        <!-- Sidebar content would go here -->
+        {{ if isset .Params "sidebar_content" }}
+          {{ .Params.sidebar_content | markdownify }}
+        {{ end }}
+      </aside>
+      {{ end }}
     </div>
     
-    <div class="page-content">
-      {{ .Content }}
-    </div>
+    {{ if eq .Section "post" }}
+    <section class="related-posts">
+      <h2>Related Articles</h2>
+      <div class="post-grid">
+        {{ $related := .Site.RegularPages.Related . | first 3 }}
+        {{ with $related }}
+          {{ range . }}
+            <article class="post-card">
+              {{ if .Params.featured_image }}
+              <div class="post-image">
+                <a href="{{ .RelPermalink }}">
+                  <img 
+                    src="/img/placeholder-blog.jpg" 
+                    data-src="{{ .Params.featured_image }}" 
+                    alt="{{ .Title }}" 
+                    class="lazyload"
+                    loading="lazy"
+                    width="350" 
+                    height="200">
+                  <noscript>
+                    <img src="{{ .Params.featured_image }}" alt="{{ .Title }}" width="350" height="200">
+                  </noscript>
+                </a>
+              </div>
+              {{ end }}
+              <div class="post-content">
+                <h3><a href="{{ .RelPermalink }}">{{ .Title }}</a></h3>
+                <p>{{ .Description | truncate 100 }}</p>
+              </div>
+            </article>
+          {{ end }}
+        {{ else }}
+          <p>No related articles found.</p>
+        {{ end }}
+      </div>
+    </section>
+    {{ end }}
   </div>
-</div>
+</article>
 {{ end }}

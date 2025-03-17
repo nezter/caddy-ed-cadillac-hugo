@@ -17,7 +17,17 @@
           {{ if .Params.featured_image }}
           <div class="post-image">
             <a href="{{ .RelPermalink }}">
-              <img src="{{ .Params.featured_image }}" alt="{{ .Title }}" class="lazyload">
+              <img 
+                src="/img/placeholder-blog.jpg" 
+                data-src="{{ .Params.featured_image }}" 
+                alt="{{ .Title }}" 
+                class="lazyload"
+                loading="lazy"
+                width="300" 
+                height="200">
+              <noscript>
+                <img src="{{ .Params.featured_image }}" alt="{{ .Title }}" width="300" height="200">
+              </noscript>
             </a>
           </div>
           {{ end }}
@@ -49,11 +59,35 @@
             <div class="vehicle-image">
               <a href="{{ .RelPermalink }}">
                 {{ if .Params.images }}
-                <img src="{{ index .Params.images 0 }}" alt="{{ .Title }}" class="lazyload">
+                <img 
+                  src="/img/placeholder-vehicle.jpg" 
+                  data-src="{{ index .Params.images 0 }}" 
+                  alt="{{ .Title }}" 
+                  class="lazyload"
+                  loading="lazy"
+                  width="300" 
+                  height="200">
+                <noscript>
+                  <img src="{{ index .Params.images 0 }}" alt="{{ .Title }}" width="300" height="200">
+                </noscript>
                 {{ else if .Params.featured_image }}
-                <img src="{{ .Params.featured_image }}" alt="{{ .Title }}" class="lazyload">
+                <img 
+                  src="/img/placeholder-vehicle.jpg" 
+                  data-src="{{ .Params.featured_image }}" 
+                  alt="{{ .Title }}" 
+                  class="lazyload"
+                  loading="lazy"
+                  width="300" 
+                  height="200">
+                <noscript>
+                  <img src="{{ .Params.featured_image }}" alt="{{ .Title }}" width="300" height="200">
+                </noscript>
                 {{ else }}
-                <img src="/img/vehicle-placeholder.jpg" alt="{{ .Title }}" class="lazyload">
+                <img 
+                  src="/img/vehicle-placeholder.jpg" 
+                  alt="{{ .Title }}" 
+                  width="300" 
+                  height="200">
                 {{ end }}
               </a>
               <button class="favorite-toggle" aria-label="Add to favorites" aria-checked="false">

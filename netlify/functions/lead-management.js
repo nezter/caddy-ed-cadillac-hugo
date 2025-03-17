@@ -1,25 +1,29 @@
 const nodemailer = require('nodemailer');
 const axios = require('axios');
+const errorHandler = require('./utils/error-handler');
 
 exports.handler = async function(event, context) {
   // Only allow POST requests for lead submission
   if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: 'Method Not Allowed' };
+    return errorHandler.forbiddenError('Method not allowed');
   }
   
   try {
     // Parse the lead data
-    const leadData = JSON.parse(event.body);
+    let leadData;
+    try {
+      leadData = JSON.parse(event.body);
+    } catch (e) {
+      return errorHandler.validationError('Invalid JSON in request body');
+    }
     
     // Basic validation
     if (!leadData.name || !leadData.email || !leadData.phone) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ 
-          success: false, 
-          message: 'Missing required fields: name, email, and phone' 
-        })
-      };
+      return errorHandler.validationError('Missing required fields', {
+        name: !leadData.name ? 'Name is required' : null,
+        email: !leadData.email ? 'Email is required' : null,
+        phone: !leadData.phone ? 'Phone is required' : null
+      });
     }
     
     // Format data for CRM integration
@@ -43,14 +47,19 @@ exports.handler = async function(event, context) {
     };
     
     // Submit to Netlify forms for backup
-    await fetch('/.netlify/functions/submission-created', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        form_name: 'lead',
-        form_data: leadData
-      })
-    });
+    try {
+      await fetch('/.netlify/functions/submission-created', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          form_name: 'lead',
+          form_data: leadData
+        })
+      });
+    } catch (netlifyError) {
+      console.error('Error sending to Netlify forms:', netlifyError);
+      // Continue execution even if Netlify form submission fails
+    }
     
     // Integration with dealer CRM system
     const crmApiKey = process.env.CRM_API_KEY;
@@ -66,28 +75,16 @@ exports.handler = async function(event, context) {
         });
       } catch (crmError) {
         console.error('Error sending lead to CRM:', crmError);
-        // We don't return an error to the user if CRM submission fails
+        // Log the error but don't return an error response to the user
         // as we've already saved the lead to Netlify forms
       }
     }
     
-    return {
-      statusCode: 200,
-      body: JSON.stringify({
-        success: true,
-        message: 'Thank you for your interest. A member of our sales team will contact you shortly.'
-      })
-    };
-    
+    return errorHandler.createSuccessResponse(
+      { leadId: Date.now().toString() },
+      'Thank you for your interest. A member of our sales team will contact you shortly.'
+    );
   } catch (error) {
-    console.error('Error processing lead:', error);
-    
-    return {
-      statusCode: 500,
-      body: JSON.stringify({
-        success: false,
-        message: 'We encountered an error processing your request. Please try again or call us directly.'
-      })
-    };
+    return errorHandler.serverError('Error processing lead submission', error);
   }
 };

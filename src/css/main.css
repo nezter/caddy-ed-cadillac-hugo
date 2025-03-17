@@ -907,3 +907,280 @@ img {
     padding-right: var(--spacing-md);
   }
 }
+
+/* Add these styles to support lazy loading effects */
+
+/* Blur-up effect when images are loading */
+.lazyload,
+.lazyloading {
+  opacity: 0;
+}
+
+.lazyloaded {
+  opacity: 1;
+  transition: opacity 300ms;
+}
+
+/* Optional: Add a background pulse animation while loading */
+@keyframes imagePlaceholderShimmer {
+  0% {
+    background-position: -400px 0;
+  }
+  100% {
+    background-position: 400px 0;
+  }
+}
+
+.vehicle-image, 
+.post-image, 
+.news-image {
+  background: linear-gradient(to right, #f6f6f6 8%, #f0f0f0 18%, #f6f6f6 33%);
+  background-size: 800px 100%;
+  position: relative;
+  animation-duration: 1.5s;
+  animation-fill-mode: forwards;
+  animation-iteration-count: infinite;
+  animation-name: imagePlaceholderShimmer;
+  animation-timing-function: linear;
+}
+
+/* Add image loading spinner for slow connections */
+.vehicle-image::before, 
+.post-image::before, 
+.news-image::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 30px;
+  height: 30px;
+  border: 3px solid rgba(0, 0, 0, 0.1);
+  border-top-color: #767676;
+  border-radius: 50%;
+  z-index: 1;
+  animation: spin 0.8s linear infinite;
+  transform: translate(-50%, -50%);
+}
+
+.vehicle-image.lazyloaded::before, 
+.post-image.lazyloaded::before, 
+.news-image.lazyloaded::before {
+  display: none;
+}
+
+@keyframes spin {
+  0% { transform: translate(-50%, -50%) rotate(0deg); }
+  100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* Style for noscript images when JS is disabled */
+noscript img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Skip to content link - accessibility feature */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: #bd8f46;
+  color: white;
+  padding: 8px;
+  z-index: 1000;
+  transition: top 0.2s ease;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+.skip-link:focus {
+  top: 0;
+  outline: 3px solid #bd8f46;
+  outline-offset: 2px;
+}
+
+/* ==== Mobile Navigation Styles ==== */
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 0;
+  position: relative;
+}
+
+.navbar-brand {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.navbar-logo {
+  display: inline-block;
+  max-height: 60px;
+}
+
+.navbar-burger {
+  display: none;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 10px;
+  margin: 0;
+  width: 48px;
+  height: 48px;
+  position: relative;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+
+.navbar-burger span {
+  display: block;
+  width: 24px;
+  height: 2px;
+  background-color: #333;
+  margin: 5px auto;
+  transition: transform 0.3s, opacity 0.3s;
+}
+
+.navbar-burger:hover, 
+.navbar-burger:focus {
+  background-color: rgba(0, 0, 0, 0.05);
+  outline: 2px solid #bd8f46;
+}
+
+.navbar-menu {
+  display: flex;
+  flex-grow: 1;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.navbar-start, .navbar-end {
+  display: flex;
+  align-items: center;
+}
+
+.navbar-item {
+  color: #333;
+  padding: 0.5rem 1rem;
+  text-decoration: none;
+  font-weight: 500;
+  position: relative;
+  transition: color 0.3s;
+}
+
+.navbar-item:hover, 
+.navbar-item:focus {
+  color: #bd8f46;
+  outline: none;
+}
+
+.navbar-item:focus-visible {
+  outline: 2px solid #bd8f46;
+  outline-offset: 2px;
+}
+
+.navbar-item.is-active {
+  color: #bd8f46;
+  font-weight: 700;
+}
+
+.navbar-item.is-active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 1rem;
+  right: 1rem;
+  height: 2px;
+  background-color: #bd8f46;
+}
+
+/* Prevent scrolling when mobile menu is open */
+body.nav-open {
+  overflow: hidden;
+}
+
+/* Mobile styles */
+@media screen and (max-width: 1023px) {
+  .navbar-burger {
+    display: block;
+  }
+  
+  .navbar-menu {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #fff;
+    flex-direction: column;
+    justify-content: flex-start;
+    padding: 80px 20px 20px;
+    z-index: 1000;
+    visibility: hidden;
+    opacity: 0;
+    transform: translateY(-100%);
+    transition: 
+      transform 0.3s ease-in-out, 
+      opacity 0.3s ease-in-out, 
+      visibility 0.3s ease-in-out;
+    overflow-y: auto;
+  }
+  
+  .navbar-menu.is-active {
+    visibility: visible;
+    opacity: 1;
+    transform: translateY(0);
+  }
+  
+  .navbar-burger.is-active span:nth-child(1) {
+    transform: translateY(7px) rotate(45deg);
+  }
+  
+  .navbar-burger.is-active span:nth-child(2) {
+    opacity: 0;
+  }
+  
+  .navbar-burger.is-active span:nth-child(3) {
+    transform: translateY(-7px) rotate(-45deg);
+  }
+  
+  .navbar-start, 
+  .navbar-end {
+    flex-direction: column;
+    width: 100%;
+    align-items: center;
+    margin: 0;
+    padding: 1rem 0;
+  }
+  
+  .navbar-item {
+    width: 100%;
+    text-align: center;
+    padding: 1rem;
+    margin: 0.5rem 0;
+    font-size: 1.25rem;
+    border-radius: 4px;
+  }
+  
+  .navbar-end .navbar-item {
+    margin-top: 1rem;
+  }
+  
+  .navbar-item.is-active::after {
+    display: none;
+  }
+  
+  /* Use background instead of underline for active mobile items */
+  .navbar-item.is-active {
+    background-color: rgba(189, 143, 70, 0.1);
+  }
+  
+  /* Ensure proper tap target size */
+  .navbar-item, 
+  .navbar-burger {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}

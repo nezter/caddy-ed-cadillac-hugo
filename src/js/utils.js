@@ -1,5 +1,6 @@
 /**
  * Utility functions for the website
+ * These functions are candidates for unit testing
  */
 
 // Format number as currency
@@ -78,6 +79,11 @@ export function initializeModals() {
 export function calculatePayment(price, downPayment, termMonths, interestRate) {
   const loan = price - downPayment;
   const monthlyRate = interestRate / 100 / 12;
+  
+  if (monthlyRate === 0) {
+    return loan / termMonths;
+  }
+  
   const payment = loan * monthlyRate * Math.pow(1 + monthlyRate, termMonths) / 
     (Math.pow(1 + monthlyRate, termMonths) - 1);
   
@@ -133,3 +139,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 });
+
+// Test cases to be implemented:
+// 1. formatCurrency: test with whole numbers, decimals, zero, negative numbers
+// 2. formatNumber: test with various number sizes including large numbers
+// 3. debounce: test timing and function execution
+// 4. getUrlParams: test with various URL parameter combinations
+// 5. calculatePayment: test with different interest rates including 0%

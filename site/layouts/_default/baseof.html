@@ -36,9 +36,12 @@
   </head>
   
   <body class="{{ if .IsHome }}home{{ else }}page{{ end }}{{ with .Type }} {{ . }}{{ end }}{{ with .Params.bodyClass }} {{ . }}{{ end }}">
+    <!-- Skip to content link -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    
     {{ block "header" . }}{{ partial "header" . }}{{ end }}
     
-    <main role="main">
+    <main role="main" id="main-content">
       {{ block "main" . }}{{ end }}
     </main>
     

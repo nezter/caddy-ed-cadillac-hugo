@@ -19,14 +19,34 @@
     
     <div class="vehicle-gallery">
       <div class="featured-image">
-        <img src="{{ .Params.featured_image }}" alt="{{ .Title }}" class="lazyload">
+        <img 
+          src="/img/placeholder-vehicle.jpg" 
+          data-src="{{ .Params.featured_image }}" 
+          alt="{{ .Title }}" 
+          class="lazyload blur-up"
+          loading="lazy"
+          width="800" 
+          height="533">
+        <noscript>
+          <img src="{{ .Params.featured_image }}" alt="{{ .Title }}" width="800" height="533">
+        </noscript>
       </div>
       
       {{ if .Params.gallery }}
       <div class="gallery-images">
         {{ range .Params.gallery }}
           <div class="gallery-item">
-            <img src="{{ .image }}" alt="{{ $.Title }}" class="lazyload">
+            <img 
+              src="/img/placeholder-vehicle-thumb.jpg" 
+              data-src="{{ .image }}" 
+              alt="{{ $.Title }}" 
+              class="lazyload"
+              loading="lazy"
+              width="150" 
+              height="100">
+            <noscript>
+              <img src="{{ .image }}" alt="{{ $.Title }}" width="150" height="100">
+            </noscript>
           </div>
         {{ end }}
       </div>

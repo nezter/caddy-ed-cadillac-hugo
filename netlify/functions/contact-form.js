@@ -1,103 +1,95 @@
 const nodemailer = require('nodemailer');
+const errorHandler = require('./utils/error-handler');
 
 exports.handler = async function(event, context) {
   // Only allow POST requests
   if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: 'Method Not Allowed' };
+    return errorHandler.forbiddenError('Method not allowed');
   }
-  
+
   try {
-    // Parse the form data
-    const formData = JSON.parse(event.body);
-    
-    // Basic validation
-    if (!formData.name || !formData.email || !formData.message) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ 
-          success: false, 
-          message: 'Please fill out all required fields' 
-        })
-      };
+    // Parse the incoming data
+    let formData;
+    try {
+      formData = JSON.parse(event.body);
+    } catch (e) {
+      return errorHandler.validationError('Invalid JSON in request body');
     }
-    
-    // Email validation
+
+    // Validate required fields
+    if (!formData.name || !formData.email) {
+      return errorHandler.validationError('Name and email are required', {
+        name: !formData.name ? 'Name is required' : null,
+        email: !formData.email ? 'Email is required' : null
+      });
+    }
+
+    // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ 
-          success: false, 
-          message: 'Please provide a valid email address' 
-        })
-      };
+      return errorHandler.validationError('Invalid email format', {
+        email: 'Please provide a valid email address'
+      });
     }
-    
-    // Log submission for debugging
-    console.log('Form submission:', formData);
-    
-    // Record form submission in Netlify Forms
-    await fetch('/.netlify/functions/submission-created', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        form_name: 'contact',
-        form_data: formData
-      })
-    });
-    
-    // Optional: Send email notification
-    // Uncomment and configure if email sending is needed
-    /*
+
+    // Setup email transport
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
-      port: process.env.SMTP_PORT,
+      port: parseInt(process.env.SMTP_PORT || '587'),
       secure: process.env.SMTP_SECURE === 'true',
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS
       }
     });
+
+    // Build email content
+    const subject = `New Contact Form Submission from ${formData.name}`;
+    let htmlContent = `
+      <h2>New Contact Form Submission</h2>
+      <p><strong>Name:</strong> ${formData.name}</p>
+      <p><strong>Email:</strong> ${formData.email}</p>
+    `;
     
-    await transporter.sendMail({
-      from: '"Caddy Ed Website" <noreply@caddyed.com>',
-      to: 'sales@caddyed.com',
-      subject: `New Contact Form Submission from ${formData.name}`,
-      text: `
-        Name: ${formData.name}
-        Email: ${formData.email}
-        Phone: ${formData.phone || 'Not provided'}
-        Message: ${formData.message}
-        Vehicle Interest: ${formData.vehicle || 'Not specified'}
-      `,
-      html: `
-        <h2>New Contact Form Submission</h2>
-        <p><strong>Name:</strong> ${formData.name}</p>
-        <p><strong>Email:</strong> ${formData.email}</p>
-        <p><strong>Phone:</strong> ${formData.phone || 'Not provided'}</p>
-        <p><strong>Message:</strong> ${formData.message}</p>
-        <p><strong>Vehicle Interest:</strong> ${formData.vehicle || 'Not specified'}</p>
-      `
+    if (formData.phone) {
+      htmlContent += `<p><strong>Phone:</strong> ${formData.phone}</p>`;
+    }
+    
+    if (formData.subject) {
+      htmlContent += `<p><strong>Subject:</strong> ${formData.subject}</p>`;
+    }
+    
+    if (formData.message) {
+      htmlContent += `<p><strong>Message:</strong></p><p>${formData.message.replace(/\n/g, '<br>')}</p>`;
+    }
+    
+    // Add any additional form fields
+    Object.entries(formData).forEach(([key, value]) => {
+      if (!['name', 'email', 'phone', 'subject', 'message'].includes(key) && value) {
+        htmlContent += `<p><strong>${key}:</strong> ${value}</p>`;
+      }
     });
-    */
-    
-    return {
-      statusCode: 200,
-      body: JSON.stringify({
-        success: true,
-        message: 'Thank you for your message. We will get back to you soon.'
-      })
-    };
-    
+
+    // Send the email
+    try {
+      await transporter.sendMail({
+        from: `"Website Form" <${process.env.SMTP_USER}>`,
+        to: process.env.NOTIFICATION_EMAIL || 'info@caddyed.com',
+        subject: subject,
+        html: htmlContent,
+        replyTo: formData.email
+      });
+    } catch (emailError) {
+      console.error('Email sending error:', emailError);
+      return errorHandler.serverError('Failed to send email', emailError);
+    }
+
+    // Return success response
+    return errorHandler.createSuccessResponse(
+      { submitted: new Date().toISOString() },
+      'Thank you for your message. We will get back to you as soon as possible.'
+    );
   } catch (error) {
-    console.error('Error processing form submission:', error);
-    
-    return {
-      statusCode: 500,
-      body: JSON.stringify({
-        success: false,
-        message: 'There was an error submitting the form. Please try again later.'
-      })
-    };
+    return errorHandler.serverError('Error processing contact form submission', error);
   }
 };

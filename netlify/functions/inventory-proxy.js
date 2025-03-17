@@ -1,4 +1,5 @@
-const fetch = require('node-fetch');
+const axios = require('axios');
+const errorHandler = require('./utils/error-handler');
 const cheerio = require('cheerio');
 const { promisify } = require('util');
 const crypto = require('crypto');
@@ -18,6 +19,11 @@ let cache = {
 };
 
 exports.handler = async function(event, context) {
+  // Check HTTP method (only allow GET)
+  if (event.httpMethod !== 'GET') {
+    return errorHandler.forbiddenError('Method not allowed');
+  }
+
   try {
     // Get query parameters for filtering
     const params = event.queryStringParameters || {};

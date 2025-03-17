@@ -22,7 +22,17 @@
         {{ range .Params.featured_vehicles }}
         <div class="vehicle-card">
           <div class="vehicle-image">
-            <img src="{{ .image }}" alt="{{ .year }} {{ .model }}" class="lazyload">
+            <img 
+              src="/img/placeholder-vehicle.jpg" 
+              data-src="{{ .image }}" 
+              alt="{{ .year }} {{ .model }}" 
+              class="lazyload"
+              loading="lazy"
+              width="400" 
+              height="300">
+            <noscript>
+              <img src="{{ .image }}" alt="{{ .year }} {{ .model }}" width="400" height="300">
+            </noscript>
           </div>
           <div class="vehicle-details">
             <h3>{{ .year }} {{ .model }}</h3>
@@ -47,7 +57,17 @@
         <div class="news-card">
           {{ if .Params.featured_image }}
           <div class="news-image">
-            <img src="{{ .Params.featured_image }}" alt="{{ .Title }}" class="lazyload">
+            <img 
+              src="/img/placeholder-blog.jpg" 
+              data-src="{{ .Params.featured_image }}" 
+              alt="{{ .Title }}" 
+              class="lazyload"
+              loading="lazy"
+              width="350" 
+              height="200">
+            <noscript>
+              <img src="{{ .Params.featured_image }}" alt="{{ .Title }}" width="350" height="200">
+            </noscript>
           </div>
           {{ end }}
           <div class="news-content">

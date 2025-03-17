@@ -1,14 +1,12 @@
 const fetch = require('node-fetch');
+const errorHandler = require('./utils/error-handler');
 
 exports.handler = async function(event, context) {
   // Get vehicle ID from query string
   const vehicleId = event.queryStringParameters.id;
   
   if (!vehicleId) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: 'Vehicle ID is required' })
-    };
+    return errorHandler.validationError('Vehicle ID is required', { id: 'Missing required parameter' });
   }
   
   try {
@@ -22,7 +20,15 @@ exports.handler = async function(event, context) {
     });
     
     if (!response.ok) {
-      throw new Error(`API returned ${response.status} ${response.statusText}`);
+      // Handle different API error status codes
+      if (response.status === 404) {
+        return errorHandler.notFoundError(`Vehicle with ID ${vehicleId} not found`);
+      }
+      
+      return errorHandler.apiError(
+        `Failed to fetch vehicle data (Status: ${response.status})`, 
+        { status: response.status, statusText: response.statusText }
+      );
     }
     
     const data = await response.json();
@@ -34,14 +40,12 @@ exports.handler = async function(event, context) {
         'Content-Type': 'application/json',
         'Cache-Control': 'public, max-age=300' // Cache for 5 minutes
       },
-      body: JSON.stringify(data)
+      body: JSON.stringify({
+        success: true,
+        data: data
+      })
     };
   } catch (error) {
-    console.error('Error fetching vehicle details:', error);
-    
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: 'Failed to fetch vehicle details' })
-    };
+    return errorHandler.serverError('Error fetching vehicle details', error);
   }
 };
