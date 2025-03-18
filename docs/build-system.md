@@ -56,6 +56,7 @@ graph TD
 - **`npm run build:notify`**: Run build with desktop notifications
 - **`npm run build:preview`**: Create production build with draft content
 - **`npm run build:analyze`**: Build and analyze bundle sizes
+- **`npm run critical-css`**: Generate critical CSS manually
 
 ### Utility Commands
 
@@ -220,5 +221,25 @@ The build system has been designed for extensibility. Some planned enhancements 
 - Critical CSS extraction for better performance
 - Automated accessibility testing in the build pipeline
 - Integration with CI/CD for automated checks
+
+## Production Build Process
+
+The production build process includes the following steps:
+
+1. **Cleaning**: Remove previous build artifacts
+2. **Webpack Build**: Process and optimize JavaScript and CSS
+3. **Critical CSS Generation**: Extract and inline critical CSS
+4. **Hugo Build**: Generate HTML from content and templates
+5. **Post-processing**: Apply additional optimizations
+
+### Critical CSS Optimization
+
+The build system now includes critical CSS optimization to improve page load performance:
+
+1. After Webpack has generated the main CSS file, critical CSS is extracted for key templates
+2. The critical CSS is inlined directly into the HTML
+3. The main CSS file is loaded asynchronously to prevent render blocking
+
+This approach significantly improves Core Web Vitals metrics like First Contentful Paint (FCP) and Largest Contentful Paint (LCP).
 
 For more information on getting started, see the [Developer Onboarding Guide](/docs/developer-onboarding.md).

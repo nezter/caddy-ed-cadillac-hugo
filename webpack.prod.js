@@ -1,91 +1,103 @@
 const { merge } = require("webpack-merge");
-const path = require("path");
+const TerserPlugin = require("terser-webpack-plugin");
 const CssMinimizerPlugin = require("css-minimizer-webpack-plugin");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
-const TerserPlugin = require("terser-webpack-plugin");
 const CompressionPlugin = require("compression-webpack-plugin");
-const { notifySuccess } = require("./scripts/build-notifier");
+const { WebpackManifestPlugin } = require("webpack-manifest-plugin");
+const { notifySuccess, notifyError } = require("./scripts/build-notifier");
+const CriticalCssWebpackPlugin = require("./scripts/critical-css-webpack-plugin");
+const criticalCssConfig = require("./scripts/critical-css-config");
+
 const common = require("./webpack.common.js");
 
 module.exports = merge(common, {
   mode: "production",
-
-  // Use source maps optimized for production
-  devtool: "source-map",
-
+  
   output: {
-    filename: "[name].[fullhash:8].js",
-    chunkFilename: "[id].[fullhash:8].js",
-    path: path.resolve(__dirname, "dist"),
-    publicPath: "/"
+    filename: "[name].[fullhash:5].js",
+    chunkFilename: "[id].[fullhash:5].css"
   },
-
-  // Optimize bundle size
+  
   optimization: {
     minimizer: [
       new TerserPlugin({
         parallel: true,
+        exclude: /\/node_modules/,
         terserOptions: {
-          ecma: 2020,
           compress: {
-            drop_console: true, // Remove console logs in production
-          },
-        },
+            drop_console: true
+          }
+        }
       }),
-      new CssMinimizerPlugin({
-        minimizerOptions: {
-          preset: [
-            'default',
-            {
-              discardComments: { removeAll: true },
-            },
-          ],
-        },
-      }),
+      new CssMinimizerPlugin()
     ],
     splitChunks: {
+      chunks: 'all',
       cacheGroups: {
         styles: {
           name: 'styles',
           test: /\.css$/,
           chunks: 'all',
           enforce: true
+        },
+        vendor: {
+          test: /[\\/]node_modules[\\/]/,
+          name: 'vendors',
+          chunks: 'all'
         }
       }
     }
   },
-
+  
   plugins: [
-    // Extract CSS into separate files for better caching
     new MiniCssExtractPlugin({
-      filename: "[name].[fullhash:8].css",
-      chunkFilename: "[id].[fullhash:8].css"
+      filename: "[name].[fullhash:5].css",
+      chunkFilename: "[id].[fullhash:5].css"
     }),
     
-    // Compress assets for faster loading
+    new WebpackManifestPlugin({
+      fileName: "assets.json",
+      publicPath: ""
+    }),
+    
     new CompressionPlugin({
-      algorithm: "gzip",
       test: /\.(js|css|html|svg)$/,
-      threshold: 10240, // Only compress files > 10kb
-      minRatio: 0.8 // Only compress if compression ratio is better than 0.8
+      algorithm: "gzip",
+      threshold: 10240,
+      minRatio: 0.8
     }),
     
-    // Show success notification on build completion
+    // Add Critical CSS plugin in production mode
+    new CriticalCssWebpackPlugin({
+      base: criticalCssConfig.base,
+      templates: criticalCssConfig.templates
+    }),
+    
+    // Notify on build completion
     {
-      apply: (compiler) => {
-        compiler.hooks.done.tap('BuildNotifier', () => {
-          if (process.env.ENABLE_NOTIFICATIONS === 'true') {
-            notifySuccess('Production build completed successfully');
+      apply: compiler => {
+        compiler.hooks.done.tap('BuildNotifierPlugin', stats => {
+          if (stats.hasErrors()) {
+            notifyError('Build failed with errors');
+            return;
           }
+          
+          const time = (stats.endTime - stats.startTime) / 1000;
+          notifySuccess(`Build completed in ${time.toFixed(2)}s`);
         });
       }
     }
   ],
-
-  // Production-specific performance hints
-  performance: {
-    hints: "warning",
-    maxAssetSize: 250000, // 250kb
-    maxEntrypointSize: 400000, // 400kb
+  
+  // More detailed stats for production build
+  stats: {
+    colors: true,
+    hash: true,
+    timings: true,
+    assets: true,
+    chunks: false,
+    chunkModules: false,
+    modules: false,
+    children: false
   }
 });
