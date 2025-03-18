@@ -1,34 +1,36 @@
 const { merge } = require("webpack-merge");
-const TerserPlugin = require("terser-webpack-plugin");
+const path = require("path");
 const CssMinimizerPlugin = require("css-minimizer-webpack-plugin");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+const TerserPlugin = require("terser-webpack-plugin");
 const CompressionPlugin = require("compression-webpack-plugin");
-const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
-const { notifySuccess, notifyError } = require('./scripts/build-notifier');
-
+const { notifySuccess } = require("./scripts/build-notifier");
 const common = require("./webpack.common.js");
 
-// Configuration for production build
-const config = merge(common, {
+module.exports = merge(common, {
   mode: "production",
 
+  // Use source maps optimized for production
+  devtool: "source-map",
+
   output: {
-    filename: "[name].[fullhash:5].js",
-    chunkFilename: "[id].[fullhash:5].css"
+    filename: "[name].[fullhash:8].js",
+    chunkFilename: "[id].[fullhash:8].js",
+    path: path.resolve(__dirname, "dist"),
+    publicPath: "/"
   },
 
-  // Enhanced optimization options
+  // Optimize bundle size
   optimization: {
     minimizer: [
       new TerserPlugin({
         parallel: true,
         terserOptions: {
-          ecma: 6,
+          ecma: 2020,
           compress: {
-            drop_console: true,
+            drop_console: true, // Remove console logs in production
           },
         },
-        extractComments: false,
       }),
       new CssMinimizerPlugin({
         minimizerOptions: {
@@ -40,48 +42,50 @@ const config = merge(common, {
           ],
         },
       }),
-    ]
+    ],
+    splitChunks: {
+      cacheGroups: {
+        styles: {
+          name: 'styles',
+          test: /\.css$/,
+          chunks: 'all',
+          enforce: true
+        }
+      }
+    }
   },
 
   plugins: [
+    // Extract CSS into separate files for better caching
     new MiniCssExtractPlugin({
-      filename: "[name].[fullhash:5].css",
-      chunkFilename: "[id].[fullhash:5].css"
+      filename: "[name].[fullhash:8].css",
+      chunkFilename: "[id].[fullhash:8].css"
     }),
     
-    // Add compression for faster loading
+    // Compress assets for faster loading
     new CompressionPlugin({
       algorithm: "gzip",
       test: /\.(js|css|html|svg)$/,
-      threshold: 10240,
-      minRatio: 0.8,
+      threshold: 10240, // Only compress files > 10kb
+      minRatio: 0.8 // Only compress if compression ratio is better than 0.8
     }),
-
-    // Add a done hook to notify of success or failure
+    
+    // Show success notification on build completion
     {
       apply: (compiler) => {
-        compiler.hooks.done.tap('BuildNotificationPlugin', (stats) => {
-          if (stats.hasErrors()) {
-            notifyError(`Build failed with ${stats.compilation.errors.length} error(s)`);
-          } else {
-            const buildTime = (stats.endTime - stats.startTime) / 1000;
-            notifySuccess(`Build completed in ${buildTime.toFixed(2)}s`);
+        compiler.hooks.done.tap('BuildNotifier', () => {
+          if (process.env.ENABLE_NOTIFICATIONS === 'true') {
+            notifySuccess('Production build completed successfully');
           }
         });
       }
     }
-  ]
+  ],
+
+  // Production-specific performance hints
+  performance: {
+    hints: "warning",
+    maxAssetSize: 250000, // 250kb
+    maxEntrypointSize: 400000, // 400kb
+  }
 });
-
-// Add bundle analyzer when ANALYZE flag is set
-if (process.env.ANALYZE) {
-  config.plugins.push(
-    new BundleAnalyzerPlugin({
-      analyzerMode: 'static',
-      reportFilename: 'bundle-report.html',
-      openAnalyzer: true
-    })
-  );
-}
-
-module.exports = config;

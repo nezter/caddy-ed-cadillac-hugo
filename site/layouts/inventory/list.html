@@ -2,309 +2,41 @@
 {{ define "description" }}Browse our extensive inventory of Cadillac vehicles at competitive prices.{{ end }}
 
 {{ define "main" }}
-<section class="inventory-section">
-  <div class="container">
-    <h1 class="inventory-title">{{ .Title }}</h1>
-    
-    {{ .Content }}
-    
-    <div class="inventory-filters">
-      <div class="filter-controls">
-        <form id="inventory-filter" class="filter-form">
-          <div class="filter-row">
-            <div class="filter-group">
-              <label for="model-filter">Model</label>
-              <select id="model-filter" name="model">
-                <option value="">All Models</option>
-                <option value="Escalade">Escalade</option>
-                <option value="CT4">CT4</option>
-                <option value="CT5">CT5</option>
-                <option value="XT4">XT4</option>
-                <option value="XT5">XT5</option>
-                <option value="XT6">XT6</option>
-                <option value="LYRIQ">LYRIQ</option>
-              </select>
-            </div>
+<div class="inventory-container container py-5">
+  <aside class="inventory-filters" id="inventory-filters">
+    <!-- Filter UI will be rendered here by JS -->
+  </aside>
 
-            <div class="filter-group">
-              <label for="year-filter">Year</label>
-              <select id="year-filter" name="year">
-                <option value="">All Years</option>
-                <option value="2024">2024</option>
-                <option value="2023">2023</option>
-                <option value="2022">2022</option>
-                <option value="2021">2021</option>
-                <option value="2020">2020</option>
-              </select>
-            </div>
-
-            <div class="filter-group">
-              <label for="price-filter">Price Range</label>
-              <div class="range-filter">
-                <input type="text" id="min-price" name="minPrice" placeholder="Min">
-                <span>to</span>
-                <input type="text" id="max-price" name="maxPrice" placeholder="Max">
-              </div>
-            </div>
-          </div>
-
-          <div class="filter-row">
-            <div class="filter-group search">
-              <label for="search-filter">Search</label>
-              <input type="text" id="search-filter" name="search" placeholder="Search by keyword">
-            </div>
-            
-            <div class="filter-group sort">
-              <label for="sort-filter">Sort By</label>
-              <select id="sort-filter" name="sort">
-                <option value="price-asc">Price: Low to High</option>
-                <option value="price-desc">Price: High to Low</option>
-                <option value="year-desc">Year: Newest First</option>
-                <option value="year-asc">Year: Oldest First</option>
-              </select>
-            </div>
-            
-            <div class="filter-actions">
-              <button type="submit" class="btn btn-primary">Apply Filters</button>
-              <button type="reset" class="btn btn-outline">Reset</button>
-            </div>
-          </div>
-        </form>
-      </div>
+  <main class="inventory-main">
+    <!-- Sort controls -->
+    <div class="inventory-sort-container">
+      <label for="inventory-sort" class="inventory-sort-label">Sort by:</label>
+      <select id="inventory-sort" class="inventory-sort">
+        <option value="featured">Featured</option>
+        <option value="price-asc">Price (Low to High)</option>
+        <option value="price-desc">Price (High to Low)</option>
+        <option value="year-desc">Year (Newest First)</option>
+        <option value="year-asc">Year (Oldest First)</option>
+        <option value="model-asc">Model (A-Z)</option>
+        <option value="model-desc">Model (Z-A)</option>
+      </select>
     </div>
-    
-    <div id="inventory-list" class="inventory-grid">
-      {{ range .Paginator.Pages }}
-      <div class="inventory-card">
-        <div class="inventory-image-container image-placeholder-container">
-          {{ $imagePath := .Params.featured_image | default .Params.image | default "/img/inventory/default-vehicle.jpg" }}
-          {{ $placeholderPath := replace $imagePath "/img/" "/img/placeholders/" }}
-          {{ $placeholderPath := replace $placeholderPath (printf "\\.%s" (path.Ext $placeholderPath)) "-placeholder.jpg" }}
-          
-          <a href="{{ .RelPermalink }}">
-            <img class="inventory-image lazyload" 
-                 src="{{ $placeholderPath }}"
-                 data-src="{{ $imagePath }}"
-                 alt="{{ .Title }} - {{ .Params.year }} {{ .Params.make }} {{ .Params.model }}"
-                 width="400"
-                 height="300">
-          </a>
-        </div>
-        
-        <div class="inventory-details">
-          <h2 class="inventory-title"></h2>
-            <a href="{{ .RelPermalink }}">{{ .Title }}</a>
-          </h2>
-          
-          <div class="inventory-meta">
-            {{ if .Params.year }}<span class="year">{{ .Params.year }}</span>{{ end }}
-            {{ if .Params.make }}<span class="make">{{ .Params.make }}</span>{{ end }}
-            {{ if .Params.model }}<span class="model">{{ .Params.model }}</span>{{ end }}
-          </div>
-          
-          {{ if .Params.price }}
-          <div class="inventory-price">${{ lang.NumFmt 0 .Params.price }}</div>
-          {{ end }}
-          
-          <div class="inventory-features">
-            {{ if .Params.mileage }}
-            <div class="feature">
-              <i class="icon-gauge"></i> {{ lang.NumFmt 0 .Params.mileage }} miles
-            </div>
-            {{ end }}
-            
-            {{ if .Params.transmission }}
-            <div class="feature">
-              <i class="icon-gears"></i> {{ .Params.transmission }}
-            </div>
-            {{ end }}
-            
-            {{ if .Params.fuel_type }}
-            <div class="feature">
-              <i class="icon-fuel"></i> {{ .Params.fuel_type }}
-            </div>
-            {{ end }}
-          </div>
-          
-          <div class="inventory-actions">
-            <a href="{{ .RelPermalink }}" class="btn btn-primary">View Details</a>
-            {{ if .Params.status }}
-            <span class="inventory-status {{ lower .Params.status }}">{{ .Params.status }}</span>
-            {{ end }}
-          </div>
-        </div>
-      </div>
-      {{ end }}
-    </div>
-    
-    {{ template "_internal/pagination.html" . }}
-  </div>
-</section>
 
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    const filterForm = document.getElementById('inventory-filter');
-    const resultsContainer = document.querySelector('.inventory-grid');
-    const loadingIndicator = document.querySelector('.loading-indicator');
-    const paginationContainer = document.querySelector('.pagination');
-    
-    let currentPage = 1;
-    
-    // Load inventory on page load
-    loadInventory();
-    
-    // Handle filter form submission
-    filterForm.addEventListener('submit', function(e) {
-      e.preventDefault();
-      currentPage = 1;
-      loadInventory();
-    });
-    
-    // Handle filter reset
-    filterForm.addEventListener('reset', function() {
-      setTimeout(() => {
-        currentPage = 1;
-        loadInventory();
-      }, 10);
-    });
-    
-    function loadInventory() {
-      // Show loading indicator
-      loadingIndicator.style.display = 'flex';
-      resultsContainer.innerHTML = '';
-      
-      // Get filter values
-      const formData = new FormData(filterForm);
-      const params = new URLSearchParams();
-      
-      // Add filters to params
-      formData.forEach((value, key) => {
-        if (value) params.append(key, value);
-      });
-      
-      // Add pagination
-      params.append('page', currentPage);
-      params.append('perPage', 12);
-      
-      // Fetch inventory
-      fetch(`/api/inventory?${params.toString()}`)
-        .then(response => {
-          if (!response.ok) throw new Error('Failed to load inventory');
-          return response.json();
-        })
-        .then(data => {
-          loadingIndicator.style.display = 'none';
-          
-          if (data.vehicles && data.vehicles.length > 0) {
-            renderVehicles(data.vehicles);
-            renderPagination(data.pagination);
-          } else {
-            resultsContainer.innerHTML = '<div class="no-results"><p>No vehicles match your criteria. Please try different filters.</p></div>';
-            paginationContainer.innerHTML = '';
-          }
-        })
-        .catch(error => {
-          console.error('Error loading inventory:', error);
-          loadingIndicator.style.display = 'none';
-          resultsContainer.innerHTML = '<div class="error-message"><p>There was an error loading the inventory. Please try again later.</p></div>';
-        });
-    }
-    
-    function renderVehicles(vehicles) {
-      let html = '';
-      
-      vehicles.forEach(vehicle => {
-        const image = vehicle.image || '/img/vehicle-placeholder.jpg';
-        const price = vehicle.price ? `$${formatNumber(vehicle.price)}` : 'Call for Price';
-        const year = vehicle.year || '';
-        const make = vehicle.make || 'Cadillac';
-        const model = vehicle.model || '';
-        const detailUrl = vehicle.detailUrl || `/inventory/${vehicle.id}`;
-        
-        html += `
-          <div class="vehicle-card">
-            <div class="vehicle-image">
-              <a href="${detailUrl}">
-                <img 
-                  src="/img/placeholder-vehicle.jpg" 
-                  data-src="${image}" 
-                  alt="${year} ${make} ${model}" 
-                  class="lazyload" 
-                  loading="lazy"
-                  width="300" 
-                  height="200">
-                <noscript>
-                  <img src="${image}" alt="${year} ${make} ${model}" width="300" height="200">
-                </noscript>
-              </a>
-            </div>
-            <div class="vehicle-details">
-              <h3><a href="${detailUrl}">${year} ${make} ${model}</a></h3>
-              <div class="vehicle-price">${price}</div>
-              <ul class="vehicle-features">
-                ${vehicle.mileage ? `<li>${formatNumber(vehicle.mileage)} miles</li>` : '<li>New</li>'}
-                ${vehicle.exteriorColor ? `<li>${vehicle.exteriorColor}</li>` : ''}
-              </ul>
-              <div class="vehicle-actions">
-                <a href="${detailUrl}" class="btn btn-primary">View Details</a>
-              </div>
-            </div>
-          </div>
-        `;
-      });
-      
-      resultsContainer.innerHTML = html;
-    }
-    
-    function renderPagination(pagination) {
-      if (!pagination || pagination.totalPages <= 1) {
-        paginationContainer.innerHTML = '';
-        return;
-      }
-      
-      const { page, totalPages } = pagination;
-      
-      let paginationHtml = '<ul class="pagination-list">';
-      
-      // Previous button
-      if (page > 1) {
-        paginationHtml += `<li><button class="pagination-link" data-page="${page - 1}">Previous</button></li>`;
-      }
-      
-      // Page numbers
-      const startPage = Math.max(1, page - 2);
-      const endPage = Math.min(totalPages, page + 2);
-      
-      for (let i = startPage; i <= endPage; i++) {
-        paginationHtml += `<li><button class="pagination-link${i === page ? ' active' : ''}" data-page="${i}">${i}</button></li>`;
-      }
-      
-      // Next button
-      if (page < totalPages) {
-        paginationHtml += `<li><button class="pagination-link" data-page="${page + 1}">Next</button></li>`;
-      }
-      
-      paginationHtml += '</ul>';
-      paginationContainer.innerHTML = paginationHtml;
-      
-      // Add pagination click handlers
-      const paginationLinks = document.querySelectorAll('.pagination-link');
-      paginationLinks.forEach(link => {
-        link.addEventListener('click', function() {
-          currentPage = parseInt(this.dataset.page);
-          loadInventory();
-          
-          // Scroll to top of results
-          document.querySelector('.inventory-filters').scrollIntoView({
-            behavior: 'smooth'
-          });
-        });
-      });
-    }
-    
-    function formatNumber(num) {
-      return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    }
-  });
-</script>
+    <!-- Results count -->
+    <div class="results-count">Loading inventory...</div>
+
+    <!-- Results container -->
+    <div id="vehicle-inventory" class="vehicle-inventory">
+      <div class="loading-spinner"></div>
+    </div>
+
+    <!-- Mobile filter toggle -->
+    <button class="filter-toggle" aria-label="Toggle filters">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M1.5 1.5A.5.5 0 0 1 2 1h12a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.128.334L10 8.692V13.5a.5.5 0 0 1-.342.474l-3 1A.5.5 0 0 1 6 14.5V8.692L1.628 3.834A.5.5 0 0 1 1.5 3.5v-2z"/>
+      </svg>
+      <span>Filters</span>
+    </button>
+  </main>
+</div>
 {{ end }}

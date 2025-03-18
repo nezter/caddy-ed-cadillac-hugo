@@ -1,19 +1,28 @@
 // Import main CSS
-import "./css/main.css";
+import './css/main.css';
 
-// Import JavaScript dependencies
-import "lazysizes";
+// Import JavaScript
+import './js/app';
+import './js/navigation';
+import './js/forms';
 
-// Service worker registration
+// Import inventory filtering functionality
+import './js/inventory-init';
+
+// Import lazyload for images
+import 'lazysizes';
+
+// Initialize service worker if supported
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').then(registration => {
-      console.log('SW registered: ', registration);
-    }).catch(registrationError => {
-      console.log('SW registration failed: ', registrationError);
+    navigator.serviceWorker.register('/sw.js').catch(registrationError => {
+      console.error('SW registration failed:', registrationError);
     });
   });
 }
+
+// Console message for developers
+console.log(`Site running in ${process.env.NODE_ENV} mode`);
 
 // Custom scripts
 document.addEventListener("DOMContentLoaded", () => {

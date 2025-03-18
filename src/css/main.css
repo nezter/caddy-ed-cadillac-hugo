@@ -89,6 +89,34 @@
 
 /* Main CSS file */
 
+/* Import base styles */
+@import './imports/_variables';
+@import './imports/_reset';
+@import './imports/_typography';
+@import './imports/_layouts';
+
+/* Import components */
+@import './imports/_buttons';
+@import './imports/_forms';
+@import './imports/_header';
+@import './imports/_footer';
+@import './imports/_navigation';
+@import './imports/_hero';
+
+/* Import page-specific styles */
+@import './imports/_home';
+@import './imports/_about';
+@import './imports/_contact';
+@import './imports/_services';
+
+/* Import inventory styles */
+@import './imports/_filter-ui';
+@import './imports/_vehicle-inventory';
+
+/* Import utility classes */
+@import './imports/_utilities';
+@import './imports/_animations';
+
 :root {
   --primary-color: #1A2B49;
   --secondary-color: #C8102E;
@@ -274,7 +302,7 @@ nav a:hover {
 
 .vehicle-price {
   font-size: 1.2rem;
-  color: var(--secondary-color);
+  color: var (--secondary-color);
   font-weight: bold;
   margin-bottom: 0.5rem;
 }
