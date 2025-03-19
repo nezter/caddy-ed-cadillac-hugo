@@ -1,109 +1,56 @@
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>{{ if .Params.seo_title }}{{ .Params.seo_title }}{{ else }}{{ .Title }} | {{ .Site.Title }}{{ end }}</title>
-  <meta name="description" content="{{ with .Params.seo_description }}{{ . }}{{ else }}{{ .Description }}{{ end }}">
-  {{ with .Params.meta_keywords }}<meta name="keywords" content="{{ delimit . ", " }}">{{ end }}
-  
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ block "title" . }}{{ with .Title }}{{ . }} | {{ end }}{{ .Site.Title }}{{ end }}</title>
+  <meta name="description" content="{{ with .Description }}{{ . }}{{ else }}{{ with .Summary }}{{ . }}{{ else }}{{ .Site.Params.description }}{{ end }}{{ end }}">
+
   <!-- Open Graph -->
-  <meta property="og:title" content="{{ if .Params.seo_title }}{{ .Params.seo_title }}{{ else }}{{ .Title }} | {{ .Site.Title }}{{ end }}">
-  <meta property="og:description" content="{{ with .Params.seo_description }}{{ . }}{{ else }}{{ .Description }}{{ end }}">
-  <meta property="og:type" content="{{ if .IsPage }}article{{ else }}website{{ end }}">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="{{ .Title }}">
+  <meta property="og:description" content="{{ with .Description }}{{ . }}{{ else }}{{ with .Summary }}{{ . }}{{ else }}{{ .Site.Params.description }}{{ end }}{{ end }}">
   <meta property="og:url" content="{{ .Permalink }}">
-  <meta property="og:image" content="{{ with .Params.image }}{{ . | absURL }}{{ else }}/img/og-image.jpg{{ end }}">
+  <meta property="og:image" content="{{ with .Params.image }}{{ . | absURL }}{{ else }}{{ "/img/og-image.jpg" | absURL }}{{ end }}">
 
-  <!-- Twitter Card -->
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="{{ if .Params.seo_title }}{{ .Params.seo_title }}{{ else }}{{ .Title }}{{ end }}">
-  <meta name="twitter:description" content="{{ with .Params.seo_description }}{{ . }}{{ else }}{{ .Description }}{{ end }}">
-  <meta name="twitter:image" content="{{ with .Params.image }}{{ . | absURL }}{{ else }}/img/og-image.jpg{{ end }}">
-
-  <!-- Schema.org -->
-  <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "Organization",
-      "name": "Ed's Classic Cadillac Restoration",
-      "url": "{{ .Site.BaseURL }}",
-      "logo": "{{ .Site.BaseURL }}img/caddy-ed-with-text.png",
-      "contactPoint": {
-        "@type": "ContactPoint",
-        "telephone": "",
-        "contactType": "customer service"
-      }
-    }
-  </script>
-
-  <!-- Preload assets -->
-  <link rel="preload" href="/css/main.css" as="style">
-  {{ if .IsHome }}
-  <link rel="preload" href="/img/home-jumbotron.jpg" as="image">
-  {{ end }}
-
-  <link rel="stylesheet" href="/css/main.css"/>
-  
   <!-- Favicon -->
-  <link rel="icon" type="image/png" href="/img/favicon-32x32.png" sizes="32x32">
-  <link rel="icon" type="image/png" href="/img/favicon-16x16.png" sizes="16x16">
+  <link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16x16.png">
+  <link rel="manifest" href="/site.webmanifest">
 
-  <!-- RSS -->
-  <link rel="alternate" type="application/rss+xml" title="{{ .Site.Title }}" href="{{ "/feed.xml" | absURL }}">
-</head>
-<head>
-
-  <title>{{ .Title }} | {{ $.Site.Title }}</title>
-
-  {{ $stylesheet := .Site.Data.webpack.main }}
-  {{ with $stylesheet.css }}
-    <link href="{{ relURL . }}" rel="stylesheet">
+  {{ if eq (getenv "HUGO_ENV") "production" | or (eq .Site.Params.env "production") }}
+  <!-- Service worker and PWA -->
+  <meta name="theme-color" content="#000000">
+  <link rel="manifest" href="/manifest.json">
   {{ end }}
 
-	<meta charset="utf-8">
-	<meta http-equiv="x-ua-compatible" content="ie=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <base href="{{ if getenv "CONTEXT" }}{{ cond (eq "production" (getenv "CONTEXT")) (getenv "URL") (getenv "DEPLOY_PRIME_URL") }}{{ else }}{{ $.Site.BaseURL }}{{ end }}">
-
-	<link href="https://fonts.googleapis.com/css?family=Nunito+Sans:400,700" rel="stylesheet">
-
-	<!-- Favicons -->
-	<link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
-	<link rel="icon" type="image/png" href="/img/favicon-32x32.png" sizes="32x32">
-	<link rel="icon" type="image/png" href="/img/favicon-16x16.png" sizes="16x16">
-	<link rel="manifest" href="/manifest.json">
-	<link rel="mask-icon" href="/img/safari-pinned-tab.svg" color="#ff4400">
-	<meta name="theme-color" content="#fff">
-
-	<!-- Open Graph -->
-	<meta property="og:type" content="business.business">
-	<meta property="og:title" content="Caddy Ed | Always looking out for the best car for you!">
-	<meta property="og:url" content="/">
-	<meta property="og:image" content="/img/caddy-ed-text.png">
-
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "AutoDealer",
-    "name": "Cadillac of South Charlotte",
-    "employee": {
-      "@type": "Person",
-      "name": "Ed Portello",
-      "jobTitle": "Cadillac Sales Specialist",
-      "telephone": "(803) 431-6180"
-    },
-    "address": {
-      "@type": "PostalAddress",
-      "streetAddress": "10725 Pineville Rd",
-      "addressLocality": "Pineville",
-      "addressRegion": "NC",
-      "postalCode": "28134"
-    },
-    "telephone": "(980) 467-0150",
-    "url": "https://www.cadillacofsouthcharlotte.com"
-  }
-  </script>
-
-  {{ if .IsHome }}
-	<script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
-	<script src="https://www.google.com/recaptcha/api.js" async defer></script>
+  <!-- Load Critical CSS for this template -->
+  {{ $templateType := .Type | default "default" }}
+  {{ if eq $templateType "page" }}{{ $templateType = "default" }}{{ end }}
+  {{ if .IsHome }}{{ $templateType = "home" }}{{ end }}
+  {{ if eq .Section "inventory" }}
+    {{ if .IsNode }}{{ $templateType = "inventory-list" }}{{ end }}
+    {{ if .IsPage }}{{ $templateType = "inventory-detail" }}{{ end }}
   {{ end }}
+
+  {{ if .Site.Data.critical }}
+    {{ if .Site.Data.critical.available }}
+      {{ $criticalTemplate := $templateType }}
+      {{ if not (in .Site.Data.critical.templates $criticalTemplate) }}
+        {{ $criticalTemplate = "default" }}
+      {{ end }}
+      
+      {{ if isset .Site.Data.critical $criticalTemplate }}
+        {{ $.Scratch.Set "criticalCss" (index .Site.Data.critical $criticalTemplate).css }}
+      {{ end }}
+    {{ end }}
+  {{ end }}
+
+  {{ if $.Scratch.Get "criticalCss" }}
+    {{ $.Scratch.Set "params" $.Params }}
+    {{ $.Scratch.SetInMap "params" "criticalCss" ($.Scratch.Get "criticalCss") }}
+    {{ $.Scratch.Set "paramsmerged" (merge $.Params (dict "criticalCss" ($.Scratch.Get "criticalCss"))) }}
+    {{ $.Scratch.Set "." (merge $ (dict "Params" ($.Scratch.Get "paramsmerged"))) }}
+  {{ end }}
+
+  {{ partial "critical-css.html" . }}
 </head>

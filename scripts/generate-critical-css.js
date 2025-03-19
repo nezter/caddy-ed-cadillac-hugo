@@ -28,6 +28,12 @@ async function generateCriticalCss(template) {
       return false;
     }
 
+    // Make sure the critical directory exists
+    const criticalDir = path.resolve(__dirname, '../dist/critical');
+    if (!fs.existsSync(criticalDir)) {
+      fs.mkdirSync(criticalDir, { recursive: true });
+    }
+
     // Generate critical CSS
     const result = await critical.generate({
       // Merge base config with template config
@@ -37,6 +43,12 @@ async function generateCriticalCss(template) {
       src: path.resolve(template.src),
       dest: path.resolve(template.dest),
       css: template.css.map(css => path.resolve(css)),
+      extract: true,
+      target: {
+        css: path.join(criticalDir, `${template.name}.css`),
+        html: path.resolve(template.dest),
+        uncritical: path.join(criticalDir, `${template.name}.uncritical.css`)
+      }
     });
 
     console.log(chalk.green(`✅ Critical CSS generated for ${template.name}`));
@@ -101,6 +113,13 @@ async function main() {
   
   console.log(chalk.blue('====================='));
   console.log(chalk.blue(`Complete: ${successes} succeeded, ${failures} failed`));
+  
+  // Run Hugo critical CSS hook
+  try {
+    require('./hugo-critical-css-hook');
+  } catch (error) {
+    console.error(chalk.red('Error executing Hugo critical CSS hook:'), error);
+  }
 }
 
 // Run the main function

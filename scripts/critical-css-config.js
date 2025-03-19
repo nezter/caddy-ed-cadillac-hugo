@@ -89,6 +89,15 @@ module.exports = {
       css: [
         'dist/main.css'
       ]
+    },
+    {
+      // Default template for other pages
+      name: 'default',
+      src: 'dist/about/index.html',
+      dest: 'dist/about/index.html',
+      css: [
+        'dist/main.css'
+      ]
     }
   ]
 };

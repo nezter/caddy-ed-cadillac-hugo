@@ -1,13 +1,26 @@
-baseURL = "/"
+baseURL = "https://www.caddyedcadillac.com/"
 languageCode = "en-us"
 title = "Caddy Ed Cadillac"
 enableRobotsTXT = true
+disableKinds = ["taxonomyTerm"]
+pygmentsCodeFences = true
+pygmentsUseClasses = true
 
 [params]
-  description = "Premium Cadillac dealership in South Charlotte offering new and used vehicles, financing, and service."
-  images = ["/img/og-image.jpg"]
-  og_image = "/img/og-image.jpg"
-  env = "production"
+  description = "Cadillac dealer serving the area with exceptional service, new and pre-owned vehicles, and factory-certified maintenance."
+  mainCSS = "/main.css" # This will be replaced with fingerprinted version in production
+  
+  # Critical CSS settings
+  enableCriticalCSS = true
+  criticalCSSPath = "/critical/"
+  
+  # Template type mappings for critical CSS
+  [params.criticalCSSTemplates]
+    home = "home"
+    inventory = "inventory-list"
+    vehicle = "inventory-detail"
+    contact = "contact"
+    default = "default"
 
 [menu]
   [[menu.main]]
@@ -19,23 +32,23 @@ enableRobotsTXT = true
     url = "/inventory/"
     weight = 2
   [[menu.main]]
-    name = "Services"
-    url = "/services/"
-    weight = 3
-  [[menu.main]]
     name = "About"
     url = "/about/"
+    weight = 3
+  [[menu.main]]
+    name = "Services"
+    url = "/services/"
     weight = 4
   [[menu.main]]
     name = "Contact"
     url = "/contact/"
     weight = 5
 
-[taxonomies]
-  category = "categories"
-  tag = "tags"
+[outputFormats.WebAppManifest]
+  mediaType = "application/manifest+json"
+  rel = "manifest"
 
 [outputs]
-  home = ["HTML", "RSS"]
+  home = ["HTML", "RSS", "WebAppManifest"]
   page = ["HTML"]
   section = ["HTML"]

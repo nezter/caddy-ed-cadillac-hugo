@@ -25,11 +25,8 @@
     <link rel="manifest" href="/manifest.json">
     {{ end }}
     
-    {{ with .Site.Data.webpack.main }}
-    {{ with .css }}
-    <link href="{{ relURL . }}" rel="stylesheet">
-    {{ end }}
-    {{ end }}
+    {{ partial "critical-css.html" . }}
+    {{ partial "header-scripts.html" . }}
 
     {{ block "headStyles" . }}{{ end }}
     {{ block "headScripts" . }}{{ end }}
@@ -65,6 +62,7 @@
     </script>
     {{ end }}
     
+    {{ partial "footer-scripts.html" . }}
     {{ block "scripts" . }}{{ end }}
   </body>
 </html>
