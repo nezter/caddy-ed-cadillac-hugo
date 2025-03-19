@@ -1,0 +1,77 @@
+/* Critical CSS for inventory listing page */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+}
+
+.header {
+  position: relative;
+  z-index: 100;
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.inventory-header {
+  padding: 2rem 1rem;
+  background-color: #f5f5f5;
+  text-align: center;
+}
+
+.inventory-header h1 {
+  margin: 0;
+  font-size: 2rem;
+  color: #333;
+}
+
+.filter-container {
+  padding: 1rem;
+  background-color: #fff;
+  border-bottom: 1px solid #eee;
+}
+
+.inventory-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+  padding: 1.5rem;
+}
+
+.vehicle-card {
+  border: 1px solid #eee;
+  border-radius: 4px;
+  overflow: hidden;
+  background-color: #fff;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.vehicle-image-container {
+  position: relative;
+  padding-top: 56.25%; /* 16:9 aspect ratio */
+  background-color: #f0f0f0;
+}
+
+.vehicle-info {
+  padding: 1rem;
+}
+
+.vehicle-title {
+  font-size: 1.2rem;
+  margin: 0 0 0.5rem;
+}
+
+.vehicle-price {
+  font-weight: bold;
+  color: #c0392b;
+}
+
+@media (max-width: 768px) {
+  .inventory-grid {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  }
+  
+  .filter-container {
+    padding: 0.75rem;
+  }
+}

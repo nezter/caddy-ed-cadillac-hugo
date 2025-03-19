@@ -1,5 +1,7 @@
 ---
-title: Caddy Ed Cadillac | Luxury Vehicles & Service
+title: "Home"
+date: 2023-01-01T00:00:00-05:00
+criticalCss: "home"
 hero:
   image: /img/hero-cadillac.jpg
   title: Experience Luxury

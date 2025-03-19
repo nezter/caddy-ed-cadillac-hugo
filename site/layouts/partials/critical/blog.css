@@ -1,0 +1,77 @@
+/* Critical CSS for blog pages */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+}
+
+.header {
+  position: relative;
+  z-index: 100;
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.blog-header {
+  padding: 2rem 1rem;
+  background-color: #f5f5f5;
+  text-align: center;
+}
+
+.blog-header h1 {
+  margin: 0;
+  font-size: 2rem;
+  color: #333;
+}
+
+.blog-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.blog-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 2rem;
+}
+
+.blog-card {
+  border: 1px solid #eee;
+  border-radius: 4px;
+  overflow: hidden;
+  background-color: #fff;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.blog-image-container {
+  position: relative;
+  padding-top: 56.25%; /* 16:9 aspect ratio */
+  background-color: #f0f0f0;
+}
+
+.blog-info {
+  padding: 1rem;
+}
+
+.blog-title {
+  font-size: 1.2rem;
+  margin: 0 0 0.5rem;
+}
+
+.blog-date {
+  color: #777;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.blog-excerpt {
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 768px) {
+  .blog-grid {
+    grid-template-columns: 1fr;
+  }
+}

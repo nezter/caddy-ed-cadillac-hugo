@@ -1,100 +1,77 @@
 /**
- * Critical CSS Webpack Plugin
- * 
- * This is a custom webpack plugin that integrates Critical with
- * the webpack build process.
+ * Webpack plugin for generating critical CSS
+ * This plugin extracts critical CSS for specified templates and saves them to Hugo partials
  */
-
-const critical = require('critical');
-const path = require('path');
 const fs = require('fs');
-const chalk = require('chalk');
+const path = require('path');
+const critical = require('critical');
 
 class CriticalCssWebpackPlugin {
-  constructor(options = {}) {
-    this.options = {
-      base: {},
+  constructor(options) {
+    this.options = Object.assign({
+      base: 'site/layouts/partials/critical',
       templates: [],
-      ...options
-    };
+      options: {
+        minify: true,
+        extract: true,
+        inline: false
+      }
+    }, options);
   }
-  
+
   apply(compiler) {
-    // Wait until after assets have been emitted
-    compiler.hooks.afterEmit.tapPromise('CriticalCssWebpackPlugin', async (compilation) => {
-      // Only run in production mode
+    // This runs after the assets are emitted
+    compiler.hooks.afterEmit.tapAsync('CriticalCssWebpackPlugin', (compilation, callback) => {
       if (process.env.NODE_ENV !== 'production') {
-        console.log(chalk.yellow('Skipping critical CSS generation in development mode'));
+        console.log('Skipping critical CSS generation in development mode');
+        callback();
         return;
       }
+
+      console.log('Generating critical CSS...');
       
-      const logger = compilation.getInfrastructureLogger('CriticalCssWebpackPlugin');
-      logger.info('Generating critical CSS...');
-      
-      const { templates, base } = this.options;
-      const outputPath = compiler.outputPath;
-      
-      // Create the critical directory if it doesn't exist
-      const criticalDir = path.join(outputPath, 'critical');
-      if (!fs.existsSync(criticalDir)) {
-        fs.mkdirSync(criticalDir, { recursive: true });
+      // Ensure the directory exists
+      if (!fs.existsSync(this.options.base)) {
+        fs.mkdirSync(this.options.base, { recursive: true });
       }
-      
-      let successCount = 0;
-      let failCount = 0;
-      
+
       // Process each template
-      for (const template of templates) {
-        const templateName = template.name || path.basename(template.src, '.html');
-        
-        try {
-          logger.info(`Processing template: ${templateName}`);
-          
-          // Resolve paths relative to webpack output directory
-          const src = path.resolve(outputPath, template.src);
-          const dest = path.resolve(outputPath, template.dest);
-          const css = template.css.map(file => path.resolve(outputPath, file));
-          
-          // Skip if source doesn't exist
-          if (!fs.existsSync(src)) {
-            logger.warn(`Source file does not exist: ${src}`);
-            failCount++;
-            continue;
-          }
-          
-          // Generate critical CSS
-          const result = await critical.generate({
-            ...base,
-            ...template,
-            src,
-            dest,
-            css,
-            extract: true,
-            target: {
-              css: path.join(criticalDir, `${templateName}.css`),
-              html: dest,
-              uncritical: path.join(criticalDir, `${templateName}.uncritical.css`)
-            }
+      const templatePromises = this.options.templates.map(template => {
+        return this.generateCriticalCss(template)
+          .catch(error => {
+            console.error(`Error generating critical CSS for ${template.name}:`, error);
           });
-          
-          logger.info(`Critical CSS generated for ${templateName}: ${result.uncritical.length} bytes uncritical, ${result.css.length} bytes critical`);
-          successCount++;
-        } catch (error) {
-          logger.error(`Error generating critical CSS for ${templateName}:`, error);
-          failCount++;
-        }
-      }
-      
-      logger.info(`Critical CSS generation complete: ${successCount} succeeded, ${failCount} failed`);
-      
-      // Run the Hugo critical CSS hook
-      try {
-        require('./hugo-critical-css-hook');
-        logger.info('Hugo critical CSS hook executed');
-      } catch (error) {
-        logger.error('Error executing Hugo critical CSS hook:', error);
-      }
+      });
+
+      Promise.all(templatePromises)
+        .then(() => {
+          console.log('Critical CSS generation completed.');
+          callback();
+        })
+        .catch(error => {
+          console.error('Error in critical CSS generation:', error);
+          callback();
+        });
     });
+  }
+
+  generateCriticalCss(template) {
+    const outputFile = path.join(this.options.base, `${template.name}.css`);
+    
+    console.log(`Generating critical CSS for ${template.name} from ${template.src}...`);
+    
+    const options = {
+      ...this.options.options,
+      src: template.src,
+      dimensions: template.dimensions
+    };
+    
+    return critical.generate(options)
+      .then(result => {
+        fs.writeFileSync(outputFile, result.css);
+        console.log(`Critical CSS for ${template.name} saved to ${outputFile}`);
+        return result;
+      });
   }
 }
 

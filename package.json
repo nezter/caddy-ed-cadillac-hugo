@@ -28,7 +28,8 @@
     "clean": "rimraf dist .cache",
     "reinstall": "rimraf node_modules package-lock.json && npm install",
     "preview": "hugo -D && http-server ./dist",
-    "critical-css": "node scripts/generate-critical-css.js"
+    "critical-css": "node scripts/generate-critical-css.js",
+    "generate-critical-css": "NODE_ENV=production node generate-critical-css.js"
   },
   "author": "Your Name",
   "license": "UNLICENSED",
@@ -36,7 +37,8 @@
   "dependencies": {
     "axios": "^0.21.1",
     "lazysizes": "^5.3.2",
-    "nouislider": "^15.6.0"
+    "nouislider": "^15.6.0",
+    "critical": "^5.0.0"
   },
   "devDependencies": {
     "@babel/core": "^7.14.6",

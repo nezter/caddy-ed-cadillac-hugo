@@ -29,7 +29,7 @@ This document tracks the progress of enhancements and fixes for the Caddy Ed Cad
 | HIGH-02 | Refactor salesDashboard.js to use modular components    | M      |       | Open       |              |
 | HIGH-03 | Implement structured error handling in API functions    | S      |GitHub Copilot| Completed | 2023-11-21   |
 | HIGH-04 | Implement lazy loading for images                       | S      |GitHub Copilot| Completed | 2023-11-17   |
-| HIGH-05 | Optimize CSS delivery with critical CSS                 | M      |       | Open       |              |
+| HIGH-05 | Optimize CSS delivery with critical CSS                 | M      |GitHub Copilot| In Progress |              |
 | HIGH-06 | Fix mobile navigation issues                            | S      |GitHub Copilot| Completed | 2023-11-22   |
 | HIGH-07 | Implement proper HTML semantics for accessibility       | M      |GitHub Copilot| Completed | 2023-11-23   |
 | HIGH-08 | Add skip-to-content link for accessibility              | XS     |GitHub Copilot| Completed | 2023-11-18   |
@@ -75,6 +75,57 @@ This document tracks the progress of enhancements and fixes for the Caddy Ed Cad
 | REFACT-01.6| Phase 6: Deployment and Training                         | M      |       | Not Started |      |
 
 ## Weekly Progress
+
+### Week of 2023-12-24
+
+**Planned Tasks:**
+- Continue HIGH-05: Template integration for critical CSS
+- Complete remaining work on HIGH-05
+- Plan implementation for HIGH-01: Refactor schedulingCalendar.js
+
+**In Progress:**
+- HIGH-05: Implementation & Integration (Subtask 3)
+  - Created critical CSS Hugo partial
+  - Set up webpack plugin integration
+  - Implemented manual generation script
+  - Updated base templates
+
+**Completed:**
+- HIGH-05: Implementation infrastructure setup
+- Created reusable critical CSS partial
+- Added critical CSS webpack plugin
+
+**Blockers:**
+- None currently
+
+**Notes:**
+- Made significant progress on HIGH-05 implementation
+- On track to complete critical CSS implementation by December 26
+- Currently focusing on template integration and performance testing
+
+### Week of 2023-12-22
+
+**Planned Tasks:**
+- Complete HIGH-05: Optimize CSS delivery with critical CSS
+- Begin work on HIGH-01: Refactor schedulingCalendar.js
+- Plan for MED-02: Implement code splitting for JS bundles
+
+**In Progress:**
+- HIGH-05: Implementation and integration of critical CSS
+  - Completed initial configuration
+  - Working on template integration and testing
+
+**Completed:**
+- MED-03: Vehicle inventory filtering (carried over from previous week)
+- Setup and configuration for critical CSS generation
+
+**Blockers:**
+- None currently
+
+**Notes:**
+- Making good progress on HIGH-05 with initial implementation completed
+- Planning to focus on remaining HIGH priority tasks before moving to MEDium tasks
+- Need to evaluate LOW priority tasks for potential reprioritization
 
 ### Week of 2023-12-13
 
@@ -485,3 +536,35 @@ The current site architecture based on Hugo + Webpack has served well but is bec
 - Evaluating technology options
 - Developing migration strategy
 - Creating detailed implementation plan
+
+### HIGH-05: Optimize CSS delivery with critical CSS
+
+**Description:**
+The site currently loads all CSS at once, slowing down initial render. Implementing critical CSS will improve page load performance by inlining critical styles and deferring non-critical CSS.
+
+**Acceptance Criteria:**
+- Critical CSS is automatically extracted during build
+- Critical CSS is inlined in the HTML head
+- Non-critical CSS is loaded asynchronously
+- No flash of unstyled content (FOUC)
+- Improved Largest Contentful Paint (LCP) metric
+- Compatible with existing build pipeline
+- Documented approach for maintaining critical CSS
+
+**Implementation Plan:**
+1. Analysis & Planning (Subtask 1) ✓
+2. Tool Setup & Configuration (Subtask 2) ✓
+3. Implementation & Integration (Subtask 3) - In Progress
+4. Testing & Optimization (Subtask 4)
+5. Documentation & Finalization (Subtask 5)
+
+**Current Status:** In Progress
+- Completed analysis and planning phase
+- Setup webpack configuration for critical CSS extraction
+- Created critical CSS configuration file
+- Implemented manual critical CSS generation script
+- Created critical CSS Hugo partial
+- Updated baseof.html template to use critical CSS
+- Added webpack plugin for critical CSS generation
+- Currently working on testing and performance optimization
+- Expected completion: December 26, 2023
