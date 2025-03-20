@@ -25,7 +25,7 @@ This document tracks the progress of enhancements and fixes for the Caddy Ed Cad
 ### High Priority
 | ID      | Description                                             | Effort | Owner | Status     | Completed     |
 |---------|---------------------------------------------------------|--------|-------|------------|--------------||
-| HIGH-01 | Refactor schedulingCalendar.js for better maintainability| M     |GitHub Copilot| Open       |              |
+| HIGH-01 | Refactor schedulingCalendar.js for better maintainability| M     |GitHub Copilot| Completed | 2024-01-02   |
 | HIGH-02 | Refactor salesDashboard.js to use modular components    | M      |       | Open       |              |
 | HIGH-03 | Implement structured error handling in API functions    | S      |GitHub Copilot| Completed | 2023-11-21   |
 | HIGH-04 | Implement lazy loading for images                       | S      |GitHub Copilot| Completed | 2023-11-17   |
