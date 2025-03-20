@@ -34,24 +34,36 @@ function notify({ title, message, type = 'info' }) {
 }
 
 /**
- * Create success notification
+ * Notify success with desktop notification and console output
+ * @param {string} message - Success message
  */
 function notifySuccess(message) {
-  notify({
+  // Console output
+  console.log(chalk.green.bold('\n✓ Success:'), chalk.green(message));
+  
+  // Desktop notification
+  notifier.notify({
     title: 'Build Successful',
-    message: message || 'Build completed successfully',
-    type: 'success'
+    message: message,
+    icon: null, // Path to success icon if available
+    sound: false
   });
 }
 
 /**
- * Create error notification
+ * Notify error with desktop notification and console output
+ * @param {string} message - Error message
  */
 function notifyError(message) {
-  notify({
+  // Console output
+  console.error(chalk.red.bold('\n✗ Error:'), chalk.red(message));
+  
+  // Desktop notification
+  notifier.notify({
     title: 'Build Failed',
-    message: message || 'There were errors during the build',
-    type: 'error'
+    message: message,
+    icon: null, // Path to error icon if available
+    sound: true
   });
 }
 
