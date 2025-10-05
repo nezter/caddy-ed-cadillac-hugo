@@ -1,0 +1,11 @@
+# Task ID: 36
+# Title: Implement lead deduplication caching in Turso
+# Status: pending
+# Dependencies: 7, 34
+# Priority: medium
+# Description: Use Turso for fast fuzzy matching cache to accelerate lead deduplication operations and reduce Supabase load
+# Details:
+
+
+# Test Strategy:
+

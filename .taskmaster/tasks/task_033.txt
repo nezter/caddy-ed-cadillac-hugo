@@ -1,0 +1,11 @@
+# Task ID: 33
+# Title: Create Turso-compatible database schema
+# Status: pending
+# Dependencies: 32
+# Priority: high
+# Description: Convert PostgreSQL schema to SQLite-compatible format for Turso with FTS5 indexes and edge-optimized tables
+# Details:
+
+
+# Test Strategy:
+

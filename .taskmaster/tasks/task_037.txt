@@ -1,0 +1,11 @@
+# Task ID: 37
+# Title: Migrate analytics and reporting data to Turso
+# Status: pending
+# Dependencies: 18, 34
+# Priority: medium
+# Description: Store aggregated analytics data, dashboard metrics, and reporting data in Turso for fast edge-based access
+# Details:
+
+
+# Test Strategy:
+

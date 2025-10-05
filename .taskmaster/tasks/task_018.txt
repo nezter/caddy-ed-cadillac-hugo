@@ -1,0 +1,11 @@
+# Task ID: 18
+# Title: Create sales performance analytics dashboard
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: Create sales performance analytics dashboard - track conversion rates, deal sizes, and rep performance metrics
+# Details:
+
+
+# Test Strategy:
+

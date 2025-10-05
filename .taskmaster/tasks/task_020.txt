@@ -1,0 +1,11 @@
+# Task ID: 20
+# Title: Add GDPR compliance features
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: Add GDPR compliance features - data export, deletion requests, and consent management system
+# Details:
+
+
+# Test Strategy:
+
