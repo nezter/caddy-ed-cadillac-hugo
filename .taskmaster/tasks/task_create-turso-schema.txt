@@ -1,0 +1,11 @@
+# Task ID: create-turso-schema
+# Title: Create Turso-compatible database schema
+# Status: pending
+# Dependencies: setup-turso-database (Not found)
+# Priority: high
+# Description: Convert PostgreSQL schema to SQLite-compatible format for Turso with FTS5 indexes and edge-optimized tables
+# Details:
+
+
+# Test Strategy:
+

@@ -1,0 +1,17 @@
+{{ define "main" }}
+<div class="customer-portal">
+  <div class="container">
+    <div class="portal-header">
+      <h1 class="portal-title">{{ .Title }}</h1>
+      <p class="portal-description">{{ .Params.description }}</p>
+    </div>
+
+    <div class="portal-content">
+      {{ .Content }}
+    </div>
+  </div>
+</div>
+
+<!-- Customer Portal JavaScript -->
+<script src="/js/customer-portal.js"></script>
+{{ end }}

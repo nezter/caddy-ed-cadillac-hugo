@@ -2,6 +2,7 @@ const webpack = require("webpack");
 const path = require("path");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+const HtmlWebpackPlugin = require("html-webpack-plugin");
 const AssetsPlugin = require("assets-webpack-plugin");
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const WebpackErrorReportingPlugin = require('./scripts/webpack-error-reporting-plugin');
@@ -46,6 +47,11 @@ module.exports = {
   module: {
     rules: [
       {
+        test: /\.css$/i,
+        exclude: /node_modules/,
+        loader: 'style-loader!css-loader'
+      },
+      {
         test: /\.((png)|(svg)|(gif)|(jpe?g)|(webp))$/,
         type: "asset/resource",
         // Add specific output path for assets
@@ -78,13 +84,13 @@ module.exports = {
         }
       },
       {
-        test: /\.(sa|sc|c)ss$/,
+        test: /\.(scss|sass)$/,
         use: [
           MiniCssExtractPlugin.loader,
           {
             loader: "css-loader",
             options: {
-              importLoaders: 1,
+              importLoaders: 2,
               // Enable source maps in development
               sourceMap: isDev
             }
@@ -96,7 +102,7 @@ module.exports = {
             }
           },
           {
-            loader: "sass-loader", 
+            loader: "sass-loader",
             options: {
               sourceMap: isDev
             }
@@ -154,6 +160,11 @@ module.exports = {
 
     new webpack.ProvidePlugin({
       fetch: "imports-loader?this=>global!exports-loader?global.fetch!whatwg-fetch"
+    }),
+
+    // Extract CSS into separate files
+    new MiniCssExtractPlugin({
+      filename: isDev ? '[name].css' : '[name].[contenthash:8].css'
     }),
 
     // Enhanced asset emitting for better build information

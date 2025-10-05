@@ -1,0 +1,11 @@
+# Task ID: create-customer-search-filtering
+# Title: Add comprehensive customer search and filtering
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: Add comprehensive customer search and filtering - full-text search with advanced filters by date, status, vehicle interest
+# Details:
+
+
+# Test Strategy:
+

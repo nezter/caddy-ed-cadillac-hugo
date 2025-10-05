@@ -1,0 +1,11 @@
+# Task ID: update-documentation-hybrid-architecture
+# Title: Update documentation for hybrid Supabase + Turso architecture
+# Status: pending
+# Dependencies: implement-hybrid-database-manager (Not found)
+# Priority: medium
+# Description: Create comprehensive documentation for the hybrid database architecture, migration guides, and operational procedures
+# Details:
+
+
+# Test Strategy:
+

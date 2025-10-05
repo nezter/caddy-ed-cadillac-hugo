@@ -27,14 +27,7 @@
   <!-- Preload critical assets -->
   <link rel="preload" href="/fonts/cadillac-gothic.woff2" as="font" type="font/woff2" crossorigin>
   
-  <!-- CSS -->
-  {{ if .Site.IsServer }}
-    <link rel="stylesheet" href="/css/main.css">
-  {{ else }}
-    {{ with resources.Get "css/main.css" | fingerprint }}
-    <link rel="stylesheet" href="{{ .RelPermalink }}" integrity="{{ .Data.Integrity }}">
-    {{ end }}
-  {{ end }}
+  <!-- CSS is loaded via critical-css.html partial -->
   
   <!-- Netlify Identity for CMS -->
   <script defer src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>

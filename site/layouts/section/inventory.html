@@ -57,4 +57,48 @@
           <select id="sortBy" class="form-control">
             <option value="featured">Featured</option>
             <option value="priceAsc">Price: Low to High</option>
-            <option value="pr
+            <option value="priceDesc">Price: High to Low</option>
+            <option value="yearDesc">Newest First</option>
+            <option value="yearAsc">Oldest First</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="inventory-grid" id="inventoryGrid">
+      {{ range .Pages }}
+      <div class="vehicle-card" data-make="{{ .Params.make }}" data-model="{{ .Params.model }}" data-year="{{ .Params.year }}" data-price="{{ .Params.price }}">
+        <div class="vehicle-image">
+          {{ if .Params.images }}
+            <img src="{{ index .Params.images 0 }}" alt="{{ .Title }}" loading="lazy">
+          {{ else }}
+            <img src="/images/placeholder-vehicle.jpg" alt="{{ .Title }}" loading="lazy">
+          {{ end }}
+        </div>
+        <div class="vehicle-info">
+          <h3 class="vehicle-title">{{ .Title }}</h3>
+          <div class="vehicle-details">
+            <span class="vehicle-year">{{ .Params.year }}</span>
+            <span class="vehicle-mileage">{{ .Params.mileage | default "N/A" }} miles</span>
+          </div>
+          <div class="vehicle-price">
+            {{ if .Params.price }}
+              ${{ .Params.price | lang.NumFmt 0 }}
+            {{ else }}
+              Call for Price
+            {{ end }}
+          </div>
+          <a href="{{ .Permalink }}" class="btn btn-primary">View Details</a>
+        </div>
+      </div>
+      {{ end }}
+    </div>
+
+    <div class="pagination" id="pagination">
+      <!-- Pagination will be added by JavaScript -->
+    </div>
+  </div>
+</div>
+
+<script src="/js/inventory.js"></script>
+{{ end }}

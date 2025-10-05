@@ -1,9 +1,10 @@
-// Import main CSS
+// Import CSS
 import './css/main.css';
+import './css/customer-portal.css';
 
 // Import JavaScript
 import './js/app';
-import './js/navigation';
+import './js/navbar';
 import './js/forms';
 
 // Import inventory filtering functionality
@@ -11,6 +12,7 @@ import './js/inventory-init';
 
 // Import lazyload for images
 import 'lazysizes';
+import './js/lazyload';
 
 // Initialize service worker if supported
 if ('serviceWorker' in navigator) {

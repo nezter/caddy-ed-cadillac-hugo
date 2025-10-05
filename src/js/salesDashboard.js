@@ -49,7 +49,7 @@ class SalesDashboard {
   }
   
   async checkAuth() {
-    return fetch('/api/sales/auth-check', {
+    return fetch('/.netlify/functions/sales-auth-check', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'
@@ -156,7 +156,7 @@ class SalesDashboard {
     const searchInput = this.filterControls?.querySelector('#search-input');
     const searchTerm = searchInput?.value || '';
     
-    const url = new URL('/api/sales/leads', window.location.origin);
+    const url = new URL('/.netlify/functions/sales-leads', window.location.origin);
     url.searchParams.append('salesId', this.salesRep.id);
     url.searchParams.append('timeframe', this.filters.timeframe);
     url.searchParams.append('status', this.filters.status);
@@ -185,7 +185,7 @@ class SalesDashboard {
   }
   
   async fetchAppointments() {
-    const url = new URL('/api/sales/appointments', window.location.origin);
+    const url = new URL('/.netlify/functions/sales-appointments', window.location.origin);
     url.searchParams.append('salesId', this.salesRep.id);
     url.searchParams.append('timeframe', this.filters.timeframe);
     
@@ -209,7 +209,7 @@ class SalesDashboard {
   }
   
   async fetchSalesMetrics() {
-    const url = new URL('/api/sales/metrics', window.location.origin);
+    const url = new URL('/.netlify/functions/sales-metrics', window.location.origin);
     url.searchParams.append('salesId', this.salesRep.id);
     url.searchParams.append('timeframe', this.filters.timeframe);
     
@@ -399,7 +399,7 @@ class SalesDashboard {
   }
   
   async addLeadNote(leadId, content) {
-    return fetch('/api/sales/add-note', {
+    return fetch('/.netlify/functions/sales-add-note', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -424,7 +424,7 @@ class SalesDashboard {
   }
   
   async updateLeadStatus(leadId, status) {
-    return fetch('/api/sales/update-status', {
+    return fetch('/.netlify/functions/sales-update-status', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -618,7 +618,7 @@ class SalesDashboard {
       // Implementation for marking appointment as complete
       console.log('Mark appointment complete:', appointmentId);
       
-      return fetch('/api/sales/complete-appointment', {
+      return fetch('/.netlify/functions/sales-complete-appointment', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

@@ -54,13 +54,7 @@
   </div>
 </footer>
 
-{{ if .Site.IsServer }}
-  {{ $script := resources.Get "js/main.js" | js.Build }}
-  <script src="{{ $script.RelPermalink }}"></script>
-{{ else }}
-  {{ $script := resources.Get "js/main.js" | js.Build | minify | fingerprint }}
-  <script src="{{ $script.RelPermalink }}" integrity="{{ $script.Data.Integrity }}"></script>
-{{ end }}
+{{/* JavaScript is loaded via header-scripts.html partial */}}
 
 <script>
 // Initialize specific page components based on page class

@@ -1,6 +1,8 @@
 const nodemailer = require('nodemailer');
 const axios = require('axios');
 const errorHandler = require('./utils/error-handler');
+const crmService = require('./utils/crm-service');
+const DeduplicationService = require('./utils/deduplication-service');
 
 exports.handler = async function(event, context) {
   // Only allow POST requests for lead submission
@@ -24,6 +26,28 @@ exports.handler = async function(event, context) {
         email: !leadData.email ? 'Email is required' : null,
         phone: !leadData.phone ? 'Phone is required' : null
       });
+    }
+
+    // Check for duplicates
+    const deduplicationService = new DeduplicationService();
+    const duplicateCheck = await deduplicationService.checkForDuplicates(leadData, {
+      confidenceThreshold: 0.8,
+      maxResults: 5
+    });
+
+    if (duplicateCheck.isDuplicate) {
+      console.log(`Duplicate lead detected. Confidence: ${duplicateCheck.confidence}`);
+      console.log('Duplicate details:', duplicateCheck.duplicates[0]);
+
+      // Return success but mark as duplicate
+      return errorHandler.createSuccessResponse(
+        {
+          leadId: duplicateCheck.duplicates[0].lead.id,
+          status: 'duplicate',
+          confidence: duplicateCheck.confidence
+        },
+        'Thank you for your interest. We already have your information on file and will be in touch soon.'
+      );
     }
     
     // Format data for CRM integration
@@ -62,22 +86,14 @@ exports.handler = async function(event, context) {
     }
     
     // Integration with dealer CRM system
-    const crmApiKey = process.env.CRM_API_KEY;
-    const crmUrl = process.env.CRM_API_URL;
-    
-    if (crmApiKey && crmUrl) {
-      try {
-        await axios.post(crmUrl, crmData, {
-          headers: {
-            'Authorization': `Bearer ${crmApiKey}`,
-            'Content-Type': 'application/json'
-          }
-        });
-      } catch (crmError) {
-        console.error('Error sending lead to CRM:', crmError);
-        // Log the error but don't return an error response to the user
-        // as we've already saved the lead to Netlify forms
-      }
+    const crmResult = await crmService.submitLead(crmData.lead);
+
+    if (crmResult.success) {
+      console.log(`Lead successfully submitted to ${crmResult.crmType} CRM with ID: ${crmResult.leadId}`);
+    } else {
+      console.error('CRM submission failed:', crmResult.error);
+      // Log the error but don't return an error response to the user
+      // as we've already saved the lead to Netlify forms as backup
     }
     
     return errorHandler.createSuccessResponse(

@@ -1,0 +1,11 @@
+# Task ID: implement-sales-customers-api
+# Title: Create missing /api/sales/customers endpoint
+# Status: completed
+# Dependencies: None
+# Priority: critical
+# Description: Create missing /api/sales/customers endpoint for customer CRUD operations with authentication and validation
+# Details:
+
+
+# Test Strategy:
+

@@ -4,12 +4,13 @@
 
 class InventoryManager {
   constructor() {
-    this.endpoint = '/.netlify/functions/inventory-proxy';
+    this.endpoint = '/.netlify/functions/inventory-api';
     this.filters = {
       make: 'Cadillac',
       model: '',
       year: '',
-      price: '',
+      priceMin: '',
+      priceMax: '',
       search: 'new'
     };
     this.currentPage = 1;
@@ -17,10 +18,11 @@ class InventoryManager {
     this.totalItems = 0;
 
     // Elements
-    this.inventoryEl = document.querySelector('#inventory-results');
+    this.inventoryEl = document.querySelector('#vehicle-inventory');
     this.filterFormEl = document.querySelector('#inventory-filters');
     this.paginationEl = document.querySelector('#inventory-pagination');
-    
+    this.resultsCountEl = document.querySelector('.results-count');
+
     // Initialize
     this.init();
   }
@@ -48,14 +50,27 @@ class InventoryManager {
 
   handleFilterChange(event) {
     const { name, value } = event.target;
-    this.filters[name] = value;
+
+    // Convert price filter values to min/max
+    if (name === 'priceFilter') {
+      if (value === '') {
+        this.filters.priceMin = '';
+        this.filters.priceMax = '';
+      } else {
+        this.filters.priceMin = '';
+        this.filters.priceMax = value;
+      }
+    } else {
+      this.filters[name] = value;
+    }
+
     this.currentPage = 1; // Reset to first page when filters change
     this.loadInventory(); // Reload inventory when filters change
   }
 
   async loadInventory() {
     if (!this.inventoryEl) return;
-    
+
     this.inventoryEl.innerHTML = '<div class="loading-spinner">Loading inventory...</div>';
 
     try {
@@ -64,20 +79,24 @@ class InventoryManager {
       Object.entries(this.filters).forEach(([key, value]) => {
         if (value) queryParams.append(key, value);
       });
-      
+
       // Add pagination
       queryParams.append('page', this.currentPage);
       queryParams.append('perPage', this.itemsPerPage);
-      
+
+      console.log('Fetching inventory with params:', queryParams.toString());
+
       // Fetch inventory data
       const response = await fetch(`${this.endpoint}?${queryParams.toString()}`);
       if (!response.ok) {
-        throw new Error('Failed to fetch inventory');
+        throw new Error(`Failed to fetch inventory: ${response.status} ${response.statusText}`);
       }
-      
-      const data = await response.json();
-      this.renderInventory(data);
-      
+
+      const vehicles = await response.json();
+      console.log(`Loaded ${vehicles.length} vehicles`);
+
+      this.renderInventory(vehicles);
+
     } catch (error) {
       console.error('Error loading inventory:', error);
       this.inventoryEl.innerHTML = `
@@ -90,28 +109,36 @@ class InventoryManager {
     }
   }
 
-  renderInventory(data) {
-    if (!data || !data.vehicles || data.vehicles.length === 0) {
+  renderInventory(vehicles) {
+    // Update results count
+    if (this.resultsCountEl) {
+      if (vehicles && vehicles.length > 0) {
+        this.resultsCountEl.textContent = `Showing ${vehicles.length} vehicle${vehicles.length === 1 ? '' : 's'}`;
+      } else {
+        this.resultsCountEl.textContent = 'No vehicles found';
+      }
+    }
+
+    if (!vehicles || vehicles.length === 0) {
       this.inventoryEl.innerHTML = `
         <div class="no-results">
           <h3>No vehicles match your criteria</h3>
           <p>Try adjusting your filters or <a href="/contact">contact Ed</a> to help find your perfect Cadillac.</p>
         </div>
       `;
-      this.paginationEl.innerHTML = '';
+      if (this.paginationEl) this.paginationEl.innerHTML = '';
       return;
     }
 
-    this.totalItems = data.totalCount || data.vehicles.length;
-    
+    this.totalItems = vehicles.length;
+
     // Generate vehicle cards
-    const vehiclesHtml = data.vehicles.map(vehicle => `
+    const vehiclesHtml = vehicles.map(vehicle => `
       <div class="vehicle-card">
         <div class="vehicle-image">
-          <img src="${vehicle.primaryPhoto || '/img/placeholder-car.jpg'}" 
-               alt="${vehicle.year} ${vehicle.make} ${vehicle.model}" 
+          <img src="${vehicle.image || '/img/placeholder-car.jpg'}"
+               alt="${vehicle.year} ${vehicle.make} ${vehicle.model}"
                class="lazyload">
-          ${vehicle.specialOffer ? `<span class="special-tag">Special Offer</span>` : ''}
         </div>
         <div class="vehicle-info">
           <h3>${vehicle.year} ${vehicle.make} ${vehicle.model}</h3>
@@ -119,12 +146,12 @@ class InventoryManager {
           <p class="vehicle-price">$${this.formatNumber(vehicle.price)}</p>
           <div class="vehicle-specs">
             <span><i class="fas fa-tachometer-alt"></i> ${this.formatNumber(vehicle.mileage)} mi</span>
-            <span><i class="fas fa-gas-pump"></i> ${vehicle.fuelType || 'Gas'}</span>
-            <span><i class="fas fa-palette"></i> ${vehicle.exteriorColor || 'N/A'}</span>
+            <span><i class="fas fa-cog"></i> ${vehicle.transmission || 'Automatic'}</span>
+            <span><i class="fas fa-palette"></i> ${vehicle.extColor || 'N/A'}</span>
           </div>
           <div class="vehicle-actions">
-            <a href="/inventory/${vehicle.vin}" class="btn btn-primary">View Details</a>
-            <a href="/test-drive?vin=${vehicle.vin}" class="btn btn-secondary">Schedule Test Drive</a>
+            <a href="${vehicle.detailUrl || '#'}" class="btn btn-primary">View Details</a>
+            <a href="/contact?vin=${vehicle.vin}" class="btn btn-secondary">Contact Us</a>
           </div>
         </div>
       </div>

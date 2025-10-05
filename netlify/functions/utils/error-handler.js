@@ -80,10 +80,61 @@ function serverError(message = 'Internal server error', error = null) {
   return errorResponse(500, message, error);
 }
 
+/**
+ * Validation error (400)
+ * @param {string} message - Error message
+ * @param {Object} fieldErrors - Object with field-specific errors
+ * @returns {Object} - Netlify function response
+ */
+function validationError(message = 'Validation failed', fieldErrors = {}) {
+  console.error('[Validation Error]', message, fieldErrors);
+
+  return {
+    statusCode: 400,
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      success: false,
+      message,
+      errorCode: 400,
+      validationErrors: fieldErrors,
+      // Include error details in development
+      ...(process.env.NODE_ENV !== 'production' && {
+        errorDetails: message,
+        fieldErrors: fieldErrors
+      })
+    })
+  };
+}
+
+/**
+ * Success response
+ * @param {any} data - Response data
+ * @param {string} message - Success message
+ * @returns {Object} - Netlify function response
+ */
+function createSuccessResponse(data = null, message = 'Success') {
+  return {
+    statusCode: 200,
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      success: true,
+      message,
+      data,
+      timestamp: new Date().toISOString()
+    })
+  };
+}
+
 module.exports = {
   badRequestError,
   unauthorizedError,
   forbiddenError,
   notFoundError,
-  serverError
+  serverError,
+  validationError,
+  createSuccessResponse
 };

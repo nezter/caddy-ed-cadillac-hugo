@@ -1,0 +1,11 @@
+# Task ID: migrate-analytics-data-to-turso
+# Title: Migrate analytics and reporting data to Turso
+# Status: pending
+# Dependencies: implement-sales-performance-analytics (Not found), implement-hybrid-database-manager (Not found)
+# Priority: medium
+# Description: Store aggregated analytics data, dashboard metrics, and reporting data in Turso for fast edge-based access
+# Details:
+
+
+# Test Strategy:
+

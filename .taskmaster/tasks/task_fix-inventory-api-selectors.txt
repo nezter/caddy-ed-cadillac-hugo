@@ -1,0 +1,11 @@
+# Task ID: fix-inventory-api-selectors
+# Title: Update inventory-api.js HTML selectors
+# Status: pending
+# Dependencies: None
+# Priority: high
+# Description: Update inventory-api.js HTML selectors to match current Cadillac dealership website structure
+# Details:
+
+
+# Test Strategy:
+
