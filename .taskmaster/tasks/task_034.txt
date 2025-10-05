@@ -1,0 +1,11 @@
+# Task ID: 34
+# Title: Implement hybrid database manager
+# Status: pending
+# Dependencies: 33
+# Priority: high
+# Description: Create DatabaseManager class that intelligently routes operations between Supabase (writes/complex ops) and Turso (reads/caching)
+# Details:
+
+
+# Test Strategy:
+

@@ -1,0 +1,11 @@
+# Task ID: 2
+# Title: Create missing /api/sales/auth-check endpoint
+# Status: completed
+# Dependencies: None
+# Priority: critical
+# Description: Create missing /api/sales/auth-check endpoint that sales dashboards require for authentication verification
+# Details:
+
+
+# Test Strategy:
+

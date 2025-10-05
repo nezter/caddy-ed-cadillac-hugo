@@ -1,0 +1,11 @@
+# Task ID: 11
+# Title: Update inventory-api.js HTML selectors
+# Status: in-progress
+# Dependencies: None
+# Priority: high
+# Description: Update inventory-api.js HTML selectors to match current Cadillac dealership website structure
+# Details:
+
+
+# Test Strategy:
+

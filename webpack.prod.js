@@ -5,8 +5,9 @@ const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const CompressionPlugin = require("compression-webpack-plugin");
 const { WebpackManifestPlugin } = require("webpack-manifest-plugin");
 const { notifySuccess, notifyError } = require("./scripts/build-notifier");
-const CriticalCssWebpackPlugin = require("./scripts/critical-css-webpack-plugin");
-const criticalCssConfig = require("./scripts/critical-css-config");
+// Critical CSS temporarily disabled due to ESM issues
+// const CriticalCssWebpackPlugin = require("./scripts/critical-css-webpack-plugin");
+// const criticalCssConfig = require("./scripts/critical-css-config");
 
 const common = require("./webpack.common.js");
 
@@ -29,7 +30,8 @@ module.exports = merge(common, {
           }
         }
       }),
-      new CssMinimizerPlugin()
+      // Temporarily disabled - causing CSS parsing issues
+      // new CssMinimizerPlugin()
     ],
     splitChunks: {
       chunks: 'all',
@@ -67,11 +69,11 @@ module.exports = merge(common, {
       minRatio: 0.8
     }),
     
-    // Add Critical CSS plugin in production mode
-    new CriticalCssWebpackPlugin({
-      base: criticalCssConfig.base,
-      templates: criticalCssConfig.templates
-    }),
+    // Temporarily disabled - causing CSS loader issues
+    // new CriticalCssWebpackPlugin({
+    //   base: criticalCssConfig.base,
+    //   templates: criticalCssConfig.templates
+    // }),
     
     // Notify on build completion
     {

@@ -1,0 +1,11 @@
+# Task ID: 35
+# Title: Migrate customer search operations to Turso
+# Status: pending
+# Dependencies: 34
+# Priority: medium
+# Description: Implement FTS5 full-text search in Turso for fast customer name/email/phone searches with highlighting
+# Details:
+
+
+# Test Strategy:
+

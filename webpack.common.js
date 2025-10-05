@@ -13,10 +13,7 @@ const isDev = process.env.NODE_ENV !== "production";
 module.exports = {
   entry: {
     main: path.join(__dirname, "src", "index.js"),
-    // Split app code from vendor code for better caching
-    vendor: path.join(__dirname, "src", "js", "vendor.js"),
-    cms: path.join(__dirname, "src", "js", "cms.js"),
-    sw: path.join(__dirname, "src", "sw.js")
+    cms: path.join(__dirname, "src", "js", "cms.js")
   },
 
   output: {
@@ -48,11 +45,13 @@ module.exports = {
     rules: [
       {
         test: /\.css$/i,
-        exclude: /node_modules/,
-        loader: 'style-loader!css-loader'
+        use: [
+          MiniCssExtractPlugin.loader,
+          'css-loader'
+        ]
       },
       {
-        test: /\.((png)|(svg)|(gif)|(jpe?g)|(webp))$/,
+        test: /\.(png|svg|gif|jpe?g|webp)$/,
         type: "asset/resource",
         // Add specific output path for assets
         generator: {
@@ -86,7 +85,7 @@ module.exports = {
       {
         test: /\.(scss|sass)$/,
         use: [
-          MiniCssExtractPlugin.loader,
+          isDev ? 'style-loader' : MiniCssExtractPlugin.loader,
           {
             loader: "css-loader",
             options: {
@@ -159,7 +158,7 @@ module.exports = {
     }),
 
     new webpack.ProvidePlugin({
-      fetch: "imports-loader?this=>global!exports-loader?global.fetch!whatwg-fetch"
+      fetch: "whatwg-fetch"
     }),
 
     // Extract CSS into separate files
