@@ -1,0 +1,34 @@
+{
+  "timestamp": "2025-10-05T16:07:31.047Z",
+  "environment": "development",
+  "summary": {
+    "totalTests": 3,
+    "successful": 1,
+    "failed": 2
+  },
+  "results": [
+    {
+      "success": false,
+      "database": "supabase",
+      "error": "Customer creation failed: Could not find the table 'public.customers' in the schema cache",
+      "operations": []
+    },
+    {
+      "success": false,
+      "database": "turso",
+      "error": "SQLITE_UNKNOWN: SQLite error: no such table: customers",
+      "operations": []
+    },
+    {
+      "success": true,
+      "component": "database_service",
+      "searchResults": 0
+    }
+  ],
+  "recommendations": [
+    "Some tests failed. Please review the errors and fix configuration issues.",
+    "Failed tests:",
+    "  - supabase: Customer creation failed: Could not find the table 'public.customers' in the schema cache",
+    "  - turso: SQLITE_UNKNOWN: SQLite error: no such table: customers"
+  ]
+}

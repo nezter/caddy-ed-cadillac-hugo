@@ -1,0 +1,12 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Simple test task",
+        "description": "A basic task to test task-master",
+        "status": "pending"
+      }
+    ]
+  }
+}

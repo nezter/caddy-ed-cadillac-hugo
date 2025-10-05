@@ -4,9 +4,70 @@
  * Supports hybrid architecture: Supabase (writes/complex ops) + Turso (reads/cache)
  */
 
+const { Pool } = require('pg');
+
 // Database connections
 let supabase = null;
 let turso = null;
+let pgPool = null;
+let pgPoolInitPromise = null;
+
+async function getPgPool() {
+  if (pgPool) {
+    return pgPool;
+  }
+
+  if (!pgPoolInitPromise) {
+    const connectionString =
+      process.env.SUPABASE_DB_URL ||
+      process.env.SUPABASE_DATABASE_URL ||
+      process.env.SUPABASE_DB_CONNECTION ||
+      process.env.DATABASE_URL;
+
+    if (!connectionString) {
+      console.warn(
+        'Supabase Postgres connection string not configured. Set SUPABASE_DB_URL (or DATABASE_URL) to enable direct queries.'
+      );
+      pgPoolInitPromise = Promise.resolve(null);
+    } else {
+      const maxConnections = parseInt(process.env.DB_POOL_MAX || '5', 10);
+      const idleTimeoutMillis = parseInt(process.env.DB_POOL_IDLE || '30000', 10);
+
+      pgPoolInitPromise = (async () => {
+        const pool = new Pool({
+          connectionString,
+          max: Number.isNaN(maxConnections) ? 5 : maxConnections,
+          idleTimeoutMillis: Number.isNaN(idleTimeoutMillis) ? 30000 : idleTimeoutMillis,
+          ssl: { rejectUnauthorized: false }
+        });
+
+        pool.on('error', (err) => {
+          console.error('Postgres pool error:', err.message);
+        });
+
+        try {
+          await pool.query('SELECT 1');
+          console.log('✅ Supabase Postgres pool initialized');
+          pgPool = pool;
+          return pool;
+        } catch (error) {
+          console.error('Failed to initialize Postgres pool:', error.message);
+          return null;
+        }
+      })();
+    }
+  }
+
+  return pgPoolInitPromise;
+}
+
+process.on('exit', () => {
+  if (pgPool) {
+    pgPool.end().catch((error) => {
+      console.error('Error while closing Postgres pool:', error.message);
+    });
+  }
+});
 
 // Initialize connections
 function initializeConnections() {
@@ -58,6 +119,22 @@ async function query(sql, params = [], options = {}) {
   console.log('🔍 Database Query:', sql.substring(0, 100) + '...');
   console.log('📋 Parameters:', params);
 
+  const safeParams = Array.isArray(params) ? params : [];
+
+  // Prefer direct Postgres connection when available
+  try {
+    const pool = await getPgPool();
+    if (pool) {
+      const result = await pool.query(sql, safeParams);
+      return {
+        rows: result.rows,
+        rowCount: result.rowCount
+      };
+    }
+  } catch (pgError) {
+    console.error('Postgres query failed, falling back to alternate handlers:', pgError.message);
+  }
+
   // Determine which database to use
   let useTurso = false;
   if (turso && !forceSupabase) {
@@ -71,7 +148,7 @@ async function query(sql, params = [], options = {}) {
   try {
     if (useTurso && turso) {
       console.log('🔄 Using Turso for query');
-      const result = await turso.execute({ sql, args: params });
+      const result = await turso.execute({ sql, args: safeParams });
       return {
         rows: result.rows,
         rowCount: result.rowsAffected || result.rows.length
@@ -84,7 +161,7 @@ async function query(sql, params = [], options = {}) {
         // Use RPC for write operations
         const { data, error } = await supabase.rpc('exec_sql', {
           sql_query: sql,
-          params: params
+          params: safeParams
         });
 
         if (error) throw error;
@@ -118,7 +195,7 @@ async function query(sql, params = [], options = {}) {
         // Fallback to RPC
         const { data, error } = await supabase.rpc('exec_sql', {
           sql_query: sql,
-          params: params
+          params: safeParams
         });
 
         if (error) throw error;
@@ -827,7 +904,7 @@ class DatabaseService {
     } = salesRepData;
 
     // Hash password if provided
-    let hashedPassword = null;
+    let hashedPassword = salesRepData.password_hash || null;
     if (salesRepData.password) {
       const bcrypt = require('bcryptjs');
       hashedPassword = await bcrypt.hash(salesRepData.password, 12);
@@ -841,7 +918,14 @@ class DatabaseService {
     `;
 
     const params = [
-      first_name, last_name, email, phone, hashedPassword, role, status, JSON.stringify(permissions)
+      first_name,
+      last_name,
+      email,
+      phone,
+      hashedPassword,
+      role,
+      status,
+      permissions
     ];
 
     try {

@@ -13,6 +13,7 @@ To connect to Supabase, the following environment variables must be set:
 ```
 SUPABASE_URL=https://your-supabase-project.supabase.co
 SUPABASE_KEY=your-supabase-anon-key
+SUPABASE_DB_URL=postgresql://<user>:<password>@db.<project>.supabase.co:6543/postgres
 ```
 
 These can be added to a `.env` file locally (see `.env.example` for reference) or configured in your deployment environment (e.g., Netlify).

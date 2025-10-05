@@ -18,18 +18,27 @@
     "migrate": "node scripts/run-migrations.js",
     "migrate:turso": "node scripts/migrate-turso.js",
     "migrate:status": "node scripts/run-migrations.js status",
-    "seed:sales-reps": "node scripts/seed-sales-reps.js"
+    "seed:sales-reps": "node scripts/seed-sales-reps.js",
+    "seed:test-data": "node scripts/seed-test-data.js"
   },
   "author": "Your Name",
   "license": "UNLICENSED",
   "private": true,
   "dependencies": {
+    "@babel/preset-react": "^7.27.1",
     "@libsql/client": "^0.3.6",
     "@supabase/supabase-js": "^2.38.4",
     "bcryptjs": "^2.4.3",
+    "critical": "^7.2.1",
+    "date-fns": "^4.1.0",
     "dotenv": "^16.3.1",
     "jsonwebtoken": "^9.0.2",
-    "lazysizes": "^5.3.2"
+    "lazysizes": "^5.3.2",
+    "netlify-cms-app": "^2.15.72",
+    "pg": "^8.16.3",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
+    "whatwg-fetch": "^3.6.20"
   },
   "devDependencies": {
     "@babel/core": "^7.14.6",
@@ -54,7 +63,7 @@
     "glob": "^7.1.7",
     "html-webpack-plugin": "^5.5.0",
     "http-server": "^14.0.0",
-    "hugo-bin": "^0.80.0",
+    "hugo-bin": "^0.148.0",
     "imports-loader": "^3.1.0",
     "json-loader": "^0.5.7",
     "mini-css-extract-plugin": "^2.1.0",
@@ -65,7 +74,7 @@
     "postcss": "^8.3.5",
     "postcss-import": "^14.0.2",
     "postcss-loader": "^6.1.1",
-    "postcss-preset-env": "^6.7.0",
+    "postcss-preset-env": "^10.4.0",
     "rimraf": "^3.0.2",
     "sass": "^1.43.4",
     "sass-loader": "^13.0.0",
@@ -74,7 +83,7 @@
     "webpack": "^5.42.0",
     "webpack-bundle-analyzer": "^4.4.2",
     "webpack-cli": "^4.7.2",
-    "webpack-dev-server": "^4.0.0",
+    "webpack-dev-server": "^5.2.2",
     "webpack-manifest-plugin": "^4.0.2",
     "webpack-merge": "^5.8.0"
   },

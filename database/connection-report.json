@@ -1,0 +1,24 @@
+{
+  "timestamp": "2025-10-05T16:03:57.517Z",
+  "environment": "development",
+  "connections": [
+    {
+      "success": true,
+      "type": "supabase",
+      "url": "https://nrcltzegfbzvkkvubgnp.supabase.co",
+      "ready": true
+    },
+    {
+      "success": true,
+      "type": "turso",
+      "url": "libsql://caddyed-nezter.aws-us-east-1.turso.io",
+      "version": "3.45.1",
+      "ready": true
+    }
+  ],
+  "summary": {
+    "total": 2,
+    "successful": 2,
+    "failed": 0
+  }
+}

@@ -60,6 +60,7 @@ cp .env.example .env
 SUPABASE_URL=your-supabase-project-url
 SUPABASE_ANON_KEY=your-supabase-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
+SUPABASE_DB_URL=postgresql://<user>:<password>@db.<project>.supabase.co:6543/postgres
 
 # Required: JWT secret for authentication
 JWT_SECRET=your-secure-jwt-secret

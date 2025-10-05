@@ -51,9 +51,9 @@ node_modules/
 *.sw?
 # OS specific
 
+# Local Netlify folder
+.netlify
+
 # Task files
 # tasks.json
 # tasks/ 
-
-# Local Netlify folder
-.netlify
