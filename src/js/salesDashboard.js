@@ -32,45 +32,31 @@ class SalesDashboard {
     this.init();
   }
   
-  init() {
-    // Verify authentication
-    this.checkAuth()
-      .then(isAuthenticated => {
-        if (isAuthenticated) {
-          this.setupDashboard();
-        } else {
-          this.showLoginPrompt();
-        }
-      })
-      .catch(error => {
-        console.error('Authentication check failed:', error);
-        this.showError('Authentication error. Please refresh or contact support.');
-      });
+  async init() {
+    // Import session manager
+    const sessionManager = await import('./utils/session-manager.js');
+
+    // Check authentication using session manager
+    const isAuthenticated = await sessionManager.default.isAuthenticated();
+
+    if (isAuthenticated) {
+      this.sessionManager = sessionManager.default;
+      this.currentUser = sessionManager.default.getCurrentUser();
+      this.setupDashboard();
+    } else {
+      this.showLoginPrompt();
+    }
   }
   
-  async checkAuth() {
-    return fetch('/.netlify/functions/sales-auth-check', {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      credentials: 'same-origin'  // Include cookies for authentication
-    })
-    .then(response => {
-      if (!response.ok) {
-        throw new Error('Authentication check failed');
-      }
-      return response.json();
-    })
-    .then(data => {
-      return data.authenticated;
-    });
-  }
+  // Authentication is now handled by session manager
   
   setupDashboard() {
+    // Apply role-based access controls
+    this.applyRoleBasedAccess();
+
     // Show loading state
     this.showLoading();
-    
+
     // Setup filter controls
     if (this.filterControls) {
       this.initFilters();
@@ -102,7 +88,51 @@ class SalesDashboard {
       this.showError('Failed to load dashboard data. Please try again.');
     });
   }
-  
+
+  applyRoleBasedAccess() {
+    const user = this.currentUser;
+    const permissions = user.permissions || [];
+
+    // Admin and manager roles have full access
+    if (user.role === 'admin' || user.role === 'sales_manager') {
+      return; // Full access
+    }
+
+    // Sales rep role - restrict certain features
+    if (user.role === 'sales_rep') {
+      // Hide admin-only elements
+      const adminElements = this.dashboardElement.querySelectorAll('.admin-only, [data-role="admin"], [data-role="manager"]');
+      adminElements.forEach(el => el.style.display = 'none');
+
+      // Disable bulk operations if no permission
+      if (!permissions.includes('manage_all_leads')) {
+        const bulkActions = this.dashboardElement.querySelectorAll('.bulk-action');
+        bulkActions.forEach(el => el.disabled = true);
+      }
+
+      // Restrict metrics access
+      if (!permissions.includes('view_all_metrics')) {
+        const sensitiveMetrics = this.dashboardElement.querySelectorAll('.sensitive-metric');
+        sensitiveMetrics.forEach(el => el.style.display = 'none');
+      }
+    }
+
+    // Viewer role - read-only access
+    if (user.role === 'viewer') {
+      // Disable all form inputs and action buttons
+      const inputs = this.dashboardElement.querySelectorAll('input, button, select, textarea');
+      inputs.forEach(el => {
+        if (el.type !== 'search' && !el.classList.contains('filter-control')) {
+          el.disabled = true;
+        }
+      });
+
+      // Hide action buttons
+      const actionButtons = this.dashboardElement.querySelectorAll('.action-btn, .edit-btn, .delete-btn');
+      actionButtons.forEach(el => el.style.display = 'none');
+    }
+  }
+
   initFilters() {
     // Timeframe filter
     const timeframeSelect = this.filterControls.querySelector('#timeframe-filter');
@@ -155,22 +185,19 @@ class SalesDashboard {
   async fetchLeads() {
     const searchInput = this.filterControls?.querySelector('#search-input');
     const searchTerm = searchInput?.value || '';
-    
+
     const url = new URL('/.netlify/functions/sales-leads', window.location.origin);
-    url.searchParams.append('salesId', this.salesRep.id);
+    url.searchParams.append('salesId', this.currentUser.id);
     url.searchParams.append('timeframe', this.filters.timeframe);
     url.searchParams.append('status', this.filters.status);
     url.searchParams.append('sort', this.filters.sort);
     if (searchTerm) {
       url.searchParams.append('search', searchTerm);
     }
-    
+
     return fetch(url, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      credentials: 'same-origin'
+      headers: this.sessionManager.getAuthHeaders()
     })
     .then(response => {
       if (!response.ok) {
@@ -186,15 +213,12 @@ class SalesDashboard {
   
   async fetchAppointments() {
     const url = new URL('/.netlify/functions/sales-appointments', window.location.origin);
-    url.searchParams.append('salesId', this.salesRep.id);
+    url.searchParams.append('salesId', this.currentUser.id);
     url.searchParams.append('timeframe', this.filters.timeframe);
-    
+
     return fetch(url, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      credentials: 'same-origin'
+      headers: this.sessionManager.getAuthHeaders()
     })
     .then(response => {
       if (!response.ok) {
@@ -210,15 +234,12 @@ class SalesDashboard {
   
   async fetchSalesMetrics() {
     const url = new URL('/.netlify/functions/sales-metrics', window.location.origin);
-    url.searchParams.append('salesId', this.salesRep.id);
+    url.searchParams.append('salesId', this.currentUser.id);
     url.searchParams.append('timeframe', this.filters.timeframe);
-    
+
     return fetch(url, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      credentials: 'same-origin'
+      headers: this.sessionManager.getAuthHeaders()
     })
     .then(response => {
       if (!response.ok) {
@@ -401,13 +422,10 @@ class SalesDashboard {
   async addLeadNote(leadId, content) {
     return fetch('/.netlify/functions/sales-add-note', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      credentials: 'same-origin',
+      headers: this.sessionManager.getAuthHeaders(),
       body: JSON.stringify({
         leadId: leadId,
-        salesId: this.salesRep.id,
+        salesId: this.currentUser.id,
         content: content
       })
     })
@@ -426,13 +444,10 @@ class SalesDashboard {
   async updateLeadStatus(leadId, status) {
     return fetch('/.netlify/functions/sales-update-status', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      credentials: 'same-origin',
+      headers: this.sessionManager.getAuthHeaders(),
       body: JSON.stringify({
         leadId: leadId,
-        salesId: this.salesRep.id,
+        salesId: this.currentUser.id,
         status: status
       })
     })
@@ -598,14 +613,55 @@ class SalesDashboard {
       }, 5000);
     }
     
-    showLoginPrompt() {
+    async showLoginPrompt() {
       this.dashboardElement.innerHTML = `
         <div class="login-prompt">
           <h3>Authentication Required</h3>
           <p>Please log in to access the sales dashboard.</p>
-          <a href="/login" class="login-button">Login</a>
+          <form id="login-form" class="login-form">
+            <div class="form-group">
+              <label for="email">Email:</label>
+              <input type="email" id="email" name="email" required>
+            </div>
+            <div class="form-group">
+              <label for="password">Password:</label>
+              <input type="password" id="password" name="password" required>
+            </div>
+            <button type="submit" class="login-button">Login</button>
+            <div id="login-error" class="error-message" style="display: none;"></div>
+          </form>
         </div>
       `;
+
+      // Add form submission handler
+      const loginForm = this.dashboardElement.querySelector('#login-form');
+      loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const email = loginForm.email.value;
+        const password = loginForm.password.value;
+        const errorDiv = loginForm.querySelector('#login-error');
+
+        try {
+          errorDiv.style.display = 'none';
+
+          // Import session manager if not already imported
+          if (!this.sessionManager) {
+            const sessionManager = await import('./utils/session-manager.js');
+            this.sessionManager = sessionManager.default;
+          }
+
+          const result = await this.sessionManager.login(email, password);
+
+          if (result.success) {
+            this.currentUser = result.user;
+            this.setupDashboard();
+          }
+        } catch (error) {
+          errorDiv.textContent = error.message;
+          errorDiv.style.display = 'block';
+        }
+      });
     }
     
     showRescheduleModal(appointmentId) {
@@ -620,13 +676,10 @@ class SalesDashboard {
       
       return fetch('/.netlify/functions/sales-complete-appointment', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'same-origin',
+        headers: this.sessionManager.getAuthHeaders(),
         body: JSON.stringify({
           appointmentId: appointmentId,
-          salesId: this.salesRep.id
+          salesId: this.currentUser.id
         })
       })
       .then(response => {

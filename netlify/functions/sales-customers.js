@@ -1,33 +1,52 @@
 const errorHandler = require('./utils/error-handler');
 const DatabaseService = require('./utils/database-service');
+const { authenticateRequest } = require('./utils/auth-middleware');
+const { sanitizeCustomerData } = require('./utils/input-sanitizer');
 
 /**
  * Sales Customers API
  * CRUD operations for customer management
  */
 exports.handler = async function(event, context) {
-  // Check authentication first
-  const authCheck = await checkAuthentication(event);
-  if (!authCheck.authenticated) {
-    return errorHandler.unauthorizedError('Authentication required');
-  }
-
   try {
+    // Authenticate and check permissions
+    const authResult = await authenticateRequest(event, {
+      requiredPermissions: ['view_customers']
+    });
+
+    if (!authResult.authenticated) {
+      return authResult.error;
+    }
+
+    const user = authResult.user;
+
     switch (event.httpMethod) {
       case 'GET':
-        return await handleGetCustomers(event, authCheck.user);
+        return await handleGetCustomers(event, user);
       case 'POST':
-        return await handleCreateCustomer(event, authCheck.user);
+        // Check if user can create customers
+        if (!user.permissions.includes('manage_customers')) {
+          return errorHandler.forbiddenError('Insufficient permissions to create customers');
+        }
+        return await handleCreateCustomer(event, user);
       case 'PUT':
-        return await handleUpdateCustomer(event, authCheck.user);
+        // Check if user can update customers
+        if (!user.permissions.includes('manage_customers')) {
+          return errorHandler.forbiddenError('Insufficient permissions to update customers');
+        }
+        return await handleUpdateCustomer(event, user);
       case 'DELETE':
-        return await handleDeleteCustomer(event, authCheck.user);
+        // Only admins can delete customers
+        if (user.role !== 'admin') {
+          return errorHandler.forbiddenError('Only administrators can delete customers');
+        }
+        return await handleDeleteCustomer(event, user);
       default:
         return errorHandler.forbiddenError('Method not allowed');
     }
   } catch (error) {
     console.error('Customers API error:', error);
-    return errorHandler.serverError('Customer operation failed', error);
+    return errorHandler.serverError('Customer operation failed');
   }
 };
 
@@ -107,9 +126,28 @@ async function handleCreateCustomer(event, user) {
   }
 
   try {
+    // Sanitize input data
+    const sanitizedData = sanitizeCustomerData({
+      first_name: customerData.firstName,
+      last_name: customerData.lastName,
+      email: customerData.email,
+      phone: customerData.phone,
+      address_line1: customerData.address,
+      city: customerData.city,
+      state: customerData.state,
+      zip_code: customerData.zipCode,
+      customer_type: customerData.type || 'prospect',
+      source: customerData.source || 'manual',
+      vehicle_interest: customerData.vehicleInterest,
+      preferred_contact_method: customerData.preferredContactMethod || 'email',
+      email_consent: customerData.emailConsent || false,
+      sms_consent: customerData.smsConsent || false,
+      phone_consent: customerData.phoneConsent || false
+    });
+
     // Check for duplicate customers
     const duplicateCheck = await DatabaseService.searchCustomers({
-      search: customerData.email,
+      search: sanitizedData.email,
       limit: 1
     });
 
@@ -121,22 +159,8 @@ async function handleCreateCustomer(event, user) {
 
     // Prepare customer data for database
     const dbCustomerData = {
-      first_name: customerData.firstName,
-      last_name: customerData.lastName,
-      email: customerData.email,
-      phone: customerData.phone,
-      address_line1: customerData.addressLine1,
-      city: customerData.city,
-      state: customerData.state,
-      zip_code: customerData.zipCode,
-      customer_type: customerData.type || 'prospect',
-      source: customerData.source || 'manual',
-      assigned_sales_rep_id: user.id,
-      vehicle_interest: customerData.vehicleInterest,
-      preferred_contact_method: customerData.preferredContactMethod || 'email',
-      email_consent: customerData.emailConsent || false,
-      sms_consent: customerData.smsConsent || false,
-      phone_consent: customerData.phoneConsent || false
+      ...sanitizedData,
+      assigned_sales_rep_id: user.id
     };
 
     // Create customer in database

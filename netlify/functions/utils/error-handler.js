@@ -10,19 +10,24 @@
  * @returns {Object} - Netlify function response object
  */
 function errorResponse(statusCode, message, error = null) {
+  // Log full error details for debugging
   console.error(`[Error ${statusCode}]`, message, error);
-  
+
+  // Never expose internal error details in production
+  const isDevelopment = process.env.NODE_ENV === 'development';
+
   return {
     statusCode,
     headers: {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      'X-Content-Type-Options': 'nosniff'
     },
     body: JSON.stringify({
       success: false,
       message,
       errorCode: statusCode,
-      // Include error details in development
-      ...(process.env.NODE_ENV !== 'production' && error && {
+      // Only include error details in development
+      ...(isDevelopment && error && {
         errorDetails: error.message,
         stack: error.stack
       })

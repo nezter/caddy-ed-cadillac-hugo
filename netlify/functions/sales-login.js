@@ -2,9 +2,14 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const errorHandler = require('./utils/error-handler');
 const DatabaseService = require('./utils/database-service');
+const { checkRateLimit } = require('./utils/auth-middleware');
+const { handleCors, addCorsHeaders } = require('./utils/cors-middleware');
 
-// JWT configuration
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+// JWT configuration - require JWT_SECRET to be set
+if (!process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is required');
+}
+const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '8h';
 
 /**
@@ -12,9 +17,24 @@ const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '8h';
  * Authenticates sales representatives and returns JWT token
  */
 exports.handler = async function(event, context) {
+  // Handle CORS preflight
+  const corsResponse = handleCors(event);
+  if (corsResponse) return corsResponse;
+
   // Only allow POST requests
   if (event.httpMethod !== 'POST') {
-    return errorHandler.forbiddenError('Method not allowed');
+    return addCorsHeaders(errorHandler.forbiddenError('Method not allowed'));
+  }
+
+  // Rate limiting for login attempts
+  const clientIP = event.headers['x-forwarded-for'] || event.headers['x-real-ip'] || 'unknown';
+  const rateLimit = checkRateLimit(`login_${clientIP}`, 5, 15 * 60 * 1000); // 5 attempts per 15 minutes
+
+  if (!rateLimit.allowed) {
+    return addCorsHeaders(errorHandler.createSuccessResponse({
+      message: 'Too many login attempts. Please try again later.',
+      retryAfter: Math.ceil((rateLimit.resetTime - Date.now()) / 1000)
+    }, 'Rate limited', 429));
   }
 
   try {
@@ -22,19 +42,19 @@ exports.handler = async function(event, context) {
     try {
       credentials = JSON.parse(event.body);
     } catch (e) {
-      return errorHandler.validationError('Invalid JSON in request body');
+      return addCorsHeaders(errorHandler.validationError('Invalid JSON in request body'));
     }
 
     // Validate required fields
     if (!credentials.email || !credentials.password) {
-      return errorHandler.validationError('Email and password are required');
+      return addCorsHeaders(errorHandler.validationError('Email and password are required'));
     }
 
     // Authenticate user
     const authResult = await authenticateUser(credentials.email, credentials.password);
 
     if (!authResult.success) {
-      return errorHandler.unauthorizedError('Invalid email or password');
+      return addCorsHeaders(errorHandler.unauthorizedError('Invalid email or password'));
     }
 
     // Generate JWT token
@@ -54,7 +74,7 @@ exports.handler = async function(event, context) {
       last_login: new Date().toISOString()
     });
 
-    return errorHandler.createSuccessResponse({
+    return addCorsHeaders(errorHandler.createSuccessResponse({
       token,
       user: {
         id: authResult.user.id,
@@ -65,11 +85,11 @@ exports.handler = async function(event, context) {
         permissions: authResult.user.permissions
       },
       expiresIn: JWT_EXPIRES_IN
-    }, 'Login successful');
+    }, 'Login successful'));
 
   } catch (error) {
     console.error('Login error:', error);
-    return errorHandler.serverError('Login failed', error);
+    return addCorsHeaders(errorHandler.serverError('Login failed'));
   }
 };
 
@@ -90,16 +110,13 @@ async function authenticateUser(email, password) {
       return { success: false, message: 'Account is not active' };
     }
 
-    // Check password hash
-    let isValidPassword = false;
-    if (user.password_hash) {
-      // Use bcrypt to compare password with hash
-      isValidPassword = await bcrypt.compare(password, user.password_hash);
-    } else {
-      // Fallback for development - check against plain text (remove in production)
-      console.warn('⚠️ Using plain text password comparison - implement proper hashing in production');
-      isValidPassword = password === 'password123'; // Temporary fallback
+    // Check password hash - require hashed passwords
+    if (!user.password_hash) {
+      return { success: false, message: 'Account setup incomplete - please contact administrator' };
     }
+
+    // Use bcrypt to compare password with hash
+    const isValidPassword = await bcrypt.compare(password, user.password_hash);
 
     if (!isValidPassword) {
       return { success: false, message: 'Invalid password' };

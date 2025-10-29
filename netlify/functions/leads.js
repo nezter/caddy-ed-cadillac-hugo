@@ -1,4 +1,8 @@
 const errorHandler = require('./utils/error-handler');
+const LeadScoringService = require('./utils/lead-scoring-service');
+const LeadAssignmentService = require('./utils/lead-assignment-service');
+const InteractionService = require('./utils/interaction-service');
+const DatabaseService = require('./utils/database-service');
 const nodemailer = require('nodemailer');
 const DeduplicationService = require('./utils/deduplication-service');
 const { createClient } = require('@supabase/supabase-js');
@@ -88,21 +92,92 @@ exports.handler = async function(event, context) {
       timestamp: new Date().toISOString(),
       status: 'new',
       assignedTo: null, // Will be assigned by lead assignment system
-      score: calculateLeadScore(leadData)
+      score: LeadScoringService.calculateInitialScore(leadData)
     };
 
-    // Save lead to database
-    const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
-    const { data, error } = await supabase
-      .from('leads')
-      .insert([processedLead])
-      .select();
+    // Save lead to database using DatabaseService
+    const leadRecord = await DatabaseService.createLead({
+      first_name: processedLead.firstName,
+      last_name: processedLead.lastName,
+      email: processedLead.email,
+      phone: processedLead.phone,
+      message: processedLead.message,
+      form_type: processedLead.formType,
+      lead_source: processedLead.leadSource,
+      vehicle_interest: processedLead.vehicleInterest,
+      utm_source: processedLead.utm.source,
+      utm_medium: processedLead.utm.medium,
+      utm_campaign: processedLead.utm.campaign,
+      priority: LeadScoringService.getPriorityLevel(processedLead.score)
+    });
 
-    if (error) {
-      console.error('Error saving lead to database:', error);
+    if (!leadRecord) {
+      console.error('Error saving lead to database');
       // Continue with email notification even if DB save fails
     } else {
-      console.log('Lead saved to database:', data[0]);
+      console.log('Lead saved to database:', leadRecord);
+      processedLead.id = leadRecord.id;
+
+      // Log the lead submission as an interaction
+      try {
+        await InteractionService.logCustomerInteraction({
+          customer_id: leadRecord.customer_id || leadRecord.id, // Use customer_id if available, otherwise lead id
+          lead_id: leadRecord.id,
+          interaction_type: 'form_submission',
+          subject: `Lead Form Submission: ${processedLead.formType}`,
+          content: processedLead.message || 'Lead submitted via website form',
+          contact_method: 'website',
+          contact_details: `Form: ${processedLead.formType}, Source: ${processedLead.leadSource}`,
+          metadata: {
+            form_type: processedLead.formType,
+            lead_source: processedLead.leadSource,
+            page_url: processedLead.pageUrl,
+            utm: processedLead.utm,
+            vehicle_interest: processedLead.vehicleInterest
+          }
+        });
+
+        console.log('Lead submission interaction logged');
+      } catch (interactionError) {
+        console.error('Error logging lead submission interaction:', interactionError);
+        // Continue with processing even if interaction logging fails
+      }
+
+      // Assign lead to sales representative
+      try {
+        const assignmentResult = await LeadAssignmentService.assignLead({
+          id: leadRecord.id,
+          first_name: processedLead.firstName,
+          last_name: processedLead.lastName,
+          email: processedLead.email,
+          phone: processedLead.phone,
+          vehicle_interest: processedLead.vehicleInterest,
+          source: processedLead.leadSource,
+          city: leadData.city || '',
+          state: leadData.state || '',
+          address_line1: leadData.address || '',
+          budget_min: leadData.budgetMin || null,
+          message: processedLead.message
+        });
+
+        if (assignmentResult && assignmentResult.assignedRep) {
+          // Update lead with assignment information
+          await DatabaseService.updateLead(leadRecord.id, {
+            assigned_sales_rep_id: assignmentResult.assignedRep.id,
+            assignment_reason: assignmentResult.assignmentReason,
+            assignment_score: assignmentResult.assignmentScore
+          });
+
+          processedLead.assignedTo = assignmentResult.assignedRep.id;
+          processedLead.assignmentReason = assignmentResult.assignmentReason;
+          processedLead.assignmentScore = assignmentResult.assignmentScore;
+
+          console.log(`Lead ${leadRecord.id} assigned to ${assignmentResult.assignedRep.first_name} ${assignmentResult.assignedRep.last_name} (${assignmentResult.assignmentReason})`);
+        }
+      } catch (assignmentError) {
+        console.error('Error assigning lead:', assignmentError);
+        // Continue with processing even if assignment fails
+      }
     }
 
     // Send notification email to sales team
@@ -150,47 +225,35 @@ exports.handler = async function(event, context) {
 };
 
 /**
- * Calculate lead score based on various factors
+ * Update lead score based on new interactions or data changes
  */
-function calculateLeadScore(leadData) {
-  let score = 50; // Base score
+async function updateLeadScore(leadId) {
+  try {
+    // Get lead data and recent interactions
+    const lead = await DatabaseService.getLead(leadId);
+    if (!lead) return null;
 
-  // Source quality scoring
-  const highQualitySources = ['website', 'phone', 'walk_in'];
-  const mediumQualitySources = ['social_media', 'email', 'referral'];
+    // Get recent interactions (last 30 days)
+    const interactions = await DatabaseService.getLeadInteractions(leadId, 30);
 
-  if (highQualitySources.includes(leadData.leadSource)) {
-    score += 20;
-  } else if (mediumQualitySources.includes(leadData.leadSource)) {
-    score += 10;
+    // Calculate updated score
+    const newScore = await LeadScoringService.updateDynamicScore(leadId, interactions);
+
+    // Update lead score in database
+    await DatabaseService.updateLead(leadId, { score: newScore });
+
+    return {
+      leadId,
+      oldScore: lead.score,
+      newScore,
+      priority: LeadScoringService.getPriorityLevel(newScore),
+      recommendedActions: LeadScoringService.getRecommendedActions(newScore, interactions)
+    };
+
+  } catch (error) {
+    console.error('Error updating lead score:', error);
+    throw error;
   }
-
-  // Phone number provided
-  if (leadData.phone) {
-    score += 15;
-  }
-
-  // Message provided (shows engagement)
-  if (leadData.message && leadData.message.length > 10) {
-    score += 10;
-  }
-
-  // Vehicle interest specified
-  if (leadData.vehicleInterest) {
-    score += 10;
-  }
-
-  // UTM parameters (paid traffic)
-  if (leadData.utm_source) {
-    score += 5;
-  }
-
-  // Consent given
-  if (leadData.consent) {
-    score += 5;
-  }
-
-  return Math.min(score, 100); // Cap at 100
 }
 
 /**

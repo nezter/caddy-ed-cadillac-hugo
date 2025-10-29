@@ -1,5 +1,7 @@
 const nodemailer = require('nodemailer');
 const errorHandler = require('./utils/error-handler');
+const InteractionService = require('./utils/interaction-service');
+const DatabaseService = require('./utils/database-service');
 
 exports.handler = async function(event, context) {
   // Only allow POST requests
@@ -82,6 +84,66 @@ exports.handler = async function(event, context) {
     } catch (emailError) {
       console.error('Email sending error:', emailError);
       return errorHandler.serverError('Failed to send email', emailError);
+    }
+
+    // Log the contact form submission as an interaction
+    try {
+      // Try to find existing customer by email
+      let customerId = null;
+      try {
+        const existingCustomers = await DatabaseService.searchCustomers({
+          search: formData.email,
+          limit: 1
+        });
+        if (existingCustomers.length > 0) {
+          customerId = existingCustomers[0].id;
+        }
+      } catch (searchError) {
+        console.log('Customer search failed, will create new interaction without customer link');
+      }
+
+      // If no existing customer, create a prospect customer record
+      if (!customerId) {
+        try {
+          const nameParts = formData.name.split(' ');
+          const customerData = {
+            first_name: nameParts[0],
+            last_name: nameParts.slice(1).join(' ') || '',
+            email: formData.email,
+            phone: formData.phone || '',
+            customer_type: 'prospect',
+            source: 'contact_form'
+          };
+
+          const newCustomer = await DatabaseService.createCustomer(customerData);
+          customerId = newCustomer.id;
+          console.log('Created new prospect customer from contact form:', customerId);
+        } catch (createError) {
+          console.error('Failed to create customer from contact form:', createError);
+          // Continue without customer link
+        }
+      }
+
+      // Log the interaction
+      if (customerId) {
+        await InteractionService.logCustomerInteraction({
+          customer_id: customerId,
+          interaction_type: 'form_submission',
+          subject: formData.subject || 'Contact Form Submission',
+          content: formData.message || 'Contact form submitted via website',
+          contact_method: 'website',
+          contact_details: `Email: ${formData.email}${formData.phone ? `, Phone: ${formData.phone}` : ''}`,
+          metadata: {
+            form_type: 'contact',
+            form_data: formData
+          }
+        });
+
+        console.log('Contact form interaction logged for customer:', customerId);
+      }
+    } catch (interactionError) {
+      console.error('Error logging contact form interaction:', interactionError);
+      // Continue with success response even if interaction logging fails
     }
 
     // Return success response

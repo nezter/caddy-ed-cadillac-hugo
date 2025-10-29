@@ -1,4 +1,5 @@
 const nodemailer = require('nodemailer');
+const InteractionService = require('./utils/interaction-service');
 
 /**
  * Send Notification Email
@@ -32,7 +33,31 @@ exports.handler = async (event, context) => {
       text: emailContent.text
     };
 
-    await transporter.sendMail(mailOptions);
+    const emailResult = await transporter.sendMail(mailOptions);
+
+    // Log the email interaction
+    try {
+      await InteractionService.logAutomatedInteraction({
+        customer_id: data.metadata?.lead?.customer_id || data.metadata?.customer_id,
+        lead_id: data.metadata?.lead?.id,
+        type: 'email',
+        subject: emailContent.subject,
+        content: emailContent.text || 'Email notification sent',
+        template_name: type,
+        campaign_id: data.metadata?.campaign_id,
+        metadata: {
+          ...data.metadata,
+          email_type: type,
+          recipient: recipient,
+          message_id: emailResult.messageId
+        }
+      });
+
+      console.log('Email interaction logged successfully');
+    } catch (interactionError) {
+      console.error('Error logging email interaction:', interactionError);
+      // Continue with success response even if interaction logging fails
+    }
 
     return {
       statusCode: 200,

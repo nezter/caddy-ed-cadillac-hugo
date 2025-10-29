@@ -1,5 +1,6 @@
 const DatabaseService = require('./utils/database-service');
 const errorHandler = require('./utils/error-handler');
+const { authenticateRequest } = require('./utils/auth-middleware');
 
 /**
  * Sales Leads API
@@ -12,13 +13,23 @@ exports.handler = async function(event, context) {
   }
 
   try {
-    // Check authentication
-    const authCheck = await checkAuthentication(event);
-    if (!authCheck.authenticated) {
-      return errorHandler.unauthorizedError('Authentication required');
+    // Check authentication and permissions
+    const authResult = await authenticateRequest(event, {
+      requiredPermissions: ['view_leads']
+    });
+
+    if (!authResult.authenticated) {
+      return authResult.error;
     }
 
-    const salesRepId = authCheck.user.userId;
+    const user = authResult.user;
+    let salesRepId = user.id;
+
+    // Managers and admins can view all leads or specify a sales rep
+    const params = event.queryStringParameters || {};
+    if ((user.role === 'admin' || user.role === 'sales_manager') && params.salesId) {
+      salesRepId = params.salesId;
+    }
 
     // Get query parameters
     const params = event.queryStringParameters || {};
@@ -163,50 +174,3 @@ async function getSalesRepLeads(salesRepId, timeframe, status, sort, search) {
   }
 }
 
-/**
- * Helper function to check authentication
- */
-async function checkAuthentication(event) {
-  const authToken = event.headers.authorization?.replace('Bearer ', '') ||
-                    event.headers['x-auth-token'] ||
-                    getCookieValue(event.headers.cookie, 'auth_token');
-
-  if (!authToken) {
-    return { authenticated: false };
-  }
-
-  try {
-    const jwt = require('jsonwebtoken');
-    const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
-
-    const decodedToken = jwt.verify(authToken, JWT_SECRET);
-
-    return {
-      authenticated: true,
-      user: {
-        userId: decodedToken.userId,
-        email: decodedToken.email,
-        role: decodedToken.role
-      }
-    };
-  } catch (error) {
-    console.error('Token verification failed:', error);
-    return { authenticated: false };
-  }
-}
-
-/**
- * Helper function to get cookie value
- */
-function getCookieValue(cookieString, cookieName) {
-  if (!cookieString) return null;
-
-  const cookies = cookieString.split(';');
-  for (const cookie of cookies) {
-    const [name, value] = cookie.trim().split('=');
-    if (name === cookieName) {
-      return decodeURIComponent(value);
-    }
-  }
-  return null;
-}

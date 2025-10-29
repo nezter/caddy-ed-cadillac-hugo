@@ -45,6 +45,14 @@ async function getPgPool() {
           console.error('Postgres pool error:', err.message);
         });
 
+        // Configure SSL properly for production
+        if (process.env.NODE_ENV === 'production') {
+          pool.ssl = { rejectUnauthorized: true };
+        } else {
+          // Allow self-signed certificates in development
+          pool.ssl = { rejectUnauthorized: false };
+        }
+
         try {
           await pool.query('SELECT 1');
           console.log('✅ Supabase Postgres pool initialized');
@@ -427,6 +435,331 @@ class DatabaseService {
     }
   }
   
+  /**
+   * Get lead interactions for scoring
+   */
+  static async getLeadInteractions(leadId, days = 30) {
+    const sql = `
+      SELECT type, created_at
+      FROM customer_interactions
+      WHERE lead_id = $1
+        AND created_at >= NOW() - INTERVAL '${days} days'
+      ORDER BY created_at DESC
+    `;
+
+    try {
+      const result = await query(sql, [leadId]);
+      return result.rows;
+    } catch (error) {
+      console.error('Error getting lead interactions:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get lead score distribution
+   */
+  static async getLeadScoreDistribution(days = 30) {
+    const sql = `
+      SELECT
+        CASE
+          WHEN score >= 80 THEN '80-100'
+          WHEN score >= 60 THEN '60-79'
+          WHEN score >= 40 THEN '40-59'
+          WHEN score >= 20 THEN '20-39'
+          ELSE '0-19'
+        END as score_range,
+        COUNT(*) as count
+      FROM leads
+      WHERE created_at >= NOW() - INTERVAL '${days} days'
+      GROUP BY score_range
+      ORDER BY score_range
+    `;
+
+    try {
+      const result = await query(sql);
+      return result.rows;
+    } catch (error) {
+      console.error('Error getting lead score distribution:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get average scores by source
+   */
+  static async getAverageScoresBySource(days = 30) {
+    const sql = `
+      SELECT
+        source,
+        ROUND(AVG(score), 1) as avg_score,
+        COUNT(*) as lead_count
+      FROM leads
+      WHERE created_at >= NOW() - INTERVAL '${days} days'
+      GROUP BY source
+      ORDER BY avg_score DESC
+    `;
+
+    try {
+      const result = await query(sql);
+      return result.rows;
+    } catch (error) {
+      console.error('Error getting average scores by source:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get lead priority distribution
+   */
+  static async getLeadPriorityDistribution(days = 30) {
+    const sql = `
+      SELECT
+        CASE
+          WHEN score >= 80 THEN 'hot'
+          WHEN score >= 60 THEN 'warm'
+          WHEN score >= 40 THEN 'cool'
+          ELSE 'cold'
+        END as priority,
+        COUNT(*) as count
+      FROM leads
+      WHERE created_at >= NOW() - INTERVAL '${days} days'
+      GROUP BY priority
+      ORDER BY
+        CASE priority
+          WHEN 'hot' THEN 1
+          WHEN 'warm' THEN 2
+          WHEN 'cool' THEN 3
+          WHEN 'cold' THEN 4
+        END
+    `;
+
+    try {
+      const result = await query(sql);
+      return result.rows;
+    } catch (error) {
+      console.error('Error getting lead priority distribution:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get lead scoring trends over time
+   */
+  static async getLeadScoringTrends(days = 30) {
+    const sql = `
+      SELECT
+        DATE(created_at) as date,
+        ROUND(AVG(score), 1) as avg_score,
+        COUNT(*) as lead_count
+      FROM leads
+      WHERE created_at >= NOW() - INTERVAL '${days} days'
+      GROUP BY DATE(created_at)
+      ORDER BY date
+    `;
+
+    try {
+      const result = await query(sql);
+      return result.rows;
+    } catch (error) {
+      console.error('Error getting lead scoring trends:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get conversion rate by score range
+   */
+  static async getConversionRateByScore(days = 30) {
+    const sql = `
+      SELECT
+        CASE
+          WHEN l.score >= 80 THEN '80-100'
+          WHEN l.score >= 60 THEN '60-79'
+          WHEN l.score >= 40 THEN '40-59'
+          WHEN l.score >= 20 THEN '20-39'
+          ELSE '0-19'
+        END as score_range,
+        COUNT(*) as total_leads,
+        COUNT(CASE WHEN l.status = 'converted' THEN 1 END) as converted_leads,
+        ROUND(
+          COUNT(CASE WHEN l.status = 'converted' THEN 1 END)::decimal /
+          NULLIF(COUNT(*), 0) * 100, 1
+        ) as conversion_rate
+      FROM leads l
+      WHERE l.created_at >= NOW() - INTERVAL '${days} days'
+      GROUP BY score_range
+      ORDER BY score_range
+    `;
+
+    try {
+      const result = await query(sql);
+      return result.rows;
+    } catch (error) {
+      console.error('Error getting conversion rate by score:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get sales rep lead count
+   */
+  static async getSalesRepLeadCount(salesRepId) {
+    const sql = `
+      SELECT COUNT(*) as lead_count
+      FROM leads
+      WHERE assigned_sales_rep_id = $1
+        AND status NOT IN ('converted', 'lost')
+        AND created_at >= NOW() - INTERVAL '30 days'
+    `;
+
+    try {
+      const result = await query(sql, [salesRepId]);
+      return parseInt(result.rows[0].lead_count) || 0;
+    } catch (error) {
+      console.error('Error getting sales rep lead count:', error);
+      return 0;
+    }
+  }
+
+  /**
+   * Get sales rep performance metrics
+   */
+  static async getSalesRepPerformance(salesRepId, days = 30) {
+    const sql = `
+      SELECT
+        COUNT(*) as total_leads,
+        COUNT(CASE WHEN status = 'converted' THEN 1 END) as converted_leads,
+        ROUND(
+          COUNT(CASE WHEN status = 'converted' THEN 1 END)::decimal /
+          NULLIF(COUNT(*), 0) * 100, 1
+        ) as conversion_rate
+      FROM leads
+      WHERE assigned_sales_rep_id = $1
+        AND created_at >= NOW() - INTERVAL '${days} days'
+    `;
+
+    try {
+      const result = await query(sql, [salesRepId]);
+      return result.rows[0];
+    } catch (error) {
+      console.error('Error getting sales rep performance:', error);
+      return { total_leads: 0, converted_leads: 0, conversion_rate: 0 };
+    }
+  }
+
+  /**
+   * Get leads needing reassignment
+   */
+  static async getLeadsNeedingReassignment() {
+    const sql = `
+      SELECT l.*,
+             sr.capacity,
+             sr.territory,
+             sr.specializations,
+             sr.source_expertise,
+             sr.budget_expertise
+      FROM leads l
+      LEFT JOIN sales_reps sr ON l.assigned_sales_rep_id = sr.id
+      WHERE l.status = 'new'
+        AND (l.assigned_sales_rep_id IS NULL
+             OR sr.status != 'active'
+             OR sr.capacity IS NULL
+             OR l.created_at < NOW() - INTERVAL '7 days')
+      ORDER BY l.created_at DESC
+      LIMIT 100
+    `;
+
+    try {
+      const result = await query(sql);
+      return result.rows;
+    } catch (error) {
+      console.error('Error getting leads needing reassignment:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get assignment analytics
+   */
+  static async getAssignmentAnalytics(days = 30) {
+    try {
+      // Total assignments
+      const totalSql = `
+        SELECT COUNT(*) as total
+        FROM leads
+        WHERE assigned_sales_rep_id IS NOT NULL
+          AND created_at >= NOW() - INTERVAL '${days} days'
+      `;
+      const totalResult = await query(totalSql);
+      const totalAssignments = parseInt(totalResult.rows[0].total) || 0;
+
+      // Average assignment score
+      const avgScoreSql = `
+        SELECT ROUND(AVG(assignment_score), 1) as avg_score
+        FROM leads
+        WHERE assignment_score IS NOT NULL
+          AND created_at >= NOW() - INTERVAL '${days} days'
+      `;
+      const avgScoreResult = await query(avgScoreSql);
+      const averageScore = parseFloat(avgScoreResult.rows[0].avg_score) || 0;
+
+      // Assignments by reason
+      const reasonSql = `
+        SELECT assignment_reason, COUNT(*) as count
+        FROM leads
+        WHERE assignment_reason IS NOT NULL
+          AND created_at >= NOW() - INTERVAL '${days} days'
+        GROUP BY assignment_reason
+        ORDER BY count DESC
+      `;
+      const reasonResult = await query(reasonSql);
+      const assignmentsByReason = reasonResult.rows;
+
+      // Rep workload distribution
+      const workloadSql = `
+        SELECT
+          sr.first_name || ' ' || sr.last_name as rep_name,
+          COUNT(l.id) as lead_count,
+          sr.capacity
+        FROM sales_reps sr
+        LEFT JOIN leads l ON sr.id = l.assigned_sales_rep_id
+          AND l.status NOT IN ('converted', 'lost')
+          AND l.created_at >= NOW() - INTERVAL '${days} days'
+        WHERE sr.status = 'active'
+        GROUP BY sr.id, sr.first_name, sr.last_name, sr.capacity
+        ORDER BY lead_count DESC
+      `;
+      const workloadResult = await query(workloadSql);
+      const repWorkload = workloadResult.rows;
+
+      // Reassignment rate
+      const reassignSql = `
+        SELECT
+          COUNT(CASE WHEN assignment_reason = 'reassigned' THEN 1 END) as reassigned,
+          COUNT(*) as total
+        FROM leads
+        WHERE created_at >= NOW() - INTERVAL '${days} days'
+      `;
+      const reassignResult = await query(reassignSql);
+      const reassignData = reassignResult.rows[0];
+      const reassignmentRate = reassignData.total > 0 ?
+        Math.round((reassignData.reassigned / reassignData.total) * 100) : 0;
+
+      return {
+        totalAssignments,
+        averageScore,
+        assignmentsByReason,
+        repWorkload,
+        reassignmentRate
+      };
+
+    } catch (error) {
+      console.error('Error getting assignment analytics:', error);
+      throw error;
+    }
+  }
+
   /**
    * Lead Management Functions
    */
@@ -949,6 +1282,230 @@ class DatabaseService {
     } catch (error) {
       console.error('Error getting all sales reps:', error);
       throw new Error('Failed to get sales reps');
+    }
+  }
+
+  /**
+   * Vehicle Management Functions
+   */
+
+  /**
+   * Create a new vehicle
+   */
+  static async createVehicle(vehicleData) {
+    const {
+      stock_number,
+      vin,
+      year,
+      make,
+      model,
+      trim,
+      body_style,
+      exterior_color,
+      interior_color,
+      engine,
+      transmission,
+      drivetrain,
+      fuel_type,
+      mileage,
+      list_price,
+      sale_price,
+      msrp,
+      status = 'available',
+      features = [],
+      packages = [],
+      image_urls = [],
+      video_url,
+      description
+    } = vehicleData;
+
+    const sql = `
+      INSERT INTO vehicles (
+        stock_number, vin, year, make, model, trim, body_style,
+        exterior_color, interior_color, engine, transmission, drivetrain, fuel_type,
+        mileage, list_price, sale_price, msrp, status, features, packages,
+        image_urls, video_url, date_in_stock, created_by
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18,
+        $19, $20, $21, $22, CURRENT_DATE, 'system'
+      )
+      RETURNING *
+    `;
+
+    const params = [
+      stock_number, vin, year, make, model, trim, body_style,
+      exterior_color, interior_color, engine, transmission, drivetrain, fuel_type,
+      mileage, list_price, sale_price, msrp, status, features, packages,
+      image_urls, video_url
+    ];
+
+    try {
+      const result = await query(sql, params);
+      return result.rows[0];
+    } catch (error) {
+      console.error('Error creating vehicle:', error);
+      throw new Error('Failed to create vehicle');
+    }
+  }
+
+  /**
+   * Get vehicle by stock number
+   */
+  static async getVehicleByStockNumber(stockNumber) {
+    const sql = 'SELECT * FROM vehicles WHERE stock_number = $1';
+
+    try {
+      const result = await query(sql, [stockNumber]);
+      return result.rows[0];
+    } catch (error) {
+      console.error('Error getting vehicle by stock number:', error);
+      throw new Error('Failed to get vehicle');
+    }
+  }
+
+  /**
+   * Get all vehicles with optional filtering
+   */
+  static async getVehicles(filters = {}) {
+    let sql = 'SELECT * FROM vehicles WHERE 1=1';
+    const params = [];
+    let paramIndex = 1;
+
+    if (filters.make) {
+      sql += ` AND LOWER(make) = LOWER($${paramIndex})`;
+      params.push(filters.make);
+      paramIndex++;
+    }
+
+    if (filters.model) {
+      sql += ` AND LOWER(model) = LOWER($${paramIndex})`;
+      params.push(filters.model);
+      paramIndex++;
+    }
+
+    if (filters.year) {
+      sql += ` AND year = $${paramIndex}`;
+      params.push(filters.year);
+      paramIndex++;
+    }
+
+    if (filters.status) {
+      sql += ` AND status = $${paramIndex}`;
+      params.push(filters.status);
+      paramIndex++;
+    }
+
+    if (filters.minPrice) {
+      sql += ` AND list_price >= $${paramIndex}`;
+      params.push(filters.minPrice);
+      paramIndex++;
+    }
+
+    if (filters.maxPrice) {
+      sql += ` AND list_price <= $${paramIndex}`;
+      params.push(filters.maxPrice);
+      paramIndex++;
+    }
+
+    sql += ' ORDER BY created_at DESC';
+
+    if (filters.limit) {
+      sql += ` LIMIT $${paramIndex}`;
+      params.push(filters.limit);
+    }
+
+    try {
+      const result = await query(sql, params);
+      return result.rows;
+    } catch (error) {
+      console.error('Error getting vehicles:', error);
+      throw new Error('Failed to get vehicles');
+    }
+  }
+
+  /**
+   * Update vehicle
+   */
+  static async updateVehicle(stockNumber, updateData) {
+    const allowedFields = [
+      'vin', 'year', 'make', 'model', 'trim', 'body_style',
+      'exterior_color', 'interior_color', 'engine', 'transmission', 'drivetrain', 'fuel_type',
+      'mileage', 'list_price', 'sale_price', 'msrp', 'status', 'features', 'packages',
+      'image_urls', 'video_url', 'date_sold'
+    ];
+
+    const updateFields = [];
+    const params = [stockNumber];
+    let paramIndex = 2;
+
+    for (const [key, value] of Object.entries(updateData)) {
+      if (allowedFields.includes(key)) {
+        updateFields.push(`${key} = $${paramIndex}`);
+        params.push(value);
+        paramIndex++;
+      }
+    }
+
+    if (updateFields.length === 0) {
+      throw new Error('No valid fields to update');
+    }
+
+    const sql = `
+      UPDATE vehicles
+      SET ${updateFields.join(', ')}, updated_at = NOW()
+      WHERE stock_number = $1
+      RETURNING *
+    `;
+
+    try {
+      const result = await query(sql, params);
+      return result.rows[0];
+    } catch (error) {
+      console.error('Error updating vehicle:', error);
+      throw new Error('Failed to update vehicle');
+    }
+  }
+
+  /**
+   * Delete vehicle
+   */
+  static async deleteVehicle(stockNumber) {
+    const sql = 'DELETE FROM vehicles WHERE stock_number = $1 RETURNING *';
+
+    try {
+      const result = await query(sql, [stockNumber]);
+      return result.rows[0];
+    } catch (error) {
+      console.error('Error deleting vehicle:', error);
+      throw new Error('Failed to delete vehicle');
+    }
+  }
+
+  /**
+   * Search vehicles by text
+   */
+  static async searchVehicles(searchTerm, limit = 50) {
+    const sql = `
+      SELECT * FROM vehicles
+      WHERE
+        stock_number ILIKE $1 OR
+        vin ILIKE $1 OR
+        make ILIKE $1 OR
+        model ILIKE $1 OR
+        trim ILIKE $1 OR
+        exterior_color ILIKE $1 OR
+        interior_color ILIKE $1 OR
+        engine ILIKE $1
+      ORDER BY created_at DESC
+      LIMIT $2
+    `;
+
+    try {
+      const result = await query(sql, [`%${searchTerm}%`, limit]);
+      return result.rows;
+    } catch (error) {
+      console.error('Error searching vehicles:', error);
+      throw new Error('Failed to search vehicles');
     }
   }
 }

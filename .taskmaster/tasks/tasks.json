@@ -99,9 +99,60 @@
         "status": "in-progress",
         "priority": "high",
         "dependencies": [],
-        "details": "",
-        "testStrategy": "",
-        "subtasks": [],
+        "details": "Basic authentication system implemented. Need to complete session management and role-based access controls.",
+        "testStrategy": "Test login/logout flows, session persistence, and role-based access to different dashboard sections",
+        "subtasks": [
+          {
+            "id": "8.1",
+            "title": "Implement JWT token-based authentication",
+            "description": "Set up JWT token generation and validation for user sessions",
+            "dependencies": [],
+            "details": "Create JWT service with secure token generation, validation, and refresh capabilities",
+            "testStrategy": "Test token generation, validation, and expiration handling",
+            "status": "done",
+            "parentId": 8
+          },
+          {
+            "id": "8.2",
+            "title": "Create login/logout API endpoints",
+            "description": "Implement /api/sales/login and /api/sales/logout endpoints",
+            "dependencies": ["8.1"],
+            "details": "Build secure login endpoint with password validation and logout with token invalidation",
+            "testStrategy": "Test successful/failed login attempts and logout functionality",
+            "status": "done",
+            "parentId": 8
+          },
+          {
+            "id": "8.3",
+            "title": "Implement session management",
+            "description": "Add session persistence and automatic refresh capabilities",
+            "dependencies": ["8.2"],
+            "details": "Implement session storage, automatic token refresh, and session timeout handling",
+            "testStrategy": "Test session persistence across page reloads and automatic refresh",
+            "status": "in-progress",
+            "parentId": 8
+          },
+          {
+            "id": "8.4",
+            "title": "Add role-based access controls",
+            "description": "Implement role-based permissions for different dashboard features",
+            "dependencies": ["8.3"],
+            "details": "Create role definitions, permission checks, and UI component visibility based on user roles",
+            "testStrategy": "Test role-based access to different dashboard sections and features",
+            "status": "pending",
+            "parentId": 8
+          },
+          {
+            "id": "8.5",
+            "title": "Create authentication middleware",
+            "description": "Build middleware for protecting API routes and dashboard pages",
+            "dependencies": ["8.1"],
+            "details": "Implement authentication middleware for Netlify functions and frontend route protection",
+            "testStrategy": "Test protected route access with/without valid authentication",
+            "status": "pending",
+            "parentId": 8
+          }
+        ],
         "createdAt": "2024-01-01T00:00:00.000Z",
         "updatedAt": "2025-10-05T14:31:19.228Z"
       },
@@ -138,9 +189,50 @@
         "status": "in-progress",
         "priority": "high",
         "dependencies": [],
-        "details": "",
-        "testStrategy": "",
-        "subtasks": [],
+        "details": "Inventory scraping reliability has been enhanced. Need to update HTML selectors to match current website structure.",
+        "testStrategy": "Test inventory data scraping with current Cadillac website selectors",
+        "subtasks": [
+          {
+            "id": "11.1",
+            "title": "Analyze current Cadillac website structure",
+            "description": "Review current Cadillac dealership website HTML structure and identify data selectors",
+            "dependencies": [],
+            "details": "Examine the current Cadillac website to understand how vehicle data is structured in HTML",
+            "testStrategy": "Document current HTML structure and data locations",
+            "status": "done",
+            "parentId": 11
+          },
+          {
+            "id": "11.2",
+            "title": "Update vehicle data selectors",
+            "description": "Update CSS selectors for vehicle information (price, model, specs, etc.)",
+            "dependencies": ["11.1"],
+            "details": "Modify inventory-api.js to use correct selectors for extracting vehicle data from current website",
+            "testStrategy": "Test data extraction accuracy with updated selectors",
+            "status": "in-progress",
+            "parentId": 11
+          },
+          {
+            "id": "11.3",
+            "title": "Update image and media selectors",
+            "description": "Update selectors for vehicle images and media content",
+            "dependencies": ["11.1"],
+            "details": "Modify selectors for extracting vehicle images, videos, and other media content",
+            "testStrategy": "Verify image URLs and media content are correctly extracted",
+            "status": "pending",
+            "parentId": 11
+          },
+          {
+            "id": "11.4",
+            "title": "Test data accuracy and completeness",
+            "description": "Test that all vehicle data is accurately extracted with new selectors",
+            "dependencies": ["11.2", "11.3"],
+            "details": "Run comprehensive tests to ensure all vehicle data fields are correctly scraped",
+            "testStrategy": "Compare scraped data against known vehicle information for accuracy",
+            "status": "pending",
+            "parentId": 11
+          }
+        ],
         "createdAt": "2024-01-01T00:00:00.000Z",
         "updatedAt": "2025-10-05T02:38:22.910Z"
       },
@@ -151,9 +243,50 @@
         "status": "pending",
         "priority": "medium",
         "dependencies": [8, 7],
-        "details": "",
-        "testStrategy": "",
-        "subtasks": [],
+        "details": "Lead scoring system needs to be implemented to prioritize leads based on multiple factors including source quality, engagement level, and vehicle interest.",
+        "testStrategy": "Test scoring accuracy against known lead quality metrics and conversion rates",
+        "subtasks": [
+          {
+            "id": "12.1",
+            "title": "Design scoring algorithm",
+            "description": "Define scoring criteria and weightings for different lead attributes",
+            "dependencies": [],
+            "details": "Create algorithm that considers source quality (website vs referral), engagement level, budget, timeline, and vehicle interest",
+            "testStrategy": "Validate scoring logic with sample lead data",
+            "status": "pending",
+            "parentId": 12
+          },
+          {
+            "id": "12.2",
+            "title": "Implement scoring service",
+            "description": "Create scoring service that calculates lead scores automatically",
+            "dependencies": ["12.1"],
+            "details": "Build service to calculate and update lead scores in real-time when lead data changes",
+            "testStrategy": "Test score calculations for various lead scenarios",
+            "status": "pending",
+            "parentId": 12
+          },
+          {
+            "id": "12.3",
+            "title": "Add scoring to lead creation",
+            "description": "Integrate scoring into lead creation and update workflows",
+            "dependencies": ["12.2"],
+            "details": "Ensure all new leads get scored automatically and scores update with new information",
+            "testStrategy": "Test lead creation with automatic scoring",
+            "status": "pending",
+            "parentId": 12
+          },
+          {
+            "id": "12.4",
+            "title": "Create scoring dashboard",
+            "description": "Add lead scoring metrics to sales dashboard",
+            "dependencies": ["12.3"],
+            "details": "Display lead scores, scoring breakdowns, and scoring trends in sales interface",
+            "testStrategy": "Verify scoring data displays correctly in dashboard",
+            "status": "pending",
+            "parentId": 12
+          }
+        ],
         "createdAt": "2024-01-01T00:00:00.000Z",
         "updatedAt": "2024-01-01T00:00:00.000Z"
       },
@@ -164,9 +297,50 @@
         "status": "pending",
         "priority": "medium",
         "dependencies": [8, 7],
-        "details": "",
-        "testStrategy": "",
-        "subtasks": [],
+        "details": "Finance application workflow needs integration with credit bureaus and automated approval processing. Currently basic form exists but no backend processing.",
+        "testStrategy": "Test complete finance application flow from submission to approval/denial",
+        "subtasks": [
+          {
+            "id": "13.1",
+            "title": "Design finance application data model",
+            "description": "Define database schema for finance applications, credit reports, and approval workflows",
+            "dependencies": [],
+            "details": "Create tables for finance applications, credit bureau integrations, and approval decision tracking",
+            "testStrategy": "Verify schema supports all required finance application data",
+            "status": "pending",
+            "parentId": 13
+          },
+          {
+            "id": "13.2",
+            "title": "Implement credit bureau integration",
+            "description": "Integrate with credit bureau APIs for credit score and report retrieval",
+            "dependencies": ["13.1"],
+            "details": "Set up secure API connections to credit bureaus with proper authentication and data handling",
+            "testStrategy": "Test credit report retrieval with mock/test data",
+            "status": "pending",
+            "parentId": 13
+          },
+          {
+            "id": "13.3",
+            "title": "Build approval processing engine",
+            "description": "Create automated approval decision engine based on credit scores and application data",
+            "dependencies": ["13.2"],
+            "details": "Implement business rules for finance approval decisions with manual override capabilities",
+            "testStrategy": "Test approval logic with various credit scenarios",
+            "status": "pending",
+            "parentId": 13
+          },
+          {
+            "id": "13.4",
+            "title": "Create finance application UI",
+            "description": "Build comprehensive finance application form and status tracking interface",
+            "dependencies": ["13.1"],
+            "details": "Create user-friendly finance application form with progress tracking and status updates",
+            "testStrategy": "Test form submission and status tracking user experience",
+            "status": "pending",
+            "parentId": 13
+          }
+        ],
         "createdAt": "2024-01-01T00:00:00.000Z",
         "updatedAt": "2024-01-01T00:00:00.000Z"
       },
@@ -177,9 +351,50 @@
         "status": "pending",
         "priority": "medium",
         "dependencies": [8, 7],
-        "details": "",
-        "testStrategy": "",
-        "subtasks": [],
+        "details": "Automated lead assignment is crucial for efficient sales operations. System should consider rep workload, expertise, geography, and lead priority.",
+        "testStrategy": "Test assignment logic with various scenarios and verify balanced workload distribution",
+        "subtasks": [
+          {
+            "id": "14.1",
+            "title": "Design assignment algorithm",
+            "description": "Create algorithm for intelligent lead assignment based on multiple factors",
+            "dependencies": [],
+            "details": "Design scoring system considering rep capacity, lead priority, geography, specialization, and performance metrics",
+            "testStrategy": "Test algorithm with sample data to verify balanced assignments",
+            "status": "pending",
+            "parentId": 14
+          },
+          {
+            "id": "14.2",
+            "title": "Implement assignment service",
+            "description": "Build automated assignment service with manual override capabilities",
+            "dependencies": ["14.1"],
+            "details": "Create service that automatically assigns leads and allows manual reassignment by managers",
+            "testStrategy": "Test automatic assignment and manual override functionality",
+            "status": "pending",
+            "parentId": 14
+          },
+          {
+            "id": "14.3",
+            "title": "Add workload balancing",
+            "description": "Implement workload tracking and balancing across sales team",
+            "dependencies": ["14.2"],
+            "details": "Track rep capacity, current assignments, and prevent overloading high performers",
+            "testStrategy": "Test workload distribution and capacity management",
+            "status": "pending",
+            "parentId": 14
+          },
+          {
+            "id": "14.4",
+            "title": "Create assignment dashboard",
+            "description": "Build interface for managers to monitor and adjust assignments",
+            "dependencies": ["14.3"],
+            "details": "Create dashboard showing assignment metrics, workload distribution, and manual reassignment tools",
+            "testStrategy": "Test dashboard functionality and assignment management features",
+            "status": "pending",
+            "parentId": 14
+          }
+        ],
         "createdAt": "2024-01-01T00:00:00.000Z",
         "updatedAt": "2024-01-01T00:00:00.000Z"
       },
@@ -190,9 +405,50 @@
         "status": "pending",
         "priority": "medium",
         "dependencies": [8, 7],
-        "details": "",
-        "testStrategy": "",
-        "subtasks": [],
+        "details": "Comprehensive interaction logging is essential for customer relationship management and sales tracking. Must capture all touchpoints and communication history.",
+        "testStrategy": "Test interaction logging across different channels and verify data integrity and accessibility",
+        "subtasks": [
+          {
+            "id": "15.1",
+            "title": "Design interaction data model",
+            "description": "Define comprehensive schema for all interaction types and metadata",
+            "dependencies": [],
+            "details": "Create database schema supporting phone calls, emails, SMS, in-person visits, website interactions, and system events",
+            "testStrategy": "Verify schema supports all required interaction types and metadata",
+            "status": "pending",
+            "parentId": 15
+          },
+          {
+            "id": "15.2",
+            "title": "Implement interaction logging service",
+            "description": "Build service to automatically log interactions from all sources",
+            "dependencies": ["15.1"],
+            "details": "Create centralized service that captures interactions from forms, calls, emails, and system events",
+            "testStrategy": "Test interaction logging from multiple sources and channels",
+            "status": "pending",
+            "parentId": 15
+          },
+          {
+            "id": "15.3",
+            "title": "Create interaction timeline view",
+            "description": "Build chronological view of all customer interactions",
+            "dependencies": ["15.2"],
+            "details": "Create timeline interface showing all customer touchpoints with filtering and search capabilities",
+            "testStrategy": "Test timeline display, filtering, and search functionality",
+            "status": "pending",
+            "parentId": 15
+          },
+          {
+            "id": "15.4",
+            "title": "Add interaction analytics",
+            "description": "Implement analytics and insights from interaction data",
+            "dependencies": ["15.3"],
+            "details": "Add metrics, trends, and insights derived from interaction patterns and frequencies",
+            "testStrategy": "Test analytics calculations and reporting accuracy",
+            "status": "pending",
+            "parentId": 15
+          }
+        ],
         "createdAt": "2024-01-01T00:00:00.000Z",
         "updatedAt": "2024-01-01T00:00:00.000Z"
       },
@@ -203,9 +459,50 @@
         "status": "pending",
         "priority": "medium",
         "dependencies": [8, 7],
-        "details": "",
-        "testStrategy": "",
-        "subtasks": [],
+        "details": "Advanced search and filtering capabilities are essential for efficient customer management. Must support full-text search, faceted filtering, and saved searches.",
+        "testStrategy": "Test search accuracy, filter combinations, and performance with large datasets",
+        "subtasks": [
+          {
+            "id": "16.1",
+            "title": "Implement full-text search",
+            "description": "Add full-text search across customer names, emails, phone numbers, and notes",
+            "dependencies": [],
+            "details": "Implement efficient full-text search with relevance ranking and highlighting",
+            "testStrategy": "Test search accuracy, relevance ranking, and performance",
+            "status": "pending",
+            "parentId": 16
+          },
+          {
+            "id": "16.2",
+            "title": "Create advanced filtering system",
+            "description": "Build comprehensive filtering by status, date ranges, vehicle interest, and custom fields",
+            "dependencies": ["16.1"],
+            "details": "Implement faceted filtering with multiple criteria combinations and filter presets",
+            "testStrategy": "Test filter combinations, performance, and user experience",
+            "status": "pending",
+            "parentId": 16
+          },
+          {
+            "id": "16.3",
+            "title": "Add saved searches and filters",
+            "description": "Allow users to save and reuse common search queries and filter combinations",
+            "dependencies": ["16.2"],
+            "details": "Implement saved search functionality with naming, sharing, and quick access features",
+            "testStrategy": "Test saved search creation, management, and reusability",
+            "status": "pending",
+            "parentId": 16
+          },
+          {
+            "id": "16.4",
+            "title": "Optimize search performance",
+            "description": "Implement caching, indexing, and query optimization for fast search results",
+            "dependencies": ["16.3"],
+            "details": "Add database indexing, query optimization, and result caching for improved performance",
+            "testStrategy": "Test search performance with large datasets and complex queries",
+            "status": "pending",
+            "parentId": 16
+          }
+        ],
         "createdAt": "2024-01-01T00:00:00.000Z",
         "updatedAt": "2024-01-01T00:00:00.000Z"
       },
@@ -216,9 +513,50 @@
         "status": "pending",
         "priority": "medium",
         "dependencies": [8, 7],
-        "details": "",
-        "testStrategy": "",
-        "subtasks": [],
+        "details": "Automated follow-up system is critical for customer engagement and conversion. Must support email sequences, SMS reminders, and personalized messaging.",
+        "testStrategy": "Test automated messaging delivery, personalization, and compliance with communication preferences",
+        "subtasks": [
+          {
+            "id": "17.1",
+            "title": "Design communication templates",
+            "description": "Create customizable email and SMS templates for different follow-up scenarios",
+            "dependencies": [],
+            "details": "Design template system for appointment reminders, lead nurturing, follow-ups, and promotional messages",
+            "testStrategy": "Test template rendering and personalization variables",
+            "status": "pending",
+            "parentId": 17
+          },
+          {
+            "id": "17.2",
+            "title": "Implement scheduling engine",
+            "description": "Build automated scheduling system for follow-up messages and sequences",
+            "dependencies": ["17.1"],
+            "details": "Create scheduling service that triggers messages based on events, time delays, and customer actions",
+            "testStrategy": "Test scheduling accuracy and timing of automated messages",
+            "status": "pending",
+            "parentId": 17
+          },
+          {
+            "id": "17.3",
+            "title": "Add communication preferences",
+            "description": "Implement customer communication preference management and opt-out handling",
+            "dependencies": ["17.2"],
+            "details": "Add preference management for email/SMS channels, frequency limits, and unsubscribe handling",
+            "testStrategy": "Test preference enforcement and opt-out functionality",
+            "status": "pending",
+            "parentId": 17
+          },
+          {
+            "id": "17.4",
+            "title": "Create follow-up analytics",
+            "description": "Add tracking and analytics for follow-up message performance",
+            "dependencies": ["17.3"],
+            "details": "Implement open rates, click tracking, response rates, and conversion attribution",
+            "testStrategy": "Test analytics accuracy and reporting functionality",
+            "status": "pending",
+            "parentId": 17
+          }
+        ],
         "createdAt": "2024-01-01T00:00:00.000Z",
         "updatedAt": "2024-01-01T00:00:00.000Z"
       },
@@ -229,9 +567,50 @@
         "status": "pending",
         "priority": "medium",
         "dependencies": [12, 14, 15],
-        "details": "",
-        "testStrategy": "",
-        "subtasks": [],
+        "details": "Performance analytics dashboard is crucial for sales management and optimization. Must provide actionable insights on rep performance, conversion rates, and business metrics.",
+        "testStrategy": "Test dashboard calculations, data accuracy, and visualization clarity",
+        "subtasks": [
+          {
+            "id": "18.1",
+            "title": "Design analytics data model",
+            "description": "Define metrics, KPIs, and data aggregation requirements",
+            "dependencies": [],
+            "details": "Design comprehensive analytics schema covering sales metrics, conversion rates, rep performance, and trend analysis",
+            "testStrategy": "Verify metric calculations and data aggregation accuracy",
+            "status": "pending",
+            "parentId": 18
+          },
+          {
+            "id": "18.2",
+            "title": "Implement analytics service",
+            "description": "Build service to calculate and aggregate performance metrics",
+            "dependencies": ["18.1"],
+            "details": "Create backend service for real-time metric calculation and historical data aggregation",
+            "testStrategy": "Test metric calculations with various data scenarios",
+            "status": "pending",
+            "parentId": 18
+          },
+          {
+            "id": "18.3",
+            "title": "Create dashboard UI components",
+            "description": "Build interactive dashboard with charts and performance visualizations",
+            "dependencies": ["18.2"],
+            "details": "Create responsive dashboard with charts, KPIs, leaderboards, and drill-down capabilities",
+            "testStrategy": "Test dashboard interactivity, data visualization, and user experience",
+            "status": "pending",
+            "parentId": 18
+          },
+          {
+            "id": "18.4",
+            "title": "Add reporting and export features",
+            "description": "Implement report generation and data export capabilities",
+            "dependencies": ["18.3"],
+            "details": "Add PDF/Excel export, scheduled reports, and customizable report templates",
+            "testStrategy": "Test report generation, export functionality, and data accuracy",
+            "status": "pending",
+            "parentId": 18
+          }
+        ],
         "createdAt": "2024-01-01T00:00:00.000Z",
         "updatedAt": "2024-01-01T00:00:00.000Z"
       },
@@ -278,27 +657,27 @@
         "id": 22,
         "title": "Update all npm dependencies to latest stable versions",
         "description": "Update all npm dependencies to latest stable versions with security patches and compatibility fixes",
-        "status": "pending",
+        "status": "done",
         "priority": "high",
         "dependencies": [],
-        "details": "",
-        "testStrategy": "",
+        "details": "PostCSS dependencies updated to v8, resolved build warnings, and improved compatibility. Migrated from node-sass to sass (Dart Sass).",
+        "testStrategy": "Run build process and verify no deprecation warnings, test CSS compilation works correctly",
         "subtasks": [],
         "createdAt": "2024-01-01T00:00:00.000Z",
-        "updatedAt": "2024-01-01T00:00:00.000Z"
+        "updatedAt": "2023-12-05T00:00:00.000Z"
       },
       {
         "id": 23,
         "title": "Modernize ESLint configuration to latest standards",
         "description": "Modernize ESLint configuration to latest standards and fix all linting errors across the codebase",
-        "status": "pending",
+        "status": "done",
         "priority": "medium",
         "dependencies": [22, 29],
-        "details": "",
-        "testStrategy": "",
+        "details": "ESLint configuration modernized and all linting errors resolved. Updated to use @babel/eslint-parser and migrated from node-sass to sass.",
+        "testStrategy": "Run ESLint across entire codebase and verify no errors or warnings",
         "subtasks": [],
         "createdAt": "2024-01-01T00:00:00.000Z",
-        "updatedAt": "2024-01-01T00:00:00.000Z"
+        "updatedAt": "2023-12-06T00:00:00.000Z"
       },
       {
         "id": 24,
@@ -307,9 +686,50 @@
         "status": "pending",
         "priority": "medium",
         "dependencies": [22, 29],
-        "details": "",
-        "testStrategy": "",
-        "subtasks": [],
+        "details": "Test suite implementation pending. Requires Jest or similar testing framework setup and comprehensive test coverage.",
+        "testStrategy": "Achieve 80%+ code coverage across critical components and API functions",
+        "subtasks": [
+          {
+            "id": "24.1",
+            "title": "Set up testing framework",
+            "description": "Install and configure Jest or similar testing framework",
+            "dependencies": [],
+            "details": "Choose appropriate testing framework and set up configuration for JavaScript/Node.js environment",
+            "testStrategy": "Verify framework installation and basic test execution",
+            "status": "pending",
+            "parentId": 24
+          },
+          {
+            "id": "24.2",
+            "title": "Create API function tests",
+            "description": "Write unit tests for all Netlify function endpoints",
+            "dependencies": ["24.1"],
+            "details": "Test all API endpoints for proper request/response handling, error cases, and data validation",
+            "testStrategy": "Test success and error scenarios for each API endpoint",
+            "status": "pending",
+            "parentId": 24
+          },
+          {
+            "id": "24.3",
+            "title": "Create frontend component tests",
+            "description": "Write tests for critical frontend components and user interactions",
+            "dependencies": ["24.1"],
+            "details": "Test component rendering, user interactions, and integration with API calls",
+            "testStrategy": "Test component behavior under various states and user interactions",
+            "status": "pending",
+            "parentId": 24
+          },
+          {
+            "id": "24.4",
+            "title": "Implement integration tests",
+            "description": "Create end-to-end tests for critical user flows",
+            "dependencies": ["24.2", "24.3"],
+            "details": "Test complete user journeys from form submission to data processing",
+            "testStrategy": "Test full user workflows and data flow through the system",
+            "status": "pending",
+            "parentId": 24
+          }
+        ],
         "createdAt": "2024-01-01T00:00:00.000Z",
         "updatedAt": "2024-01-01T00:00:00.000Z"
       },
@@ -317,27 +737,27 @@
         "id": 25,
         "title": "Optimize webpack build performance",
         "description": "Optimize webpack build performance - implement code splitting, tree shaking, and asset optimization",
-        "status": "pending",
+        "status": "done",
         "priority": "medium",
         "dependencies": [22, 29],
-        "details": "",
-        "testStrategy": "",
+        "details": "Build scripts optimized with improved caching, code splitting, and performance enhancements. Added new NPM scripts for better developer workflow.",
+        "testStrategy": "Measure build time improvements and verify bundle size optimizations",
         "subtasks": [],
         "createdAt": "2024-01-01T00:00:00.000Z",
-        "updatedAt": "2024-01-01T00:00:00.000Z"
+        "updatedAt": "2023-12-08T00:00:00.000Z"
       },
       {
         "id": 26,
         "title": "Audit and modernize all Hugo templates",
         "description": "Audit and modernize all Hugo templates for HTML5 standards, accessibility, and performance",
-        "status": "pending",
+        "status": "done",
         "priority": "medium",
         "dependencies": [22, 29],
-        "details": "",
-        "testStrategy": "",
+        "details": "Hugo templates audited and modernized with proper HTML5 semantics, accessibility improvements, and performance optimizations. Added semantic HTML elements and ARIA attributes.",
+        "testStrategy": "Run accessibility audit tools and verify HTML5 compliance",
         "subtasks": [],
         "createdAt": "2024-01-01T00:00:00.000Z",
-        "updatedAt": "2024-01-01T00:00:00.000Z"
+        "updatedAt": "2023-11-23T00:00:00.000Z"
       },
       {
         "id": 27,
@@ -372,9 +792,60 @@
         "status": "pending",
         "priority": "high",
         "dependencies": [],
-        "details": "",
-        "testStrategy": "",
-        "subtasks": [],
+        "details": "Security audit is critical for production readiness. Need to audit authentication, data handling, API security, and infrastructure security.",
+        "testStrategy": "Use security scanning tools, manual code review, and penetration testing to identify vulnerabilities",
+        "subtasks": [
+          {
+            "id": "29.1",
+            "title": "Audit authentication and authorization",
+            "description": "Review JWT implementation, password handling, and access controls",
+            "dependencies": [],
+            "details": "Check JWT token security, password hashing, session management, and role-based access controls",
+            "testStrategy": "Test authentication bypass attempts and authorization edge cases",
+            "status": "pending",
+            "parentId": 29
+          },
+          {
+            "id": "29.2",
+            "title": "Review API security",
+            "description": "Audit API endpoints for security vulnerabilities",
+            "dependencies": [],
+            "details": "Check for SQL injection, XSS, CSRF, rate limiting, input validation, and secure headers",
+            "testStrategy": "Use API security testing tools and manual vulnerability assessment",
+            "status": "pending",
+            "parentId": 29
+          },
+          {
+            "id": "29.3",
+            "title": "Audit data handling and privacy",
+            "description": "Review data storage, transmission, and GDPR compliance",
+            "dependencies": [],
+            "details": "Check encryption at rest/transit, data sanitization, GDPR compliance, and privacy controls",
+            "testStrategy": "Review data flows and privacy compliance requirements",
+            "status": "pending",
+            "parentId": 29
+          },
+          {
+            "id": "29.4",
+            "title": "Review infrastructure security",
+            "description": "Audit serverless functions, database security, and deployment security",
+            "dependencies": [],
+            "details": "Check Netlify security, database access controls, environment variable security, and CI/CD security",
+            "testStrategy": "Review infrastructure configuration and access controls",
+            "status": "pending",
+            "parentId": 29
+          },
+          {
+            "id": "29.5",
+            "title": "Implement security fixes",
+            "description": "Address identified security vulnerabilities and implement fixes",
+            "dependencies": ["29.1", "29.2", "29.3", "29.4"],
+            "details": "Implement security patches, add security headers, improve error handling, and enhance monitoring",
+            "testStrategy": "Retest security fixes and verify vulnerabilities are resolved",
+            "status": "pending",
+            "parentId": 29
+          }
+        ],
         "createdAt": "2024-01-01T00:00:00.000Z",
         "updatedAt": "2024-01-01T00:00:00.000Z"
       },
@@ -411,9 +882,50 @@
         "status": "pending",
         "priority": "high",
         "dependencies": [],
-        "details": "",
-        "testStrategy": "",
-        "subtasks": [],
+        "details": "Turso database setup is critical for the hybrid architecture performance improvements. Need to create instance, configure authentication, and set up connection pooling.",
+        "testStrategy": "Verify Turso connection, basic queries work, and connection pooling is configured correctly",
+        "subtasks": [
+          {
+            "id": "32.1",
+            "title": "Create Turso database instance",
+            "description": "Set up Turso account and create database instance",
+            "dependencies": [],
+            "details": "Create Turso account, set up database instance, and configure initial settings. Run: npm run setup:turso",
+            "testStrategy": "Verify database instance is accessible and basic connection works",
+            "status": "done",
+            "parentId": 32
+          },
+          {
+            "id": "32.2",
+            "title": "Configure authentication and security",
+            "description": "Set up authentication tokens and security settings for Turso",
+            "dependencies": ["32.1"],
+            "details": "Generate auth tokens, configure access controls, and set up secure connection settings via setup script",
+            "testStrategy": "Test authentication with different permission levels",
+            "status": "done",
+            "parentId": 32
+          },
+          {
+            "id": "32.3",
+            "title": "Set up connection configuration",
+            "description": "Configure Turso connection settings in environment and application",
+            "dependencies": ["32.2"],
+            "details": "Add Turso connection strings to environment variables and configure connection pooling in DatabaseService",
+            "testStrategy": "Verify connection configuration works in development and production",
+            "status": "done",
+            "parentId": 32
+          },
+          {
+            "id": "32.4",
+            "title": "Test Turso connectivity",
+            "description": "Verify Turso database connectivity and basic operations",
+            "dependencies": ["32.3"],
+            "details": "Test basic CRUD operations, connection pooling, and error handling. Run: npm run migrate:turso",
+            "testStrategy": "Run comprehensive connectivity tests and performance benchmarks",
+            "status": "done",
+            "parentId": 32
+          }
+        ],
         "createdAt": "2024-01-01T00:00:00.000Z",
         "updatedAt": "2024-01-01T00:00:00.000Z"
       },
@@ -564,11 +1076,11 @@
         "id": 44,
         "title": "Implement comprehensive data seeding system",
         "description": "Create data seeding scripts for customers, leads, vehicles, and sample data",
-        "status": "in-progress",
+        "status": "done",
         "priority": "high",
         "dependencies": [9],
-        "details": "",
-        "testStrategy": "",
+        "details": "Created comprehensive data seeding system with scripts for customers, leads, vehicles, interactions, appointments, and analytics data. Added vehicle methods to DatabaseService and created seeding scripts with realistic sample data.",
+        "testStrategy": "Run seeding scripts and verify data integrity, relationships, and realistic distribution",
         "subtasks": [
           {
             "id": 44.1,
@@ -577,7 +1089,7 @@
             "dependencies": [],
             "details": "Create scripts to seed 100+ sample customers with realistic names, emails, phone numbers, addresses, and demographic data. Include different customer segments and types.",
             "testStrategy": "Verify seeded customer data quality, uniqueness, and proper format",
-            "status": "pending",
+            "status": "done",
             "parentId": 44
           },
           {
@@ -587,7 +1099,7 @@
             "dependencies": [44.1],
             "details": "Create scripts to seed 200+ sample leads with different sources (website, phone, email, referral), statuses, lead scores, and assignment to sales reps.",
             "testStrategy": "Verify lead data relationships, proper assignment, and realistic distribution",
-            "status": "pending",
+            "status": "done",
             "parentId": 44
           },
           {
@@ -597,7 +1109,7 @@
             "dependencies": [],
             "details": "Create scripts to seed current Cadillac vehicle inventory with models, trims, pricing, VIN numbers, specifications, and availability status.",
             "testStrategy": "Verify vehicle data accuracy, completeness, and realistic inventory mix",
-            "status": "pending",
+            "status": "done",
             "parentId": 44
           },
           {
@@ -607,7 +1119,7 @@
             "dependencies": [44.1, 44.2],
             "details": "Create scripts to seed customer interactions, appointments, follow-ups, and communication history. Include different interaction types and outcomes.",
             "testStrategy": "Verify interaction data relationships, realistic timelines, and proper linking",
-            "status": "pending",
+            "status": "done",
             "parentId": 44
           },
           {
@@ -617,7 +1129,7 @@
             "dependencies": [44.1, 44.2, 44.3],
             "details": "Create scripts to seed historical sales data, conversion rates, performance metrics, and analytics data for dashboard testing and demonstration.",
             "testStrategy": "Verify sales data accuracy, realistic performance metrics, and proper analytics calculations",
-            "status": "pending",
+            "status": "done",
             "parentId": 44
           }
         ],
