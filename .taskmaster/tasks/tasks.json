@@ -541,7 +541,7 @@
             "title": "Add communication preferences",
             "description": "Implement customer communication preference management and opt-out handling",
             "dependencies": ["17.2"],
-            "details": "Add preference management for email/SMS channels, frequency limits, and unsubscribe handling. IN PROGRESS: Need to integrate preference checking into lead creation and appointment workflows.",
+            "details": "Add preference management for email/SMS channels, frequency limits, and unsubscribe handling. PENDING: Need to integrate preference checking into lead creation and appointment workflows.",
             "testStrategy": "Test preference enforcement and opt-out functionality",
             "status": "pending",
             "parentId": 17
@@ -556,6 +556,16 @@
             "status": "pending",
             "parentId": 17
           },
+          {
+            "id": "17.6",
+            "title": "Create admin dashboard UI",
+            "description": "Build campaign manager UI components and admin dashboard integration",
+            "dependencies": ["17.2"],
+            "details": "Create comprehensive UI for managing campaigns and rules. COMPLETED: Built followup-campaign-manager.js component with full CRUD operations, rule builder, and template integration. Created admin page at /admin/followup-campaigns.",
+            "testStrategy": "Test UI functionality, form validation, and API integration",
+            "status": "done",
+            "parentId": 17
+          }
           {
             "id": "17.5",
             "title": "Complete workflow integration",
