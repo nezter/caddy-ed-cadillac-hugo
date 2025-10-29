@@ -2,6 +2,7 @@ const errorHandler = require('./utils/error-handler');
 const LeadScoringService = require('./utils/lead-scoring-service');
 const LeadAssignmentService = require('./utils/lead-assignment-service');
 const InteractionService = require('./utils/interaction-service');
+const FollowupService = require('./utils/followup-service');
 const DatabaseService = require('./utils/database-service');
 const nodemailer = require('nodemailer');
 const DeduplicationService = require('./utils/deduplication-service');
@@ -177,6 +178,15 @@ exports.handler = async function(event, context) {
       } catch (assignmentError) {
         console.error('Error assigning lead:', assignmentError);
         // Continue with processing even if assignment fails
+      }
+
+      // Schedule automated follow-ups for the new lead
+      try {
+        await FollowupService.scheduleFollowups(leadRecord.customer_id, leadRecord.id, 'lead_created');
+        console.log(`Follow-ups scheduled for lead ${leadRecord.id}`);
+      } catch (followupError) {
+        console.error('Error scheduling follow-ups for lead:', followupError);
+        // Continue with processing even if follow-up scheduling fails
       }
     }
 

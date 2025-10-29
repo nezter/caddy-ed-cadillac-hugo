@@ -1,5 +1,6 @@
 const errorHandler = require('./utils/error-handler');
 const InteractionService = require('./utils/interaction-service');
+const FollowupService = require('./utils/followup-service');
 const DatabaseService = require('./utils/database-service');
 
 /**
@@ -188,18 +189,27 @@ async function logInteraction(event) {
     });
   }
 
-  try {
-    const interaction = await InteractionService.logInteraction(interactionData);
+   try {
+     const interaction = await InteractionService.logCustomerInteraction(customerData);
 
-    return errorHandler.createSuccessResponse({
-      message: 'Interaction logged successfully',
-      interaction
-    }, 'Interaction recorded');
+     // Schedule follow-ups based on the customer interaction
+     try {
+       await FollowupService.scheduleFollowups(interaction.customer_id, interaction.lead_id, 'interaction_added');
+       console.log(`Follow-ups scheduled for customer interaction ${interaction.id}`);
+     } catch (followupError) {
+       console.error('Error scheduling follow-ups for customer interaction:', followupError);
+       // Continue with success response even if follow-up scheduling fails
+     }
 
-  } catch (error) {
-    console.error('Error logging interaction:', error);
-    return errorHandler.serverError('Failed to log interaction', error);
-  }
+     return errorHandler.createSuccessResponse({
+       message: 'Customer interaction logged successfully',
+       interaction
+     });
+
+   } catch (error) {
+     console.error('Error logging customer interaction:', error);
+     return errorHandler.serverError('Failed to log customer interaction', error);
+   }
 }
 
 /**
@@ -222,18 +232,27 @@ async function logAutomatedInteraction(event) {
     });
   }
 
-  try {
-    const interaction = await InteractionService.logAutomatedInteraction(automatedData);
+   try {
+     const interaction = await InteractionService.logAutomatedInteraction(automatedData);
 
-    return errorHandler.createSuccessResponse({
-      message: 'Automated interaction logged successfully',
-      interaction
-    });
+     // Schedule follow-ups based on the automated interaction
+     try {
+       await FollowupService.scheduleFollowups(interaction.customer_id, interaction.lead_id, 'interaction_added');
+       console.log(`Follow-ups scheduled for automated interaction ${interaction.id}`);
+     } catch (followupError) {
+       console.error('Error scheduling follow-ups for automated interaction:', followupError);
+       // Continue with success response even if follow-up scheduling fails
+     }
 
-  } catch (error) {
-    console.error('Error logging automated interaction:', error);
-    return errorHandler.serverError('Failed to log automated interaction', error);
-  }
+     return errorHandler.createSuccessResponse({
+       message: 'Automated interaction logged successfully',
+       interaction
+     });
+
+   } catch (error) {
+     console.error('Error logging automated interaction:', error);
+     return errorHandler.serverError('Failed to log automated interaction', error);
+   }
 }
 
 /**
@@ -257,18 +276,27 @@ async function logSalesInteraction(event) {
     });
   }
 
-  try {
-    const interaction = await InteractionService.logSalesInteraction(salesData);
+   try {
+     const interaction = await InteractionService.logInteraction(interactionData);
 
-    return errorHandler.createSuccessResponse({
-      message: 'Sales interaction logged successfully',
-      interaction
-    });
+     // Schedule follow-ups based on the interaction
+     try {
+       await FollowupService.scheduleFollowups(interaction.customer_id, interaction.lead_id, 'interaction_added');
+       console.log(`Follow-ups scheduled for interaction ${interaction.id}`);
+     } catch (followupError) {
+       console.error('Error scheduling follow-ups for interaction:', followupError);
+       // Continue with success response even if follow-up scheduling fails
+     }
 
-  } catch (error) {
-    console.error('Error logging sales interaction:', error);
-    return errorHandler.serverError('Failed to log sales interaction', error);
-  }
+     return errorHandler.createSuccessResponse({
+       message: 'Interaction logged successfully',
+       interaction
+     });
+
+   } catch (error) {
+     console.error('Error logging interaction:', error);
+     return errorHandler.serverError('Failed to log interaction', error);
+   }
 }
 
 /**
@@ -291,18 +319,27 @@ async function logCustomerInteraction(event) {
     });
   }
 
-  try {
-    const interaction = await InteractionService.logCustomerInteraction(customerData);
+   try {
+     const interaction = await InteractionService.logSalesInteraction(salesData);
 
-    return errorHandler.createSuccessResponse({
-      message: 'Customer interaction logged successfully',
-      interaction
-    });
+     // Schedule follow-ups based on the sales interaction
+     try {
+       await FollowupService.scheduleFollowups(interaction.customer_id, interaction.lead_id, 'interaction_added');
+       console.log(`Follow-ups scheduled for sales interaction ${interaction.id}`);
+     } catch (followupError) {
+       console.error('Error scheduling follow-ups for sales interaction:', followupError);
+       // Continue with success response even if follow-up scheduling fails
+     }
 
-  } catch (error) {
-    console.error('Error logging customer interaction:', error);
-    return errorHandler.serverError('Failed to log customer interaction', error);
-  }
+     return errorHandler.createSuccessResponse({
+       message: 'Sales interaction logged successfully',
+       interaction
+     });
+
+   } catch (error) {
+     console.error('Error logging sales interaction:', error);
+     return errorHandler.serverError('Failed to log sales interaction', error);
+   }
 }
 
 /**

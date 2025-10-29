@@ -561,9 +561,9 @@
             "title": "Complete workflow integration",
             "description": "Hook follow-up triggers into lead creation, interactions, and appointment events",
             "dependencies": ["17.2"],
-            "details": "Connect automated follow-up system with existing workflows - lead creation events, appointment scheduling, and customer interactions. NEXT PRIORITY: Update leads.js, appointments, and interaction endpoints to trigger follow-ups.",
+            "details": "Connect automated follow-up system with existing workflows - lead creation events, appointment scheduling, and customer interactions. COMPLETED: Added follow-up scheduling to leads.js (lead_created), schedule-test-drive.js (appointment_scheduled), and interactions.js (interaction_added) endpoints.",
             "testStrategy": "Test end-to-end follow-up triggering from various events",
-            "status": "pending",
+            "status": "done",
             "parentId": 17
           }
         ],

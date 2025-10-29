@@ -1,5 +1,6 @@
 const nodemailer = require('nodemailer');
 const InteractionService = require('./utils/interaction-service');
+const FollowupService = require('./utils/followup-service');
 const DatabaseService = require('./utils/database-service');
 
 exports.handler = async function(event, context) {
@@ -123,6 +124,15 @@ exports.handler = async function(event, context) {
         });
 
         console.log('Test drive request interaction logged for customer:', customerId);
+
+        // Schedule automated follow-ups for the test drive request
+        try {
+          await FollowupService.scheduleFollowups(customerId, null, 'appointment_scheduled');
+          console.log(`Follow-ups scheduled for test drive request from customer ${customerId}`);
+        } catch (followupError) {
+          console.error('Error scheduling follow-ups for test drive:', followupError);
+          // Continue with success response even if follow-up scheduling fails
+        }
       }
     } catch (interactionError) {
       console.error('Error logging test drive interaction:', interactionError);
