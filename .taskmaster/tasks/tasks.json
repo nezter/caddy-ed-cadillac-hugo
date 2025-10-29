@@ -510,10 +510,10 @@
         "id": 17,
         "title": "Implement automated follow-up system",
         "description": "Implement automated follow-up system - email/SMS reminders for appointments and customer nurturing sequences",
-        "status": "pending",
+        "status": "in_progress",
         "priority": "medium",
         "dependencies": [8, 7],
-        "details": "Automated follow-up system is critical for customer engagement and conversion. Must support email sequences, SMS reminders, and personalized messaging.",
+        "details": "Automated follow-up system is critical for customer engagement and conversion. Must support email sequences, SMS reminders, and personalized messaging. Database tables and API endpoints completed - now integrating with workflows.",
         "testStrategy": "Test automated messaging delivery, personalization, and compliance with communication preferences",
         "subtasks": [
           {
@@ -521,9 +521,9 @@
             "title": "Design communication templates",
             "description": "Create customizable email and SMS templates for different follow-up scenarios",
             "dependencies": [],
-            "details": "Design template system for appointment reminders, lead nurturing, follow-ups, and promotional messages",
+            "details": "Design template system for appointment reminders, lead nurturing, follow-ups, and promotional messages. COMPLETED: Created email-templates.js and sms-templates.js APIs with full CRUD operations, personalization variables, and testing capabilities.",
             "testStrategy": "Test template rendering and personalization variables",
-            "status": "pending",
+            "status": "done",
             "parentId": 17
           },
           {
@@ -531,9 +531,9 @@
             "title": "Implement scheduling engine",
             "description": "Build automated scheduling system for follow-up messages and sequences",
             "dependencies": ["17.1"],
-            "details": "Create scheduling service that triggers messages based on events, time delays, and customer actions",
+            "details": "Create scheduling service that triggers messages based on events, time delays, and customer actions. COMPLETED: Created followup-rules.js API with rules engine, followup-campaigns.js for campaign management, and database tables (followup_campaigns, followup_rules, followups).",
             "testStrategy": "Test scheduling accuracy and timing of automated messages",
-            "status": "pending",
+            "status": "done",
             "parentId": 17
           },
           {
@@ -541,7 +541,7 @@
             "title": "Add communication preferences",
             "description": "Implement customer communication preference management and opt-out handling",
             "dependencies": ["17.2"],
-            "details": "Add preference management for email/SMS channels, frequency limits, and unsubscribe handling",
+            "details": "Add preference management for email/SMS channels, frequency limits, and unsubscribe handling. IN PROGRESS: Need to integrate preference checking into lead creation and appointment workflows.",
             "testStrategy": "Test preference enforcement and opt-out functionality",
             "status": "pending",
             "parentId": 17
@@ -551,14 +551,24 @@
             "title": "Create follow-up analytics",
             "description": "Add tracking and analytics for follow-up message performance",
             "dependencies": ["17.3"],
-            "details": "Implement open rates, click tracking, response rates, and conversion attribution",
+            "details": "Implement open rates, click tracking, response rates, and conversion attribution. PENDING: Need to add analytics endpoints and dashboard integration.",
             "testStrategy": "Test analytics accuracy and reporting functionality",
+            "status": "pending",
+            "parentId": 17
+          },
+          {
+            "id": "17.5",
+            "title": "Complete workflow integration",
+            "description": "Hook follow-up triggers into lead creation, interactions, and appointment events",
+            "dependencies": ["17.2"],
+            "details": "Connect automated follow-up system with existing workflows - lead creation events, appointment scheduling, and customer interactions. NEXT PRIORITY: Update leads.js, appointments, and interaction endpoints to trigger follow-ups.",
+            "testStrategy": "Test end-to-end follow-up triggering from various events",
             "status": "pending",
             "parentId": 17
           }
         ],
         "createdAt": "2024-01-01T00:00:00.000Z",
-        "updatedAt": "2024-01-01T00:00:00.000Z"
+        "updatedAt": "2025-10-29T12:00:00.000Z"
       },
       {
         "id": 18,
