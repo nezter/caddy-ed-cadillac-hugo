@@ -1,0 +1,1661 @@
+openapi: 3.0.3
+info:
+  title: Cadillac of South Charlotte - Follow-up System API
+  description: |
+    Comprehensive follow-up system for automated customer communication.
+    
+    This API provides endpoints for managing campaigns, rules, templates, analytics, and customer interactions.
+    
+    ## Authentication
+    
+    All endpoints require JWT authentication with the following format:
+    ```
+    Authorization: Bearer <jwt_token>
+    ```
+    
+    ## Rate Limiting
+    
+    API endpoints are rate-limited to 100 requests per minute per authenticated user.
+    
+    ## Error Handling
+    
+    The API uses standard HTTP status codes and returns error responses in the following format:
+    ```json
+    {
+      "success": false,
+      "error": "error_type",
+      "message": "Human readable error message",
+      "details": "Additional error details (in development mode)"
+    }
+    ```
+  
+  version: 1.0.0
+  contact:
+    name: Cadillac of South Charlotte Development Team
+    email: dev@cadillacofsouthcharlotte.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://cadillac-of-south-charlotte.netlify.app
+    description: Production server
+  - url: https://dev--cadillac-of-south-charlotte.netlify.app
+    description: Development server
+
+security:
+  - BearerAuth: []
+
+paths:
+  /health-check:
+    get:
+      tags:
+        - Health
+      summary: Basic health check
+      description: Returns basic system health status
+      operationId: basicHealthCheck
+      responses:
+        '200':
+          description: System is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '503':
+          description: System is unhealthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /health-check/detailed:
+    get:
+      tags:
+        - Health
+      summary: Detailed health check
+      description: Returns comprehensive system health status including performance metrics
+      operationId: detailedHealthCheck
+      responses:
+        '200':
+          description: Detailed health information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailedHealthResponse'
+
+  /followup-campaigns:
+    get:
+      tags:
+        - Campaigns
+      summary: List campaigns
+      description: Retrieve a list of follow-up campaigns with optional filtering
+      operationId: listCampaigns
+      parameters:
+        - name: active
+          in: query
+          description: Filter by active status
+          schema:
+            type: boolean
+        - name: type
+          in: query
+          description: Filter by campaign type
+          schema:
+            type: string
+            enum: [nurture, re_engagement, welcome, birthday, anniversary, holiday, custom]
+        - name: audience
+          in: query
+          description: Filter by target audience
+          schema:
+            type: string
+            enum: [all, prospects, leads, active_customers, inactive_customers, vip_customers]
+        - name: limit
+          in: query
+          description: Maximum number of results to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: offset
+          in: query
+          description: Number of results to skip
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: sort_by
+          in: query
+          description: Field to sort by
+          schema:
+            type: string
+            enum: [name, campaign_type, created_at, updated_at, priority]
+            default: created_at
+        - name: sort_order
+          in: query
+          description: Sort order
+          schema:
+            type: string
+            enum: [ASC, DESC]
+            default: DESC
+      responses:
+        '200':
+          description: List of campaigns
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampaignListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+    post:
+      tags:
+        - Campaigns
+      summary: Create campaign
+      description: Create a new follow-up campaign
+      operationId: createCampaign
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCampaignRequest'
+      responses:
+        '201':
+          description: Campaign created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampaignResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /followup-campaigns/stats:
+    get:
+      tags:
+        - Campaigns
+      summary: Campaign statistics
+      description: Get overall campaign statistics
+      operationId: getCampaignStats
+      responses:
+        '200':
+          description: Campaign statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampaignStatsResponse'
+
+  /followup-campaigns/active:
+    get:
+      tags:
+        - Campaigns
+      summary: Active campaigns
+      description: Get list of active campaigns
+      operationId: getActiveCampaigns
+      responses:
+        '200':
+          description: List of active campaigns
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampaignListResponse'
+
+  /followup-campaigns/{campaignId}:
+    get:
+      tags:
+        - Campaigns
+      summary: Get campaign
+      description: Retrieve a specific campaign by ID
+      operationId: getCampaign
+      parameters:
+        - name: campaignId
+          in: path
+          required: true
+          description: Campaign ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Campaign details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampaignResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags:
+        - Campaigns
+      summary: Update campaign
+      description: Update an existing campaign
+      operationId: updateCampaign
+      parameters:
+        - name: campaignId
+          in: path
+          required: true
+          description: Campaign ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCampaignRequest'
+      responses:
+        '200':
+          description: Campaign updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampaignResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags:
+        - Campaigns
+      summary: Delete campaign
+      description: Delete a campaign
+      operationId: deleteCampaign
+      parameters:
+        - name: campaignId
+          in: path
+          required: true
+          description: Campaign ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Campaign deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /followup-campaigns/{campaignId}/activate:
+    post:
+      tags:
+        - Campaigns
+      summary: Activate campaign
+      description: Activate a campaign
+      operationId: activateCampaign
+      parameters:
+        - name: campaignId
+          in: path
+          required: true
+          description: Campaign ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Campaign activated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampaignResponse'
+
+  /followup-campaigns/{campaignId}/deactivate:
+    post:
+      tags:
+        - Campaigns
+      summary: Deactivate campaign
+      description: Deactivate a campaign
+      operationId: deactivateCampaign
+      parameters:
+        - name: campaignId
+          in: path
+          required: true
+          description: Campaign ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Campaign deactivated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampaignResponse'
+
+  /followup-campaigns/{campaignId}/performance:
+    get:
+      tags:
+        - Campaigns
+      summary: Campaign performance
+      description: Get performance metrics for a specific campaign
+      operationId: getCampaignPerformance
+      parameters:
+        - name: campaignId
+          in: path
+          required: true
+          description: Campaign ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Campaign performance metrics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampaignPerformanceResponse'
+
+  /followup-rules:
+    get:
+      tags:
+        - Rules
+      summary: List rules
+      description: Retrieve a list of follow-up rules
+      operationId: listRules
+      parameters:
+        - name: campaign_id
+          in: query
+          description: Filter by campaign ID
+          schema:
+            type: string
+            format: uuid
+        - name: active
+          in: query
+          description: Filter by active status
+          schema:
+            type: boolean
+        - name: trigger_event
+          in: query
+          description: Filter by trigger event
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Maximum number of results
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: offset
+          in: query
+          description: Number of results to skip
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: List of rules
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RuleListResponse'
+
+    post:
+      tags:
+        - Rules
+      summary: Create rule
+      description: Create a new follow-up rule
+      operationId: createRule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRuleRequest'
+      responses:
+        '201':
+          description: Rule created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RuleResponse'
+
+  /followup-rules/{ruleId}:
+    get:
+      tags:
+        - Rules
+      summary: Get rule
+      description: Retrieve a specific rule by ID
+      operationId: getRule
+      parameters:
+        - name: ruleId
+          in: path
+          required: true
+          description: Rule ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Rule details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RuleResponse'
+
+    put:
+      tags:
+        - Rules
+      summary: Update rule
+      description: Update an existing rule
+      operationId: updateRule
+      parameters:
+        - name: ruleId
+          in: path
+          required: true
+          description: Rule ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRuleRequest'
+      responses:
+        '200':
+          description: Rule updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RuleResponse'
+
+    delete:
+      tags:
+        - Rules
+      summary: Delete rule
+      description: Delete a rule
+      operationId: deleteRule
+      parameters:
+        - name: ruleId
+          in: path
+          required: true
+          description: Rule ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Rule deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteResponse'
+
+  /followup-analytics/dashboard:
+    get:
+      tags:
+        - Analytics
+      summary: Analytics dashboard
+      description: Get analytics dashboard data
+      operationId: getAnalyticsDashboard
+      responses:
+        '200':
+          description: Analytics dashboard data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalyticsDashboardResponse'
+
+  /followup-analytics/track:
+    post:
+      tags:
+        - Analytics
+      summary: Track event
+      description: Track an analytics event
+      operationId: trackEvent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TrackEventRequest'
+      responses:
+        '200':
+          description: Event tracked successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrackEventResponse'
+
+  /followup-analytics/campaign/{campaignId}:
+    get:
+      tags:
+        - Analytics
+      summary: Campaign analytics
+      description: Get analytics for a specific campaign
+      operationId: getCampaignAnalytics
+      parameters:
+        - name: campaignId
+          in: path
+          required: true
+          description: Campaign ID
+          schema:
+            type: string
+            format: uuid
+        - name: start_date
+          in: query
+          description: Start date for analytics period
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          description: End date for analytics period
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Campaign analytics data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampaignAnalyticsResponse'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        status:
+          type: string
+          enum: [healthy, unhealthy, warning]
+          example: healthy
+        timestamp:
+          type: string
+          format: date-time
+        responseTime:
+          type: string
+          example: "45ms"
+        services:
+          type: object
+          properties:
+            database:
+              type: object
+              properties:
+                status:
+                  type: string
+                  example: "connected"
+                type:
+                  type: string
+                  example: "postgresql"
+            cache:
+              type: object
+              properties:
+                status:
+                  type: string
+                  example: "healthy"
+                connected:
+                  type: boolean
+                  example: true
+        memory:
+          type: object
+          properties:
+            used:
+              type: string
+              example: "128MB"
+            total:
+              type: string
+              example: "256MB"
+            percentage:
+              type: integer
+              example: 50
+        uptime:
+          type: object
+          properties:
+            seconds:
+              type: integer
+              example: 3600
+            human:
+              type: string
+              example: "1h 0m"
+
+    DetailedHealthResponse:
+      allOf:
+        - $ref: '#/components/schemas/HealthResponse'
+        - type: object
+          properties:
+            system:
+              type: object
+              properties:
+                nodeVersion:
+                  type: string
+                  example: "v18.17.0"
+                platform:
+                  type: string
+                  example: "linux"
+                arch:
+                  type: string
+                  example: "x64"
+                environment:
+                  type: string
+                  example: "production"
+            services:
+              type: object
+              properties:
+                database:
+                  type: object
+                  properties:
+                    postgres:
+                      type: boolean
+                      example: true
+                    supabase:
+                      type: boolean
+                      example: true
+                    turso:
+                      type: boolean
+                      example: false
+                cache:
+                  $ref: '#/components/schemas/CacheHealth'
+                performance:
+                  $ref: '#/components/schemas/PerformanceSummary'
+
+    CacheHealth:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, unhealthy, not_initialized]
+          example: healthy
+        connected:
+          type: boolean
+          example: true
+        responseTime:
+          type: string
+          example: "5ms"
+        stats:
+          type: object
+          properties:
+            hits:
+              type: integer
+              example: 1250
+            misses:
+              type: integer
+              example: 75
+            hitRate:
+              type: string
+              example: "94.3%"
+            isConnected:
+              type: boolean
+              example: true
+
+    PerformanceSummary:
+      type: object
+      properties:
+        overall:
+          type: object
+          properties:
+            status:
+              type: string
+              enum: [healthy, warning, critical]
+              example: healthy
+            score:
+              type: integer
+              minimum: 0
+              maximum: 100
+              example: 92
+        requests:
+          type: object
+          properties:
+            total:
+              type: integer
+              example: 5000
+            successRate:
+              type: integer
+              example: 98
+            averageResponseTime:
+              type: string
+              example: "245ms"
+            slowRequests:
+              type: integer
+              example: 12
+        database:
+          type: object
+          properties:
+            totalQueries:
+              type: integer
+              example: 15000
+            averageQueryTime:
+              type: string
+              example: "45ms"
+            slowQueries:
+              type: integer
+              example: 8
+            errorRate:
+              type: integer
+              example: 1
+        cache:
+          type: object
+          properties:
+            hitRate:
+              type: string
+              example: "87.5%"
+            totalOperations:
+              type: integer
+              example: 25000
+        memory:
+          type: object
+          properties:
+            usage:
+              type: string
+              example: "256MB / 512MB"
+            percentage:
+              type: string
+              example: "50%"
+
+    Campaign:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        name:
+          type: string
+          example: "New Lead Nurture Campaign"
+        description:
+          type: string
+          example: "Automated nurturing for new leads"
+        campaign_type:
+          type: string
+          enum: [nurture, re_engagement, welcome, birthday, anniversary, holiday, custom]
+          example: nurture
+        is_active:
+          type: boolean
+          example: true
+        priority:
+          type: integer
+          minimum: 1
+          maximum: 10
+          example: 1
+        target_audience:
+          type: string
+          enum: [all, prospects, leads, active_customers, inactive_customers, vip_customers]
+          example: leads
+        start_date:
+          type: string
+          format: date-time
+          nullable: true
+        end_date:
+          type: string
+          format: date-time
+          nullable: true
+        timezone:
+          type: string
+          example: "America/New_York"
+        total_sent:
+          type: integer
+          example: 1250
+        total_opened:
+          type: integer
+          example: 875
+        total_clicked:
+          type: integer
+          example: 262
+        total_converted:
+          type: integer
+          example: 88
+        total_unsubscribed:
+          type: integer
+          example: 5
+        tags:
+          type: array
+          items:
+            type: string
+          example: ["nurture", "automated", "leads"]
+        metadata:
+          type: object
+          additionalProperties: true
+          example: {"department": "sales", "region": "southeast"}
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        created_by:
+          type: string
+          example: "admin@company.com"
+        updated_by:
+          type: string
+          example: "manager@company.com"
+
+    CreateCampaignRequest:
+      type: object
+      required:
+        - name
+        - campaign_type
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: "Welcome Campaign"
+        description:
+          type: string
+          maxLength: 1000
+          example: "Welcome new customers to our dealership"
+        campaign_type:
+          type: string
+          enum: [nurture, re_engagement, welcome, birthday, anniversary, holiday, custom]
+          example: welcome
+        is_active:
+          type: boolean
+          default: true
+        priority:
+          type: integer
+          minimum: 1
+          maximum: 10
+          default: 1
+        target_audience:
+          type: string
+          enum: [all, prospects, leads, active_customers, inactive_customers, vip_customers]
+          default: all
+        start_date:
+          type: string
+          format: date-time
+          nullable: true
+        end_date:
+          type: string
+          format: date-time
+          nullable: true
+        timezone:
+          type: string
+          default: "America/New_York"
+        tags:
+          type: array
+          items:
+            type: string
+          example: ["welcome", "new-customers"]
+        metadata:
+          type: object
+          additionalProperties: true
+
+    UpdateCampaignRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+          maxLength: 1000
+        campaign_type:
+          type: string
+          enum: [nurture, re_engagement, welcome, birthday, anniversary, holiday, custom]
+        is_active:
+          type: boolean
+        priority:
+          type: integer
+          minimum: 1
+          maximum: 10
+        target_audience:
+          type: string
+          enum: [all, prospects, leads, active_customers, inactive_customers, vip_customers]
+        start_date:
+          type: string
+          format: date-time
+          nullable: true
+        end_date:
+          type: string
+          format: date-time
+          nullable: true
+        timezone:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        metadata:
+          type: object
+          additionalProperties: true
+
+    CampaignResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/Campaign'
+
+    CampaignListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Campaign'
+        pagination:
+          type: object
+          properties:
+            total:
+              type: integer
+              example: 45
+            limit:
+              type: integer
+              example: 20
+            offset:
+              type: integer
+              example: 0
+            hasMore:
+              type: boolean
+              example: true
+
+    CampaignStatsResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            total_campaigns:
+              type: integer
+              example: 12
+            active_campaigns:
+              type: integer
+              example: 8
+            total_sent:
+              type: integer
+              example: 15000
+            total_opened:
+              type: integer
+              example: 10500
+            total_clicked:
+              type: integer
+              example: 3150
+            total_converted:
+              type: integer
+              example: 945
+            average_open_rate:
+              type: number
+              format: float
+              example: 70.0
+            average_click_rate:
+              type: number
+              format: float
+              example: 21.0
+            average_conversion_rate:
+              type: number
+              format: float
+              example: 6.3
+
+    CampaignPerformanceResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            campaign_id:
+              type: string
+              format: uuid
+            campaign_name:
+              type: string
+            total_sent:
+              type: integer
+            total_opened:
+              type: integer
+            total_clicked:
+              type: integer
+            total_converted:
+              type: integer
+            open_rate:
+              type: number
+              format: float
+              example: 72.5
+            click_rate:
+              type: number
+              format: float
+              example: 18.3
+            conversion_rate:
+              type: number
+              format: float
+              example: 5.2
+            unsubscribe_rate:
+              type: number
+              format: float
+              example: 0.4
+            performance_trend:
+              type: string
+              enum: [improving, stable, declining]
+              example: improving
+
+    Rule:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: "Welcome Email Rule"
+        description:
+          type: string
+          example: "Send welcome email 1 hour after lead creation"
+        trigger_event:
+          type: string
+          example: "lead_created"
+        conditions:
+          type: object
+          additionalProperties: true
+          example: {"lead_source": "website"}
+        customer_conditions:
+          type: object
+          additionalProperties: true
+        lead_conditions:
+          type: object
+          additionalProperties: true
+        interaction_conditions:
+          type: object
+          additionalProperties: true
+        actions:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+                example: "schedule_followup"
+              email:
+                type: boolean
+                example: true
+              email_template:
+                type: string
+                example: "welcome_new_lead"
+              delay:
+                type: string
+                example: "1 hour"
+              priority:
+                type: integer
+                example: 1
+        campaign_id:
+          type: string
+          format: uuid
+          nullable: true
+        campaign_name:
+          type: string
+          nullable: true
+        priority:
+          type: integer
+          example: 10
+        delay_hours:
+          type: integer
+          example: 1
+        is_active:
+          type: boolean
+          example: true
+        start_date:
+          type: string
+          format: date-time
+          nullable: true
+        end_date:
+          type: string
+          format: date-time
+          nullable: true
+        days_of_week:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+            maximum: 6
+          example: [1, 2, 3, 4, 5]  # Monday to Friday
+        time_range_start:
+          type: string
+          format: time
+          nullable: true
+          example: "09:00:00"
+        time_range_end:
+          type: string
+          format: time
+          nullable: true
+          example: "17:00:00"
+        business_hours_only:
+          type: boolean
+          default: false
+        trigger_count:
+          type: integer
+          example: 150
+        success_count:
+          type: integer
+          example: 142
+        failure_count:
+          type: integer
+          example: 8
+        tags:
+          type: array
+          items:
+            type: string
+        metadata:
+          type: object
+          additionalProperties: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        created_by:
+          type: string
+        updated_by:
+          type: string
+
+    CreateRuleRequest:
+      type: object
+      required:
+        - name
+        - trigger_event
+        - actions
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+          maxLength: 1000
+        trigger_event:
+          type: string
+          minLength: 1
+        conditions:
+          type: object
+          additionalProperties: true
+        customer_conditions:
+          type: object
+          additionalProperties: true
+        lead_conditions:
+          type: object
+          additionalProperties: true
+        interaction_conditions:
+          type: object
+          additionalProperties: true
+        actions:
+          type: array
+          items:
+            type: object
+            required:
+              - type
+            properties:
+              type:
+                type: string
+              email:
+                type: boolean
+              sms:
+                type: boolean
+              email_template:
+                type: string
+              sms_template:
+                type: string
+              delay:
+                type: string
+              priority:
+                type: integer
+        campaign_id:
+          type: string
+          format: uuid
+          nullable: true
+        priority:
+          type: integer
+          minimum: 1
+          maximum: 10
+          default: 1
+        delay_hours:
+          type: integer
+          default: 0
+        is_active:
+          type: boolean
+          default: true
+        start_date:
+          type: string
+          format: date-time
+          nullable: true
+        end_date:
+          type: string
+          format: date-time
+          nullable: true
+        days_of_week:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+            maximum: 6
+        time_range_start:
+          type: string
+          format: time
+          nullable: true
+        time_range_end:
+          type: string
+          format: time
+          nullable: true
+        business_hours_only:
+          type: boolean
+          default: false
+        tags:
+          type: array
+          items:
+            type: string
+        metadata:
+          type: object
+          additionalProperties: true
+
+    UpdateRuleRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+          maxLength: 1000
+        trigger_event:
+          type: string
+          minLength: 1
+        conditions:
+          type: object
+          additionalProperties: true
+        customer_conditions:
+          type: object
+          additionalProperties: true
+        lead_conditions:
+          type: object
+          additionalProperties: true
+        interaction_conditions:
+          type: object
+          additionalProperties: true
+        actions:
+          type: array
+          items:
+            type: object
+        campaign_id:
+          type: string
+          format: uuid
+          nullable: true
+        priority:
+          type: integer
+          minimum: 1
+          maximum: 10
+        delay_hours:
+          type: integer
+        is_active:
+          type: boolean
+        start_date:
+          type: string
+          format: date-time
+          nullable: true
+        end_date:
+          type: string
+          format: date-time
+          nullable: true
+        days_of_week:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+            maximum: 6
+        time_range_start:
+          type: string
+          format: time
+          nullable: true
+        time_range_end:
+          type: string
+          format: time
+          nullable: true
+        business_hours_only:
+          type: boolean
+        tags:
+          type: array
+          items:
+            type: string
+        metadata:
+          type: object
+          additionalProperties: true
+
+    RuleResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/Rule'
+
+    RuleListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Rule'
+        pagination:
+          type: object
+          properties:
+            total:
+              type: integer
+            limit:
+              type: integer
+            offset:
+              type: integer
+            hasMore:
+              type: boolean
+
+    AnalyticsDashboardResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            total_events:
+              type: integer
+              example: 50000
+            event_breakdown:
+              type: object
+              properties:
+                sent:
+                  type: integer
+                  example: 15000
+                delivered:
+                  type: integer
+                  example: 14850
+                opened:
+                  type: integer
+                  example: 10500
+                clicked:
+                  type: integer
+                  example: 3150
+                bounced:
+                  type: integer
+                  example: 150
+                complained:
+                  type: integer
+                  example: 15
+                unsubscribed:
+                  type: integer
+                  example: 75
+            recent_activity:
+              type: array
+              items:
+                type: object
+                properties:
+                  date:
+                    type: string
+                    format: date
+                  events:
+                    type: integer
+            top_campaigns:
+              type: array
+              items:
+                type: object
+                properties:
+                  campaign_id:
+                    type: string
+                    format: uuid
+                  campaign_name:
+                    type: string
+                  events:
+                    type: integer
+                  open_rate:
+                    type: number
+                    format: float
+            performance_trends:
+              type: object
+              properties:
+                opens:
+                  type: string
+                  enum: [up, down, stable]
+                clicks:
+                  type: string
+                  enum: [up, down, stable]
+                conversions:
+                  type: string
+                  enum: [up, down, stable]
+
+    TrackEventRequest:
+      type: object
+      required:
+        - followup_id
+        - customer_id
+        - event_type
+      properties:
+        followup_id:
+          type: string
+          format: uuid
+        customer_id:
+          type: string
+          format: uuid
+        campaign_id:
+          type: string
+          format: uuid
+          nullable: true
+        event_type:
+          type: string
+          enum: [sent, delivered, opened, clicked, bounced, complained, unsubscribed]
+        event_timestamp:
+          type: string
+          format: date-time
+          nullable: true
+        email_opened:
+          type: boolean
+          default: false
+        link_clicked:
+          type: string
+          maxLength: 500
+          nullable: true
+        user_agent:
+          type: string
+          nullable: true
+        ip_address:
+          type: string
+          format: ipv4
+          nullable: true
+        location_data:
+          type: object
+          additionalProperties: true
+          nullable: true
+        campaign_name:
+          type: string
+          nullable: true
+        template_name:
+          type: string
+          nullable: true
+        metadata:
+          type: object
+          additionalProperties: true
+
+    TrackEventResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            event_id:
+              type: string
+              format: uuid
+            message:
+              type: string
+              example: "Event tracked successfully"
+
+    CampaignAnalyticsResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            campaign_id:
+              type: string
+              format: uuid
+            campaign_name:
+              type: string
+            period:
+              type: object
+              properties:
+                start_date:
+                  type: string
+                  format: date
+                end_date:
+                  type: string
+                  format: date
+            metrics:
+              type: object
+              properties:
+                total_sent:
+                  type: integer
+                total_opened:
+                  type: integer
+                total_clicked:
+                  type: integer
+                total_converted:
+                  type: integer
+                open_rate:
+                  type: number
+                  format: float
+                click_rate:
+                  type: number
+                  format: float
+                conversion_rate:
+                  type: number
+                  format: float
+                bounce_rate:
+                  type: number
+                  format: float
+                unsubscribe_rate:
+                  type: number
+                  format: float
+            daily_breakdown:
+              type: array
+              items:
+                type: object
+                properties:
+                  date:
+                    type: string
+                    format: date
+                  sent:
+                    type: integer
+                  opened:
+                    type: integer
+                  clicked:
+                    type: integer
+                  converted:
+                    type: integer
+
+    DeleteResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Resource deleted successfully"
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          example: "validation_error"
+        message:
+          type: string
+          example: "Request validation failed"
+        details:
+          type: string
+          nullable: true
+          example: "Field 'name' is required"
+
+  responses:
+    BadRequest:
+      description: Bad request - validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Unauthorized:
+      description: Unauthorized - authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Forbidden:
+      description: Forbidden - insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    TooManyRequests:
+      description: Rate limit exceeded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+tags:
+  - name: Health
+    description: System health check endpoints
+  - name: Campaigns
+    description: Campaign management endpoints
+  - name: Rules
+    description: Follow-up rule management endpoints
+  - name: Analytics
+    description: Analytics and tracking endpoints

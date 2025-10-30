@@ -2,16 +2,22 @@ const errorHandler = require('./utils/error-handler');
 const SearchService = require('./utils/search-service');
 const SearchIndexService = require('./utils/search-index-service');
 const DatabaseService = require('./utils/database-service');
+const { authenticateRequest } = require('./utils/auth-middleware');
 
 /**
  * Advanced Search API
  * Comprehensive search across all CRM entities with faceted filtering
  */
 exports.handler = async function(event, context) {
-  // Check authentication (simplified - in production use proper JWT validation)
-  const authHeader = event.headers.authorization || event.headers.Authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return errorHandler.unauthorizedError('Authentication required');
+  // Authenticate request with proper JWT validation
+  const auth = await authenticateRequest(event, {
+    requireAuth: true,
+    allowedRoles: ['admin', 'manager', 'sales_rep'],
+    requiredPermissions: ['search_read']
+  });
+
+  if (!auth.authenticated) {
+    return auth.error;
   }
 
   try {

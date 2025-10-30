@@ -177,7 +177,7 @@ class FollowupService {
   }
 
   /**
-   * Send email followup
+   * Send an email followup
    */
   static async sendEmailFollowup(followup) {
     try {
@@ -187,16 +187,53 @@ class FollowupService {
         throw new Error(`Email template ${followup.email_template} not found`);
       }
 
+      // Get customer data
+      const customer = await this.getCustomerData(followup.customer_id);
+      if (!customer) {
+        throw new Error(`Customer ${followup.customer_id} not found`);
+      }
+
+      // Check if customer has consented to email
+      if (!customer.email_consent) {
+        console.log('⚠️ Customer has not consented to email communications');
+        return false;
+      }
+
+      // Render template
+      const renderedContent = this.renderTemplate(template.content, customer);
+      const renderedSubject = this.renderTemplate(template.subject, customer);
+
+      // Add unsubscribe footer to email content
+      const unsubscribeContent = this.addUnsubscribeFooter(renderedContent, customer);
+
+      // Send email (placeholder - integrate with email service)
+      console.log('📧 Sending email to:', customer.email);
+      console.log('📧 Subject:', renderedSubject);
+      console.log('📧 Content length:', unsubscribeContent.length);
+
+      return true;
+    } catch (error) {
+      console.error('Error sending email followup:', error);
+      throw error;
+    }
+  }
+
       // Personalize content
       const personalizedContent = this.personalizeContent(template.content, followup);
       const personalizedSubject = this.personalizeContent(template.subject, followup);
+
+      // Add tracking pixel for open tracking
+      const contentWithTracking = this.addTrackingPixel(personalizedContent, followup);
+
+      // Add unsubscribe footer
+      const contentWithUnsubscribe = this.addUnsubscribeFooter(contentWithTracking, followup);
 
       // Send email using notification service
       const emailData = {
         type: 'followup_email',
         recipient: followup.email,
         subject: personalizedSubject,
-        content: personalizedContent,
+        content: contentWithUnsubscribe,
         metadata: {
           followup_id: followup.id,
           customer_id: followup.customer_id,
@@ -298,6 +335,52 @@ class FollowupService {
       .replace(/\{\{campaign_name\}\}/g, followup.campaign_name || '')
       .replace(/\{\{company_name\}\}/g, 'Caddy Ed Cadillac')
       .replace(/\{\{current_date\}\}/g, new Date().toLocaleDateString());
+  }
+
+  /**
+   * Add tracking pixel to email content for open tracking
+   */
+  static addTrackingPixel(content, followup) {
+    // Create tracking ID (followup_id:customer_id encoded in base64)
+    const trackingId = Buffer.from(`${followup.id}:${followup.customer_id}`).toString('base64');
+
+    const baseUrl = process.env.URL || 'https://caddyed.com';
+    const trackingPixelUrl = `${baseUrl}/api/followup-analytics/track/${trackingId}`;
+
+    // Add invisible tracking pixel at the end of the email
+    const trackingPixel = `<img src="${trackingPixelUrl}" width="1" height="1" style="display:none;" alt="" />`;
+
+    return content + trackingPixel;
+  }
+
+  /**
+   * Add unsubscribe footer to email content
+   */
+  static addUnsubscribeFooter(content, followup) {
+    // Create unsubscribe token (customer_id:email encoded in base64)
+    const token = Buffer.from(`${followup.customer_id}:${followup.email}`).toString('base64');
+
+    const baseUrl = process.env.URL || 'https://caddyed.com';
+    const unsubscribeUrl = `${baseUrl}/api/communication-preferences/unsubscribe/${token}?type=email`;
+
+    const footer = `
+
+---
+This email was sent to ${followup.email} because you have expressed interest in Cadillac vehicles.
+
+Don't want to receive these emails?
+Unsubscribe from email communications: ${unsubscribeUrl}
+
+Manage all your communication preferences: ${baseUrl}/communication-preferences
+
+Cadillac of South Charlotte
+704-555-0123
+www.cadillacofsouthcharlotte.com
+
+Confidentiality Notice: This email contains confidential information intended only for the use of the individual or entity named above.
+`;
+
+    return content + footer;
   }
 
   /**

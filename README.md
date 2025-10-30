@@ -1,244 +1,290 @@
-# Cadillac Dealership Customer Management & Inventory System
+[bep]: https://github.com/bep
+[bugs]: https://github.com/gohugoio/hugo/issues?q=is%3Aopen+is%3Aissue+label%3ABug
+[contributing]: CONTRIBUTING.md
+[create a proposal]: https://github.com/gohugoio/hugo/issues/new?labels=Proposal%2C+NeedsTriage&template=feature_request.md
+[documentation repository]: https://github.com/gohugoio/hugoDocs
+[documentation]: https://gohugo.io/documentation
+[dragonfly bsd, freebsd, netbsd, and openbsd]: https://gohugo.io/installation/bsd
+[forum]: https://discourse.gohugo.io
+[friends]: https://github.com/gohugoio/hugo/graphs/contributors
+[go]: https://go.dev/
+[hugo modules]: https://gohugo.io/hugo-modules/
+[installation]: https://gohugo.io/installation
+[issue queue]: https://github.com/gohugoio/hugo/issues
+[linux]: https://gohugo.io/installation/linux
+[macos]: https://gohugo.io/installation/macos
+[prebuilt binary]: https://github.com/gohugoio/hugo/releases/latest
+[requesting help]: https://discourse.gohugo.io/t/requesting-help/9132
+[spf13]: https://github.com/spf13
+[static site generator]: https://en.wikipedia.org/wiki/Static_site_generator
+[support]: https://discourse.gohugo.io
+[themes]: https://themes.gohugo.io/
+[twitter]: https://twitter.com/gohugoio
+[website]: https://gohugo.io
+[windows]: https://gohugo.io/installation/windows
 
-A modern, scalable web application for Cadillac dealerships featuring comprehensive customer relationship management, inventory integration, and sales team automation. Built with Hugo, Netlify Functions, and a hybrid database architecture.
+<a href="https://gohugo.io/"><img src="https://raw.githubusercontent.com/gohugoio/gohugoioTheme/master/static/images/hugo-logo-wide.svg?sanitize=true" alt="Hugo" width="565"></a>
 
-## 🏗️ Architecture Overview
+A fast and flexible static site generator built with love by [bep], [spf13], and [friends] in [Go].
 
-This system implements a **hybrid architecture** optimized for performance and scalability:
+---
 
-### Core Components
-- **Frontend**: Hugo static site generator with modern JavaScript
-- **Backend**: Netlify Functions (serverless) with Node.js
-- **Database**: Hybrid PostgreSQL (Supabase) + SQLite (Turso) architecture
-- **Edge**: Global CDN with intelligent caching and routing
+[![GoDoc](https://godoc.org/github.com/gohugoio/hugo?status.svg)](https://godoc.org/github.com/gohugoio/hugo)
+[![Tests on Linux, MacOS and Windows](https://github.com/gohugoio/hugo/workflows/Test/badge.svg)](https://github.com/gohugoio/hugo/actions?query=workflow%3ATest)
+[![Go Report Card](https://goreportcard.com/badge/github.com/gohugoio/hugo)](https://goreportcard.com/report/github.com/gohugoio/hugo)
 
-### Key Features
-- ✅ **Complete CRM System**: Lead capture, customer management, sales tracking
-- ✅ **Inventory Integration**: Real-time sync with Cadillac dealership APIs
-- ✅ **Sales Team Portal**: Authentication, dashboards, appointment scheduling
-- ✅ **Lead Deduplication**: AI-powered duplicate detection and merging
-- ✅ **Performance Optimized**: Edge caching, lazy loading, critical CSS
-- ✅ **GDPR Compliant**: Data protection and privacy controls
-- ✅ **Mobile Responsive**: Optimized for all devices
+[Website] | [Installation] | [Documentation] | [Support] | [Contributing] | [Twitter]
 
-### Technology Stack
-- **Frontend**: Hugo, JavaScript ES6+, CSS Grid/Flexbox, Webpack
-- **Backend**: Netlify Functions, Node.js, JWT Authentication
-- **Database**: Supabase (PostgreSQL) + Turso (SQLite edge database)
-- **Deployment**: Netlify CDN, automated CI/CD
-- **External**: CRM integrations, email services, analytics
+## Overview
 
-For detailed architecture information, see [Architecture Overview](docs/architecture-overview.md).
+Hugo is a [static site generator] written in [Go], optimized for speed and designed for flexibility. With its advanced templating system and fast asset pipelines, Hugo renders a complete site in seconds, often less.
 
-## Environment Setup
+Due to its flexible framework, multilingual support, and powerful taxonomy system, Hugo is widely used to create:
 
-Before running the application, you need to configure your environment variables:
+- Corporate, government, nonprofit, education, news, event, and project sites
+- Documentation sites
+- Image portfolios
+- Landing pages
+- Business, professional, and personal blogs
+- Resumes and CVs
 
-### Quick Setup (Recommended)
+Use Hugo's embedded web server during development to instantly see changes to content, structure, behavior, and presentation. Then deploy the site to your host, or push changes to your Git provider for automated builds and deployment.
 
-```bash
-# Run the interactive setup script
-npm run setup
+Hugo's fast asset pipelines include:
+
+- CSS bundling &ndash; transpilation (Sass), tree shaking, minification, source maps, SRI hashing, and PostCSS integration
+- JavaScript bundling &ndash; transpilation (TypeScript, JSX), tree shaking, minification, source maps, and SRI hashing
+- Image processing &ndash; convert, resize, crop, rotate,  adjust colors, apply filters, overlay text and images, and extract EXIF data
+
+And with [Hugo Modules], you can share content, assets, data, translations, themes, templates, and configuration with other projects via public or private Git repositories.
+
+## Sponsors
+
+<p>&nbsp;</p>
+<p float="left">
+  <a href="https://www.linode.com/?utm_campaign=hugosponsor&utm_medium=banner&utm_source=hugogithub" target="_blank"><img src="https://raw.githubusercontent.com/gohugoio/gohugoioTheme/master/assets/images/sponsors/linode-logo_standard_light_medium.png" width="200" alt="Linode"></a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <a href="https://cloudcannon.com/hugo-cms/?utm_campaign=HugoSponsorship&utm_source=sponsor&utm_content=gohugo" target="_blank"><img src="https://raw.githubusercontent.com/gohugoio/gohugoioTheme/master/assets/images/sponsors/cloudcannon-blue.svg" width="220" alt="CloudCannon"></a>
+<p>&nbsp;</p>
+
+## Installation
+
+Install Hugo from a [prebuilt binary], package manager, or package repository. Please see the installation instructions for your operating system:
+
+- [macOS]
+- [Linux]
+- [Windows]
+- [DragonFly BSD, FreeBSD, NetBSD, and OpenBSD]
+
+## Build from source
+
+Hugo is available in two editions: standard and extended. With the extended edition you can:
+
+- Encode to the WebP format when processing images. You can decode WebP images with either edition.
+- Transpile Sass to CSS using the embedded LibSass transpiler. The extended edition is not required to use the Dart Sass transpiler.
+
+Prerequisites to build Hugo from source:
+
+- Standard edition: Go 1.19 or later
+- Extended edition: Go 1.19 or later, and GCC
+
+Build the standard edition:
+
+```text
+go install github.com/gohugoio/hugo@latest
 ```
 
-This will guide you through configuring:
-- Supabase database credentials
-- Turso database (optional, for hybrid architecture)
-- Email settings (optional)
-- AI API keys (optional, for Task Master)
+Build the extended edition:
 
-### Manual Setup
-
-1. Copy the example environment file:
-```bash
-cp .env.example .env
+```text
+CGO_ENABLED=1 go install -tags extended github.com/gohugoio/hugo@latest
 ```
 
-2. Edit `.env` with your actual credentials:
-```bash
-# Required: Supabase credentials
-SUPABASE_URL=your-supabase-project-url
-SUPABASE_ANON_KEY=your-supabase-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
-SUPABASE_DB_URL=postgresql://<user>:<password>@db.<project>.supabase.co:6543/postgres
+## Documentation
 
-# Required: JWT secret for authentication
-JWT_SECRET=your-secure-jwt-secret
+Hugo's [documentation] includes installation instructions, a quick start guide, conceptual explanations, reference information, and examples.
 
-# Optional: Turso for hybrid database architecture
-TURSO_DATABASE_URL=your-turso-database-url
-TURSO_AUTH_TOKEN=your-turso-auth-token
+Please submit documentation issues and pull requests to the [documentation repository].
 
-# Optional: Email notifications
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=your-email@gmail.com
-SMTP_PASS=your-app-password
+## Support
+
+Please **do not use the issue queue** for questions or troubleshooting. Unless you are certain that your issue is a software defect, use the [forum].
+
+Hugo’s [forum] is an active community of users and developers who answer questions, share knowledge, and provide examples. A quick search of over 20,000 topics will often answer your question. Please be sure to read about [requesting help] before asking your first question.
+
+## Contributing
+
+You can contribute to the Hugo project by:
+
+- Answering questions on the [forum]
+- Improving the [documentation]
+- Monitoring the [issue queue]
+- Creating or improving [themes]
+- Squashing [bugs]
+
+Please submit documentation issues and pull requests to the [documentation repository].
+
+If you have an idea for an enhancement or new feature, create a new topic on the [forum] in the "Feature" category. This will help you to:
+
+- Determine if the capability already exists
+- Measure interest
+- Refine the concept
+
+If there is sufficient interest, [create a proposal]. Do not submit a pull request until the project lead accepts the proposal.
+
+For a complete guide to contributing to Hugo, see the [Contribution Guide](CONTRIBUTING.md).
+
+## Dependencies
+
+Hugo stands on the shoulders of great open source libraries. Run `hugo env --logLevel info` to display a list of dependencies.
+
+<details>
+<summary>See current dependencies</summary>
+
+```text
+cloud.google.com/go/compute/metadata="v0.2.3"
+cloud.google.com/go/iam="v1.1.0"
+cloud.google.com/go/storage="v1.30.1"
+cloud.google.com/go="v0.110.2"
+github.com/Azure/azure-sdk-for-go/sdk/azcore="v1.6.1"
+github.com/Azure/azure-sdk-for-go/sdk/azidentity="v1.3.0"
+github.com/Azure/azure-sdk-for-go/sdk/internal="v1.3.0"
+github.com/Azure/azure-sdk-for-go/sdk/storage/azblob="v1.0.0"
+github.com/Azure/go-autorest/autorest/to="v0.4.0"
+github.com/AzureAD/microsoft-authentication-library-for-go="v1.0.0"
+github.com/BurntSushi/locker="v0.0.0-20171006230638-a6e239ea1c69"
+github.com/PuerkitoBio/purell="v1.1.1"
+github.com/PuerkitoBio/urlesc="v0.0.0-20170810143723-de5bf2ad4578"
+github.com/alecthomas/chroma/v2="v2.7.0"
+github.com/armon/go-radix="v1.0.0"
+github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream="v1.4.10"
+github.com/aws/aws-sdk-go-v2/config="v1.18.27"
+github.com/aws/aws-sdk-go-v2/credentials="v1.13.26"
+github.com/aws/aws-sdk-go-v2/feature/ec2/imds="v1.13.4"
+github.com/aws/aws-sdk-go-v2/feature/s3/manager="v1.11.70"
+github.com/aws/aws-sdk-go-v2/internal/configsources="v1.1.34"
+github.com/aws/aws-sdk-go-v2/internal/endpoints/v2="v2.4.28"
+github.com/aws/aws-sdk-go-v2/internal/ini="v1.3.35"
+github.com/aws/aws-sdk-go-v2/internal/v4a="v1.0.26"
+github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding="v1.9.11"
+github.com/aws/aws-sdk-go-v2/service/internal/checksum="v1.1.29"
+github.com/aws/aws-sdk-go-v2/service/internal/presigned-url="v1.9.28"
+github.com/aws/aws-sdk-go-v2/service/internal/s3shared="v1.14.3"
+github.com/aws/aws-sdk-go-v2/service/s3="v1.35.0"
+github.com/aws/aws-sdk-go-v2/service/sso="v1.12.12"
+github.com/aws/aws-sdk-go-v2/service/ssooidc="v1.14.12"
+github.com/aws/aws-sdk-go-v2/service/sts="v1.19.2"
+github.com/aws/aws-sdk-go-v2="v1.18.1"
+github.com/aws/aws-sdk-go="v1.44.284"
+github.com/aws/smithy-go="v1.13.5"
+github.com/bep/clocks="v0.5.0"
+github.com/bep/debounce="v1.2.0"
+github.com/bep/gitmap="v1.1.2"
+github.com/bep/goat="v0.5.0"
+github.com/bep/godartsass/v2="v2.0.0"
+github.com/bep/godartsass="v1.2.0"
+github.com/bep/golibsass="v1.1.1"
+github.com/bep/gowebp="v0.2.0"
+github.com/bep/lazycache="v0.2.0"
+github.com/bep/logg="v0.2.0"
+github.com/bep/mclib="v1.20400.20402"
+github.com/bep/overlayfs="v0.6.0"
+github.com/bep/simplecobra="v0.3.2"
+github.com/bep/tmc="v0.5.1"
+github.com/clbanning/mxj/v2="v2.5.7"
+github.com/cli/safeexec="v1.0.1"
+github.com/cpuguy83/go-md2man/v2="v2.0.2"
+github.com/disintegration/gift="v1.2.1"
+github.com/dlclark/regexp2="v1.10.0"
+github.com/dustin/go-humanize="v1.0.1"
+github.com/evanw/esbuild="v0.18.5"
+github.com/fatih/color="v1.15.0"
+github.com/frankban/quicktest="v1.14.5"
+github.com/fsnotify/fsnotify="v1.6.0"
+github.com/getkin/kin-openapi="v0.118.0"
+github.com/ghodss/yaml="v1.0.0"
+github.com/go-openapi/jsonpointer="v0.19.6"
+github.com/go-openapi/swag="v0.22.3"
+github.com/gobuffalo/flect="v1.0.2"
+github.com/gobwas/glob="v0.2.3"
+github.com/gohugoio/go-i18n/v2="v2.1.3-0.20210430103248-4c28c89f8013"
+github.com/gohugoio/locales="v0.14.0"
+github.com/gohugoio/localescompressed="v1.0.1"
+github.com/golang-jwt/jwt/v4="v4.5.0"
+github.com/golang/groupcache="v0.0.0-20210331224755-41bb18bfe9da"
+github.com/golang/protobuf="v1.5.3"
+github.com/google/go-cmp="v0.5.9"
+github.com/google/s2a-go="v0.1.4"
+github.com/google/uuid="v1.3.0"
+github.com/google/wire="v0.5.0"
+github.com/googleapis/enterprise-certificate-proxy="v0.2.5"
+github.com/googleapis/gax-go/v2="v2.11.0"
+github.com/gorilla/websocket="v1.5.0"
+github.com/hairyhenderson/go-codeowners="v0.3.0"
+github.com/hashicorp/golang-lru/v2="v2.0.1"
+github.com/invopop/yaml="v0.1.0"
+github.com/jdkato/prose="v1.2.1"
+github.com/jmespath/go-jmespath="v0.4.0"
+github.com/josharian/intern="v1.0.0"
+github.com/kr/pretty="v0.3.1"
+github.com/kr/text="v0.2.0"
+github.com/kylelemons/godebug="v1.1.0"
+github.com/kyokomi/emoji/v2="v2.2.12"
+github.com/mailru/easyjson="v0.7.7"
+github.com/marekm4/color-extractor="v1.2.0"
+github.com/mattn/go-colorable="v0.1.13"
+github.com/mattn/go-isatty="v0.0.19"
+github.com/mattn/go-runewidth="v0.0.9"
+github.com/mitchellh/hashstructure="v1.1.0"
+github.com/mitchellh/mapstructure="v1.5.0"
+github.com/mohae/deepcopy="v0.0.0-20170929034955-c48cc78d4826"
+github.com/muesli/smartcrop="v0.3.0"
+github.com/niklasfasching/go-org="v1.7.0"
+github.com/olekukonko/tablewriter="v0.0.5"
+github.com/pelletier/go-toml/v2="v2.0.8"
+github.com/perimeterx/marshmallow="v1.1.4"
+github.com/pkg/browser="v0.0.0-20210911075715-681adbf594b8"
+github.com/pkg/errors="v0.9.1"
+github.com/rogpeppe/go-internal="v1.10.1-0.20230508101108-a4f6fabd84c5"
+github.com/russross/blackfriday/v2="v2.1.0"
+github.com/rwcarlsen/goexif="v0.0.0-20190401172101-9e8deecbddbd"
+github.com/sanity-io/litter="v1.5.5"
+github.com/sass/dart-sass/compiler="1.63.6"
+github.com/sass/dart-sass/implementation="1.63.6"
+github.com/sass/dart-sass/protocol="2.1.0"
+github.com/sass/libsass="3.6.5"
+github.com/spf13/afero="v1.9.5"
+github.com/spf13/cast="v1.5.1"
+github.com/spf13/cobra="v1.7.0"
+github.com/spf13/fsync="v0.9.0"
+github.com/spf13/pflag="v1.0.5"
+github.com/tdewolff/minify/v2="v2.12.7"
+github.com/tdewolff/parse/v2="v2.6.6"
+github.com/webmproject/libwebp="v1.2.4"
+github.com/yuin/goldmark="v1.5.4"
+go.opencensus.io="v0.24.0"
+go.uber.org/atomic="v1.11.0"
+go.uber.org/automaxprocs="v1.5.2"
+gocloud.dev="v0.30.0"
+golang.org/x/crypto="v0.10.0"
+golang.org/x/exp="v0.0.0-20230321023759-10a507213a29"
+golang.org/x/image="v0.8.0"
+golang.org/x/mod="v0.10.0"
+golang.org/x/net="v0.11.0"
+golang.org/x/oauth2="v0.9.0"
+golang.org/x/sync="v0.3.0"
+golang.org/x/sys="v0.9.0"
+golang.org/x/text="v0.10.0"
+golang.org/x/tools="v0.9.3"
+golang.org/x/xerrors="v0.0.0-20220907171357-04be3eba64a2"
+google.golang.org/api="v0.128.0"
+google.golang.org/appengine="v1.6.7"
+google.golang.org/genproto/googleapis/api="v0.0.0-20230530153820-e85fd2cbaebc"
+google.golang.org/genproto/googleapis/rpc="v0.0.0-20230530153820-e85fd2cbaebc"
+google.golang.org/genproto="v0.0.0-20230530153820-e85fd2cbaebc"
+google.golang.org/grpc="v1.56.0"
+google.golang.org/protobuf="v1.30.0"
+gopkg.in/yaml.v2="v2.4.0"
+gopkg.in/yaml.v3="v3.0.1"
+software.sslmate.com/src/go-pkcs12="v0.2.0"
 ```
-
-3. Run database migrations:
-```bash
-npm run migrate
-```
-
-## 🚀 Quick Start
-
-### Option 1: One-Click Deploy
-[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/cadillac-dealership/crm-system)
-
-### Option 2: Local Development
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/cadillac-dealership/crm-system.git
-   cd crm-system
-   ```
-
-2. **Set up environment variables**
-   ```bash
-   # Interactive setup (recommended)
-   npm run setup
-
-   # Or manually configure .env file
-   cp .env.example .env
-   # Edit .env with your API keys and database credentials
-   ```
-
-3. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-4. **Set up database**
-   ```bash
-   # Run database migrations
-   npm run migrate
-
-   # Optional: Set up Turso for hybrid architecture
-   npm run setup:turso
-   npm run migrate:turso
-   ```
-
-5. **Start development server**
-   ```bash
-   npm run dev
-   ```
-
-6. **Open your browser**
-   - Website: http://localhost:1313
-   - Admin dashboard will be available after authentication setup
-
-## 📚 Documentation
-
-- **[Architecture Overview](docs/architecture-overview.md)** - System design and components
-- **[API Reference](docs/api-reference.md)** - Complete API documentation
-- **[Database Schema](database/migrations/001_create_comprehensive_schema.sql)** - Database structure
-- **[Deployment Guide](docs/deployment.md)** - Production deployment instructions 
-
-[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/netlify-templates/one-click-hugo-cms&stack=cms)
-
-This will setup everything needed for running the CMS:
-
-* A new repository in your GitHub account with the code
-* Full Continuous Deployment to Netlify's global CDN network
-* Control users and access with Netlify Identity
-* Manage content with Netlify CMS
-
-Once the initial build finishes, you can invite yourself as a user. Go to the Identity tab in your new site, click "Invite" and send yourself an invite.
-
-Now you're all set, and you can start editing content!
-
-## Local Development
-
-Clone this repository, and run `yarn` or `npm install` from the new folder to install all required dependencies.
-
-Then start the development server with `yarn start` or `npm start`.
-
-## Layouts
-
-The template is based on small, content-agnostic partials that can be mixed and matched. The pre-built pages showcase just a few of the possible combinations. Refer to the `site/layouts/partials` folder for all available partials.
-
-Use Hugo’s `dict` functionality to feed content into partials and avoid repeating yourself and creating discrepancies.
-
-## CSS
-
-The template uses a custom fork of Tachyons and PostCSS with cssnext and cssnano. To customize the template for your brand, refer to `src/css/imports/_variables.css` where most of the important global variables like colors and spacing are stored.
-
-## SVG
-
-All SVG icons stored in `site/static/img/icons` are automatically optimized with SVGO (gulp-svgmin) and concatenated into a single SVG sprite stored as a a partial called `svg.html`. Make sure you use consistent icons in terms of viewport and art direction for optimal results. Refer to an SVG via the `<use>` tag like so:
-
-```
-<svg width="16px" height="16px" class="db">
-  <use xlink:href="#SVG-ID"></use>
-</svg>
-```
-
-<!-- TASKMASTER_EXPORT_START -->
-> 🎯 **Taskmaster Export** - 2025-10-05 02:28:21 UTC
-> 📋 Export: without subtasks • Status filter: none
-> 🔗 Powered by [Task Master](https://task-master.dev?utm_source=github-readme&utm_medium=readme-export&utm_campaign=caddy-ed-cadillac-hugo&utm_content=task-export-link)
-
-| Project Dashboard |  |
-| :-                |:-|
-| Task Progress     | ████░░░░░░░░░░░░░░░░ 19% |
-| Done | 8 |
-| In Progress | 0 |
-| Pending | 33 |
-| Deferred | 0 |
-| Cancelled | 0 |
-|-|-|
-| Subtask Progress | ░░░░░░░░░░░░░░░░░░░░ 0% |
-| Completed | 0 |
-| In Progress | 0 |
-| Pending | 0 |
-
-
-| ID | Title | Status | Priority | Dependencies | Complexity |
-| :- | :-    | :-     | :-       | :-           | :-         |
-| fix-error-handler-validation-methods | Fix critical error handler methods (validationError, createSuccessResponse) | ✓&nbsp;done | critical | None | N/A |
-| implement-sales-auth-check-api | Create missing /api/sales/auth-check endpoint | ✓&nbsp;done | critical | None | N/A |
-| implement-sales-customers-api | Create missing /api/sales/customers endpoint | ✓&nbsp;done | critical | None | N/A |
-| implement-leads-api-endpoint | Create /api/leads endpoint for form submissions | ✓&nbsp;done | critical | None | N/A |
-| fix-webpack-html-plugin-import | Add missing HtmlWebpackPlugin import | ✓&nbsp;done | critical | None | N/A |
-| implement-crm-integration-real | Implement proper CRM integration | ✓&nbsp;done | high | None | N/A |
-| implement-lead-deduplication-system | Implement lead deduplication system | ✓&nbsp;done | high | None | N/A |
-| create-sales-authentication-system | Create authentication system for sales dashboards | in_progress | high | None | N/A |
-| design-customer-database-schema | Set up persistent customer database schema | ✓&nbsp;done | high | None | N/A |
-| improve-inventory-scraping-reliability | Enhance inventory scraping reliability | in_progress | high | None | N/A |
-| fix-inventory-api-selectors | Update inventory-api.js HTML selectors | ○&nbsp;pending | high | None | N/A |
-| create-lead-scoring-system | Implement lead scoring algorithm | ○&nbsp;pending | medium | None | N/A |
-| implement-finance-application-workflow | Complete finance application workflow | ○&nbsp;pending | medium | None | N/A |
-| build-sales-rep-assignment-system | Create sales rep assignment system | ○&nbsp;pending | medium | None | N/A |
-| implement-customer-interaction-tracking | Implement customer interaction logging | ○&nbsp;pending | medium | None | N/A |
-| create-customer-search-filtering | Add comprehensive customer search and filtering | ○&nbsp;pending | medium | None | N/A |
-| build-automated-followup-system | Implement automated follow-up system | ○&nbsp;pending | medium | None | N/A |
-| implement-sales-performance-analytics | Create sales performance analytics dashboard | ○&nbsp;pending | medium | None | N/A |
-| create-customer-feedback-system | Implement customer feedback collection system | ○&nbsp;pending | low | None | N/A |
-| implement-gdpr-compliance | Add GDPR compliance features | ○&nbsp;pending | medium | None | N/A |
-| create-audit-logging-system | Implement comprehensive audit logging | ○&nbsp;pending | low | None | N/A |
-| update-npm-dependencies | Update all npm dependencies to latest stable versions | ○&nbsp;pending | high | None | N/A |
-| modernize-eslint-configuration | Modernize ESLint configuration to latest standards | ○&nbsp;pending | medium | None | N/A |
-| create-comprehensive-test-suite | Implement comprehensive test suite | ○&nbsp;pending | medium | None | N/A |
-| optimize-webpack-build-performance | Optimize webpack build performance | ○&nbsp;pending | medium | None | N/A |
-| review-hugo-templates-accessibility | Audit and modernize all Hugo templates | ○&nbsp;pending | medium | None | N/A |
-| implement-typescript-migration-plan | Create TypeScript migration plan | ○&nbsp;pending | low | None | N/A |
-| implement-production-monitoring | Set up production monitoring, error tracking, and performance monitoring | ○&nbsp;pending | medium | None | N/A |
-| perform-security-audit | Conduct comprehensive security audit | ○&nbsp;pending | high | None | N/A |
-| create-deployment-documentation | Create detailed deployment procedures | ○&nbsp;pending | medium | None | N/A |
-| implement-performance-monitoring | Implement Core Web Vitals tracking | ○&nbsp;pending | low | None | N/A |
-| setup-turso-database | Set up Turso database for hybrid architecture | ○&nbsp;pending | high | design-customer-database-schema | N/A |
-| create-turso-schema | Create Turso-compatible database schema | ○&nbsp;pending | high | setup-turso-database | N/A |
-| implement-hybrid-database-manager | Implement hybrid database manager | ○&nbsp;pending | high | create-turso-schema | N/A |
-| migrate-customer-search-to-turso | Migrate customer search operations to Turso | ○&nbsp;pending | medium | implement-hybrid-database-manager | N/A |
-| implement-lead-deduplication-cache-turso | Implement lead deduplication caching in Turso | ○&nbsp;pending | medium | implement-lead-deduplication-system, implement-hybrid-database-manager | N/A |
-| migrate-analytics-data-to-turso | Migrate analytics and reporting data to Turso | ○&nbsp;pending | medium | implement-sales-performance-analytics, implement-hybrid-database-manager | N/A |
-| implement-session-caching-turso | Implement user session and preferences caching in Turso | ○&nbsp;pending | medium | create-sales-authentication-system, implement-hybrid-database-manager | N/A |
-| setup-database-synchronization | Set up Supabase to Turso synchronization | ○&nbsp;pending | medium | implement-hybrid-database-manager | N/A |
-| optimize-inventory-queries-turso | Optimize inventory search and filtering with Turso | ○&nbsp;pending | medium | improve-inventory-scraping-reliability, implement-hybrid-database-manager | N/A |
-| implement-edge-caching-layer | Implement comprehensive edge caching layer | ○&nbsp;pending | medium | implement-hybrid-database-manager | N/A |
-| create-database-performance-monitoring | Create database performance monitoring and optimization | ○&nbsp;pending | low | implement-production-monitoring | N/A |
-| update-documentation-hybrid-architecture | Update documentation for hybrid Supabase + Turso architecture | ○&nbsp;pending | medium | implement-hybrid-database-manager | N/A |
-
-> 📋 **End of Taskmaster Export** - Tasks are synced from your project using the `sync-readme` command.
-<!-- TASKMASTER_EXPORT_END -->
+</details>

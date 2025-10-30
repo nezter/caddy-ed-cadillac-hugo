@@ -1,0 +1,118 @@
+<div class="customer-dashboard" id="customerDashboard" style="display: none;">
+  <div class="dashboard-header">
+    <div class="customer-info">
+      <h2 id="customerName">Welcome back!</h2>
+      <p id="customerEmail">Loading...</p>
+    </div>
+    <button class="btn btn-outline" id="logoutButton">Logout</button>
+  </div>
+
+  <div class="dashboard-grid">
+    <!-- Upcoming Appointments -->
+    <div class="dashboard-card">
+      <h3>Upcoming Appointments</h3>
+      <div id="appointmentsList" class="appointments-list">
+        <div class="loading">Loading appointments...</div>
+      </div>
+      <button class="btn btn-secondary" id="scheduleAppointment">Schedule New Appointment</button>
+    </div>
+
+    <!-- Vehicle Preferences -->
+    <div class="dashboard-card">
+      <h3>My Vehicle Preferences</h3>
+      <div id="vehiclePreferences" class="preferences-list">
+        <div class="loading">Loading preferences...</div>
+      </div>
+      <button class="btn btn-secondary" id="updatePreferences">Update Preferences</button>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="dashboard-card">
+      <h3>Recent Activity</h3>
+      <div id="recentActivity" class="activity-list">
+        <div class="loading">Loading activity...</div>
+      </div>
+    </div>
+
+    <!-- Contact Sales Rep -->
+    <div class="dashboard-card">
+      <h3>Contact Your Sales Representative</h3>
+      <div id="salesRepInfo" class="sales-rep-info">
+        <div class="loading">Loading sales rep information...</div>
+      </div>
+      <button class="btn btn-primary" id="contactSalesRep">Send Message</button>
+    </div>
+  </div>
+
+  <!-- Appointment Scheduling Modal -->
+  <div class="modal" id="appointmentModal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Schedule Appointment</h3>
+        <button class="modal-close" id="closeAppointmentModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="appointmentForm">
+          <div class="form-group">
+            <label for="appointmentType">Appointment Type</label>
+            <select id="appointmentType" name="type" required>
+              <option value="test_drive">Test Drive</option>
+              <option value="meeting">In-Person Meeting</option>
+              <option value="phone_call">Phone Consultation</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="appointmentDate">Preferred Date</label>
+            <input type="date" id="appointmentDate" name="date" required>
+          </div>
+
+          <div class="form-group">
+            <label for="appointmentTime">Preferred Time</label>
+            <select id="appointmentTime" name="time" required>
+              <option value="09:00">9:00 AM</option>
+              <option value="10:00">10:00 AM</option>
+              <option value="11:00">11:00 AM</option>
+              <option value="13:00">1:00 PM</option>
+              <option value="14:00">2:00 PM</option>
+              <option value="15:00">3:00 PM</option>
+              <option value="16:00">4:00 PM</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="appointmentNotes">Additional Notes</label>
+            <textarea id="appointmentNotes" name="notes" rows="3" placeholder="Any specific questions or requirements..."></textarea>
+          </div>
+
+          <button type="submit" class="btn btn-primary">Schedule Appointment</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Message Modal -->
+  <div class="modal" id="messageModal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Send Message to Sales Representative</h3>
+        <button class="modal-close" id="closeMessageModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="messageForm">
+          <div class="form-group">
+            <label for="messageSubject">Subject</label>
+            <input type="text" id="messageSubject" name="subject" required placeholder="Message subject">
+          </div>
+
+          <div class="form-group">
+            <label for="messageContent">Message</label>
+            <textarea id="messageContent" name="content" rows="5" required placeholder="Your message..."></textarea>
+          </div>
+
+          <button type="submit" class="btn btn-primary">Send Message</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

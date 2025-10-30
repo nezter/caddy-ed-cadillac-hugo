@@ -2,16 +2,22 @@ const errorHandler = require('./utils/error-handler');
 const InteractionService = require('./utils/interaction-service');
 const FollowupService = require('./utils/followup-service');
 const DatabaseService = require('./utils/database-service');
+const { authenticateRequest } = require('./utils/auth-middleware');
 
 /**
  * Interactions API
  * Comprehensive API for managing customer interactions and touchpoints
  */
 exports.handler = async function(event, context) {
-  // Check authentication (simplified - in production use proper JWT validation)
-  const authHeader = event.headers.authorization || event.headers.Authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return errorHandler.unauthorizedError('Authentication required');
+  // Authenticate request with proper JWT validation
+  const auth = await authenticateRequest(event, {
+    requireAuth: true,
+    allowedRoles: ['admin', 'manager', 'sales_rep'],
+    requiredPermissions: ['interactions_read', 'interactions_write']
+  });
+
+  if (!auth.authenticated) {
+    return auth.error;
   }
 
   try {

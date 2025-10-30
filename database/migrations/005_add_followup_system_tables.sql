@@ -266,6 +266,50 @@ CREATE INDEX IF NOT EXISTS idx_sms_templates_type ON sms_templates(template_type
 CREATE INDEX IF NOT EXISTS idx_sms_templates_active ON sms_templates(is_active);
 
 -- ============================================
+-- FUNCTIONS for Triggers
+-- ============================================
+
+-- Function to audit communication preference changes
+CREATE OR REPLACE FUNCTION audit_communication_changes()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Only log changes to communication-related fields
+  IF (OLD.email_consent IS DISTINCT FROM NEW.email_consent) OR
+     (OLD.sms_consent IS DISTINCT FROM NEW.sms_consent) OR
+     (OLD.phone_consent IS DISTINCT FROM NEW.phone_consent) OR
+     (OLD.communication_preferences IS DISTINCT FROM NEW.communication_preferences) OR
+     (OLD.gdpr_consent_withdrawn IS DISTINCT FROM NEW.gdpr_consent_withdrawn) THEN
+
+    INSERT INTO communication_preference_log (
+      customer_id,
+      action,
+      changes,
+      source,
+      processed_by
+    ) VALUES (
+      NEW.id,
+      CASE
+        WHEN NEW.gdpr_consent_withdrawn = true AND OLD.gdpr_consent_withdrawn = false THEN 'complete_opt_out'
+        WHEN NEW.email_consent = false AND OLD.email_consent = true THEN 'unsubscribe'
+        ELSE 'update'
+      END,
+      jsonb_build_object(
+        'email_consent', jsonb_build_object('old', OLD.email_consent, 'new', NEW.email_consent),
+        'sms_consent', jsonb_build_object('old', OLD.sms_consent, 'new', NEW.sms_consent),
+        'phone_consent', jsonb_build_object('old', OLD.phone_consent, 'new', NEW.phone_consent),
+        'communication_preferences', jsonb_build_object('old', OLD.communication_preferences, 'new', NEW.communication_preferences),
+        'gdpr_consent_withdrawn', jsonb_build_object('old', OLD.gdpr_consent_withdrawn, 'new', NEW.gdpr_consent_withdrawn)
+      ),
+      COALESCE(NEW.consent_source, 'system'),
+      COALESCE(NEW.updated_by, 'system')
+    );
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- ============================================
 -- TRIGGERS for Automatic Updates
 -- ============================================
 
@@ -289,6 +333,103 @@ CREATE TRIGGER update_email_templates_updated_at
 CREATE TRIGGER update_sms_templates_updated_at
   BEFORE UPDATE ON sms_templates
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- ============================================
+-- FOLLOWUP_ANALYTICS TABLE - Email/SMS analytics tracking
+-- ============================================
+CREATE TABLE IF NOT EXISTS followup_analytics (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+
+  -- Relationships
+  followup_id UUID REFERENCES followups(id) ON DELETE CASCADE,
+  customer_id UUID REFERENCES customers(id) ON DELETE CASCADE,
+  campaign_id UUID REFERENCES followup_campaigns(id) ON DELETE SET NULL,
+
+  -- Event tracking
+  event_type VARCHAR(50) NOT NULL CHECK (event_type IN (
+    'sent', 'delivered', 'opened', 'clicked', 'bounced', 'complained', 'unsubscribed'
+  )),
+  event_timestamp TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+
+  -- Email/SMS specific data
+  email_opened BOOLEAN DEFAULT false,
+  link_clicked VARCHAR(500), -- URL that was clicked
+  user_agent TEXT, -- Browser/client info
+  ip_address INET,
+  location_data JSONB, -- Geolocation data
+
+  -- Campaign attribution
+  campaign_name VARCHAR(255),
+  template_name VARCHAR(255),
+
+  -- Metadata
+  metadata JSONB DEFAULT '{}',
+
+  -- Timestamps
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Indexes for followup analytics
+CREATE INDEX IF NOT EXISTS idx_followup_analytics_followup ON followup_analytics(followup_id);
+CREATE INDEX IF NOT EXISTS idx_followup_analytics_customer ON followup_analytics(customer_id);
+CREATE INDEX IF NOT EXISTS idx_followup_analytics_campaign ON followup_analytics(campaign_id);
+CREATE INDEX IF NOT EXISTS idx_followup_analytics_event ON followup_analytics(event_type);
+CREATE INDEX IF NOT EXISTS idx_followup_analytics_timestamp ON followup_analytics(event_timestamp DESC);
+
+-- ============================================
+-- COMMUNICATION_PREFERENCE_LOG TABLE - GDPR audit trail
+-- ============================================
+CREATE TABLE IF NOT EXISTS communication_preference_log (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+
+  -- Customer reference
+  customer_id UUID REFERENCES customers(id) ON DELETE CASCADE,
+
+  -- Action details
+  action VARCHAR(50) NOT NULL CHECK (action IN (
+    'update', 'unsubscribe', 'complete_opt_out', 'consent_granted'
+  )),
+  changes JSONB NOT NULL, -- What changed
+  source VARCHAR(100) DEFAULT 'customer_portal', -- How the change was made
+
+  -- Audit information
+  ip_address INET,
+  user_agent TEXT,
+  session_id VARCHAR(255),
+
+  -- Metadata
+  notes TEXT,
+  processed_by VARCHAR(100), -- System or user who made the change
+
+  -- Timestamps
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Indexes for communication preference log
+CREATE INDEX IF NOT EXISTS idx_communication_log_customer ON communication_preference_log(customer_id);
+CREATE INDEX IF NOT EXISTS idx_communication_log_action ON communication_preference_log(action);
+CREATE INDEX IF NOT EXISTS idx_communication_log_created ON communication_preference_log(created_at DESC);
+
+-- Trigger for communication preference log
+CREATE TRIGGER audit_communication_preferences
+  AFTER INSERT OR UPDATE ON customers
+  FOR EACH ROW
+  WHEN (OLD.* IS DISTINCT FROM NEW.*)
+  EXECUTE FUNCTION audit_communication_changes();
+
+-- ============================================
+-- UPDATE CUSTOMERS TABLE for Enhanced Communication Preferences
+-- ============================================
+
+-- Add enhanced communication preference fields
+ALTER TABLE customers ADD COLUMN IF NOT EXISTS phone_consent BOOLEAN DEFAULT false;
+ALTER TABLE customers ADD COLUMN IF NOT EXISTS communication_preferences JSONB DEFAULT '{}';
+ALTER TABLE customers ADD COLUMN IF NOT EXISTS consent_date TIMESTAMP WITH TIME ZONE;
+ALTER TABLE customers ADD COLUMN IF NOT EXISTS consent_source VARCHAR(100);
+ALTER TABLE customers ADD COLUMN IF NOT EXISTS gdpr_consent_withdrawn BOOLEAN DEFAULT false;
+ALTER TABLE customers ADD COLUMN IF NOT EXISTS consent_withdrawn_date TIMESTAMP WITH TIME ZONE;
+ALTER TABLE customers ADD COLUMN IF NOT EXISTS consent_withdrawn_reason TEXT;
+ALTER TABLE customers ADD COLUMN IF NOT EXISTS updated_by VARCHAR(100);
 
 -- ============================================
 -- INITIAL DATA - Sample Templates and Campaigns

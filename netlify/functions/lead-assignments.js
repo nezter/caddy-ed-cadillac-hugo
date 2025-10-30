@@ -1,16 +1,22 @@
 const errorHandler = require('./utils/error-handler');
 const LeadAssignmentService = require('./utils/lead-assignment-service');
 const DatabaseService = require('./utils/database-service');
+const { authenticateRequest } = require('./utils/auth-middleware');
 
 /**
  * Lead Assignment Management API
  * Handles manual assignment, analytics, and rebalancing
  */
 exports.handler = async function(event, context) {
-  // Check authentication (simplified - in production use proper JWT validation)
-  const authHeader = event.headers.authorization || event.headers.Authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return errorHandler.unauthorizedError('Authentication required');
+  // Authenticate request with proper JWT validation
+  const auth = await authenticateRequest(event, {
+    requireAuth: true,
+    allowedRoles: ['admin', 'manager', 'sales_rep'],
+    requiredPermissions: ['assignments_read', 'assignments_write']
+  });
+
+  if (!auth.authenticated) {
+    return auth.error;
   }
 
   try {

@@ -1,15 +1,51 @@
 const errorHandler = require('./utils/error-handler');
 const DatabaseService = require('./utils/database-service');
+const { authenticateRequest } = require('./utils/auth-middleware');
+const { validateBody, validateQuery, validateParams, campaignSchemas, commonSchemas } = require('./utils/validation-middleware');
+const { applySecurity, createSecureResponse } = require('./utils/security-middleware');
+const Joi = require('joi');
+
+/**
+ * Convert error handler response to secure response
+ */
+function toSecureResponse(errorResponse, rateLimitHeaders) {
+  return createSecureResponse(
+    errorResponse.statusCode || 500,
+    {
+      success: false,
+      error: errorResponse.body?.error || 'Unknown error',
+      message: errorResponse.body?.message,
+      details: errorResponse.body?.details
+    },
+    rateLimitHeaders
+  );
+}
 
 /**
  * Follow-up Campaigns API
  * Manages automated follow-up campaigns
  */
 exports.handler = async function(event, context) {
-  // Check authentication (simplified - in production use proper JWT validation)
-  const authHeader = event.headers.authorization || event.headers.Authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return errorHandler.unauthorizedError('Authentication required');
+  // Apply security checks (CORS, rate limiting, headers)
+  const securityResult = await applySecurity(event, {
+    enableRateLimit: true,
+    maxRequests: 100,
+    windowMs: 60000 // 1 minute
+  });
+
+  if (securityResult) {
+    return securityResult;
+  }
+
+  // Authenticate request with proper JWT validation
+  const auth = await authenticateRequest(event, {
+    requireAuth: true,
+    allowedRoles: ['admin', 'manager', 'sales_rep'],
+    requiredPermissions: ['campaigns_read', 'campaigns_write']
+  });
+
+  if (!auth.authenticated) {
+    return createSecureResponse(401, auth.error.body);
   }
 
   try {
@@ -43,12 +79,16 @@ exports.handler = async function(event, context) {
       case `GET /${resourceId}/performance`:
         return await getCampaignPerformance(event, resourceId);
       default:
-        return errorHandler.notFoundError('Endpoint not found');
+        return toSecureResponse(errorHandler.notFoundError('Endpoint not found'), event.rateLimitHeaders);
     }
 
   } catch (error) {
     console.error('Follow-up Campaigns API error:', error);
-    return errorHandler.serverError('Failed to process campaign request', error);
+    return createSecureResponse(500, {
+      success: false,
+      error: 'Failed to process campaign request',
+      message: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    }, event.rateLimitHeaders);
   }
 };
 
@@ -56,14 +96,27 @@ exports.handler = async function(event, context) {
  * Get all campaigns with optional filtering
  */
 async function getCampaigns(event) {
+  // Validate query parameters
+  const queryValidation = validateQuery(Joi.object({
+    active: Joi.boolean(),
+    type: Joi.string().valid('nurture', 're_engagement', 'welcome', 'birthday', 'anniversary', 'holiday', 'custom'),
+    audience: Joi.string().valid('all', 'prospects', 'leads', 'active_customers', 'inactive_customers', 'vip_customers'),
+    ...commonSchemas.pagination,
+    ...commonSchemas.sorting
+  }))(event);
+
+  if (!queryValidation.isValid) {
+    return queryValidation.error;
+  }
+
   const filters = {
-    is_active: event.queryStringParameters?.active ? event.queryStringParameters.active === 'true' : undefined,
-    campaign_type: event.queryStringParameters?.type,
-    target_audience: event.queryStringParameters?.audience,
-    limit: parseInt(event.queryStringParameters?.limit) || 50,
-    offset: parseInt(event.queryStringParameters?.offset) || 0,
-    sort_by: event.queryStringParameters?.sort_by || 'created_at',
-    sort_order: event.queryStringParameters?.sort_order || 'desc'
+    is_active: queryValidation.data.active,
+    campaign_type: queryValidation.data.type,
+    target_audience: queryValidation.data.audience,
+    limit: queryValidation.data.limit,
+    offset: queryValidation.data.offset,
+    sort_by: queryValidation.data.sort_by,
+    sort_order: queryValidation.data.sort_order
   };
 
   try {
@@ -106,17 +159,22 @@ async function getCampaigns(event) {
     const countParams = params.slice(0, -2); // Remove limit and offset
     const countResult = await DatabaseService.query(countSql, countParams);
 
-    return errorHandler.createSuccessResponse({
+    return createSecureResponse(200, {
+      success: true,
       campaigns: result.rows,
       total: parseInt(countResult.rows[0].total),
       limit: filters.limit,
       offset: filters.offset,
       filters
-    });
+    }, event.rateLimitHeaders);
 
   } catch (error) {
     console.error('Error getting campaigns:', error);
-    return errorHandler.serverError('Failed to get campaigns', error);
+    return createSecureResponse(500, {
+      success: false,
+      error: 'Failed to get campaigns',
+      message: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    }, event.rateLimitHeaders);
   }
 }
 
@@ -124,37 +182,13 @@ async function getCampaigns(event) {
  * Create a new campaign
  */
 async function createCampaign(event) {
-  let campaignData;
-  try {
-    campaignData = JSON.parse(event.body);
-  } catch (e) {
-    return errorHandler.validationError('Invalid JSON in request body');
+  // Validate request body
+  const bodyValidation = validateBody(campaignSchemas.create)(event);
+  if (!bodyValidation.isValid) {
+    return createSecureResponse(400, bodyValidation.error.body, event.rateLimitHeaders);
   }
 
-  const { name, campaign_type } = campaignData;
-
-  if (!name || !campaign_type) {
-    return errorHandler.validationError('Missing required fields', {
-      name: !name ? 'Campaign name is required' : null,
-      campaign_type: !campaign_type ? 'Campaign type is required' : null
-    });
-  }
-
-  // Validate campaign type
-  const validTypes = ['nurture', 're_engagement', 'welcome', 'birthday', 'anniversary', 'holiday', 'custom'];
-  if (!validTypes.includes(campaign_type)) {
-    return errorHandler.validationError('Invalid campaign type', {
-      campaign_type: `Must be one of: ${validTypes.join(', ')}`
-    });
-  }
-
-  // Validate target audience
-  const validAudiences = ['all', 'prospects', 'leads', 'active_customers', 'inactive_customers', 'vip_customers'];
-  if (campaignData.target_audience && !validAudiences.includes(campaignData.target_audience)) {
-    return errorHandler.validationError('Invalid target audience', {
-      target_audience: `Must be one of: ${validAudiences.join(', ')}`
-    });
-  }
+  const campaignData = bodyValidation.data;
 
   try {
     const sql = `
@@ -182,14 +216,15 @@ async function createCampaign(event) {
 
     const result = await DatabaseService.query(sql, params);
 
-    return errorHandler.createSuccessResponse({
+    return createSecureResponse(201, {
+      success: true,
       message: 'Campaign created successfully',
       campaign: result.rows[0]
-    }, 'Campaign created');
+    }, event.rateLimitHeaders);
 
   } catch (error) {
     console.error('Error creating campaign:', error);
-    return errorHandler.serverError('Failed to create campaign', error);
+    return toSecureResponse(errorHandler.serverError('Failed to create campaign', error), event.rateLimitHeaders);
   }
 }
 
@@ -197,7 +232,16 @@ async function createCampaign(event) {
  * Get campaign statistics
  */
 async function getCampaignStats(event) {
-  const days = parseInt(event.queryStringParameters?.days) || 30;
+  // Validate query parameters
+  const queryValidation = validateQuery(Joi.object({
+    days: Joi.number().integer().min(1).max(365).default(30)
+  }))(event);
+
+  if (!queryValidation.isValid) {
+    return queryValidation.error;
+  }
+
+  const days = queryValidation.data.days;
 
   try {
     const sql = `
@@ -231,7 +275,7 @@ async function getCampaignStats(event) {
 
   } catch (error) {
     console.error('Error getting campaign stats:', error);
-    return errorHandler.serverError('Failed to get campaign stats', error);
+    return toSecureResponse(errorHandler.serverError('Failed to get campaign stats', error), event.rateLimitHeaders);
   }
 }
 
@@ -257,7 +301,7 @@ async function getActiveCampaigns(event) {
 
   } catch (error) {
     console.error('Error getting active campaigns:', error);
-    return errorHandler.serverError('Failed to get active campaigns', error);
+    return toSecureResponse(errorHandler.serverError('Failed to get active campaigns', error), event.rateLimitHeaders);
   }
 }
 
@@ -265,12 +309,17 @@ async function getActiveCampaigns(event) {
  * Get a specific campaign
  */
 async function getCampaign(event, campaignId) {
+  // Validate campaign ID
+  const paramsValidation = validateParams(commonSchemas.id)(event);
+  if (!paramsValidation.isValid) {
+    return paramsValidation.error;
+  }
   try {
     const sql = 'SELECT * FROM followup_campaigns WHERE id = $1';
     const result = await DatabaseService.query(sql, [campaignId]);
 
     if (result.rows.length === 0) {
-      return errorHandler.notFoundError('Campaign not found');
+      return toSecureResponse(errorHandler.notFoundError('Campaign not found'), event.rateLimitHeaders);
     }
 
     // Get associated rules count
@@ -299,41 +348,19 @@ async function getCampaign(event, campaignId) {
  * Update a campaign
  */
 async function updateCampaign(event, campaignId) {
-  let updateData;
-  try {
-    updateData = JSON.parse(event.body);
-  } catch (e) {
-    return errorHandler.validationError('Invalid JSON in request body');
+  // Validate campaign ID
+  const paramsValidation = validateParams(commonSchemas.id)(event);
+  if (!paramsValidation.isValid) {
+    return paramsValidation.error;
   }
 
-  // Remove fields that shouldn't be updated
-  delete updateData.id;
-  delete updateData.created_at;
-  delete updateData.created_by;
-
-  if (Object.keys(updateData).length === 0) {
-    return errorHandler.validationError('No valid fields to update');
+  // Validate request body
+  const bodyValidation = validateBody(campaignSchemas.update)(event);
+  if (!bodyValidation.isValid) {
+    return bodyValidation.error;
   }
 
-  // Validate campaign type if provided
-  if (updateData.campaign_type) {
-    const validTypes = ['nurture', 're_engagement', 'welcome', 'birthday', 'anniversary', 'holiday', 'custom'];
-    if (!validTypes.includes(updateData.campaign_type)) {
-      return errorHandler.validationError('Invalid campaign type', {
-        campaign_type: `Must be one of: ${validTypes.join(', ')}`
-      });
-    }
-  }
-
-  // Validate target audience if provided
-  if (updateData.target_audience) {
-    const validAudiences = ['all', 'prospects', 'leads', 'active_customers', 'inactive_customers', 'vip_customers'];
-    if (!validAudiences.includes(updateData.target_audience)) {
-      return errorHandler.validationError('Invalid target audience', {
-        target_audience: `Must be one of: ${validAudiences.join(', ')}`
-      });
-    }
-  }
+  const updateData = bodyValidation.data;
 
   try {
     const allowedFields = [
@@ -482,7 +509,22 @@ async function deactivateCampaign(event, campaignId) {
  * Get campaign performance metrics
  */
 async function getCampaignPerformance(event, campaignId) {
-  const days = parseInt(event.queryStringParameters?.days) || 30;
+  // Validate campaign ID
+  const paramsValidation = validateParams(commonSchemas.id)(event);
+  if (!paramsValidation.isValid) {
+    return paramsValidation.error;
+  }
+
+  // Validate query parameters
+  const queryValidation = validateQuery(Joi.object({
+    days: Joi.number().integer().min(1).max(365).default(30)
+  }))(event);
+
+  if (!queryValidation.isValid) {
+    return queryValidation.error;
+  }
+
+  const days = queryValidation.data.days;
 
   try {
     // Get campaign details

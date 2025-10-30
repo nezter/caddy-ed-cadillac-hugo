@@ -32,11 +32,11 @@ exports.handler = async function(event, context) {
     }
 
     // Get query parameters
-    const params = event.queryStringParameters || {};
-    const timeframe = params.timeframe || 'week';
-    const status = params.status || 'all';
-    const sort = params.sort || 'date-desc';
-    const search = params.search || '';
+    const queryParams = event.queryStringParameters || {};
+    const timeframe = queryParams.timeframe || 'week';
+    const status = queryParams.status || 'all';
+    const sort = queryParams.sort || 'date-desc';
+    const search = queryParams.search || '';
 
     // Get leads for this sales rep
     const leads = await getSalesRepLeads(salesRepId, timeframe, status, sort, search);

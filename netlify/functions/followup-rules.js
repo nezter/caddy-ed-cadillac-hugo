@@ -1,16 +1,22 @@
 const errorHandler = require('./utils/error-handler');
 const DatabaseService = require('./utils/database-service');
 const FollowupRulesEngine = require('./utils/followup-rules-engine');
+const { authenticateRequest } = require('./utils/auth-middleware');
 
 /**
  * Follow-up Rules API
  * Manages automated follow-up rules and conditional logic
  */
 exports.handler = async function(event, context) {
-  // Check authentication (simplified - in production use proper JWT validation)
-  const authHeader = event.headers.authorization || event.headers.Authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return errorHandler.unauthorizedError('Authentication required');
+  // Authenticate request with proper JWT validation
+  const auth = await authenticateRequest(event, {
+    requireAuth: true,
+    allowedRoles: ['admin', 'manager', 'sales_rep'],
+    requiredPermissions: ['rules_read', 'rules_write']
+  });
+
+  if (!auth.authenticated) {
+    return auth.error;
   }
 
   try {

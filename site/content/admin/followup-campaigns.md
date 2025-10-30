@@ -6,20 +6,79 @@ layout: "admin"
 
 # Follow-up Campaign Manager
 
-<div id="followup-campaign-manager">
-  <div class="loading-state">
-    <div class="spinner"></div>
-    <p>Loading campaign manager...</p>
+<!-- Navigation Tabs -->
+<div class="admin-tabs">
+  <button class="tab-button active" data-tab="campaigns">
+    <i class="fas fa-cogs"></i> Campaign Manager
+  </button>
+  <button class="tab-button" data-tab="analytics">
+    <i class="fas fa-chart-bar"></i> Analytics Dashboard
+  </button>
+</div>
+
+<!-- Campaign Manager Tab -->
+<div id="campaigns-tab" class="tab-content active">
+  <div id="followup-campaign-manager">
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Loading campaign manager...</p>
+    </div>
+  </div>
+</div>
+
+<!-- Analytics Dashboard Tab -->
+<div id="analytics-tab" class="tab-content">
+  <div id="followup-analytics-dashboard">
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Loading analytics dashboard...</p>
+    </div>
   </div>
 </div>
 
 <script src="/js/components/followup-campaign-manager.js"></script>
+<script src="/js/components/followup-analytics-dashboard.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-  // Initialize the campaign manager when the page loads
+  // Initialize components
+  let campaignManager = null;
+  let analyticsDashboard = null;
+
+  // Tab switching functionality
+  const tabButtons = document.querySelectorAll('.tab-button');
+  const tabContents = document.querySelectorAll('.tab-content');
+
+  tabButtons.forEach(button => {
+    button.addEventListener('click', function() {
+      const tabName = this.getAttribute('data-tab');
+
+      // Update active tab button
+      tabButtons.forEach(btn => btn.classList.remove('active'));
+      this.classList.add('active');
+
+      // Update active tab content
+      tabContents.forEach(content => content.classList.remove('active'));
+      document.getElementById(tabName + '-tab').classList.add('active');
+
+      // Lazy load components
+      if (tabName === 'campaigns' && !campaignManager) {
+        const container = document.getElementById('followup-campaign-manager');
+        if (container) {
+          campaignManager = new FollowupCampaignManager('followup-campaign-manager');
+        }
+      } else if (tabName === 'analytics' && !analyticsDashboard) {
+        const container = document.getElementById('followup-analytics-dashboard');
+        if (container) {
+          analyticsDashboard = new FollowupAnalyticsDashboard('followup-analytics-dashboard');
+        }
+      }
+    });
+  });
+
+  // Initialize first tab
   const container = document.getElementById('followup-campaign-manager');
   if (container) {
-    new FollowupCampaignManager('followup-campaign-manager');
+    campaignManager = new FollowupCampaignManager('followup-campaign-manager');
   }
 });
 </script>
@@ -48,8 +107,47 @@ document.addEventListener('DOMContentLoaded', function() {
   100% { transform: rotate(360deg); }
 }
 
+/* Tabbed Interface */
+.admin-tabs {
+  display: flex;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.tab-button {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  background: none;
+  color: #6c757d;
+  font-size: 1rem;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tab-button:hover {
+  color: #007cba;
+}
+
+.tab-button.active {
+  color: #007cba;
+  border-bottom-color: #007cba;
+}
+
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}
+
 /* Additional styles for the campaign manager */
-#followup-campaign-manager {
+#followup-campaign-manager,
+#followup-analytics-dashboard {
   min-height: 600px;
 }
 

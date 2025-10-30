@@ -56,4 +56,8 @@ node_modules/
 
 # Task files
 # tasks.json
-# tasks/ 
+# tasks/
+
+# Test data with sensitive tokens
+test-data/test-tokens.json
+test-data/*.tokens.json 
