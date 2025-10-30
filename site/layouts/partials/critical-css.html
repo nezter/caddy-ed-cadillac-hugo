@@ -1,29 +1,12 @@
-{{/* Critical CSS loading for webpack-built assets */}}
-{{ if isset .Params "criticalCss" }}
-  <style id="critical-css">{{ partial (printf "critical/%s.css" .Params.criticalCss) . | safeCSS }}</style>
-  <link rel="preload" href="/css/main.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-  <noscript><link rel="stylesheet" href="/css/main.css"></noscript>
-  <script>
-    // Fallback for browsers that don't support preload
-    (function() {
-      var loadCSS = function(href) {
-        var link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = href;
-        document.head.appendChild(link);
-      };
+{{/* CSS loading for Cadillac CRM */}}
+<link rel="stylesheet" href="/css/main.css">
 
-      if ('querySelector' in document && 'addEventListener' in window) {
-        var links = document.querySelectorAll('link[rel="preload"][as="style"]');
-        for (var i = 0; i < links.length; i++) {
-          loadCSS(links[i].href);
-        }
-      } else {
-        // For older browsers, load stylesheet synchronously
-        document.write('<link rel="stylesheet" href="/css/main.css">');
-      }
-    })();
-  </script>
-{{ else }}
-  <link rel="stylesheet" href="/css/main.css">
+{{/* Optional: Add critical CSS inlining for better performance */}}
+{{ if eq .Kind "home" }}
+<style>
+  /* Critical above-the-fold styles for homepage */
+  .site-header { position: sticky; top: 0; z-index: 100; }
+  .hero { background: linear-gradient(135deg, #1A2B49 0%, #2a3a5a 100%); }
+  .navbar { display: flex; justify-content: space-between; align-items: center; }
+</style>
 {{ end }}

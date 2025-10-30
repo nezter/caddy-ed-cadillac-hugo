@@ -1,109 +1,30 @@
 [build]
-  publish = "dist"
-  command = "npm run build"
-  functions = "netlify/functions"
+  publish = "site/public"
+  command = "npm run build:production"
 
 [build.environment]
-  HUGO_VERSION = "0.121.1"
-  NODE_VERSION = "18.16.0"
-  NPM_VERSION = "9.5.1"
+  NODE_VERSION = "18"
+  HUGO_VERSION = "0.119.0"
 
-[context.production.environment]
-  HUGO_ENV = "production"
-  HUGO_ENABLEGITINFO = "true"
+[dev]
+  command = "./hugo server -D -F --source=site --bind 0.0.0.0 --port 1313 --buildDrafts --buildFuture"
+  publish = "site/public"
+  port = 1313
 
-[context.deploy-preview]
-  command = "npm run build:preview"
+[functions]
+  directory = "netlify/functions"
 
-[context.branch-deploy]
-  command = "npm run build:preview"
-
-# Redirects and rewrite rules
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/:splat"
   status = 200
 
 [[redirects]]
-  from = "/inventory-api/*"
-  to = "/.netlify/functions/inventory-proxy/:splat"
+  from = "/health"
+  to = "/.netlify/functions/health-check"
   status = 200
-  
-[[redirects]]
-  from = "/contact"
-  to = "/contact/"
-  status = 301
 
 [[redirects]]
-  from = "/inventory"
-  to = "/inventory/"
-  status = 301
-
-[[redirects]]
-  from = "/*"
-  to = "/404.html"
-  status = 404
-
-# Headers for security and caching
-[[headers]]
-  for = "/*"
-  [headers.values]
-    X-Frame-Options = "DENY"
-    X-XSS-Protection = "1; mode=block"
-    X-Content-Type-Options = "nosniff"
-    Referrer-Policy = "strict-origin-when-cross-origin"
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' *.netlify.app *.google-analytics.com *.googletagmanager.com; style-src 'self' 'unsafe-inline' fonts.googleapis.com; img-src 'self' data: *.cadillacofsouthcharlotte.com *.googleapis.com *.gstatic.com; font-src 'self' fonts.gstatic.com; connect-src 'self' *.netlify.app *.cadillacofsouthcharlotte.com *.google-analytics.com;"
-    Permissions-Policy = "camera=(), microphone=(), geolocation=(self)"
-    Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
-    Access-Control-Allow-Origin = "https://caddyed.com"
-    Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
-    Access-Control-Allow-Headers = "Content-Type, Authorization, X-Auth-Token"
-    Access-Control-Allow-Credentials = "true"
-    Access-Control-Max-Age = "86400"
-
-[[headers]]
-  for = "/*.js"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
-[[headers]]
-  for = "/*.css"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
-[[headers]]
-  for = "/*.jpg"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
-[[headers]]
-  for = "/*.png"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
-[[headers]]
-  for = "/*.webp"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
-[[plugins]]
-  package = "@netlify/plugin-lighthouse"
-
-[[plugins]]
-  package = "netlify-plugin-submit-sitemap"
-  [plugins.inputs]
-    baseUrl = "https://caddyed.com"
-    sitemapPath = "/sitemap.xml"
-    providers = [
-      "google",
-      "bing"
-    ]
-
-[[plugins]]
-  package = "netlify-plugin-cache"
-  [plugins.inputs]
-    paths = [
-      "node_modules/.cache",
-      ".cache",
-      "site/resources"
-    ]
+  from = "/health/*"
+  to = "/.netlify/functions/health-check/:splat"
+  status = 200
