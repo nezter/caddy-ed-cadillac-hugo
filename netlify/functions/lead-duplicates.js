@@ -1,7 +1,7 @@
 const errorHandler = require('./utils/error-handler');
 const DeduplicationService = require('./utils/deduplication-service');
 const FuzzyMatcher = require('./utils/fuzzy-matcher');
-const DataNormalizer = require('./data-normalizer');
+const DataNormalizer = require('./utils/data-normalizer');
 
 /**
  * Lead duplicates API
