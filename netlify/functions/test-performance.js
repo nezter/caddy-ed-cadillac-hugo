@@ -1,6 +1,6 @@
 // Test performance optimizations
 const EnhancedDatabaseService = require('./utils/enhanced-database-service');
-const CacheService = require('./utils/cache-service');
+const CacheService = require('./utils/redis-cache-service');
 
 console.log('⚡ Testing Performance Optimizations...\n');
 
