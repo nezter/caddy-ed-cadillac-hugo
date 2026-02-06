@@ -60,4 +60,7 @@ node_modules/
 
 # Test data with sensitive tokens
 test-data/test-tokens.json
-test-data/*.tokens.json 
+test-data/*.tokens.json
+
+# Task Master AI - local config
+.taskmaster/
