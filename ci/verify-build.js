@@ -163,7 +163,28 @@ function checkStructure(htmlFiles) {
       );
     }
 
-    // 6. <img> with an empty or missing src
+    // 6. absolute URLs where a crawler needs one
+    //
+    // canonical and og:url are the two tags a search engine and a social
+    // crawler both read to decide what a page IS. A relative value there is
+    // not a warning, it is an identity failure: with baseURL = "/" every page
+    // emitted `href=/` and `content="/"`, so every page on the site claimed to
+    // be the same URL as every other page. The build was green throughout.
+    for (const m of body.matchAll(
+      /<link[^>]+rel=["']?canonical["']?[^>]*href=["']?([^"'\s>]+)|<meta[^>]+property=["']?og:url["']?[^>]*content=["']?([^"'\s>]+)/gi
+    )) {
+      const url = (m[1] || m[2] || '').trim();
+      if (url && !/^https?:\/\//i.test(url)) {
+        // group 1 is the canonical branch, group 2 the og:url branch
+        const which = m[1] !== undefined ? 'canonical' : 'og:url';
+        problems.push(
+          `${rel}: ${which} is relative ("${url}") -- crawlers need an absolute URL; check baseURL`
+        );
+        break;
+      }
+    }
+
+    // 7. <img> with an empty or missing src
     for (const m of body.matchAll(/<img\b([^>]*)>/gi)) {
       const attrs = m[1] || '';
       const sm = attrs.match(/\bsrc=(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i);

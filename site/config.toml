@@ -1,4 +1,18 @@
-baseURL = "/"
+# The production origin. This MUST be absolute and MUST be the real domain.
+#
+# It was "/" and nothing overrode it, so every canonical link, every og:url and
+# every sitemap entry on the site was emitted as a relative path:
+#
+#     <link rel=canonical href=/>
+#     <meta property="og:url" content="/">
+#
+# Search engines and social crawlers require absolute URLs for both. A
+# production build with a relative baseURL is a silent SEO failure -- every
+# page looks like a duplicate of every other page.
+#
+# Hugo reads HUGO_BASEURL from the environment, so local and preview builds
+# override it rather than shipping a caddyed.com canonical to a dev host.
+baseURL = "https://caddyed.com/"
 locale = "en-us"
 title = "Caddy Ed - Cadillac Sales Specialist"
 enableRobotsTXT = true
@@ -6,7 +20,11 @@ disableKinds = ["RSS"]
 
 [params]
   description = "Caddy Ed - Your Cadillac Sales Specialist in South Charlotte. New & Pre-Owned Cadillac inventory, test drives, and trade-in valuations."
-  images = ["img/caddy-ed-logo.jpg"]
+  # Social share card. 1200x630, the size both Facebook and Twitter
+  # crop to. Read by partials/head-meta.html as .Site.Params.og_image.
+  # This was `images = ["img/caddy-ed-logo.jpg"]` -- wrong key, and
+  # the file it named did not exist.
+  og_image = "img/og-image.jpg"
   title = "Caddy Ed - Cadillac Sales Specialist"
   dealer_name = "Cadillac of South Charlotte"
   phone = "704-555-1234"

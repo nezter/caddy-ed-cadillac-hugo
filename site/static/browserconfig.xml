@@ -1,9 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Windows tile metadata. Without this, Internet Explorer and Edge Legacy
+     auto-discover /img/mstile-*.png only by convention; naming them here makes
+     the set explicit and keeps those files genuinely referenced. Referenced
+     from partials/head-meta.html via msapplication-config. -->
 <browserconfig>
   <msapplication>
     <tile>
+      <square70x70logo src="/img/mstile-70x70.png"/>
       <square150x150logo src="/img/mstile-150x150.png"/>
-      <TileColor>#ff4400</TileColor>
+      <square310x310logo src="/img/mstile-310x310.png"/>
+      <wide310x150logo src="/img/mstile-310x150.png"/>
+      <TileColor>#c8102e</TileColor>
     </tile>
   </msapplication>
 </browserconfig>

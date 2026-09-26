@@ -155,7 +155,11 @@ if (fs.existsSync(cmsEntry)) {
 
 // 5. Hugo. Emits all HTML plus the fingerprinted CSS/JS from site/assets.
 run(
-  `hugo --source=site --destination=../site/public --minify --gc --cleanDestinationDir`,
+  // HUGO_BASEURL lets a local or preview build emit its own origin. Without
+  // it, a dev host would ship caddyed.com canonical URLs -- telling a search
+  // engine that every preview page is a duplicate of the live one. Defaults
+  // to the config's production baseURL when unset.
+  `HUGO_BASEURL=${process.env.HUGO_BASEURL || 'https://caddyed.com/'} hugo --source=site --destination=../site/public --minify --gc --cleanDestinationDir`,
   { label: 'hugo build (Hugo Pipes assets)' }
 );
 

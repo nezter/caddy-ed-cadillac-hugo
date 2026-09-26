@@ -3,18 +3,19 @@
   "short_name": "Caddy Ed",
   "icons": [
     {
-      "src": "/img/icon-192x192.png",
+      "src": "/img/android-chrome-192x192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/img/icon-512x512.png",
+      "src": "/img/android-chrome-512x512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
   ],
-  "theme_color": "#ffffff",
-  "background_color": "#ffffff",
+  "theme_color": "#c8102e",
+  "background_color": "#0b0d10",
   "display": "standalone",
-  "start_url": "/"
+  "start_url": "/",
+  "description": "Caddy Ed - Cadillac Sales Specialist in South Charlotte."
 }

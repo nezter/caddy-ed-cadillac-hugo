@@ -83,7 +83,8 @@ function walk(dir, filter, out = []) {
 
 const problems = [];
 const warnings = [];
-const drift = [];   // design-system consistency, reported separately
+const drift = [];
+const deadAssets = [];   // unreferenced media shipped on every deploy   // design-system consistency, reported separately
 
 // --- content contamination -------------------------------------------------
 const contentFiles = walk(path.join(ROOT, 'site', 'content'), (p) => /\.(md|html)$/.test(p));
@@ -221,6 +222,111 @@ if (fs.existsSync(CRITICAL) && fs.existsSync(MAIN_CSS)) {
   }
 }
 
+// --- unreferenced static assets -------------------------------------------
+// Everything in site/static/ is copied verbatim into every deploy, whether or
+// not a page uses it. After the Kaldi Coffee pages were removed, 3.53 MB across
+// 26 files shipped on every build: products-grid*.jpg, about-*.jpg,
+// blog-*.jpg, four unused headshots, a Cadillac wallpaper, five social icons
+// for a footer with no social links.
+//
+// A build gate cannot see this -- the files are legitimately part of the
+// output. Only comparing the source tree against the built HTML can.
+//
+// Browsers and platforms request a few paths by convention rather than by
+// markup (favicon.ico, mstile tiles, safari-pinned-tab), so those are exempt.
+const CONVENTIONAL = new Set([
+  'favicon.ico',
+  'safari-pinned-tab.svg',
+  'site.webmanifest',
+  'browserconfig.xml',
+  'robots.txt',
+]);
+
+// Only media, and only files a browser fetches by URL rather than a script
+// resolving at runtime.
+//
+// site/static also holds the Decap CMS bundle (~5.9 MB including the Squoosh
+// wasm). Its webpack chunks reference each other by numeric filename from
+// inside cms.js, so a basename scan cannot see those references and reports
+// 111 phantom orphans. A JS chunk is resolved by code; an <img> is requested by
+// a URL, and that is the case worth catching.
+const MEDIA = /\.(?:jpe?g|png|svg|gif|webp|avif|ico)$/i;
+const URL_REQUESTED = new Set([
+  'cms.html', // the CMS entry point, linked from /admin/cms
+  'robots.txt',
+  'sw.js', // registered by sw-register.js
+  'manifest.json',
+]);
+
+function assetBasenames() {
+  const out = new Map();
+  for (const f of walk(path.join(ROOT, 'site', 'static'), () => true)) {
+    const name = path.basename(f);
+    if (!MEDIA.test(name) && !URL_REQUESTED.has(name)) continue;
+    out.set(name, fs.statSync(f).size);
+  }
+  return out;
+}
+
+/** Every asset path any built page, config, manifest or template mentions. */
+function referencedAssets() {
+  const refs = new Set();
+  const add = (text) => {
+    // /img/foo.png, /images/foo.png, /assets/foo.css -- and the root-level
+    // files a page or a manifest requests by bare name (/sw.js, /cms.html,
+    // /manifest.json). Missing the second form flagged the PWA icons, which
+    // site.webmanifest references by path, as orphans.
+    for (const m of text.matchAll(
+      /\/?(?:img|images|assets)\/[A-Za-z0-9._-]+\.[A-Za-z0-9]+|\/(?:sw|sw-register|cms)\.[a-z]+|\/manifest\.json/g
+    )) {
+      refs.add(path.basename(m[0]));
+    }
+  };
+  const pub = path.join(ROOT, 'site', 'public');
+  if (fs.existsSync(pub)) {
+    for (const f of walk(pub, (p) => /\.(html|json|xml|webmanifest|txt|css|js)$/.test(p))) {
+      add(fs.readFileSync(f, 'utf8'));
+    }
+  }
+  // The manifests name assets by path and are the only thing that references
+  // the PWA icon set and the Windows tiles.
+  for (const f of walk(path.join(ROOT, 'site', 'static'), (p) =>
+    /\.(?:webmanifest|xml|json|txt)$/.test(p)
+  )) {
+    add(fs.readFileSync(f, 'utf8'));
+  }
+  for (const f of [
+    path.join(ROOT, 'site', 'config.toml'),
+    path.join(ROOT, 'netlify.toml'),   // [[redirects]] name /cms.html and /health
+    ...walk(path.join(ROOT, 'site', 'content'), (p) => p.endsWith('.md')),
+    ...walk(path.join(ROOT, 'site', 'layouts'), (p) => p.endsWith('.html')),
+    ...walk(path.join(ROOT, 'site', 'assets'), (p) => /\.(css|js)$/.test(p)),
+  ]) {
+    if (fs.existsSync(f)) add(fs.readFileSync(f, 'utf8'));
+  }
+  return refs;
+}
+
+const staticAssets = assetBasenames();
+const referenced = referencedAssets();
+const orphans = [...staticAssets.entries()].filter(
+  ([name]) => !referenced.has(name) && !CONVENTIONAL.has(name)
+);
+
+if (orphans.length) {
+  const bytes = orphans.reduce((a, [, s]) => a + s, 0);
+  deadAssets.push(
+    `${orphans.length} unreferenced file(s) in site/static/ ship on every deploy ` +
+      `(${(bytes / 1024 / 1024).toFixed(2)} MB): ` +
+      orphans
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 12)
+        .map(([n, s]) => `${n} (${Math.round(s / 1024)}K)`)
+        .join(', ') +
+      (orphans.length > 12 ? `, +${orphans.length - 12} more` : '')
+  );
+}
+
 // ---------------------------------------------------------------------------
 // report
 // ---------------------------------------------------------------------------
@@ -246,6 +352,10 @@ if (problems.length) {
 if (warnings.length) {
   console.log(`\n  ${ylw('WARN')}  ${warnings.length} file(s) with possible demo copy:`);
   for (const w of warnings) console.log(`    ${w}`);
+}
+
+if (deadAssets.length) {
+  console.log(`\n  ${ylw('WARN')}  ${deadAssets[0]}`);
 }
 
 if (drift.length) {

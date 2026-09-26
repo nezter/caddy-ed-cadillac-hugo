@@ -64,6 +64,7 @@ in_container() {
       -w /site \
       -e CI=true \
       -e NETLIFY_TELEMETRY_DISABLED=1 \
+      -e HUGO_BASEURL="${HUGO_BASEURL:-https://caddyed.com/}" \
       --user root \
       ${IMAGE} bash -lc $(printf '%q' "$inner")"
 }
@@ -94,7 +95,11 @@ do_verify() {
   # content, e.g. the Kaldi Coffee pricing page) produces a perfectly valid
   # build. Order is deliberate: fail on the real problem first.
   log "Verifying source content is not starter-template filler"
-  in_container 'node ci/verify-content.js'
+  in_container 'node ci/verify-content.js --strict'
+  # Third gate: do the live bundles call endpoints that exist? Runs against
+  # the publish dir, so it must come after the build.
+  log "Verifying every endpoint called by a live bundle resolves"
+  in_container 'node ci/verify-endpoints.js'
 }
 
 do_inventory() {

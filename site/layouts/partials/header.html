@@ -33,7 +33,10 @@
     <nav class="navbar" aria-label="Main navigation">
       <div class="navbar-brand">
         <a class="navbar-logo" href="/" aria-label="{{ .Site.Title }} home">
-          <img src="/img/logo.svg" alt="{{ .Site.Title }}" width="180" height="34">
+          {{/* 180x40 matches the wordmark's true 109:24 ratio (4.54). It was declared
+               180x34 (5.29), which stretched it. An SVG needs no srcset --
+               it is resolution-independent at any size. */}}
+          <img src="/img/logo.svg" alt="{{ .Site.Title }}" width="180" height="40">
         </a>
         <button class="navbar-burger"
                 id="navToggle"

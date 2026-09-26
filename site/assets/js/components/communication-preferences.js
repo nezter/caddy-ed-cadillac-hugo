@@ -233,7 +233,7 @@ class CommunicationPreferences {
     this.showLoading(true);
 
     try {
-      const response = await fetch(`/api/communication-preferences/customer/${this.customerId}`);
+      const response = await fetch(`/.netlify/functions/communication-preferences/customer/${this.customerId}`);
       const data = await response.json();
 
       if (data.success) {
@@ -305,7 +305,7 @@ class CommunicationPreferences {
     this.showLoading(true);
 
     try {
-      const response = await fetch('/api/communication-preferences/update', {
+      const response = await fetch('/.netlify/functions/communication-preferences/update', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -341,7 +341,7 @@ class CommunicationPreferences {
     this.showLoading(true);
 
     try {
-      const response = await fetch('/api/communication-preferences/opt-out', {
+      const response = await fetch('/.netlify/functions/communication-preferences/opt-out', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

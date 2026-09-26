@@ -184,7 +184,7 @@ class FollowupAnalyticsDashboard {
     this.showError(false);
 
     try {
-      const response = await fetch(`/api/followup-analytics/dashboard?days=${this.selectedPeriod}`);
+      const response = await fetch(`/.netlify/functions/followup-analytics/dashboard?days=${this.selectedPeriod}`);
       const data = await response.json();
 
       if (data.success) {

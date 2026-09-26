@@ -12,16 +12,29 @@
 <title>{{ if .IsHome }}{{ .Site.Title }}{{ else }}{{ .Title }} &middot; {{ .Site.Title }}{{ end }}</title>
 <meta name="description" content="{{ .Description | default .Site.Params.description | plainify | truncate 160 }}">
 
+{{- /* Social card.
+       The fallback to .Site.Params.og_image matters: without it, only the 36
+       pages that happen to set `.Params.image` got a card, and the other 18 --
+       including the home page -- shared nothing. twitter:image is separate
+       from og:image in the Twitter/X parser; it is not inferred. */}}
 {{- with .Params.image | default .Site.Params.og_image }}
 <meta property="og:image" content="{{ . | absURL }}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:image" content="{{ . | absURL }}">
 {{- end }}
+<meta property="og:image:alt" content="{{ .Site.Title }}">
 <meta property="og:type" content="{{ if .IsPage }}article{{ else }}website{{ end }}">
 <meta property="og:site_name" content="{{ .Site.Title }}">
 <meta property="og:title" content="{{ if .IsHome }}{{ .Site.Title }}{{ else }}{{ .Title }}{{ end }}">
 <meta property="og:description" content="{{ .Description | default .Site.Params.description | plainify | truncate 160 }}">
+{{- /* .Permalink resolves against baseURL, so this is only absolute because
+       baseURL is. It was `content="/"` before that was fixed. */}}
 <meta property="og:url" content="{{ .Permalink }}">
 {{- if .IsHome }}<meta property="og:locale" content="en_US">{{ end }}
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{ if .IsHome }}{{ .Site.Title }}{{ else }}{{ .Title }}{{ end }}">
+<meta name="twitter:description" content="{{ .Description | default .Site.Params.description | plainify | truncate 160 }}">
 
 {{- /* Canonical + trailing-slash consistency. */}}
 <link rel="canonical" href="{{ .Permalink }}">
@@ -30,6 +43,15 @@
 <link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32x32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16x16.png">
+{{/* Browsers request /favicon.ico unprompted, so it needs a link or it 404s
+     in every tab strip and bookmark. */}}
+<link rel="icon" href="/img/favicon.ico" sizes="any">
 <link rel="manifest" href="/site.webmanifest">
+{{/* Windows tile + Safari pinned tab. These files were on disk and referenced
+     by nothing, which is the same defect as the manifest's wrong icon paths. */}}
+<meta name="msapplication-TileColor" content="#c8102e">
+<meta name="msapplication-TileImage" content="/img/mstile-150x150.png">
+<meta name="msapplication-config" content="/browserconfig.xml">
+<link rel="mask-icon" href="/img/safari-pinned-tab.svg" color="#c8102e">
 <meta name="theme-color" content="#0b0d10" media="(prefers-color-scheme: dark)">
 <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">

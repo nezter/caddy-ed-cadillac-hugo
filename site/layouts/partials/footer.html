@@ -22,14 +22,16 @@
     <div class="footer-grid">
       <div>
         <a href="/" class="footer-logo" aria-label="{{ .Site.Title }} home">
-          {{/* An SVG wordmark: already a vector, already 265 KB of embedded
-               raster that libvips cannot improve on. `passthrough` keeps this
-               a single <img> -- a srcset of one icon is noise. */}}
+          {{/* A 1,965-byte vector wordmark. `passthrough` keeps this a single
+               <img>: a srcset of one resolution-independent asset is noise.
+               This file was previously a 265 KB SVG wrapping a 197 KB base64
+               PNG of a photograph, rendered 180x34 and therefore squashed --
+               see docs/styling-audit.md. */}}
           {{ partial "static-picture.html" (dict
               "src" "/img/logo.svg"
               "alt" .Site.Title
               "width" 180
-              "height" 34
+              "height" 40
               "passthrough" true
               "style" "filter: brightness(0) invert(1); margin-bottom: var(--space-3)") }}
         </a>
