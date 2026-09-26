@@ -106,7 +106,7 @@ function declaredEntries() {
 // ---------------------------------------------------------------------------
 function reachableFrom(entries) {
   const seen = new Set();
-  const stack = [...entries];
+  const stack = entries.map((rel) => ({ rel, importer: null }));
   const unresolved = new Set();
 
   const find = (rel, importer) => {
@@ -120,9 +120,20 @@ function reachableFrom(entries) {
     return cands.find((c) => fs.existsSync(c) && fs.statSync(c).isFile()) || null;
   };
 
+  // Carry the IMPORTER with each pending specifier.
+  //
+  // This resolved every relative import with `importer = null`, i.e. relative
+  // to site/assets/js/ rather than to the file doing the importing. A helper one
+  // directory down -- `./lib/helper` -- was therefore never scanned. Proved by
+  // injecting an import of a helper containing a bogus endpoint: the gate
+  // passed. A gate with a hole in its reach is worse than no gate, because it
+  // reports OK.
+  //
+  // This also forced an agent to inline endpoint literals into entry files
+  // rather than share a helper module, to work around a bug in this file.
   while (stack.length) {
-    const rel = stack.pop();
-    const f = find(rel, null);
+    const { rel, importer } = stack.pop();
+    const f = find(rel, importer);
     if (!f) {
       unresolved.add(rel);
       continue;
@@ -130,10 +141,16 @@ function reachableFrom(entries) {
     if (seen.has(f)) continue;
     seen.add(f);
     const t = fs.readFileSync(f, 'utf8');
-    const re = /(?:from|import)\s+['"]([^'".][^'"]*)['"]|require\(\s*['"]([^'"]+)['"]\s*\)/g;
+    // The character class must NOT exclude a leading dot. It used to be
+    // [^'".], which meant  never matched at all -- so the
+    // startsWith('.') branch below was unreachable and NO relative import was
+    // ever followed. The gate had only ever scanned entry files. Proved by
+    // injecting an import of a helper containing a bogus endpoint: it passed.
+    // Entries themselves are still needed, so the class only excludes quotes.
+    const re = /(?:from|import)\s+['"]([^'"]+)['"]|require\(\s*['"]([^'"]+)['"]\s*\)/g;
     for (const m of t.matchAll(re)) {
       const r = m[1] || m[2];
-      if (r.startsWith('.')) stack.push(r);
+      if (r.startsWith('.')) stack.push({ rel: r, importer: f });
       else unresolved.add(r); // bare specifier: an npm package, not our problem
     }
   }

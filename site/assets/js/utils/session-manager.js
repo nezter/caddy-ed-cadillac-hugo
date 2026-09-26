@@ -122,7 +122,13 @@ class SessionManager {
         }
         return response.json();
       })
-      .then(data => {
+      .then(envelope => {
+        // `authenticated` lives at body.data.authenticated, not at the top
+        // level: sales-auth-check returns the standard
+        // {success, message, data, timestamp} envelope. Reading the top level
+        // yields undefined, so isAuthenticated() always returned false and
+        // /admin/dashboard showed its sign-in prompt to a signed-in rep.
+        const data = envelope && envelope.data ? envelope.data : {};
         if (data.authenticated) {
           // Token is still valid, schedule next refresh
           this.setupAutoRefresh();
@@ -248,7 +254,9 @@ class SessionManager {
         }
       });
 
-      const data = await response.json();
+      const envelope = await response.json();
+      // Same envelope: the flag is at body.data.authenticated.
+      const data = envelope && envelope.data ? envelope.data : {};
       return data.authenticated === true;
 
     } catch (error) {
