@@ -26,7 +26,9 @@
     {{ end }}
     
     {{ partial "critical-css.html" . }}
-    {{ partial "header-scripts.html" . }}
+    {{/* Fingerprinted CSS emitted by Hugo Pipes. Replaces the hardcoded
+         /css/main.css that used to point at a stale 6KB duplicate. */}}
+    {{ partial "assets.html" (dict "page" . "mode" "css") }}
 
     {{ block "headStyles" . }}{{ end }}
     {{ block "headScripts" . }}{{ end }}
@@ -44,12 +46,15 @@
     
     {{ block "footer" . }}{{ partial "footer" . }}{{ end }}
     
-    {{ with .Site.Data.webpack.main }}
-    {{ with .js }}
-    <script src="{{ relURL . }}"></script>
-    {{ end }}
-    {{ end }}
-    
+    {{/* Fingerprinted JS bundle emitted by Hugo Pipes (esbuild).
+         Replaces `header-scripts.html`, which hardcoded /js/index.js --
+         a file that was never built and 404'd on every page. */}}
+    {{ partial "assets.html" (dict "page" . "mode" "js") }}
+    {{/* Page-scoped entries declared in front matter (customer portal,
+         admin dashboards, etc.). */}}
+    {{ partial "page-scripts.html" . }}
+    <script src="/sw-register.js" defer></script>
+
     {{ if eq (getenv "HUGO_ENV") "production" | or (eq .Site.Params.env "production") }}
     <script>
       if ('serviceWorker' in navigator) {

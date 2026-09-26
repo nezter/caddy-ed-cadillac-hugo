@@ -2,6 +2,8 @@
 title: "Sales Dashboard"
 description: "Sales performance dashboard for sales representatives"
 layout: "admin"
+scripts:
+  - salesDashboard.js
 ---
 
 # Sales Dashboard
@@ -13,7 +15,6 @@ layout: "admin"
   </div>
 </div>
 
-<script src="/js/salesDashboard.js"></script>
 
 <style>
 /* Dashboard Loading State */

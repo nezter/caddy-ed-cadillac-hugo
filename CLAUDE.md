@@ -174,56 +174,59 @@ docs/                   # Project documentation
 
 ## 🚀 Deployment Process
 
-### Development Deployment
-```bash
-# Local development
-npm run dev
+**Netlify's remote builders are disabled on purpose** — the monthly build
+allowance is scarce. Builds run on the CI host (`10.1.0.25`) inside the
+`caddy-netlify-build:2026` podman image, and production is updated by uploading
+a prebuilt directory, which consumes **zero build minutes**.
 
-# Build for production
-npm run build
+```bash
+# Build + verify on the CI host
+./ci/run.sh verify
+
+# Deploy prebuilt output
+./ci/run.sh deploy-prod          # production (caddyed.com)
+./ci/run.sh deploy               # draft/preview URL
 ```
 
-### Production Deployment
-- Automatic deployment via Netlify on `main` branch push
-- Environment variables configured in Netlify dashboard
-- Database migrations run automatically
-- CDN invalidation for static assets
+### Front-end build
+Hugo Pipes (`js.Build` / `css.Sass`) compiles and fingerprints all CSS/JS.
+Webpack survives only for the Netlify CMS bundle (`webpack.cms.js`).
+**Never hardcode an asset path in a template** — reference it through
+`partials/assets.html` or page front matter, or `ci/verify-build.js` will fail
+the build.
 
 ### Environment Setup
 ```bash
-# Interactive setup
-npm run setup
-
-# Database migrations
-npm run migrate
-
-# Optional Turso setup
-npm run setup:turso
-npm run migrate:turso
+./ci/run.sh image    # (re)build the toolchain image
+npm run setup        # interactive env setup (local)
+npm run migrate      # Supabase migrations
 ```
+
+See `docs/build-system.md` and `docs/deployment.md` for the full picture.
 
 ## 🔧 Tooling & Commands
 
-### Development Tools
 ```bash
-# Code quality
-npm run lint          # ESLint checking
-npm run build         # Production build
+# Build (all on the CI host)
+./ci/run.sh build      ./ci/run.sh verify      ./ci/run.sh test
+
+# Local dev
+make dev              # hugo server :1313
+make dev-functions    # netlify dev :8888
+
+# Quality
+make lint             npm run verify
 
 # Database
-npm run migrate       # Run Supabase migrations
-npm run migrate:turso # Run Turso migrations
-
-# Task management
-task-master next      # Find next task
-task-master list      # View all tasks
-task-master show <id> # Task details
+npm run migrate       npm run migrate:turso
 ```
 
 ### Key Files
-- `docs/architecture-overview.md` - System architecture
+- `docs/build-system.md` - Build pipeline and rationale
+- `docs/deployment.md` - CI/CD and the zero-build-minute deploy path
 - `docs/api-reference.md` - API documentation
-- `docs/deployment.md` - Deployment guide
+- `ci/run.sh` - CI driver (all builds)
+- `ci/Containerfile` - Pinned toolchain (Node 24, Hugo extended 0.166.0)
 - `database/migrations/` - Database schema files
 - `netlify/functions/` - Serverless functions
 

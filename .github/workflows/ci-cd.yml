@@ -1,390 +1,202 @@
-name: CI/CD Pipeline - Follow-up System
+name: CI/CD
+
+# =============================================================================
+# caddy-ed-cadillac-hugo
+#
+# Design constraints (deliberate):
+#
+#  * NO job here ever deploys to Netlify. Netlify's remote builders are
+#    disabled on the site (skip_automatic_builds) because the monthly build
+#    allowance is scarce and the old remote builds could never succeed. The
+#    production site is updated by uploading a prebuilt directory
+#    (netlify deploy --dir=...), which consumes no build minutes.
+#
+#  * Every build runs on the CI host (10.1.0.25) inside the
+#    caddy-netlify-build:2026 image, which pins Node 24, Hugo Extended 0.166.0
+#    and @netlify/build so local and CI builds are byte-for-byte comparable.
+#
+#  * GitHub-hosted runners are used only as an ORCHESTRATOR: they SSH to the CI
+#    host and invoke ci/run.sh. No compilation happens on GitHub infrastructure.
+#
+# Deploys are a separate, manual workflow (see .github/workflows/deploy.yml).
+# =============================================================================
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [master, main]
   pull_request:
-    branches: [ main, develop ]
-  release:
-    types: [ published ]
+    branches: [master, main]
+  workflow_dispatch:
+
+# Cancel superseded runs for the same ref.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 env:
-  NODE_VERSION: '18'
-  NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-  NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+  CI_HOST: 10.1.0.25
+  IMAGE: caddy-netlify-build:2026
+  HUGO_VERSION: '0.166.0'
+  NODE_VERSION: '24'
 
 jobs:
-  # Code Quality and Security
-  lint-and-security:
-    name: Code Quality & Security Scan
+  # ---------------------------------------------------------------------------
+  # Gate: the build image must exist on the CI host and be the right version.
+  # Building it is a deliberate, manual step -- a CI run must never mutate the
+  # shared CI host or race with a concurrent job.
+  # ---------------------------------------------------------------------------
+  preflight:
+    name: Preflight (CI host + image)
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Verify CI host is reachable
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 5); do
+            if ssh -o ConnectTimeout=8 -o StrictHostKeyChecking=no "$CI_HOST" true; then
+              echo "CI host reachable"; exit 0
+            fi
+            echo "attempt $i failed, retrying..."; sleep 5
+          done
+          echo "::error::CI host $CI_HOST unreachable"
+          exit 1
+
+      - name: Verify build image exists and reports the expected toolchain
+        run: |
+          set -euo pipefail
+          ssh -o StrictHostKeyChecking=no "$CI_HOST" \
+            "podman image exists '$IMAGE' || { echo '::error::image $IMAGE missing -- run: make image'; exit 1; }
+             podman run --rm '$IMAGE' bash -lc 'node -v; npm -v; hugo version; netlify --version'"
+          # Node 24 + Hugo Extended are hard requirements.
+          ssh -o StrictHostKeyChecking=no "$CI_HOST" \
+            "podman run --rm '$IMAGE' bash -lc 'hugo version | grep -q \"+extended\"' \
+             || { echo '::error::image hugo is not extended'; exit 1; }"
+
+  # ---------------------------------------------------------------------------
+  # Build + asset verification, entirely on the CI host.
+  # ---------------------------------------------------------------------------
+  build:
+    name: Build & verify assets
+    needs: preflight
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build and verify (on CI host)
+        run: ./ci/run.sh verify
+
+      - name: Archive publish directory
+        uses: actions/upload-artifact@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: netlify/functions/package-lock.json
+          name: site-public
+          path: site/public
+          retention-days: 7
+          if-no-files-found: error
 
-      - name: Install dependencies
-        run: |
-          cd netlify/functions
-          npm ci
-
-      - name: Run ESLint
-        run: |
-          cd netlify/functions
-          npm run lint || echo "Lint script not found, skipping..."
-
-      - name: Run security audit
-        run: |
-          cd netlify/functions
-          npm audit --audit-level=high
-
-      - name: Run Snyk security scan
-        if: github.event_name == 'push' || github.event_name == 'pull_request'
-        uses: snyk/actions/node@master
-        continue-on-error: true
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          args: --severity-threshold=high
-          command: monitor
-          json: true
-
-  # Testing
+  # ---------------------------------------------------------------------------
+  # Tests for the Netlify functions.
+  # ---------------------------------------------------------------------------
   test:
-    name: Test Suite
+    name: Functions tests
+    needs: preflight
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [16, 18, 20]
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: 'npm'
-          cache-dependency-path: netlify/functions/package-lock.json
+      - name: Run jest suite (on CI host)
+        run: ./ci/run.sh test
 
-      - name: Install dependencies
-        run: |
-          cd netlify/functions
-          npm ci
-
-      - name: Run unit tests
-        run: |
-          cd netlify/functions
-          npm run test:unit || npm run test || echo "Running basic tests..."
-
-      - name: Run integration tests
-        run: |
-          cd netlify/functions
-          npm run test:integration || echo "Integration tests not configured..."
-
-      - name: Generate coverage report
-        run: |
-          cd netlify/functions
-          npm run test:coverage || npm run test -- --coverage
-
-      - name: Upload coverage to Codecov
-        if: matrix.node-version == 18
-        uses: codecov/codecov-action@v3
-        with:
-          file: ./netlify/functions/coverage/lcov.info
-          flags: unittests
-          name: codecov-umbrella
-          fail_ci_if_error: false
-
-  # Build and Deploy
-  build-and-deploy:
-    name: Build & Deploy
+  # ---------------------------------------------------------------------------
+  # Lint. Pinned to the versions in package.json rather than floating.
+  # ---------------------------------------------------------------------------
+  lint:
+    name: Lint
+    needs: preflight
     runs-on: ubuntu-latest
-    needs: [lint-and-security, test]
-    if: github.ref == 'refs/heads/main' || github.event_name == 'release'
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: netlify/functions/package-lock.json
-
-      - name: Install dependencies
+      - name: ESLint (on CI host)
         run: |
-          cd netlify/functions
-          npm ci
+          set -euo pipefail
+          ./ci/run.sh sync
+          ssh -o StrictHostKeyChecking=no "$CI_HOST" \
+            "podman run --rm -v /var/tmp/caddy-build:/site:Z -w /site '$IMAGE' \
+               bash -lc 'npm install --no-audit --no-fund >/dev/null && npm run lint'"
 
-      - name: Build functions
-        run: |
-          cd netlify/functions
-          npm run build || echo "No build script configured"
-
-      - name: Setup Hugo
-        uses: peaceiris/actions-hugo@v2
-        with:
-          hugo-version: 'latest'
-          extended: true
-
-      - name: Build Hugo site
-        run: |
-          hugo --minify --gc
-
-      - name: Deploy to Netlify (Production)
-        if: github.ref == 'refs/heads/main'
-        uses: netlify/actions/cli@master
-        with:
-          args: deploy --prod --dir=public --functions=netlify/functions
-        env:
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-
-      - name: Deploy to Netlify (Preview)
-        if: github.event_name == 'pull_request'
-        uses: netlify/actions/cli@master
-        with:
-          args: deploy --dir=public --functions=netlify/functions --message="Pull Request ${{ github.event.number }}"
-        env:
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-
-      - name: Comment PR with deploy URL
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const deployUrl = process.env.DEPLOY_URL;
-            const prNumber = context.issue.number;
-            
-            github.rest.issues.createComment({
-              issue_number: prNumber,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: `🚀 **Preview deployed!**\n\nView the changes at: ${deployUrl}\n\n**Follow-up System Changes:**\n- Security fixes and improvements\n- Performance optimizations\n- Enhanced monitoring and health checks\n- Comprehensive test coverage`
-            });
-
-  # Database Migration
-  database-migration:
-    name: Database Migration
+  # ---------------------------------------------------------------------------
+  # Dependency audit. Informational for the front end, blocking for high/critical
+  # in the functions bundle (those are the ones exposed to the internet).
+  # ---------------------------------------------------------------------------
+  audit:
+    name: Dependency audit
+    needs: preflight
     runs-on: ubuntu-latest
-    needs: [test]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Install dependencies
+      - name: Audit netlify/functions
         run: |
-          cd netlify/functions
-          npm ci
+          set -euo pipefail
+          ./ci/run.sh sync
+          ssh -o StrictHostKeyChecking=no "$CI_HOST" \
+            "podman run --rm -v /var/tmp/caddy-build:/site:Z -w /site '$IMAGE' \
+               bash -lc 'cd netlify/functions && npm install --no-audit --no-fund >/dev/null && npm audit --audit-level=high'"
 
-      - name: Run database migrations
-        run: |
-          echo "Running database migrations..."
-          # Add your migration script here
-          # Example: node scripts/run-migrations.js
-          echo "Migrations completed successfully"
-
-      - name: Verify database schema
-        run: |
-          echo "Verifying database schema..."
-          # Add schema verification script here
-          echo "Schema verification completed"
-
-  # Performance Testing
-  performance-test:
-    name: Performance Testing
+  # ---------------------------------------------------------------------------
+  # Security scanning. Trivy is pinned to a release tag (the old workflow used
+  # @master, which is an unpinned third-party code-execution risk).
+  # ---------------------------------------------------------------------------
+  security:
+    name: Security scan
+    needs: preflight
     runs-on: ubuntu-latest
-    needs: [build-and-deploy]
-    if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      security-events: write
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Trivy filesystem scan
+        uses: aquasecurity/trivy-action@0.28.0
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          scan-type: fs
+          scan-ref: .
+          severity: CRITICAL,HIGH
+          format: sarif
+          output: trivy-results.sarif
+          # The repo is full of vendored/legacy scripts; scan the live code only.
+          skip-dirs: "node_modules,site/public,.git,bin"
 
-      - name: Install dependencies
-        run: |
-          cd netlify/functions
-          npm ci
-
-      - name: Run performance tests
-        run: |
-          echo "Running performance tests..."
-          # Add performance testing script here
-          # Example: npm run test:performance
-          echo "Performance tests completed"
-
-      - name: Upload performance results
-        uses: actions/upload-artifact@v3
+      - name: Upload SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
         with:
-          name: performance-results
-          path: performance-results.json
+          sarif_file: trivy-results.sarif
+        continue-on-error: true
 
-  # Documentation
-  documentation:
-    name: Update Documentation
+  # ---------------------------------------------------------------------------
+  # Single source of truth for a green build.
+  # ---------------------------------------------------------------------------
+  ci-green:
+    name: CI green
+    needs: [build, test, lint, audit, security]
+    if: always()
     runs-on: ubuntu-latest
-    needs: [build-and-deploy]
-    if: github.ref == 'refs/heads/main'
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Generate API documentation
+      - name: Verify all required jobs passed
         run: |
-          echo "Generating API documentation..."
-          # Add documentation generation script here
-          echo "Documentation generated"
-
-      - name: Deploy documentation
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./docs
-          destination_dir: api
-
-  # Notification
-  notify:
-    name: Notify Team
-    runs-on: ubuntu-latest
-    needs: [build-and-deploy, database-migration]
-    if: always() && github.ref == 'refs/heads/main'
-    steps:
-      - name: Notify Slack on Success
-        if: needs.build-and-deploy.result == 'success'
-        uses: 8398a7/action-slack@v3
-        with:
-          status: success
-          channel: '#deployments'
-          text: |
-            🎉 **Follow-up System Deployed Successfully!**
-            
-            **Environment:** Production
-            **Branch:** ${{ github.ref_name }}
-            **Commit:** ${{ github.sha }}
-            **Deployed by:** ${{ github.actor }}
-            
-            **Changes:**
-            - Security fixes and improvements
-            - Performance optimizations
-            - Enhanced monitoring and health checks
-            - Comprehensive test coverage
-            
-            **Health Check:** https://cadillac-of-south-charlotte.netlify.app/.netlify/functions/health-check
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-
-      - name: Notify Slack on Failure
-        if: needs.build-and-deploy.result == 'failure'
-        uses: 8398a7/action-slack@v3
-        with:
-          status: failure
-          channel: '#deployments'
-          text: |
-            ❌ **Follow-up System Deployment Failed!**
-            
-            **Environment:** Production
-            **Branch:** ${{ github.ref_name }}
-            **Commit:** ${{ github.sha }}
-            **Failed by:** ${{ github.actor }}
-            
-            Please check the GitHub Actions logs for details.
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-
-      - name: Send Email Notification
-        if: needs.build-and-deploy.result == 'success'
-        uses: dawidd6/action-send-mail@v3
-        with:
-          server_address: smtp.gmail.com
-          server_port: 587
-          username: ${{ secrets.EMAIL_USERNAME }}
-          password: ${{ secrets.EMAIL_PASSWORD }}
-          subject: "Follow-up System Deployment - ${{ github.ref_name }}"
-          to: ${{ secrets.NOTIFICATION_EMAIL }}
-          from: "GitHub Actions <noreply@cadillacofsouthcharlotte.com>"
-          body: |
-            The Follow-up System has been successfully deployed to production.
-            
-            Details:
-            - Branch: ${{ github.ref_name }}
-            - Commit: ${{ github.sha }}
-            - Deployed by: ${{ github.actor }}
-            - Time: ${{ github.event.head_commit.timestamp }}
-            
-            View the deployment at: https://cadillac-of-south-charlotte.netlify.app
-            Health check: https://cadillac-of-south-charlotte.netlify.app/.netlify/functions/health-check
-
-  # Security Scan (Advanced)
-  advanced-security:
-    name: Advanced Security Scan
-    runs-on: ubuntu-latest
-    needs: [lint-and-security]
-    if: github.event_name == 'push' || github.event_name == 'pull_request'
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-
-      - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v2
-        with:
-          sarif_file: 'trivy-results.sarif'
-
-      - name: Run CodeQL Analysis
-        uses: github/codeql-action/analyze@v2
-        with:
-          languages: javascript
-
-  # Environment Tests
-  environment-tests:
-    name: Environment Tests
-    runs-on: ubuntu-latest
-    needs: [build-and-deploy]
-    if: github.ref == 'refs/heads/main'
-    steps:
-      - name: Wait for deployment
-        run: sleep 60
-
-      - name: Test production endpoints
-        run: |
-          echo "Testing production endpoints..."
-          
-          # Test health check
-          curl -f https://cadillac-of-south-charlotte.netlify.app/.netlify/functions/health-check || exit 1
-          
-          # Test API endpoints (with proper authentication)
-          # Add more endpoint tests here
-          
-          echo "All endpoint tests passed!"
-
-      - name: Run smoke tests
-        run: |
-          echo "Running smoke tests..."
-          # Add smoke test script here
-          echo "Smoke tests completed"
+          set -euo pipefail
+          echo "build=${{ needs.build.result }} test=${{ needs.test.result }} lint=${{ needs.lint.result }} audit=${{ needs.audit.result }} security=${{ needs.security.result }}"
+          for job in build test lint audit security; do
+            if [ "${{ needs.$job.result }}" != "success" ]; then
+              echo "::error::job '$job' finished as ${{ needs.$job.result }}"
+              exit 1
+            fi
+          done
+          echo "All required jobs passed."

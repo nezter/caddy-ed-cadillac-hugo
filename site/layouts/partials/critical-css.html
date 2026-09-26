@@ -1,12 +1,42 @@
-{{/* CSS loading for Cadillac CRM */}}
-<link rel="stylesheet" href="/css/main.css">
+{{- /*
+  critical-css.html -- above-the-fold CSS.
 
-{{/* Optional: Add critical CSS inlining for better performance */}}
-{{ if eq .Kind "home" }}
+  The old version of this file was the source of the site's broken styling: it
+  hardcoded `<link rel="stylesheet" href="/css/main.css">`, which resolved to
+  `site/static/css/main.css` -- a stale 6KB hand-written duplicate of the real
+  20KB `assets/css/main.css`. The real stylesheet was never served.
+
+  Stylesheets are now emitted (and fingerprinted) by `partials/assets.html`.
+  This partial only carries a small inline block for the most common above-the-
+  fold elements so first paint does not wait on the main stylesheet.
+*/ -}}
 <style>
-  /* Critical above-the-fold styles for homepage */
+  /* Above-the-fold baseline: matches the CSS custom properties in
+     assets/css/main.css so there is no flash of unstyled colour. */
+  :root {
+    --primary-color: #1A2B49;
+    --secondary-color: #C8102E;
+    --accent-color: #B69F58;
+    --light-grey: #f4f4f4;
+    --white: #ffffff;
+    --text-color: #222;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+                 Roboto, 'Helvetica Neue', Arial, sans-serif;
+    color: var(--text-color);
+    line-height: 1.6;
+    background: var(--white);
+  }
   .site-header { position: sticky; top: 0; z-index: 100; }
-  .hero { background: linear-gradient(135deg, #1A2B49 0%, #2a3a5a 100%); }
-  .navbar { display: flex; justify-content: space-between; align-items: center; }
+  .skip-link {
+    position: absolute; left: -9999px;
+  }
+  .skip-link:focus {
+    left: 0; top: 0; z-index: 1000;
+    padding: .75rem 1rem; background: var(--primary-color); color: #fff;
+  }
+  img { max-width: 100%; height: auto; }
 </style>
-{{ end }}

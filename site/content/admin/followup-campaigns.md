@@ -2,6 +2,9 @@
 title: "Follow-up Campaign Manager"
 description: "Create and manage automated follow-up campaigns"
 layout: "admin"
+scripts:
+  - components/followup-campaign-manager.js
+  - components/followup-analytics-dashboard.js
 ---
 
 # Follow-up Campaign Manager
@@ -36,8 +39,7 @@ layout: "admin"
   </div>
 </div>
 
-<script src="/js/components/followup-campaign-manager.js"></script>
-<script src="/js/components/followup-analytics-dashboard.js"></script>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
   // Initialize components

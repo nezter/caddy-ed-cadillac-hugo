@@ -12,6 +12,7 @@
   </div>
 </div>
 
-<!-- Customer Portal JavaScript -->
-<script src="/js/customer-portal.js"></script>
+<!-- Customer Portal JavaScript (bundled + fingerprinted; the old
+     hardcoded /js/customer-portal.js was never emitted and 404'd) -->
+{{ partial "entry.html" (dict "entry" "customer-portal.js" "page" .) }}
 {{ end }}

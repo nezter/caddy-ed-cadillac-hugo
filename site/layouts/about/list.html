@@ -1,6 +1,8 @@
 {{ define "main" }}
 <div class="about-page">
-  <div class="hero-banner" style="background-image: url('{{ .Params.image }}')">
+  {{/* Hero only renders a background if the page actually defines one --
+       the old version emitted `background-image: url('')` when unset. */}}
+  <div class="hero-banner"{{ with .Params.image }} style="background-image: url('{{ . | relURL }}')"{{ end }}>
     <div class="container">
       <h1>{{ .Title }}</h1>
     </div>
@@ -82,23 +84,34 @@
       </div>
     </div>
 
+    {{/* Gallery renders only from images that actually exist. These used to be
+         four hardcoded /img/dealership/*.jpg paths with no files behind them, so
+         the section shipped as four broken images. Drop real photography into
+         static/img/dealership/ and it appears automatically. */}}
+    {{ $gallery := slice
+        (dict "src" "img/dealership/showroom.jpg" "alt" "Caddy Ed Cadillac Showroom")
+        (dict "src" "img/dealership/service.jpg"   "alt" "Caddy Ed Cadillac Service Center")
+        (dict "src" "img/dealership/lounge.jpg"    "alt" "Customer Lounge")
+        (dict "src" "img/dealership/exterior.jpg"  "alt" "Dealership Exterior")
+    }}
+    {{ $shots := slice }}
+    {{ range $gallery }}
+      {{ with resources.Get .src }}
+        {{ $shots = $shots | append (dict "res" . "alt" $.alt) }}
+      {{ end }}
+    {{ end }}
+    {{ with $shots }}
     <div class="dealership-gallery">
       <h2 class="section-title">Our Dealership</h2>
       <div class="gallery-grid">
+        {{ range . }}
         <div class="gallery-item">
-          <img src="/img/dealership/showroom.jpg" alt="Caddy Ed Cadillac Showroom" class="lazyload">
+          <img src="{{ .res.RelPermalink }}" alt="{{ .alt }}" class="lazyload" loading="lazy">
         </div>
-        <div class="gallery-item">
-          <img src="/img/dealership/service.jpg" alt="Caddy Ed Cadillac Service Center" class="lazyload">
-        </div>
-        <div class="gallery-item">
-          <img src="/img/dealership/lounge.jpg" alt="Customer Lounge" class="lazyload">
-        </div>
-        <div class="gallery-item">
-          <img src="/img/dealership/exterior.jpg" alt="Dealership Exterior" class="lazyload">
-        </div>
+        {{ end }}
       </div>
     </div>
+    {{ end }}
 
     <div class="cta-box">
       <h2>Ready to Experience Caddy Ed Cadillac?</h2>

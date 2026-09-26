@@ -1,86 +1,172 @@
-# Build System Documentation
+# Build System
 
-This document provides an overview of the build system used in the Caddy Ed Cadillac Hugo project.
+How `caddy-ed-cadillac-hugo` is built, and why it works the way it does.
 
-## Overview
+## TL;DR
 
-The project uses a modern build system that combines Hugo (for static site generation) with Webpack (for asset processing). This approach provides the best of both worlds:
+| | |
+|---|---|
+| **Static site** | Hugo Extended 0.166.0 |
+| **Front-end CSS/JS** | Hugo Pipes (`js.Build` / `css.Sass`) — built into Hugo |
+| **CMS bundle** | the one remaining webpack build (`webpack.cms.js`) |
+| **Backend** | Netlify Functions (Node 24) |
+| **Build host** | 10.1.0.25, inside `caddy-netlify-build:2026` (podman) |
+| **Deploy** | `netlify deploy --dir=site/public` — **no build minutes used** |
+| **Netlify remote builds** | disabled on purpose |
 
-- **Hugo**: Fast static site generation, content management, and templating
-- **Webpack**: Modern JavaScript processing, CSS optimization, and asset management
+## Running a build
 
-## Core Components
+```bash
+./ci/run.sh build      # full production build on the CI host
+./ci/run.sh verify     # build + assert no page references a missing asset
+./ci/run.sh test       # netlify/functions jest suite
+./ci/run.sh shell      # interactive shell in the build container
+make build             # same as ./ci/run.sh build
+```
 
-### 1. Hugo
+Every one of these rsyncs the working tree to `10.1.0.25:/var/tmp/caddy-build`
+and runs the command inside the podman image. Nothing is compiled on your
+workstation, and Netlify's remote builders are never used.
 
-Hugo is responsible for generating HTML from markdown content and templates.
+To change the toolchain, edit `ci/Containerfile` and run `./ci/run.sh image`.
 
-### 2. Webpack Configuration
+## The pipeline
 
-The Webpack configuration is split into three files:
+`scripts/build-for-netlify.js` runs these steps in order:
 
-- `webpack.common.js`: Common configuration shared between environments
-- `webpack.dev.js`: Development-specific configuration with fast builds and hot reloading
-- `webpack.prod.js`: Production-specific configuration with optimizations
+1. **Assert Hugo is the extended build.** Fails immediately otherwise. Since
+   Hugo 0.146 the extended build is a *separate* release asset
+   (`hugo_extended_*`); installing the default `hugo_*` package gives you a
+   binary with no esbuild or libsass, and every asset call fails.
+2. **Clean** `site/public` and `site/resources`.
+3. **Install root dependencies.** Hugo Pipes resolves the bare npm imports
+   (`lazysizes`, `date-fns`) out of `./node_modules` via esbuild.
+4. **Install `netlify/functions` dependencies** (production only).
+5. **Build the CMS bundle** with webpack. Non-fatal — a CMS failure must not
+   take the public site down.
+6. **Run Hugo**, which emits all HTML *and* the fingerprinted CSS/JS.
+7. **Verify** — `ci/verify-build.js` fails the build if any page references a
+   local asset that does not exist.
 
-### 3. NPM Scripts
+## Why there is no webpack on the front end
 
-Several NPM scripts are available to streamline development:
+Historically the front end was webpack + a `dist/` directory, and it was broken
+in a specific, repeatable way:
 
-- `npm start`: Start development server (Hugo + Webpack)
-- `npm run build`: Build for production
-- `npm run build:enhanced`: Build with enhanced error reporting
-- `npm run build:notify`: Build with desktop notifications
-- `npm run check:errors`: Run pre-build error checks
-- `npm run critical-css`: Generate critical CSS manually
+- `scripts/build-for-netlify.js` copied `dist/*` into `site/public/`, but
+  **nothing ever ran webpack**, so `dist/` never existed — and the
+  `2>/dev/null || echo` in that step swallowed the failure.
+- Templates hardcoded `<script src="/js/index.js">`, but webpack emitted
+  `main.<hash>.js` / `styles.<hash>.css` into `dist/`. The names could never
+  match.
+- The two webpack configs disagreed about the manifest filename
+  (`webpack.json` vs `assets.json`).
 
-## Production Build Process
+Net result: **every page 404'd its own JavaScript**, and the site shipped
+unstyled and inert while looking superficially "built".
 
-The production build process includes the following steps:
+Hugo Pipes removes the entire class of problem: the template asks Hugo for the
+resource, Hugo builds and fingerprints it, and the URL it emits is correct by
+construction. There is no `dist/`, no manifest to keep in sync, and no
+opportunity for the template and the bundler to disagree.
 
-1. **Cleaning**: Remove previous build artifacts
-2. **Webpack Build**: Process and optimize JavaScript and CSS
-3. **Critical CSS Generation**: Extract and inline critical CSS
-4. **Hugo Build**: Generate HTML from content and templates
-5. **Post-processing**: Apply additional optimizations
+See `site/layouts/partials/assets.html`.
 
-### Critical CSS Optimization
+## Assets
 
-The build system now includes critical CSS optimization to improve page load performance:
+| Output | Source | Mechanism |
+|---|---|---|
+| `css/main.min.<sha512>.css` | `site/assets/css/main.css` | `minify` + `fingerprint` |
+| `css/customer-portal.min.<sha512>.css` | `site/assets/css/customer-portal.css` | `minify` + `fingerprint` |
+| `css/inventory.min.<sha512>.css` | `site/assets/css/inventory.scss` | `css.Sass` → `minify` → `fingerprint` |
+| `js/main.<sha512>.js` | `site/assets/js/index.js` | `js.Build` (esbuild) → `fingerprint` |
+| per-page bundles | `site/assets/js/<name>.js` | `js.Build`, driven by front matter |
 
-1. After Webpack has generated the main CSS file, critical CSS is extracted for key templates
-2. The critical CSS is inlined directly into the HTML
-3. The main CSS file is loaded asynchronously to prevent render blocking
+Fingerprinted assets are served with `Cache-Control: immutable, max-age=1y`
+(see `netlify.toml`). Only production builds fingerprint; development builds
+stay unfingerprinted so rebuilds are cheap.
 
-This approach significantly improves Core Web Vitals metrics like First Contentful Paint (FCP) and Largest Contentful Paint (LCP).
+### Page-scoped bundles
 
-## Development Workflow
+Pages declare their own scripts and stylesheets in front matter:
 
-During development:
+```yaml
+---
+title: "Follow-up Campaign Manager"
+scripts:
+  - components/followup-campaign-manager.js
+  - components/followup-analytics-dashboard.js
+---
+```
 
-1. Run `npm start` to start both Hugo and Webpack in development mode
-2. Hugo will serve content on http://localhost:1313
-3. Changes to source files trigger automatic rebuilds
+`partials/page-scripts.html` bundles each entry and automatically pulls in the
+matching `components/<name>.css` if it exists. Components must self-initialise
+(see `salesDashboard.js` for the pattern) — do not inject `<script>` tags from
+markdown.
 
-## Error Reporting
+## The CMS is the exception
 
-The build system includes enhanced error reporting:
+Netlify CMS needs `netlify-cms-app` + React + eight preview templates bundled
+together, and the preview templates are registered dynamically at runtime
+against a shared React instance. A single-entry esbuild pass cannot express
+that, so the CMS keeps a dedicated webpack build scoped to exactly one entry
+and one output: `site/static/cms.js`, referenced by `site/static/cms.html`.
 
-1. **Pre-build Checks**: Detect common issues before building
-2. **Formatted Errors**: Clear, contextual error messages
-3. **Build Notifications**: Desktop notifications for build events
-4. **Visual Hierarchy**: Color-coded error output
+Its config is `site/static/admin/config.yml`. Note it targets the `master`
+branch — it previously said `main`, which does not exist in this repository, so
+every CMS publish would have failed.
 
-## Advanced Features
+## npm lifecycle scripts (EALLOWSCRIPTS)
 
-### Bundle Analysis
+npm 11 refuses to run dependency install scripts unless they are allowlisted.
+The allowlist lives in the **`allowScripts` field of `package.json`**, and
+deliberately *not* in `.npmrc`.
 
-Run `npm run build:analyze` to generate a visual representation of bundle sizes.
+That distinction matters and cost real debugging time. When you run
+`npm run <script>`, npm injects every `.npmrc` key into the child process as
+`npm_config_<key>`. An `allow-scripts` line in `.npmrc` therefore reaches the
+nested `npm install` as an environment variable, and npm 11 rejects that form
+for project-scoped installs:
 
-### Cache Management
+```
+npm error code EALLOWSCRIPTS
+npm error --allow-scripts is not allowed in project-scoped installs.
+```
 
-Run `npm run cache:clear` to clear the build cache if you encounter unexplained issues.
+The `package.json` field is not converted to an env var, so it works in both
+direct and nested installs. For the same reason, `ci/Containerfile` passes
+`--allow-scripts` on the global `npm install -g` command line rather than
+persisting it globally, and the build script defensively strips
+`npm_config_allow_scripts` from its child environment.
 
-### Clean Reinstall
+## Verification gate
 
-Run `npm run reinstall` to perform a clean reinstallation of dependencies.
+`ci/verify-build.js` is the check that would have caught the original outage.
+It walks every generated HTML file, collects every `src`/`href`/`srcset`,
+resolves each root-relative reference against the publish directory, and fails
+if any are missing. It also enforces bundle size budgets and asserts that the
+site emitted *some* JavaScript — a site with no JS is a bug, not a valid build.
+
+```
+  Checked 459 local asset reference(s)
+  OK    all referenced assets exist
+```
+
+## Troubleshooting
+
+**`the hugo on PATH is not the EXTENDED build`**
+You are not in the container, or the image is stale. Use `./ci/run.sh`, or
+install the `hugo_extended_*` release asset.
+
+**`EALLOWSCRIPTS`**
+Something is setting `npm_config_allow_scripts`. Check `.npmrc` and any global
+npm config; the allowlist belongs in `package.json`.
+
+**A page renders unstyled**
+Check whether its stylesheet is emitted by `assets.html` or declared in front
+matter. `ci/verify-build.js` catches missing *files*; it cannot catch a page
+that never requested its stylesheet at all.
+
+**Builds work locally but not in CI**
+Almost always a toolchain drift. Compare `.nvmrc`, `.tool-versions`,
+`netlify.toml`, and `ci/Containerfile` — they are meant to agree.

@@ -1,3 +1,14 @@
-{{/* Header scripts for webpack-built JavaScript */}}
-<script src="/js/index.js" defer></script>
-<script src="/sw-register.js" defer></script>
+{{- /*
+  DEPRECATED -- intentionally empty.
+
+  This partial used to hardcode `<script src="/js/index.js" defer>`. That path
+  was never produced by any build: webpack emitted `main.<hash>.js` into `dist/`,
+  and the Netlify build never ran webpack at all, so every page shipped a 404
+  for its JavaScript.
+
+  The front-end bundle is now built by Hugo Pipes `js.Build` and injected by
+  `partials/assets.html`. See site/layouts/_default/baseof.html.
+
+  Kept as an empty file (rather than deleted) so any layout still calling it
+  renders harmlessly instead of failing the build.
+*/ -}}

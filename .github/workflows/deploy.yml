@@ -1,0 +1,124 @@
+name: Deploy
+
+# =============================================================================
+# Production deploy for caddyed.com
+#
+# This workflow does NOT run a Netlify build. It downloads the prebuilt
+# site/public artifact produced by ci-cd.yml and uploads it:
+#
+#     netlify deploy --prod --dir=site/public --functions=netlify/functions
+#
+# `netlify deploy --dir` uploads an already-built directory, so Netlify never
+# starts a builder and ZERO build minutes are consumed. The site's
+# skip_automatic_builds is enabled precisely so that a git push can never
+# silently start a remote build.
+#
+# Triggered manually only. Nothing pushes to master and expects a deploy.
+# =============================================================================
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "deploy" to publish to production (caddyed.com)'
+        required: true
+        default: ''
+      reason:
+        description: 'Why is this being deployed?'
+        required: true
+        default: ''
+
+permissions:
+  contents: read
+
+# Only one deploy at a time, ever.
+concurrency:
+  group: netlify-production-deploy
+  cancel-in-progress: false
+
+env:
+  CI_HOST: 10.1.0.25
+  IMAGE: caddy-netlify-build:2026
+  SITE_ID: 532a7445-ce96-40c1-bebb-b9d14a0d0e10
+
+jobs:
+  deploy:
+    name: Deploy prebuilt site to production
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Verify the operator really meant it
+        run: |
+          set -euo pipefail
+          if [ "${{ inputs.confirm }}" != "deploy" ]; then
+            echo "::error::confirmation must be exactly 'deploy'"
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+
+      - name: Reject dirty working trees
+        run: |
+          set -euo pipefail
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "::error::working tree is dirty; the deployed artifact must match a commit"
+            git status --short
+            exit 1
+          fi
+
+      - name: Download the verified build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: site-public
+          path: site/public
+
+      - name: Sanity-check the artifact
+        run: |
+          set -euo pipefail
+          test -f site/public/index.html || { echo "::error::no index.html in artifact"; exit 1; }
+          echo "pages: $(find site/public -name '*.html' | wc -l)"
+          # Re-run the asset gate against the downloaded artifact.
+          node ci/verify-build.js site/public
+
+      - name: Authenticate to Netlify
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+        run: echo "::add-mask::${NETLIFY_AUTH_TOKEN}"
+
+      - name: Upload prebuilt site (no build minutes used)
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        run: |
+          set -euo pipefail
+          # Run the CLI from the pinned build image so the deploy tool version is
+          # reproducible rather than whatever is newest on the runner.
+          ssh -o StrictHostKeyChecking=no "$CI_HOST" \
+            "podman run --rm -v \"$PWD\":/site:Z -w /site \
+               -e NETLIFY_AUTH_TOKEN -e NETLIFY_SITE_ID \
+               '$IMAGE' \
+               bash -lc 'netlify deploy --prod \
+                 --site=\"\$NETLIFY_SITE_ID\" \
+                 --dir=site/public \
+                 --functions=netlify/functions \
+                 --message=\"${{ github.actor }}: ${{ inputs.reason }}\"'"
+
+      - name: Post-deploy smoke test
+        run: |
+          set -euo pipefail
+          fail=0
+          for url in \
+            "https://caddyed.com/" \
+            "https://caddyed.com/inventory/" \
+            "https://caddyed.com/contact/" \
+            "https://caddyed.com/contact/" ; do
+            code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 25 "$url" || echo 000)
+            echo "$code  $url"
+            [ "$code" = "200" ] || fail=1
+          done
+          # The health function must be reachable through the /health alias.
+          code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 25 "https://caddyed.com/health" || echo 000)
+          echo "$code  https://caddyed.com/health"
+          [ "$code" = "200" ] || fail=1
+          exit $fail

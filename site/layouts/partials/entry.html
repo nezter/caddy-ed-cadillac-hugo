@@ -1,0 +1,39 @@
+{{- /*
+  entry.html -- build a page-scoped JS bundle from site/assets/js/.
+
+  The customer portal and admin dashboards each need their own component
+  scripts. Those used to be referenced with hardcoded paths like
+  `/js/customer-portal.js`, which were never copied into the publish
+  directory -- every one of those pages 404'd on its own script.
+
+  This partial bundles the requested entry through the same Hugo Pipes
+  `js.Build` pipeline as the main bundle, so the URL is always correct and
+  fingerprinted.
+
+  Usage: {{ partial "entry.html" (dict "entry" "customer-portal.js" "page" .) }}
+
+  Context (dict):
+    entry - file name under assets/js/ (required)
+    page  - the Page, used for asset resolution (required)
+*/ -}}
+
+{{- $entry := .entry -}}
+{{- $page := .page -}}
+
+{{- with resources.Get (printf "js/%s" $entry) -}}
+  {{- $opts := dict
+        "targetPath" (printf "js/%s" (path.BaseName $entry))
+        "format" "iife"
+        "minify" hugo.IsProduction
+        "sourceMap" (cond (not hugo.IsProduction) "inline" "")
+        "target" (cond hugo.IsProduction "es2018" "es2017")
+  -}}
+  {{- $js := . | js.Build $opts -}}
+  {{- if hugo.IsProduction -}}
+    {{- $js = $js | fingerprint "sha512" -}}
+  {{- end -}}
+  <script src="{{ $js.RelPermalink }}" defer
+          {{- with $js.Data.Integrity }} integrity="{{ . }}" crossorigin="anonymous"{{ end }}></script>
+{{- else -}}
+  {{- warnf "entry.html: no such asset %q (page %s)" $entry $page.RelPermalink -}}
+{{- end -}}

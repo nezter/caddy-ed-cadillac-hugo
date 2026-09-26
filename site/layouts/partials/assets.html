@@ -1,0 +1,74 @@
+{{- /*
+  assets.html -- front-end asset pipeline (Hugo Pipes).
+
+  Replaces the webpack build for the public site. Hugo's `js.Build` (esbuild)
+  and `css.Sass` (libsass) are built into Hugo Extended, so the front end no
+  longer needs a separate bundler, a `dist/` directory, or a manifest that had
+  to be kept in sync with the templates.
+
+  Why this exists: templates used to hardcode `/js/index.js` and `/css/main.css`
+  while webpack emitted `main.<hash>.js` / `styles.<hash>.css` into `dist/`, and
+  the Netlify build never ran webpack at all -- so every page shipped with a
+  404 for its JavaScript. Fingerprinted resources emitted straight from Hugo
+  make that class of bug impossible: the URL is always correct by construction.
+
+  Usage:
+    {{ partial "assets.html" (dict "page" . "mode" "css") }}   -> CSS <link>s
+    {{ partial "assets.html" (dict "page" . "mode" "js") }}    -> JS <script>s
+
+  Context (dict):
+    page  - the Page (required)
+    mode  - "css" | "js" | "all" (default "all")
+*/ -}}
+
+{{- $page := .page -}}
+{{- $mode := .mode | default "all" -}}
+{{- $isProd := hugo.IsProduction -}}
+{{- /* Hugo's fingerprint takes a hash algorithm, not a boolean. sha512 is
+       what SRI expects and what Netlify's CDN serves best. */ -}}
+{{- $algo := "sha512" -}}
+{{- $withIntegrity := true -}}
+
+{{- /* ---------------------------------------------------------------- CSS */ -}}
+{{- if or (eq $mode "css") (eq $mode "all") -}}
+  {{- with resources.Get "css/main.css" -}}
+    {{- $css := . | minify | fingerprint $algo -}}
+    <link rel="stylesheet" href="{{ $css.RelPermalink }}"
+          {{- if $withIntegrity }}{{ with $css.Data.Integrity }} integrity="{{ . }}" crossorigin="anonymous"{{ end }}{{ end }}>
+  {{- end -}}
+
+  {{- with resources.Get "css/customer-portal.css" -}}
+    {{- $css := . | minify | fingerprint $algo -}}
+    <link rel="stylesheet" href="{{ $css.RelPermalink }}"
+          {{- if $withIntegrity }}{{ with $css.Data.Integrity }} integrity="{{ . }}" crossorigin="anonymous"{{ end }}{{ end }}>
+  {{- end -}}
+
+  {{- /* inventory.scss is compiled by Hugo's built-in libsass when present. */ -}}
+  {{- with resources.Get "css/inventory.scss" -}}
+    {{- $opts := dict "targetPath" "css/inventory.css" "outputStyle" (cond $isProd "compressed" "expanded") -}}
+    {{- $css := . | toCSS $opts | minify | fingerprint $algo -}}
+    <link rel="stylesheet" href="{{ $css.RelPermalink }}"
+          {{- if $withIntegrity }}{{ with $css.Data.Integrity }} integrity="{{ . }}" crossorigin="anonymous"{{ end }}{{ end }}>
+  {{- end -}}
+{{- end -}}
+
+{{- /* ----------------------------------------------------------------- JS */ -}}
+{{- if or (eq $mode "js") (eq $mode "all") -}}
+  {{- with resources.Get "js/index.js" -}}
+    {{- $opts := dict
+          "targetPath" "js/main.js"
+          "format" "iife"
+          "minify" $isProd
+          "sourceMap" (cond (not $isProd) "inline" "")
+          "target" (cond $isProd "es2018" "es2017")
+          "params" (dict "loader" (dict ".js" "js"))
+    -}}
+    {{- $js := . | js.Build $opts -}}
+    {{- /* Fingerprint only in production so dev rebuilds stay cheap. */ -}}
+    {{- if $isProd -}}
+      {{- $js = $js | fingerprint $algo -}}
+    {{- end -}}
+    <script src="{{ $js.RelPermalink }}" defer
+            {{- if $withIntegrity }}{{ with $js.Data.Integrity }} integrity="{{ . }}" crossorigin="anonymous"{{ end }}{{ end }}></script>
+  {{- end -}}
+{{- end -}}

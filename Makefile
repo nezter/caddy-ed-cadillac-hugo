@@ -1,51 +1,94 @@
-# Makefile for Cadillac of South Charlotte Development
+# =============================================================================
+# Makefile -- caddy-ed-cadillac-hugo
+#
+# IMPORTANT: builds do NOT happen here or on this workstation. They run on the
+# CI host (10.1.0.25 by default) inside the caddy-netlify-build:2026 podman
+# image, which bundles Node 24, Hugo Extended 0.166.0 and @netlify/build.
+# Netlify's own remote builders are never used -- the site is deployed by
+# uploading a prebuilt directory, which costs zero build minutes.
+#
+# See ci/run.sh and ci/Containerfile.
+# =============================================================================
 
-.PHONY: help install dev test build clean validate api setup-db setup-redis setup-all lint format deploy-staging deploy-prod
+CI_HOST  ?= 10.1.0.25
+CI_RUN   := ./ci/run.sh
+SITE_DIR := site
 
-help: ## Show this help message
-	@echo "Available commands:"
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
+.DEFAULT_GOAL := help
+.PHONY: help build build-ci verify test image shell deploy deploy-prod \
+        dev dev-functions dev-all clean lint lint-fix link status \
+        functions-install deps
 
-install: ## Install dependencies
-	cd netlify/functions && npm install
-	npm install -g netlify-cli
+help: ## Show available targets
+	@echo "caddy-ed-cadillac-hugo"
+	@echo
+	@echo "Builds run on $(CI_HOST) inside the caddy-netlify-build:2026 image."
+	@echo "Netlify remote builds are disabled by design."
+	@echo
+	@grep -hE '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
+	  | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}'
 
-dev: ## Start development servers
-	./scripts/start-dev-server.sh
+# --- pipeline (all remote, on CI_HOST) -------------------------------------
 
-test: ## Run test suite
-	./scripts/run-tests.sh
+build: ## Full production build on the CI host
+	$(CI_RUN) build
 
-build: ## Build for production
-	./hugo --gc --minify
+build-ci: build ## Alias for `build`
 
-validate: ## Validate build and functions
-	./scripts/validate-build.sh
+verify: ## Build, then assert no page references a missing asset
+	$(CI_RUN) verify
 
-api: ## Test API endpoints
-	./scripts/test-api.sh
+test: ## Run the netlify/functions test suite on the CI host
+	$(CI_RUN) test
 
-clean: ## Clean build artifacts
-	rm -rf public/
-	rm -rf netlify/functions/.netlify/
-	rm -rf netlify/functions/coverage/
+image: ## (Re)build the podman build image on the CI host
+	$(CI_RUN) image
 
-setup-db: ## Setup local database
-	./scripts/setup-local-db.sh
+shell: ## Interactive shell inside the build container
+	$(CI_RUN) shell
 
-setup-redis: ## Setup local Redis
-	./scripts/setup-local-redis.sh
+# --- deploy (uploads prebuilt output; no build minutes consumed) -----------
 
-setup-all: setup-db setup-redis ## Setup all services
+deploy: ## Deploy the prebuilt site to a Netlify draft/preview URL
+	$(CI_RUN) deploy
 
-lint: ## Lint code
-	cd netlify/functions && npm run lint || echo "Lint not configured"
+deploy-prod: ## Deploy the prebuilt site to production (caddyed.com)
+	$(CI_RUN) deploy-prod
 
-format: ## Format code
-	cd netlify/functions && npm run format || echo "Format not configured"
+link: ## Link this directory to the Netlify site
+	netlify link --site 532a7445-ce96-40c1-bebb-b9d14a0d0e10
 
-deploy-staging: ## Deploy to staging
-	netlify deploy --dir=public --functions=netlify/functions --message="Staging deploy"
+status: ## Show Netlify build/deploy settings
+	netlify status
 
-deploy-prod: ## Deploy to production
-	netlify deploy --prod --dir=public --functions=netlify/functions --message="Production deploy"
+# --- local development (fast iteration; not the release path) -------------
+
+dev: ## Hugo dev server on :1313
+	hugo server --source=$(SITE_DIR) --port 1313 --buildDrafts --buildFuture
+
+dev-functions: ## Netlify dev server for the functions on :8888
+	netlify dev --dir=$(SITE_DIR)/public --functions=netlify/functions --port 8888
+
+dev-all: ## Hugo + netlify dev concurrently
+	npm-run-all --parallel dev dev-functions
+
+deps: ## Install root + functions dependencies locally
+	npm install
+	npm --prefix netlify/functions install
+
+functions-install: ## Install netlify/functions dependencies
+	npm --prefix netlify/functions install
+
+# --- quality --------------------------------------------------------------
+
+lint: ## ESLint over the front-end and build scripts
+	npm run lint
+
+lint-fix: ## ESLint --fix
+	npm run lint:fix
+
+# --- housekeeping ---------------------------------------------------------
+
+clean: ## Remove local build artifacts
+	rimraf $(SITE_DIR)/public $(SITE_DIR)/resources dist
+	@echo "cleaned local build artifacts"

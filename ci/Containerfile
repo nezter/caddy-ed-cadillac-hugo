@@ -1,0 +1,94 @@
+# syntax=docker/dockerfile:1
+#
+# Local Netlify-equivalent build image for caddy-ed-cadillac-hugo
+# ---------------------------------------------------------------------------
+# Purpose: reproduce Netlify's build environment on the 10.1.0.25 CI host so the
+#          whole pipeline runs locally and consumes ZERO Netlify build credits.
+#
+# Built with podman on 10.1.0.25. Deliberately self-contained: it does NOT
+# register with GitLab and does NOT touch the existing runner config.
+#
+# Contents:
+#   - Node.js 24 LTS + npm 11   (matches netlify.toml NODE_VERSION)
+#   - Hugo 0.166.0 extended     (latest 2026; project was pinned to 0.119.0)
+#   - @netlify/build            (open-source Netlify build system, so a local
+#                                `netlify build` behaves like a real one)
+#   - netlify-cli               (optional: lets this container also push a
+#                                prebuilt deploy, burning no build minutes)
+#   - toolchain                 (python3/make/g++ for any native node modules)
+#
+# Build:  podman build -t caddy-netlify-build:2026 -f ci/Containerfile .
+# Run:    podman run --rm -v "$PWD:/site" -w /site caddy-netlify-build:2026 \
+#           bash -lc 'npm run build:production'
+
+ARG NODE_TAG=24-bookworm-slim
+ARG HUGO_VERSION=0.166.0
+
+FROM docker.io/library/node:${NODE_TAG}
+
+ARG HUGO_VERSION
+ARG DEBIAN_FRONTEND=noninteractive
+
+# HUGO_VERSION is baked into the image layer so `hugo version` is authoritative.
+ENV HUGO_VERSION=${HUGO_VERSION} \
+    NETLIFY_TELEMETRY_DISABLED=1 \
+    NPM_CONFIG_UPDATE_NOTIFIER=false \
+    NPM_CONFIG_FUND=false \
+    CI=true
+
+# --- system toolchain -------------------------------------------------------
+# build-essential/python3 are only needed for optional native node modules.
+RUN set -eux; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+        ca-certificates curl git openssh-client rsync \
+        make g++ python3 pkg-config; \
+    rm -rf /var/lib/apt/lists/*
+
+# --- Hugo (extended) --------------------------------------------------------
+# Extended is REQUIRED: Hugo Pipes `js.Build` (esbuild) and `css.Sass`
+# (libsass) power the entire front-end build now that webpack is gone.
+#
+# Since Hugo 0.146 the extended build ships as a SEPARATE artifact
+# (`hugo_extended_*`) rather than being the default `hugo_*` package. Installing
+# the wrong one yields a `hugo` binary without SCSS/esbuild support, and every
+# asset pipeline call fails at build time -- so we assert on it below.
+RUN set -eux; \
+    arch="$(dpkg --print-architecture)"; \
+    curl -fsSL -o /tmp/hugo.deb \
+      "https://github.com/gohugoio/hugo/releases/download/v${HUGO_VERSION}/hugo_extended_${HUGO_VERSION}_linux-${arch}.deb"; \
+    dpkg -i /tmp/hugo.deb; \
+    rm -f /tmp/hugo.deb; \
+    hugo version; \
+    hugo version | grep -q 'extended' \
+      || { echo "FATAL: installed hugo is not the extended build"; exit 1; }
+
+# --- Node toolchain: @netlify/build + netlify-cli ---------------------------
+# Installed globally so the container mirrors a real Netlify build image.
+# @netlify/build is pinned to a caret range; netlify-cli is what we use to
+# upload an already-built `site/public` (deploys of prebuilt dirs do not
+# consume Netlify build minutes).
+#
+# The --allow-scripts flag is passed ON THE COMMAND LINE for this global install
+# only. It is deliberately NOT persisted into a global .npmrc: npm converts any
+# .npmrc `allow-scripts` key into an `npm_config_allow_scripts` env var for every
+# child npm process, and npm 11 rejects that form for project-scoped installs
+# with EALLOWSCRIPTS. Persisting it globally broke every `npm run build`.
+RUN set -eux; \
+    npm install -g --no-fund --no-audit \
+        --allow-scripts='netlify-cli,@netlify/build,@netlify/esbuild,esbuild,@parcel/watcher,sharp,unix-dgram' \
+        "@netlify/build@^17" \
+        "netlify-cli@^23"; \
+    npm cache clean --force; \
+    # Defence in depth: make sure no inherited global config re-introduces the
+    # key, which would poison nested `npm run` invocations inside the container.
+    npm config delete allow-scripts --location=global || true
+
+WORKDIR /site
+
+# Fail fast, loud, and non-interactive: CI must never hang waiting for input.
+ENV NPM_CONFIG_YES=true \
+    CI=true \
+    DEBIAN_FRONTEND=noninteractive
+
+CMD ["bash", "-lc", "node -v && npm -v && hugo version && netlify --version"]

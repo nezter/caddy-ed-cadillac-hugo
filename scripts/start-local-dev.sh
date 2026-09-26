@@ -28,7 +28,7 @@ fi
 
 # Start Hugo in background
 echo -e "${BLUE}📱 Starting Hugo development server...${NC}"
-./hugo server --source=site --port 1313 --bind 0.0.0.0 --disableFastRender > hugo-dev.log 2>&1 &
+hugo server --source=site --port 1313 --bind 0.0.0.0 --disableFastRender > hugo-dev.log 2>&1 &
 HUGO_PID=$!
 
 # Wait for Hugo to start

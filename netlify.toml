@@ -1,30 +1,140 @@
+# =============================================================================
+# netlify.toml -- single source of truth for build, publish, functions, headers.
+#
+# This file was previously ignored by Netlify entirely (the site's
+# `configuration_file_path` was null, so Netlify used its own dashboard values:
+# `yarn build` publishing `dist`, which never existed). Those dashboard values
+# have been corrected to point back at this file, and the site is configured
+# with skip_automatic_builds so NO remote builder is ever started.
+#
+# Deploys are performed by uploading a prebuilt directory:
+#     netlify deploy --dir=site/public --functions=netlify/functions [--prod]
+# which consumes zero Netlify build minutes. See ci/run.sh.
+# =============================================================================
+
 [build]
-  publish = "site/public"
-  command = "npm run build:production"
+  publish  = "site/public"
+  command  = "npm run build"
+  functions = "netlify/functions"
 
 [build.environment]
-  NODE_VERSION = "18"
-  HUGO_VERSION = "0.119.0"
+  # Keep in sync with .nvmrc, .tool-versions and ci/Containerfile.
+  NODE_VERSION = "24"
+  HUGO_VERSION = "0.166.0"
+  # Hugo Pipes is the front-end pipeline; make sure nothing tries to shell out
+  # to a system `hugo` that may be a non-extended build.
+  HUGO_ENV     = "production"
+  NODE_ENV     = "production"
+  # npm 11 blocks dependency lifecycle scripts by default; the project .npmrc
+  # allowlists the ones we actually need.
+  NPM_FLAGS    = "--no-audit --no-fund"
 
-[dev]
-  command = "./hugo server -D -F --source=site --bind 0.0.0.0 --port 1313 --buildDrafts --buildFuture"
-  publish = "site/public"
-  port = 1313
-
+# -----------------------------------------------------------------------------
+# Functions
+# -----------------------------------------------------------------------------
 [functions]
   directory = "netlify/functions"
+  # The functions are CommonJS on Node 24.
+  node_bundler = "esbuild"
 
-[[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/:splat"
-  status = 200
+# -----------------------------------------------------------------------------
+# Local dev server
+# -----------------------------------------------------------------------------
+[dev]
+  command = "npm run dev:hugo"
+  publish = "site/public"
+  targetPort = 1313
+  port = 8888
+  autoLaunch = false
+  dir = "site"
 
+# -----------------------------------------------------------------------------
+# Redirects
+#
+# NOTE: `/api/*` used to rewrite every /api/ call to /.netlify/functions/$1.
+# The functions in this repo are NOT mounted under /api/ -- they are called by
+# their own names (e.g. /contact-form -> contact-form function), either
+# directly at /.netlify/functions/<name> or through these aliases below.
+# -----------------------------------------------------------------------------
 [[redirects]]
   from = "/health"
   to = "/.netlify/functions/health-check"
   status = 200
 
 [[redirects]]
-  from = "/health/*"
-  to = "/.netlify/functions/health-check/:splat"
+  from = "/api/contact"
+  to = "/.netlify/functions/contact-form"
   status = 200
+
+[[redirects]]
+  from = "/api/lead"
+  to = "/.netlify/functions/lead-form"
+  status = 200
+
+[[redirects]]
+  from = "/api/inventory"
+  to = "/.netlify/functions/inventory-api"
+  status = 200
+
+# Netlify CMS. `cms.html` is served from site/static and loads /cms.js, which is
+# produced by the one remaining webpack build (webpack.cms.js).
+[[redirects]]
+  from = "/admin/cms"
+  to = "/cms.html"
+  status = 200
+
+# -----------------------------------------------------------------------------
+# Headers
+#
+# Fingerprinted assets under /css and /js carry a content hash in the filename,
+# so they are safe to cache immutably. Everything else stays revalidated.
+# -----------------------------------------------------------------------------
+[[headers]]
+  for = "/css/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/js/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/img/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# The CMS bundle is fingerprinted only by webpack's content, and rebuilt often.
+[[headers]]
+  for = "/cms.js"
+  [headers.values]
+    Cache-Control = "public, max-age=3600"
+
+# Service worker must never be cached, or clients get stuck on an old one.
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "SAMEORIGIN"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "geolocation=(self), microphone=(), camera=()"
+    # Netlify Identity is required for the CMS and the customer portal login.
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://identity.netlify.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data:; connect-src 'self' https://*.netlify.app https://*.supabase.co wss://*.supabase.co; frame-ancestors 'self'; base-uri 'self'; form-action 'self'"
+
+# -----------------------------------------------------------------------------
+# Edge/bot handling
+# -----------------------------------------------------------------------------
+[[headers]]
+  for = "/admin/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+
+[[headers]]
+  for = "/cms.html"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"

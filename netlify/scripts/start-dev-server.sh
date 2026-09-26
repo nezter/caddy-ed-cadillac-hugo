@@ -22,7 +22,7 @@ sleep 5
 
 # Start Hugo development server
 echo "Starting Hugo development server..."
-./hugo server -D -F --bind 0.0.0.0 --port 1313 --buildDrafts --buildFuture &
+hugo server -D -F --bind 0.0.0.0 --port 1313 --buildDrafts --buildFuture &
 HUGO_PID=$!
 
 echo "✅ Development servers started!"

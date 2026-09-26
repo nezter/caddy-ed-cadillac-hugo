@@ -8,7 +8,7 @@ export $(cat .env.local | grep -v '^#' | xargs)
 
 # Build Hugo site
 echo "Building Hugo site..."
-./hugo --source=site --gc --minify
+hugo --source=site --gc --minify
 
 if [ $? -eq 0 ]; then
     echo "✅ Hugo build successful"

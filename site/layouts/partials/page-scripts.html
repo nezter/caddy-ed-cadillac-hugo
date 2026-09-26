@@ -1,0 +1,64 @@
+{{- /*
+  page-scripts.html -- page-scoped JS entries and component CSS.
+
+  Some pages (customer portal, admin dashboards, communication preferences)
+  load their own component scripts and stylesheets in addition to the main
+  bundle. Those were referenced with hardcoded `/js/...` and `/css/...` paths
+  inside markdown content, which no build step ever produced -- so each of
+  those pages loaded nothing.
+
+  Pages now declare what they need in front matter and this partial bundles and
+  fingerprints it through the same Hugo Pipes pipeline as everything else.
+
+  Front matter:
+    scripts:                 # paths relative to assets/js/
+      - customer-portal.js
+    styles:                  # paths relative to assets/css/
+      - components/communication-preferences.css
+
+  A page can also pull in the matching component stylesheet automatically by
+  naming the script's directory (e.g. components/x.js -> components/x.css),
+  which is why `styles` is usually unnecessary.
+*/ -}}
+
+{{- $page := . -}}
+
+{{- /* --- component stylesheets ---------------------------------------- */ -}}
+{{- $styles := slice -}}
+{{- with $page.Params.styles -}}
+  {{- range . -}}{{- $styles = $styles | append . -}}{{- end -}}
+{{- end -}}
+{{- /* Derive styles from script names when a matching component CSS exists. */ -}}
+{{- with $page.Params.scripts -}}
+  {{- range . -}}
+    {{- $dir := path.Dir . -}}
+    {{- $stem := path.BaseName . -}}
+    {{- $candidate := "" -}}
+    {{- if ne $dir "." -}}
+      {{- $candidate = printf "%s/%s.css" $dir $stem -}}
+    {{- end -}}
+    {{- with $candidate -}}
+      {{- with resources.Get (printf "css/%s" .) -}}
+        {{- if not (in $styles .) -}}
+          {{- $styles = $styles | append . -}}
+        {{- end -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+
+{{- range $styles -}}
+  {{- with resources.Get (printf "css/%s" .) -}}
+    {{- $css := . -}}
+    {{- if hugo.IsProduction -}}{{- $css = $css | minify | fingerprint "sha512" -}}{{- end -}}
+    <link rel="stylesheet" href="{{ $css.RelPermalink }}"
+          {{- if hugo.IsProduction }}{{ with $css.Data.Integrity }} integrity="{{ . }}" crossorigin="anonymous"{{ end }}{{ end }}>
+  {{- end -}}
+{{- end -}}
+
+{{- /* --- page-scoped scripts ------------------------------------------ */ -}}
+{{- with $page.Params.scripts -}}
+  {{- range . -}}
+    {{- partial "entry.html" (dict "entry" . "page" $page) -}}
+  {{- end -}}
+{{- end -}}

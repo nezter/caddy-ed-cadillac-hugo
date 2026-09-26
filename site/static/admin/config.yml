@@ -1,6 +1,8 @@
 backend:
   name: git-gateway
-  branch: main
+  # The repository's default branch is `master`. This was `main`, so every CMS
+  # publish would have targeted a branch that does not exist.
+  branch: master
   commit_messages:
     create: 'Create {{collection}} "{{slug}}"'
     update: 'Update {{collection}} "{{slug}}"'

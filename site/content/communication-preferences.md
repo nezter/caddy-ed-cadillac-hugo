@@ -2,31 +2,17 @@
 title: "Communication Preferences"
 description: "Manage your communication preferences and privacy settings"
 layout: "page"
+scripts:
+  - components/communication-preferences.js
 ---
 
 <div id="communication-preferences-container">
-  <!-- Communication Preferences Component will be loaded here -->
+  <!-- Communication Preferences Component is mounted by
+       components/communication-preferences.js, which is bundled and
+       fingerprinted via the `scripts:` front-matter key above. The matching
+       stylesheet (components/communication-preferences.css) is emitted
+       automatically by partials/page-scripts.html. -->
 </div>
-
-<script>
-// Load the communication preferences component
-document.addEventListener('DOMContentLoaded', function() {
-  // Load the CSS
-  const cssLink = document.createElement('link');
-  cssLink.rel = 'stylesheet';
-  cssLink.href = '/css/components/communication-preferences.css';
-  document.head.appendChild(cssLink);
-
-  // Load the JavaScript component
-  const script = document.createElement('script');
-  script.src = '/js/components/communication-preferences.js';
-  script.onload = function() {
-    // Initialize the component
-    new CommunicationPreferences('communication-preferences-container');
-  };
-  document.body.appendChild(script);
-});
-</script>
 
 <style>
 /* Additional page-specific styles */

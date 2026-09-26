@@ -167,7 +167,7 @@ sleep 5
 
 # Start Hugo development server
 echo "Starting Hugo development server..."
-./hugo server -D -F --bind 0.0.0.0 --port 1313 --buildDrafts --buildFuture &
+hugo server -D -F --bind 0.0.0.0 --port 1313 --buildDrafts --buildFuture &
 HUGO_PID=$!
 
 echo "✅ Development servers started!"
@@ -247,7 +247,7 @@ rm -rf public/
 
 # Build Hugo site
 echo "Building Hugo site..."
-./hugo --gc --minify
+hugo --gc --minify
 
 if [ $? -eq 0 ]; then
     echo "✅ Hugo build successful"
@@ -342,7 +342,7 @@ test: ## Run test suite
 	./scripts/run-tests.sh
 
 build: ## Build for production
-	./hugo --gc --minify
+	hugo --gc --minify
 
 validate: ## Validate build and functions
 	./scripts/validate-build.sh
@@ -461,7 +461,7 @@ make setup-redis
 
 ### Hugo Debugging
 ```bash
-./hugo server -D -F --bind 0.0.0.0 --port 1313 --buildDrafts --buildFuture --verbose
+hugo server -D -F --bind 0.0.0.0 --port 1313 --buildDrafts --buildFuture --verbose
 ```
 
 ### Netlify Functions Debugging

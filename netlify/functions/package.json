@@ -3,6 +3,12 @@
   "version": "1.0.0",
   "description": "Netlify Functions for Caddy Ed website",
   "main": "index.js",
+  "allowScripts": {
+    "bcrypt": true,
+    "esbuild": true,
+    "sharp": true,
+    "@parcel/watcher": true
+  },
   "dependencies": {
     "@libsql/client": "^0.6.0",
     "@supabase/supabase-js": "^2.38.4",

@@ -12,7 +12,7 @@ rm -rf public/
 
 # Build Hugo site
 echo "Building Hugo site..."
-./hugo --gc --minify
+hugo --gc --minify
 
 if [ $? -eq 0 ]; then
     echo "✅ Hugo build successful"
