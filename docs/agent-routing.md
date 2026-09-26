@@ -39,7 +39,7 @@ need", not by "how big is the file".
 | **Implementation from a precise spec** — the spec in the brief is complete | `opencode-go/kimi-k2.7-code` | Code-specialised. Follows an explicit contract instead of reinventing one. Use for wiring endpoints, contract reconciliation, CSS token ports. |
 | **Implementation with design latitude** — building something the brief describes but does not specify | `opencode-go/glm-5.3` | Good general engineering judgement, will make reasonable choices when the brief leaves room. |
 | **Long-context reading / surveying a large tree** | `opencode-go/kimi-k3` | When the task is mostly "read a lot and summarise what exists". |
-| **Bulk sweeps, greps, counting, gate-running, mechanical edits** | `opencode-go/deepseek-v4.1-flash` | Flash tier. A job that is 90% tool calls and 10% judgement. |
+| **Bulk sweeps, greps, counting, gate-running, mechanical edits** | `opencode-go/qwen3.8-flash` | Flash tier. A job that is 90% tool calls and 10% judgement. `deepseek-v4.1-flash` is the other candidate but **it is not usable here** — it rejects every request with "This Go model requires Global regions", and the workspace is not set to Global. Discovered by paying for a dispatch to find out. |
 | **Cheap parallelism** — many independent small jobs | `opencode-go/qwen3.8-flash` | Same tier, different family; useful when you want diversity across parallel workers. |
 | **Throwaway / no-stakes** | `opencode-go/space-bunny-free` | Free. Only for work you would happily redo. |
 
@@ -50,6 +50,12 @@ for review; `opencode-go/minimax-m3` for long documents.
 Do **not** route to `github-copilot`, `openrouter` or `bailian-coding-plan`
 without being asked. They are available, but the instruction was
 opencode-go.
+
+**Availability is not the same as being listed.** The catalogue in
+`opencode.models` shows every model with `cost: null` and no region metadata, so
+it cannot tell you that a model will refuse the request outright. When a
+dispatch fails at the provider rather than in the agent, the fix is a different
+model from the same provider and the same tier -- not a retry of the same one.
 
 ## Dispatch checklist
 
