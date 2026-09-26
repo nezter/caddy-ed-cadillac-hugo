@@ -312,6 +312,10 @@ out of both files and fails on an unknown token or a disagreeing value.
 
 ## Remaining
 
+Items needing an owner's decision are in
+[`OPEN-QUESTIONS.md`](OPEN-QUESTIONS.md). Purely technical leftovers:
+
+
 - [ ] **`/products/` and `/values/` have no replacement.** The Kaldi Coffee
       pages are gone and the layouts that served them are deleted, but the
       navigation never linked to them, so nothing is broken. If a "Values" page

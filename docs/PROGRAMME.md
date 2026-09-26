@@ -159,16 +159,18 @@ lists the ones still carrying unrouted `/api/` calls. Twenty of them do.
 
 ## Open questions for the owner
 
-1. **Admin auth.** Should `/admin/*` pages be gated (redirect/404 when
-   unauthenticated), or is world-readable dashboard shell acceptable? The data
-   behind them is already protected.
-2. **Turso programme.** Taskmaster tasks 32–43 are a 12-task hybrid
-   Supabase+Turso architecture, all pending, all blocked behind each other.
-   In scope now, or park it?
-3. **Real inventory feed.** If a DMS feed is ever available, `INVENTORY_SOURCE_URL`
-   supersedes the crawl. Is one available?
-4. **Non-Cadillac stock.** The bargain-inventory page yields BMW/Nissan/Volvo
-   trade-ins. Keep them listed, or filter to Cadillac only?
+**All open questions are consolidated in [`docs/OPEN-QUESTIONS.md`](OPEN-QUESTIONS.md).**
+That file is the single place; this section used to hold a stale four-item copy
+and that is exactly how an answer gets given twice or missed.
+
+The three that block everything else:
+
+1. **Push and deploy** — 15+ commits have never left this machine.
+2. **The logo** — I replaced a squashed photograph with a 1,965-byte vector
+   wordmark on measurement grounds; it is a brand decision, not a technical one.
+3. **The database** — there is no Postgres anywhere, so no function that touches
+   data has been verified past its auth boundary, and sign-out cannot revoke a
+   token.
 
 ## Session log
 
