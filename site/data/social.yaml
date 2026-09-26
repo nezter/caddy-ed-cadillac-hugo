@@ -1,0 +1,22 @@
+# data/social.yaml -- drives the "What Ed is posting" panel and the follow row.
+# Read by partials/connect-config.html and partials/connect-hub.html.
+# Leave a url/handle blank to keep just the follow button and show the labelled
+# sample layout in that panel.
+
+facebook:
+  label: "Follow on Facebook"
+  url: "https://www.facebook.com/eportello"
+
+x:
+  label: "Follow on X"
+  handle: ""                     # set once the X account is known, e.g. "@CaddyEd"
+  url: ""
+
+text:
+  label: "Text Ed directly"
+  number: "+17045557890"
+
+alerts:
+  heading: "Get a note when the right one lands"
+  body: "Tell Ed what you are holding out for. When something close comes in, you hear about it before it goes on the site. No lists, no spam, unsubscribe whenever you like."
+  form_name: "stock-alerts"

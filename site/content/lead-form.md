@@ -17,7 +17,7 @@ scripts:
     </div>
   </noscript>
 
-  <form class="form lead-capture-form" id="lead-form" action="/api/lead" method="post" data-form-type="lead" aria-describedby="lead-form-description">
+  <form class="form lead-form lead-capture-form" id="lead-form" action="/api/lead" method="post" data-form-type="lead" aria-describedby="lead-form-description">
     <p id="lead-form-description" class="visually-hidden">Name, email and phone are required. A message is optional.</p>
 
     <div class="form-grid form-grid-2">
@@ -73,3 +73,13 @@ scripts:
     <p class="form-message form-message--error hidden" id="lead-form-error" role="alert"></p>
   </form>
 </div>
+
+<div id="lead-popup" class="lead-popup hidden" role="dialog" aria-modal="true" aria-labelledby="lead-popup-title">
+  <div class="lead-popup__backdrop"></div>
+  <div class="lead-popup__content">
+    <button type="button" class="popup-close" data-close aria-label="Close">&times;</button>
+    <h3 id="lead-popup-title">Thanks for reaching out</h3>
+    <div class="lead-popup__body"></div>
+  </div>
+</div>
+

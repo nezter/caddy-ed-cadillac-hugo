@@ -1,0 +1,164 @@
+{{- /*
+  connect-hub.html -- the "Stay connected" section for the home page.
+
+  Include it straight after the hero in layouts/index.html:
+
+      {{ partial "connect-hub.html" . }}
+
+  Styles: assets/css/connect.css, attached through the page's headStyles block.
+  Behaviour: assets/js/connect.js, loaded through entry.html in the scripts
+  block, preceded by connect-config.html.
+*/ -}}
+{{- $social := site.Data.social | default dict -}}
+{{- $fbUrl := "" }}{{ $fbLabel := "Follow on Facebook" }}
+{{- $xUrl := "" }}{{ $xLabel := "Follow on X" }}
+{{- $smsLabel := "Text Ed directly" }}{{ $smsNumber := "+17045557890" }}
+{{- $alerts := dict "heading" "Get a note when the right one lands" "body" "" "form_name" "stock-alerts" }}
+{{- with $social }}
+  {{- with .facebook }}{{ $fbUrl = .url | default "" }}{{ $fbLabel = .label | default $fbLabel }}{{ end }}
+  {{- with .x }}{{ $xUrl = .url | default "" }}{{ $xLabel = .label | default $xLabel }}{{ end }}
+  {{- with .text }}{{ $smsLabel = .label | default $smsLabel }}{{ $smsNumber = .number | default $smsNumber }}{{ end }}
+  {{- with .alerts }}{{ $alerts = . }}{{ end }}
+{{- end }}
+{{- $phone := site.Params.phone | default "704-555-1234" -}}
+{{- $phoneHref := replace $phone "." "" | replace "(" "" | replace ")" "" | replace " " "" -}}
+
+<section class="section section-subtle" id="connect">
+  <div class="container">
+    <div class="section-head">
+      <h2>Stay connected to Ed, between visits</h2>
+      <p class="lede">New stock lands here as it arrives, alongside what Ed is posting on Facebook and X. Ask about any vehicle without leaving the page, or set an alert for the one you are waiting on.</p>
+    </div>
+
+    <div class="connect-grid">
+
+      {{/* ---------------------------------------------------- stock feed -- */}}
+      <div class="panel" aria-labelledby="stockHeading">
+        <div class="panel__head">
+          <h3 class="panel__title" id="stockHeading">Fresh stock</h3>
+          <p class="cluster" style="gap:var(--space-2)">
+            <span class="live-badge" id="stockLive" hidden><span class="live-badge__dot"></span>Live</span>
+            <span class="src-note" id="stockUpdated"></span>
+          </p>
+        </div>
+
+        <div class="chip-row" role="group" aria-label="Filter stock">
+          <button class="chip" type="button" data-filter="all" data-label="All" aria-pressed="true">All</button>
+          <button class="chip" type="button" data-filter="new" data-label="New" aria-pressed="false">New</button>
+          <button class="chip" type="button" data-filter="cpo" data-label="Certified" aria-pressed="false">Certified</button>
+          <button class="chip" type="button" data-filter="pre-owned" data-label="Pre-Owned" aria-pressed="false">Pre-Owned</button>
+          <button class="chip" type="button" data-filter="electric" data-label="Electric" aria-pressed="false">Electric</button>
+        </div>
+
+        <ul class="stock-list" id="stockList" aria-live="polite">
+          <li class="stock-skeleton"><span class="sk sk--media"></span><span style="display:grid;gap:10px"><span class="sk sk--line short"></span><span class="sk sk--line"></span><span class="sk sk--line short"></span></span></li>
+          <li class="stock-skeleton"><span class="sk sk--media"></span><span style="display:grid;gap:10px"><span class="sk sk--line short"></span><span class="sk sk--line"></span><span class="sk sk--line short"></span></span></li>
+          <li class="stock-skeleton"><span class="sk sk--media"></span><span style="display:grid;gap:10px"><span class="sk sk--line short"></span><span class="sk sk--line"></span><span class="sk sk--line short"></span></span></li>
+        </ul>
+
+        <div class="panel__foot" style="display:flex;flex-wrap:wrap;gap:var(--space-3);align-items:center;justify-content:space-between">
+          <p class="src-note" id="stockSummary">Loading stock...</p>
+          <p class="cluster" style="gap:var(--space-2)">
+            <button class="btn btn-outline btn-sm" type="button" id="stockMore" hidden>Show more</button>
+            <button class="btn btn-ghost btn-sm" type="button" id="stockFewer" hidden>Show fewer</button>
+            <a class="btn btn-ghost btn-sm" href="/inventory/">All inventory</a>
+          </p>
+        </div>
+
+        <div class="panel__foot" style="background:var(--bg-subtle)">
+          <form class="quick-ask" id="quickAsk" novalidate>
+            <div class="quick-ask__fields">
+              <div class="form-field">
+                <label for="quickAskName">Your name</label>
+                <input class="input" id="quickAskName" name="name" type="text" autocomplete="name" required>
+              </div>
+              <div class="form-field">
+                <label for="quickAskEmail">Email</label>
+                <input class="input" id="quickAskEmail" name="email" type="email" autocomplete="email" required>
+              </div>
+              <div class="form-field form-field--full">
+                <label for="quickAskPhone">Phone (optional)</label>
+                <input class="input" id="quickAskPhone" name="phone" type="tel" autocomplete="tel">
+              </div>
+              <div class="form-field form-field--full">
+                <label for="quickAskMessage">Ask about any vehicle</label>
+                <textarea class="textarea" id="quickAskMessage" name="message" rows="3" placeholder="Tell Ed the model, the budget, or the car you saw. Photos, availability, out-the-door numbers: he will answer the same day."></textarea>
+              </div>
+            </div>
+            <div class="quick-ask__row">
+              <p class="quick-ask__status" id="quickAskNote" aria-live="polite"></p>
+              <button class="btn btn-primary" type="submit">Send question</button>
+            </div>
+            <input type="hidden" id="quickAskVehicle" name="vehicle" value="">
+            <div class="form-message" id="quickAskStatus" role="status" hidden></div>
+          </form>
+        </div>
+      </div>
+
+      {{/* --------------------------------------------------- social feed -- */}}
+      <div class="panel" aria-label="Social feeds">
+        <div class="panel__head">
+          <h3 class="panel__title">What Ed is posting</h3>
+          <div class="tabs" role="tablist" aria-label="Choose a feed">
+            <button class="tab tab--fb" type="button" role="tab" id="tabFacebook" aria-controls="panelFacebook" aria-selected="true">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+              Facebook
+            </button>
+            <button class="tab tab--x" type="button" role="tab" id="tabX" aria-controls="panelX" aria-selected="false" tabindex="-1">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932zM17.61 20.644h2.039L6.486 3.24H4.298z"/></svg>
+              X
+            </button>
+          </div>
+        </div>
+
+        <div class="social-body">
+          <div class="tabpanel" id="panelFacebook" role="tabpanel" aria-labelledby="tabFacebook"></div>
+          <div class="tabpanel" id="panelX" role="tabpanel" aria-labelledby="tabX" hidden></div>
+        </div>
+
+        <div class="follow-row">
+          {{ with $fbUrl }}
+          <a class="follow-btn follow-btn--fb" href="{{ . }}" target="_blank" rel="noopener">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+            {{ $fbLabel }}
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg>
+          </a>
+          {{ end }}
+          {{ with $xUrl }}
+          <a class="follow-btn follow-btn--x" href="{{ . }}" target="_blank" rel="noopener">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932zM17.61 20.644h2.039L6.486 3.24H4.298z"/></svg>
+            {{ $xLabel }}
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg>
+          </a>
+          {{ end }}
+          <a class="follow-btn" href="sms:{{ $smsNumber }}">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+            {{ $smsLabel }}
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    {{/* --------------------------------------------------- alerts band -- */}}
+    <div class="notify-band">
+      <div>
+        <h3>{{ $alerts.heading }}</h3>
+        <p>{{ $alerts.body }}</p>
+        <div class="contact-chips">
+          <a class="btn btn-ghost btn-sm" href="tel:+1{{ $phoneHref }}">Call {{ $phone }}</a>
+          <a class="btn btn-ghost btn-sm" href="sms:{{ $smsNumber }}">Text Ed</a>
+          <a class="btn btn-ghost btn-sm" href="mailto:{{ site.Params.email | default "ed@caddyed.com" }}">{{ site.Params.email | default "ed@caddyed.com" }}</a>
+        </div>
+      </div>
+      <form class="notify-form" id="stockAlerts" name="{{ $alerts.form_name }}" method="POST" data-netlify="true" novalidate>
+        <input type="hidden" name="form-name" value="{{ $alerts.form_name }}">
+        <label class="visually-hidden" for="alertsEmail">Email address</label>
+        <input class="input" id="alertsEmail" name="email" type="email" autocomplete="email" placeholder="you@example.com" required>
+        <button class="btn btn-primary" type="submit">Send me alerts</button>
+        <p class="notify-form__note">Used only for stock alerts from Ed.</p>
+        <div class="form-message" id="stockAlertsStatus" role="status" hidden></div>
+      </form>
+    </div>
+  </div>
+</section>

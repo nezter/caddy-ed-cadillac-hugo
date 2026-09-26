@@ -1,3 +1,6 @@
+{{ define "headStyles" }}{{ partial "stylesheet.html" "connect.css" }}{{ end }}
+{{ define "scripts" }}{{ partial "connect-config.html" . }}{{ partial "entry.html" (dict "entry" "connect.js" "page" .) }}{{ end }}
+
 {{ define "main" }}
 {{- $phone := .Site.Params.phone | default "704-555-1234" -}}
 {{- $phoneHref := replace $phone "." "" -}}
@@ -63,6 +66,8 @@
     </div>
   </div>
 </section>
+
+{{ partial "connect-hub.html" . }}
 
 {{/* ------------------------------------------------------------------
      Inventory preview. The core of a dealership site: real vehicles,
@@ -239,6 +244,46 @@
     </div>
   </div>
 </section>
+
+{{/* ------------------------------------------------------------------
+     Featured vehicles carousel. Pulls real inventory data so the carousel
+     always shows current stock rather than placeholder slides.
+     ------------------------------------------------------------------ */}}
+{{ $featured := where .Site.RegularPages "Section" "inventory" }}
+{{ if ge (len $featured) 2 }}
+<section class="section section-subtle">
+  <div class="container">
+    <div class="section-head">
+      <p class="eyebrow">Featured</p>
+      <h2>Worth a closer look</h2>
+    </div>
+    <div class="carousel" data-autoplay="true" data-autoplay-delay="6000">
+      <button class="carousel-prev" aria-label="Previous vehicle" type="button">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="carousel-container">
+        {{ range first 8 $featured }}
+        {{ $img := .Params.image | default "/img/placeholder-vehicle.jpg" }}
+        <div class="carousel-slide">
+          <a href="{{ .RelPermalink }}" class="carousel-slide__link">
+            {{ partial "vehicle-image.html" (dict "src" $img "alt" .Title "width" .Params.image_width "height" .Params.image_height) }}
+            <div class="carousel-slide__info">
+              <h3>{{ .Title }}</h3>
+              {{ with .Params.price }}<p class="carousel-slide__price">${{ delimit (split (printf "%v" .) ".") "," }}</p>{{ end }}
+              {{ with .Params.subtitle }}<p class="carousel-slide__meta">{{ . }}</p>{{ end }}
+            </div>
+          </a>
+        </div>
+        {{ end }}
+      </div>
+      <button class="carousel-next" aria-label="Next vehicle" type="button">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+      </button>
+      <div class="carousel-indicators" aria-hidden="true"></div>
+    </div>
+  </div>
+</section>
+{{ end }}
 
 {{/* Content from _index.md renders after the designed sections so the
      marketing copy stays editable without touching this template. */}}

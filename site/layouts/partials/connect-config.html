@@ -1,0 +1,66 @@
+{{- /*
+  connect-config.html -- runtime config + build-time stock feed for the
+  "Stay connected" hub on the home page.
+
+  Call it once, at the end of the page, BEFORE the connect.js entry:
+
+      {{ define "scripts" }}
+        {{ partial "connect-config.html" . }}
+        {{ partial "entry.html" (dict "entry" "connect.js" "page" .) }}
+      {{ end }}
+
+  The stock list is baked here from the real inventory pages, so the panel is
+  correct on first paint with no fetch, no skeleton flash and no 404 when the
+  optional live feed is not deployed. Set `stockEndpoint` to a URL to switch the
+  panel into pull mode.
+
+  Front matter it reads from content/inventory/*.md:
+    title, status, price, subtitle, image, year
+*/ -}}
+
+{{- $social := site.Data.social | default dict -}}
+{{- $fb := "" -}}
+{{- with $social.facebook }}{{ $fb = .url | default "" }}{{ end -}}
+{{- $xh := "" -}}
+{{- with $social.x }}{{ $xh = .handle | default "" }}{{ end -}}
+
+{{- $vehicles := where site.RegularPages "Section" "inventory" -}}
+
+<script>
+  window.CADDY_CONNECT = {
+    /* Empty: the list below is already real, baked at build time.
+       Point at a feed URL to pull live instead. */
+    stockEndpoint: "",
+    socialEndpoint: "",
+    facebookPageUrl: {{ $fb | jsonify }},
+    xHandle: {{ $xh | jsonify }},
+    askEndpoint: "/api/contact",
+    alertFormName: "stock-alerts",
+    visibleCount: 6,
+    totalStock: {{ len $vehicles }},
+    buildDate: {{ now.Format "2 Jan 2006" | jsonify }}
+  };
+</script>
+
+{{- $items := slice -}}
+{{- range $vehicles -}}
+  {{- $img := "" -}}
+  {{- with .Params.image }}{{ with resources.Get . }}{{ $img = .RelPermalink }}{{ end }}{{ end -}}
+  {{- $price := int (.Params.price | default 0) -}}
+  {{- /* priceText is deliberately left empty: connect.js formats the numeric
+         `price` with toLocaleString, so no Hugo number-formatting function is
+         needed and there is no way for a locale/API change to break the build. */ -}}
+  {{- $items = $items | append (dict
+      "slug" .File.TranslationBaseName
+      "title" .Title
+      "href" .RelPermalink
+      "img" $img
+      "price" $price
+      "priceText" ""
+      "condition" (.Params.status | default "Pre-Owned")
+      "status" (.Params.status | default "used")
+      "year" (string (.Params.year | default ""))
+      "meta" (.Params.subtitle | default "")
+  ) -}}
+{{- end -}}
+<script>window.CADDY_STOCK_FALLBACK = {{ $items | jsonify }};</script>
