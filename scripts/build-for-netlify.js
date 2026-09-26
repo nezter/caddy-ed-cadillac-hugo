@@ -27,7 +27,19 @@ const path = require('path');
 const ROOT = path.resolve(__dirname, '..');
 const PUBLIC_DIR = path.join(ROOT, 'site', 'public');
 const FUNCTIONS_DIR = path.join(ROOT, 'netlify', 'functions');
-const IS_PROD = process.env.NODE_ENV === 'production' || process.env.HUGO_ENV === 'production';
+// Production is the DEFAULT for this script -- it is the production build.
+//
+// This previously required NODE_ENV or HUGO_ENV to be explicitly "production".
+// But `ci/run.sh` runs the container with neither set, so the build silently
+// ran in development mode: webpack shipped a 21.5MB UNMINIFIED CMS bundle
+// instead of 4.7MB, and nothing else warned, because the gate only checks for
+// missing assets.
+//
+// Opt out explicitly (e.g. a local `npm run build` while debugging) with
+// NODE_ENV=development or HUGO_ENV=development.
+const IS_PROD =
+  !['development', 'dev'].includes(process.env.NODE_ENV) &&
+  !['development', 'dev'].includes(process.env.HUGO_ENV);
 
 let step = 0;
 const t0 = Date.now();

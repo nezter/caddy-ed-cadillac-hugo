@@ -1,4 +1,15 @@
-import CMS from "netlify-cms-app";
+// Decap CMS (formerly Netlify CMS).
+//
+// Migrated from `netlify-cms-app` to `decap-cms-app`. Netlify CMS is the
+// unmaintained upstream; Decap is the actively maintained fork (published
+// 2026-09-22). The config format and the `git-gateway` backend are unchanged,
+// so site/static/admin/config.yml needed no edits -- only the import below and
+// the CDN assets in site/static/cms.html.
+//
+// This is also what unblocks React 19: netlify-cms-app@2 pins
+// `react: ^16.8.4 || ^17.0.0`, so React could not be modernised while it was
+// in the tree.
+import CMS from "decap-cms-app";
 
 // Import CMS preview templates.
 //

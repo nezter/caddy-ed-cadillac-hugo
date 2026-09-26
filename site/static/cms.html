@@ -1,40 +1,70 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
     <title>Content Management System | Caddy Ed</title>
-    <link rel="icon" type="image/x-icon" href="/img/favicon.ico">
-    <link rel="stylesheet" href="https://unpkg.com/netlify-cms@^2.0.0/dist/cms.css" />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Playfair+Display:400,700|Open+Sans:400,600,700">
+
+    <link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16x16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png" />
+
+    <!--
+      No CMS stylesheet is loaded here on purpose.
+
+      Decap CMS (and Netlify CMS before it) moved from a static stylesheet to
+      CSS-in-JS in v2.0. The old `dist/cms.css` is a deliberately blank
+      placeholder that upstream ships only so existing builds keep resolving,
+      and upstream explicitly asks builds to stop requiring it. The link this
+      page used to carry resolved to that empty file.
+
+      The CMS bundle (/cms.js) injects its own styles at runtime.
+    -->
+
     <style>
-      /* Custom admin styles */
-      .nc-app {
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-      }
-      .nc-app-header {
-        background-color: #222;
-      }
-      .nc-app-header__button--secondary {
-        background-color: #444;
+      /* Minimal shell styling. The CMS renders into <body> and styles itself. */
+      html, body { margin: 0; padding: 0; min-height: 100%; background: #fff; }
+      .cms-loading {
+        display: flex; align-items: center; justify-content: center;
+        min-height: 60vh; font: 14px/1.5 -apple-system, BlinkMacSystemFont,
+        'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; color: #555;
       }
     </style>
-    <!-- Include the script that builds the page and powers Netlify CMS -->
+
+    <!--
+      Netlify Identity powers Decap's git-gateway auth backend on Netlify
+      (see backend.name in /admin/config.yml), so this stays on
+      identity.netlify.com.
+    -->
     <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
   </head>
+
   <body>
+    <div class="cms-loading" id="cms-loading">Loading the CMS&hellip;</div>
+
     <script>
+      // Gate on authentication before the CMS mounts, so editors land on a
+      // login screen rather than a half-rendered editor.
       if (window.netlifyIdentity) {
-        window.netlifyIdentity.on("init", user => {
+        window.netlifyIdentity.on('init', function (user) {
           if (!user) {
-            window.netlifyIdentity.on("login", () => {
-              document.location.href = "/admin/";
+            window.netlifyIdentity.on('login', function () {
+              window.location.href = '/admin/';
             });
+            return;
           }
+          document.getElementById('cms-loading')?.remove();
         });
       }
     </script>
-    <!-- Include the script that builds the page and powers Netlify CMS -->
+
+    <!--
+      Built by webpack.cms.js from src/js/cms.js (decap-cms-app + React 19 +
+      the preview templates in site/assets/js/cms-preview-templates/).
+      This is the only remaining webpack build in the project; the public site
+      is bundled by Hugo Pipes.
+    -->
     <script src="/cms.js"></script>
   </body>
 </html>

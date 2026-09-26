@@ -91,9 +91,9 @@ do_test() {
   sync_to_ci
   require_image
   log "Running functions test suite on ${CI_HOST}"
-  # The production build installs functions deps with --omit=dev, so jest and
-  # supertest are absent here. Install the full tree before testing.
-  in_container 'cd netlify/functions && npm install --no-audit --no-fund && npx jest --ci --watchAll=false'
+  # The image sets NODE_ENV=production, so a plain `npm install` omits dev deps
+  # and jest/supertest are absent. --include=dev is required here.
+  in_container 'cd netlify/functions && npm install --include=dev --no-audit --no-fund && npx jest --ci --watchAll=false'
 }
 
 do_deploy() {

@@ -52,7 +52,7 @@ jobs:
     name: Preflight (CI host + image)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Verify CI host is reachable
         run: |
@@ -85,13 +85,13 @@ jobs:
     needs: preflight
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Build and verify (on CI host)
         run: ./ci/run.sh verify
 
       - name: Archive publish directory
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: site-public
           path: site/public
@@ -122,14 +122,14 @@ jobs:
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Run jest suite (on CI host)
         run: ./ci/run.sh test
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: jest-results
           path: |
@@ -146,7 +146,7 @@ jobs:
     needs: preflight
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: ESLint (on CI host)
         run: |
@@ -154,7 +154,7 @@ jobs:
           ./ci/run.sh sync
           ssh -o StrictHostKeyChecking=no "$CI_HOST" \
             "podman run --rm -v /var/tmp/caddy-build:/site:Z -w /site '$IMAGE' \
-               bash -lc 'npm install --no-audit --no-fund >/dev/null && npm run lint'"
+               bash -lc 'npm install --include=dev --no-audit --no-fund >/dev/null && npm run lint'"
 
   # ---------------------------------------------------------------------------
   # Dependency audit. Informational for the front end, blocking for high/critical
@@ -165,7 +165,7 @@ jobs:
     needs: preflight
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Audit netlify/functions
         run: |
@@ -173,7 +173,7 @@ jobs:
           ./ci/run.sh sync
           ssh -o StrictHostKeyChecking=no "$CI_HOST" \
             "podman run --rm -v /var/tmp/caddy-build:/site:Z -w /site '$IMAGE' \
-               bash -lc 'cd netlify/functions && npm install --no-audit --no-fund >/dev/null && npm audit --audit-level=high'"
+               bash -lc 'cd netlify/functions && npm install --include=dev --no-audit --no-fund >/dev/null && npm audit --audit-level=high'"
 
   # ---------------------------------------------------------------------------
   # Security scanning. Trivy is pinned to a release tag (the old workflow used
@@ -187,10 +187,10 @@ jobs:
       contents: read
       security-events: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Trivy filesystem scan
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@0.36.0
         with:
           scan-type: fs
           scan-ref: .
@@ -202,7 +202,7 @@ jobs:
 
       - name: Upload SARIF
         if: always()
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: trivy-results.sarif
         continue-on-error: true

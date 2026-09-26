@@ -68,3 +68,6 @@ test-data/*.tokens.json
 
 # Task Master AI - local config
 .taskmaster/
+
+# webpack CMS bundle sidecar
+site/static/cms.js.LICENSE.txt

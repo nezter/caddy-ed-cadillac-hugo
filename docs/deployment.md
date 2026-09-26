@@ -32,6 +32,41 @@ Check them any time:
 netlify api getSite --data '{"site_id":"532a7445-ce96-40c1-bebb-b9d14a0d0e10"}'
 ```
 
+## Live preview (no Netlify involved)
+
+To review a build in a browser without spending build minutes or touching
+production:
+
+```bash
+./ci/preview.sh up       # deploy + serve
+./ci/preview.sh logs     # tail the container
+./ci/preview.sh down     # stop (artifact is left in place)
+```
+
+This relays the **already-verified** `site/public` from the CI host
+(`10.1.0.25:/var/tmp/caddy-build/site/public`) to a k3s node and serves it from
+an nginx container.
+
+Default target: **`10.1.0.81:8090`** -- VM 999, `k3s-node-81`, which runs under
+the `10.1.0.10` Proxmox host. Override with `./ci/preview.sh up <host> <port>`
+or the `PREVIEW_HOST` / `PREVIEW_PORT` environment variables.
+
+Two deliberate behaviours:
+
+- **Functions are not included.** It is a static preview. `/.netlify/*` and
+  `/health` return an honest JSON explanation rather than a 404, so nobody
+  spends time chasing a phantom API outage. Use `make dev-functions`
+  (netlify dev) when the API matters.
+- **Nothing is built here.** The preview only ever ships output that has
+  already passed `ci/verify-build.js`.
+
+> The k3s control plane is at `10.1.0.141:6443` but is not reachable with the
+> keys available here: the PVE host's kubeconfig belongs to a different cluster
+> (its CA does not match), and k3s agents carry no admin credentials. So the
+> preview runs as a plain container on a cluster node rather than as a
+> Kubernetes Deployment. A real in-cluster Deployment needs an admin
+> kubeconfig for that cluster.
+
 ## The CI host
 
 `10.1.0.25` (`cicd-runners`) runs all builds inside the podman image

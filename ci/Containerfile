@@ -74,21 +74,36 @@ RUN set -eux; \
 # .npmrc `allow-scripts` key into an `npm_config_allow_scripts` env var for every
 # child npm process, and npm 11 rejects that form for project-scoped installs
 # with EALLOWSCRIPTS. Persisting it globally broke every `npm run build`.
+#
+# Version floors, kept current with `npm view <pkg> version`:
+#   netlify-cli    27.x   (was 23 -- four majors behind)
+#   @netlify/build 37.x   (was ^17 -- very far behind; 35 was already arriving
+#                          transitively, so the old pin was the outlier)
+ARG NETLIFY_CLI_VERSION=27
+ARG NETLIFY_BUILD_VERSION=37
 RUN set -eux; \
     npm install -g --no-fund --no-audit \
         --allow-scripts='netlify-cli,@netlify/build,@netlify/esbuild,esbuild,@parcel/watcher,sharp,unix-dgram' \
-        "@netlify/build@^17" \
-        "netlify-cli@^23"; \
+        "@netlify/build@^${NETLIFY_BUILD_VERSION}" \
+        "netlify-cli@^${NETLIFY_CLI_VERSION}"; \
     npm cache clean --force; \
     # Defence in depth: make sure no inherited global config re-introduces the
     # key, which would poison nested `npm run` invocations inside the container.
-    npm config delete allow-scripts --location=global || true
+    npm config delete allow-scripts --location=global || true; \
+    echo "--- installed Netlify toolchain ---"; \
+    netlify --version; \
+    npm ls -g --depth=0 @netlify/build netlify-cli
 
 WORKDIR /site
 
 # Fail fast, loud, and non-interactive: CI must never hang waiting for input.
 ENV NPM_CONFIG_YES=true \
     CI=true \
-    DEBIAN_FRONTEND=noninteractive
+    DEBIAN_FRONTEND=noninteractive \
+    # State the production intent explicitly. Without this the build script fell
+    # back to development mode (see scripts/build-for-netlify.js) and shipped an
+    # unminified 21.5MB CMS bundle. Matches netlify.toml's [build.environment].
+    NODE_ENV=production \
+    HUGO_ENV=production
 
 CMD ["bash", "-lc", "node -v && npm -v && hugo version && netlify --version"]

@@ -8,11 +8,11 @@ const TerserPlugin = require("terser-webpack-plugin");
  * Hugo Pipes (`js.Build` + `css.Sass`) from site/assets/. See
  * site/layouts/partials/assets.html.
  *
- * Netlify CMS is the exception. It needs `netlify-cms-app` plus React and the
- * eight preview templates bundled together, which Hugo's single-entry esbuild
- * pass cannot produce (the preview templates are registered dynamically at
- * runtime and share a React instance). So the CMS keeps a dedicated webpack
- * build, scoped to exactly one entry and one output file.
+ * Decap CMS is the exception. It needs `decap-cms-app` plus React and the eight
+ * preview templates bundled together, which Hugo's single-entry esbuild pass
+ * cannot produce (the preview templates are registered dynamically at runtime
+ * and share a React instance). So the CMS keeps a dedicated webpack build,
+ * scoped to exactly one entry and one output file.
  *
  * Output: site/static/cms.js  ->  consumed by site/static/cms.html
  */
