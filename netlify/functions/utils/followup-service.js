@@ -178,6 +178,12 @@ class FollowupService {
 
   /**
    * Send an email followup
+   *
+   * This replaces a placeholder implementation that only console.logged and
+   * called `getCustomerData()` / `renderTemplate()` -- neither of which exists
+   * anywhere in this file, so it could never have run. The real body below was
+   * present in the file but had lost its method header, leaving it spliced
+   * outside the class body and making the whole module unparseable.
    */
   static async sendEmailFollowup(followup) {
     try {
@@ -186,37 +192,6 @@ class FollowupService {
       if (!template) {
         throw new Error(`Email template ${followup.email_template} not found`);
       }
-
-      // Get customer data
-      const customer = await this.getCustomerData(followup.customer_id);
-      if (!customer) {
-        throw new Error(`Customer ${followup.customer_id} not found`);
-      }
-
-      // Check if customer has consented to email
-      if (!customer.email_consent) {
-        console.log('⚠️ Customer has not consented to email communications');
-        return false;
-      }
-
-      // Render template
-      const renderedContent = this.renderTemplate(template.content, customer);
-      const renderedSubject = this.renderTemplate(template.subject, customer);
-
-      // Add unsubscribe footer to email content
-      const unsubscribeContent = this.addUnsubscribeFooter(renderedContent, customer);
-
-      // Send email (placeholder - integrate with email service)
-      console.log('📧 Sending email to:', customer.email);
-      console.log('📧 Subject:', renderedSubject);
-      console.log('📧 Content length:', unsubscribeContent.length);
-
-      return true;
-    } catch (error) {
-      console.error('Error sending email followup:', error);
-      throw error;
-    }
-  }
 
       // Personalize content
       const personalizedContent = this.personalizeContent(template.content, followup);

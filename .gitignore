@@ -27,12 +27,15 @@ Thumbs.db
 *.swo
 
 # Environment variables
+# .env and friends hold real secrets and are never committed.
 .env
 .env.*
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+# ...but the template is documentation and must be tracked.
+!.env.example
 
 # Logs
 logs

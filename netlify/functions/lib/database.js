@@ -1,4 +1,4 @@
-import { Pool } from 'pg';
+const { Pool } = require('pg');
 
 // Initialize the PostgreSQL connection pool
 const dbConfig = {
@@ -8,8 +8,8 @@ const dbConfig = {
   user: process.env.SUPABASE_PG_USER,
   password: process.env.SUPABASE_PG_PASSWORD,
   ssl: {
-    rejectUnauthorized: false // Required for Supabase PostgreSQL connections
-  }
+    rejectUnauthorized: false, // Required for Supabase PostgreSQL connections
+  },
 };
 
 // Check if environment variables are configured
@@ -22,22 +22,13 @@ if (!dbConfig.host || !dbConfig.user || !dbConfig.password) {
 // Create connection pool
 const pool = new Pool(dbConfig);
 
-// Test the connection on init
-pool.query('SELECT NOW()', (err, res) => {
-  if (err) {
-    console.error('PostgreSQL connection error:', err.message);
-  } else {
-    console.log('PostgreSQL connected successfully at:', res.rows[0].now);
-  }
-});
-
 /**
  * Execute a SQL query against the PostgreSQL database
  * @param {string} text - The SQL query text
  * @param {Array} params - The query parameters
  * @returns {Promise} - Query result
  */
-export async function query(text, params) {
+async function query(text, params) {
   const start = Date.now();
   try {
     const res = await pool.query(text, params);
@@ -54,13 +45,8 @@ export async function query(text, params) {
  * Get a dedicated client from the pool for transactions
  * @returns {Object} - PostgreSQL client
  */
-export async function getClient() {
-  const client = await pool.connect();
-  return client;
+async function getClient() {
+  return pool.connect();
 }
 
-export default {
-  query,
-  getClient,
-  pool
-};
+module.exports = { query, getClient, pool };

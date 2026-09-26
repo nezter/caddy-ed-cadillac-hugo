@@ -8,6 +8,8 @@
 # a prebuilt directory, which consumes no Netlify build minutes.
 #
 #   ./ci/run.sh build        full production build (hugo + functions + verify)
+#   ./ci/run.sh functions    boot netlify dev (static site + all 51 functions)
+#   ./ci/run.sh fn-bundle    bundle the functions, report failures, exit
 #   ./ci/run.sh verify       build + assert no broken asset references
 #   ./ci/run.sh test         unit + integration tests for netlify/functions
 #   ./ci/run.sh shell        interactive shell inside the build container
@@ -117,5 +119,24 @@ case "${1:-build}" in
   deploy)      do_deploy "" ;;
   deploy-prod) do_deploy "--prod" ;;
   sync)        sync_to_ci ;;
-  *)           sed -n '2,20p' "$0"; exit 1 ;;
+  functions)
+    # Boot `netlify dev` on the CI host: the static site AND all 51 functions.
+    # This is how the admin area gets exercised end to end.
+    sync_to_ci
+    require_image
+    log "Booting netlify dev on ${CI_HOST} (functions + static site)"
+    in_container "netlify dev --port 8888 --dir=site/public --functions=netlify/functions"
+    ;;
+  fn-bundle)   # bundle the functions and report failures, then exit
+    sync_to_ci
+    require_image
+    log "Bundling functions on ${CI_HOST} (no server left running)"
+    ssh "${CI_USER}@${CI_HOST}" "podman run --rm --network=host \
+        -v ${REMOTE_WORKDIR}:/site:Z -w /site -e CI=true \
+        -e NETLIFY_TELEMETRY_DISABLED=1 ${IMAGE} \
+        bash -lc 'cd netlify/functions && npm install --omit=dev --no-audit --no-fund >/dev/null 2>&1; \
+                   cd /site && timeout 120 netlify dev --port 8889 --dir=site/public --functions=netlify/functions 2>&1 \
+                   | grep -E \"Loaded function|Failed to load|ERROR\"' || true"
+    ;;
+  *)           sed -n '2,22p' "$0"; exit 1 ;;
 esac

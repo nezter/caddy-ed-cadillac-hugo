@@ -1,4 +1,4 @@
-const { query } = require('../../src/lib/database');
+const { query } = require('./lib/database');
 const errorHandler = require('./utils/error-handler');
 
 exports.handler = async function(event, context) {

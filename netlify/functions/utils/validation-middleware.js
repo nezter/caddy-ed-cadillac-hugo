@@ -8,22 +8,40 @@ const { sanitizeString, sanitizeEmail, sanitizePhone, sanitizeText } = require('
 const errorHandler = require('./error-handler');
 
 /**
+ * Reusable field maps.
+ *
+ * These are PLAIN objects of field schemas, not compiled Joi schemas, so they
+ * can be spread into a larger object schema or have individual fields
+ * referenced (`paginationFields.limit`).
+ *
+ * This distinction matters: `pagination` and `sorting` below are *compiled*
+ * `Joi.object(...)` values. Reaching into one of those -- `pagination.limit` --
+ * yields `undefined`, because a compiled schema is not a map of its fields.
+ * joi 17 silently ignored an `undefined` key inside `Joi.object({...})`, but
+ * joi 18 throws `Invalid undefined schema` at module load, which took down
+ * every function that requires this file (followup-campaigns among them).
+ */
+const paginationFields = {
+  limit: Joi.number().integer().min(1).max(100).default(50),
+  offset: Joi.number().integer().min(0).default(0)
+};
+
+const sortingFields = {
+  sort_by: Joi.string(),
+  sort_order: Joi.string().valid('asc', 'desc').default('desc')
+};
+
+/**
  * Common validation schemas
  */
 const commonSchemas = {
   id: Joi.number().integer().positive().required(),
-  pagination: Joi.object({
-    limit: Joi.number().integer().min(1).max(100).default(50),
-    offset: Joi.number().integer().min(0).default(0)
-  }),
+  pagination: Joi.object(paginationFields),
   dateRange: Joi.object({
     start_date: Joi.date().iso(),
     end_date: Joi.date().iso().min(Joi.ref('start_date'))
   }),
-  sorting: Joi.object({
-    sort_by: Joi.string(),
-    sort_order: Joi.string().valid('asc', 'desc').default('desc')
-  })
+  sorting: Joi.object(sortingFields)
 };
 
 /**
@@ -248,10 +266,8 @@ const searchSchemas = {
     q: Joi.string().min(1).max(500).required(),
     type: Joi.string().valid('all', 'customers', 'leads', 'interactions', 'appointments').default('all'),
     filters: Joi.object({}).default({}),
-    limit: commonSchemas.pagination.limit,
-    offset: commonSchemas.pagination.offset,
-    sort_by: commonSchemas.sorting.sort_by,
-    sort_order: commonSchemas.sorting.sort_order
+    ...paginationFields,
+    ...sortingFields
   })
 };
 
@@ -393,6 +409,8 @@ function validateParams(schema) {
 }
 
 module.exports = {
+  paginationFields,
+  sortingFields,
   // Validation schemas
   commonSchemas,
   campaignSchemas,

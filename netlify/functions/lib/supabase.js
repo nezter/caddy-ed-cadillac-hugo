@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+const { createClient } = require('@supabase/supabase-js');
 
 // Initialize the Supabase client
 const supabaseUrl = process.env.SUPABASE_URL;
@@ -14,8 +14,9 @@ if (!supabaseUrl || !supabaseAnonKey) {
 // Create Supabase client
 const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    persistSession: true
-  }
+    persistSession: true,
+  },
 });
 
-export default supabase;
+module.exports = supabase;
+module.exports.default = supabase;

@@ -57,7 +57,7 @@ export default [
   // --- browser: the front end -------------------------------------------
   {
     files: ['site/assets/js/**/*.js', 'src/js/**/*.js'],
-    // src/lib/** is server code and is handled by the node block below.
+    // netlify/functions/lib/** is server code, handled by the node block below.
     languageOptions: {
       ecmaVersion: 2023,
       sourceType: 'module',
@@ -99,15 +99,15 @@ export default [
   },
 
   // --- node: build, CI and ops scripts -----------------------------------
-  // src/lib/ is deliberately excluded from the browser block above: those
-  // modules (supabase.js, database.js) are required by netlify/functions via
-  // `require('../../src/lib/database')` and are server code. Linting them with
-  // browser globals produced ~90 bogus "'process' is not defined" errors.
+  // netlify/functions/lib/ is deliberately excluded from the browser block
+  // above: those modules (supabase.js, database.js) are required by the
+  // functions via `require('./lib/database')` and are server code. Linting them
+  // with browser globals produced ~90 bogus "'process' is not defined" errors.
   //
   // Note: no bare `*.js` glob here. It would match root-level ESM files
   // (eslint.config.js) and force sourceType:commonjs onto them.
   {
-    files: ['scripts/**/*.js', 'ci/**/*.js', 'webpack.cms.js'],
+    files: ['scripts/**/*.js', 'ci/**/*.js', 'webpack.cms.js', 'netlify/functions/lib/**/*.js'],
     languageOptions: {
       ecmaVersion: 2023,
       sourceType: 'commonjs',
@@ -131,14 +131,17 @@ export default [
     },
   },
 
-  // --- node, but ESM: src/lib/ ------------------------------------------
-  // supabase.js and database.js are required by netlify/functions, but they are
-  // written as ES modules. Node globals, module syntax.
+  // --- server-side shared modules -----------------------------------------
+  // netlify/functions/lib/{database,supabase}.js. These were written as ES
+  // modules and required()d from the functions, which is why they failed to
+  // bundle. They are now CommonJS (see the files themselves), so they belong in
+  // the commonjs block above; this entry only exists to keep the old path
+  // covered if it is ever reintroduced.
   {
-    files: ['src/lib/**/*.js'],
+    files: ['netlify/functions/lib/**/*.js'],
     languageOptions: {
       ecmaVersion: 2023,
-      sourceType: 'module',
+      sourceType: 'commonjs',
       globals: { ...globals.node },
     },
     rules: {

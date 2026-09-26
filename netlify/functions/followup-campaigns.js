@@ -1,7 +1,15 @@
 const errorHandler = require('./utils/error-handler');
 const DatabaseService = require('./utils/database-service');
 const { authenticateRequest } = require('./utils/auth-middleware');
-const { validateBody, validateQuery, validateParams, campaignSchemas, commonSchemas } = require('./utils/validation-middleware');
+const {
+  validateBody,
+  validateQuery,
+  validateParams,
+  campaignSchemas,
+  commonSchemas,
+  paginationFields,
+  sortingFields,
+} = require('./utils/validation-middleware');
 const { applySecurity, createSecureResponse } = require('./utils/security-middleware');
 const Joi = require('joi');
 
@@ -101,8 +109,11 @@ async function getCampaigns(event) {
     active: Joi.boolean(),
     type: Joi.string().valid('nurture', 're_engagement', 'welcome', 'birthday', 'anniversary', 'holiday', 'custom'),
     audience: Joi.string().valid('all', 'prospects', 'leads', 'active_customers', 'inactive_customers', 'vip_customers'),
-    ...commonSchemas.pagination,
-    ...commonSchemas.sorting
+    // Spread the FIELD MAPS, not the compiled Joi schemas. Spreading
+    // `commonSchemas.pagination` (a Joi.object) spread a schema object's own
+    // internals instead of its fields.
+    ...paginationFields,
+    ...sortingFields
   }))(event);
 
   if (!queryValidation.isValid) {

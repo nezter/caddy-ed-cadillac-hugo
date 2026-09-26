@@ -12,10 +12,15 @@
     "node": ">=24 <25"
   },
   "allowScripts": {
-    "esbuild": true,
-    "sharp": true,
+    "@libsql/client": true,
+    "@libsql/darwin-arm64": true,
+    "@libsql/darwin-x64": true,
+    "@libsql/linux-x64-gnu": true,
+    "@libsql/linux-x64-musl": true,
     "@parcel/watcher": true,
-    "hugo-bin": true
+    "esbuild": true,
+    "hugo-bin": true,
+    "sharp": true
   },
   "scripts": {
     "build": "node scripts/build-for-netlify.js",
@@ -44,10 +49,13 @@
     "seed:all": "npm run seed:sales-reps && npm run seed:test-data && npm run seed:vehicles && npm run seed:analytics"
   },
   "dependencies": {
+    "@libsql/client": "^0.18.0",
     "@supabase/supabase-js": "^2.117.2",
     "bcryptjs": "^2.4.3",
     "date-fns": "^4.1.0",
     "decap-cms-app": "^3.16.3",
+    "dotenv": "^18.0.4",
+    "jsonwebtoken": "^9.0.2",
     "lazysizes": "^5.3.2",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"

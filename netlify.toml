@@ -37,13 +37,33 @@
   # The functions are CommonJS on Node 24.
   node_bundler = "esbuild"
 
+  # @libsql/client loads its platform-native binary through an OPTIONAL
+  # dependency (@libsql/linux-x64-gnu, or the musl/darwin equivalents). esbuild
+  # cannot see through that conditional require, so it is left unresolved and
+  # the function dies at runtime with:
+  #   Error: Cannot find module '@libsql/linux-x64-gnu'
+  # Shipping the platform packages alongside the bundle resolves it.
+  included_files = [
+    "node_modules/@libsql/**",
+    "node_modules/libsql/**",
+  ]
+
 # -----------------------------------------------------------------------------
 # Local dev server
+#
+# NOTE: there is deliberately NO `command` here.
+#
+# `netlify dev` is used to exercise the FUNCTIONS against the already-built
+# site, so it should serve the publish directory directly. This section used to
+# run `npm run dev:hugo` (hugo server on :1313) as well, which made
+# `netlify dev` spawn a second server and die with
+# "listen tcp 127.0.0.1:1313: bind: address already in use".
+#
+# For front-end work use `make dev` (plain hugo server, no functions), or
+# `make dev-all` to run both.
 # -----------------------------------------------------------------------------
 [dev]
-  command = "npm run dev:hugo"
   publish = "site/public"
-  targetPort = 1313
   port = 8888
   autoLaunch = false
   dir = "site"

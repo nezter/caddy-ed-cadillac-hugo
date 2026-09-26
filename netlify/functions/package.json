@@ -4,16 +4,21 @@
   "description": "Netlify Functions for Caddy Ed website",
   "main": "index.js",
   "allowScripts": {
+    "@libsql/client": true,
+    "@libsql/linux-x64-gnu": true,
+    "@libsql/linux-x64-musl": true,
+    "@parcel/watcher": true,
     "bcrypt": true,
     "esbuild": true,
-    "sharp": true,
-    "@parcel/watcher": true
+    "sharp": true
   },
   "dependencies": {
-    "@libsql/client": "^0.6.0",
+    "@libsql/client": "^0.18.0",
     "@supabase/supabase-js": "^2.117.2",
+    "axios": "^1.13.1",
     "bcryptjs": "^2.4.3",
     "cheerio": "^1.1.2",
+    "dom-parser": "^1.1.5",
     "dotenv": "^18.0.4",
     "fast-levenshtein": "^3.0.0",
     "fuse.js": "^6.6.2",
