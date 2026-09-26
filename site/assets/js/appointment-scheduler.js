@@ -51,37 +51,21 @@ class AppointmentScheduler {
   }
   
   fetchSalesReps() {
-    // This would normally fetch from an API, but for demo purposes we'll use mock data
+    // There is one sales specialist here, not a team. The mock data this replaced
+    // invented four reps with stock photos that exist nowhere in the build, and a
+    // visitor who picked "Sarah Johnson" would have been booking with nobody.
+    //
+    // The id is stable so a future multi-rep feed can replace this array without
+    // touching the rendering code.
     return new Promise((resolve) => {
       setTimeout(() => {
         resolve([
           {
-            id: 'rep1',
-            name: 'John Smith',
-            position: 'Sales Consultant',
-            image: '/images/sales-reps/john-smith.jpg',
-            specialties: ['Escalade', 'CT5']
-          },
-          {
-            id: 'rep2',
-            name: 'Sarah Johnson',
-            position: 'Senior Sales Consultant',
-            image: '/images/sales-reps/sarah-johnson.jpg',
-            specialties: ['XT5', 'XT6']
-          },
-          {
-            id: 'rep3',
-            name: 'Miguel Rodriguez',
-            position: 'Sales Manager',
-            image: '/images/sales-reps/miguel-rodriguez.jpg',
-            specialties: ['Luxury Vehicles', 'Financing']
-          },
-          {
-            id: 'rep4',
-            name: 'Emily Chen',
-            position: 'Client Advisor',
-            image: '/images/sales-reps/emily-chen.jpg',
-            specialties: ['Lyriq', 'Electric Vehicles']
+            id: 'caddy-ed',
+            name: 'Caddy Ed',
+            position: 'Sales Specialist',
+            image: null,
+            specialties: ['All models']
           }
         ]);
       }, 500);
