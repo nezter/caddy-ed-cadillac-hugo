@@ -450,3 +450,84 @@
     }
   }
 }
+
+/* --- added during the eleven-way consolidation (docs/inventory-consolidation.md) --- */
+
+/* The multi-selects are driven by inventory-filter.js, which sets .multiple.
+   A bare list box is a bad control -- 40 options with no hint that ctrl-click
+   is required -- so the collapsed state looks like a normal select and opens
+   into a real list box. */
+.select--multi {
+  min-height: 2.75rem;
+  background-image:
+    linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position: calc(100% - 18px) 55%, calc(100% - 13px) 55%;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 2.25rem;
+}
+.select--multi[size]:not([size="1"]) { min-height: 9rem; }
+
+/* Price band chips. Rendered by inventory-filter.js from PRICE_BANDS, so the
+   markup and the values cannot drift apart. */
+.inventory-price-bands {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+.chip {
+  font: inherit;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  line-height: 1;
+  padding: 0.5rem 0.85rem;
+  min-height: 32px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  background: var(--bg-subtle);
+  color: var(--text);
+  cursor: pointer;
+  transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+.chip:hover { border-color: var(--text); }
+.chip[aria-pressed="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.chip:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+/* How many filters are narrowing the list. Without it there is no way to tell
+   at a glance why the grid shows three cars out of thirty-five. */
+.inventory-filters__active {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--accent);
+  margin: 0;
+}
+
+/* Favourites. localStorage only -- there is no account system to hang this
+   off, and inventing one for a "save this car" button would be a bigger
+   change than the feature deserves. */
+.vehicle-card__fav {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  z-index: 2;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  font-size: 1.25rem;
+  line-height: 1;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.45);
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background-color var(--dur) var(--ease);
+}
+.vehicle-card__fav:hover { background: rgba(0, 0, 0, 0.7); }
+.vehicle-card__fav:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }

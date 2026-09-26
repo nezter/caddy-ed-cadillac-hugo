@@ -25,6 +25,11 @@ exports.handler = async function(event, context) {
     const method = event.httpMethod;
 
     // Parse path parameters
+    // `DELETE /saved/<id>` puts the collection in pathParts[0] and the id in
+    // pathParts[1]. This used to read pathParts[0] as the id, so the case
+    // template `DELETE /saved/${resourceId}` interpolated the literal "saved"
+    // and could never match the request path -- every delete fell through to
+    // the default branch and 404'd. subResource was declared and never used.
     const pathParts = path.split('/').filter(p => p);
     const resourceId = pathParts[0];
     const subResource = pathParts[1];
@@ -38,8 +43,8 @@ exports.handler = async function(event, context) {
         return await saveSearch(event);
       case 'GET /saved':
         return await getSavedSearches(event);
-      case `DELETE /saved/${resourceId}`:
-        return await deleteSavedSearch(event, resourceId);
+      case `DELETE /saved/${subResource}`:
+        return await deleteSavedSearch(event, subResource);
       case 'GET /facets':
         return await getSearchFacets(event);
       case 'GET /analytics':

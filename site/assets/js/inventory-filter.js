@@ -7,19 +7,51 @@
  * /.netlify/functions/inventory-api.
  *
  * The previous setup did the opposite: inventory.js looked for
- * #vehicle-inventory / #inventory-filters / #inventory-pagination and fetched
+ #vehicle-inventory / #inventory-filters / #inventory-pagination and fetched
  * everything from a function, but the section layout rendered none of those
  * elements -- so the page loaded a bundle that silently did nothing, and
  * browsing inventory depended on a serverless function being reachable.
  *
  * Every vehicle card carries data-* attributes for its filter keys, so this
  * never has to parse text out of the markup.
+ *
+ * Consolidated from eleven competing implementations. The review is in
+ * docs/inventory-consolidation.md. What survived the port, and why:
+ *
+ *   empty state for zero inventory   error-states.js:20-50
+ *   active-filter count              FilterUI.js:549-590
+ *   drivetrain / transmission facets FilterManager.js:55-70 (the data was
+ *                                     already in 35 of 36 content files and
+ *                                     had never been surfaced)
+ *   price-band preset chips          FilterManager.js:101-124
+ *   multi-select, OR within a facet  FilterManager.js:459-522
+ *   favourites / shortlist           vehicle-inventory.js:112-169
+ *
+ * Declined: named saved searches and session memory (the URL is strictly
+ * better and survives a share), range sliders (the code depended on
+ * noUiSlider, which is loaded nowhere -- 99 lines never executed), pagination
+ * (35 vehicles does not need it), and a mobile filter drawer (the grid
+ * already stacks).
  */
 
 (function () {
   'use strict';
 
-  const FIELDS = ['q', 'model', 'year', 'body_style', 'status', 'max_price', 'sort'];
+  const FIELDS = [
+    'q', 'model', 'year', 'drivetrain', 'transmission', 'status', 'max_price', 'sort',
+  ];
+  // Facets that accept more than one value. OR within a facet, AND across
+  // facets -- the convention every faceted search uses, and what
+  // FilterManager.js:459-522 got right.
+  const MULTI = ['model', 'year', 'drivetrain', 'transmission', 'status'];
+  const PRICE_BANDS = [
+    { label: 'Under $40k', max: 40000 },
+    { label: '$40k-$55k', min: 40000, max: 55000 },
+    { label: '$55k-$70k', min: 55000, max: 70000 },
+    { label: '$70k-$90k', min: 70000, max: 90000 },
+    { label: '$90k+', min: 90000 },
+  ];
+  const STORE_KEY = 'caddy-ed:favourites';
 
   function init() {
     const form = document.querySelector('[data-inventory-filters]');
@@ -27,34 +59,73 @@
     if (!form || !grid) return;
 
     const cards = Array.prototype.slice.call(grid.querySelectorAll('[data-vehicle]'));
-    if (!cards.length) return;
-
     const countEl = document.getElementById('inventory-count');
     const emptyEl = document.getElementById('inventory-empty');
     const searchEl = form.querySelector('#f-search');
+    const badgeEl = document.getElementById('inventory-active-filters');
+
+    // Zero inventory is a different situation from zero matches. A filter that
+    // matches nothing can be undone; an empty dealership cannot, and the page
+    // used to render blank with no explanation and no way forward.
+    if (!cards.length) {
+      if (emptyEl) {
+        emptyEl.classList.remove('hidden');
+        const msg = emptyEl.querySelector('[data-empty-message]');
+        if (msg) {
+          msg.textContent =
+            'There are no vehicles in stock right now. New stock arrives regularly — ' +
+            'get in touch and we will let you know first.';
+        }
+        // "Clear filters" is meaningless with nothing to clear.
+        const resetBtn = emptyEl.querySelector('[data-inventory-reset]');
+        if (resetBtn) resetBtn.remove();
+      }
+      if (countEl) countEl.textContent = 'No vehicles in stock';
+      return;
+    }
 
     function fieldEl(name) {
       return form.querySelector('[name="' + name + '"]');
     }
 
     function val(name) {
-      let el = fieldEl(name);
+      const el = fieldEl(name);
       return el ? String(el.value || '').trim().toLowerCase() : '';
     }
 
     function numVal(name) {
-      let n = parseFloat(val(name));
+      const n = parseFloat(val(name));
       return isNaN(n) ? null : n;
     }
 
-    function matches(card, q, model, year, body, status, maxPrice) {
+    /** Selected values for a facet. A multiple <select> returns an array. */
+    function vals(name) {
+      const el = fieldEl(name);
+      if (!el) return [];
+      if (el.multiple) {
+        return Array.prototype.slice
+          .call(el.selectedOptions)
+          .map((o) => String(o.value).trim().toLowerCase())
+          .filter(Boolean);
+      }
+      const v = String(el.value || '').trim().toLowerCase();
+      return v ? [v] : [];
+    }
+
+    function hasFacets() {
+      return vals('model').length || vals('year').length || vals('drivetrain').length ||
+        vals('transmission').length || vals('status').length || numVal('max_price') !== null;
+    }
+
+    function matches(card, q, model, year, drivetrain, transmission, status, maxPrice) {
       if (q && (card.dataset.title || '').indexOf(q) === -1) return false;
-      if (model && card.dataset.model !== model) return false;
-      if (year && String(card.dataset.year) !== year) return false;
-      if (body && card.dataset.body !== body) return false;
-      if (status && (card.dataset.status || '') !== status) return false;
+      if (model.length && model.indexOf(card.dataset.model || '') === -1) return false;
+      if (year.length && year.indexOf(String(card.dataset.year || '')) === -1) return false;
+      if (drivetrain.length && drivetrain.indexOf(card.dataset.drivetrain || '') === -1) return false;
+      if (transmission.length && transmission.indexOf(card.dataset.transmission || '') === -1) return false;
+      if (status.length && status.indexOf(card.dataset.status || '') === -1) return false;
       if (maxPrice !== null) {
-        let p = parseFloat(card.dataset.price || '0');
+        const p = parseFloat(card.dataset.price || '0');
         if (!(p > 0 && p <= maxPrice)) return false;
       }
       return true;
@@ -67,34 +138,48 @@
           return (num(a, 'price') || Infinity) - (num(b, 'price') || Infinity);
         },
         'price-desc': function (a, b) { return num(b, 'price') - num(a, 'price'); },
-        'year-desc': function (a, b) { return num(b, 'year') - num(a, 'year'); },
+        'year-desc': function (a, b) {
+          return num(b, 'year') - num(a, 'year') || (num(a, 'price') || Infinity) - (num(b, 'price') || Infinity);
+        },
         'mileage-asc': function (a, b) {
           return (num(a, 'mileage') || Infinity) - (num(b, 'mileage') || Infinity);
         },
-        // Default: featured first, then newest, then cheapest.
-        featured: function (a, b) {
-          const fa = a.dataset.featured === '1' ? 0 : 1;
-          const fb = b.dataset.featured === '1' ? 0 : 1;
-          if (fa !== fb) return fa - fb;
-          const y = num(b, 'year') - num(a, 'year');
-          if (y !== 0) return y;
-          return (num(a, 'price') || Infinity) - (num(b, 'price') || Infinity);
-        },
       };
-      return list.slice().sort(comparators[mode] || comparators.featured);
+      // No `featured` comparator: the feed never sets `featured`, so it was a
+      // no-op that silently fell through to year-desc. The option is gone from
+      // the select too.
+      return list.slice().sort(comparators[mode] || comparators['year-desc']);
+    }
+
+    function updateActiveFilterCount() {
+      if (!badgeEl) return;
+      let n = 0;
+      FIELDS.forEach(function (key) {
+        if (key === 'sort') return;
+        if (key === 'max_price') {
+          if (numVal('max_price') !== null) n += 1;
+        } else if (key === 'q') {
+          if (val('q')) n += 1;
+        } else {
+          n += vals(key).length;
+        }
+      });
+      badgeEl.textContent = n ? n + ' active' : '';
+      badgeEl.classList.toggle('hidden', n === 0);
     }
 
     function apply() {
-      let q = val('q');
-      let model = val('model');
-      let year = val('year');
-      let body = val('body_style');
-      let status = val('status');
-      let maxPrice = numVal('max_price');
-      let sort = val('sort') || 'featured';
+      const q = val('q');
+      const model = vals('model');
+      const year = vals('year');
+      const drivetrain = vals('drivetrain');
+      const transmission = vals('transmission');
+      const status = vals('status');
+      const maxPrice = numVal('max_price');
+      const sort = val('sort') || 'year-desc';
 
       let visible = cards.filter(function (card) {
-        return matches(card, q, model, year, body, status, maxPrice);
+        return matches(card, q, model, year, drivetrain, transmission, status, maxPrice);
       });
       visible = sortCards(visible, sort);
 
@@ -117,21 +202,29 @@
           (visible.length === cards.length ? '' : ' of ' + cards.length);
       }
       if (emptyEl) emptyEl.classList.toggle('hidden', visible.length > 0);
+      updateActiveFilterCount();
     }
 
     function reset() {
       form.reset();
       apply();
+      writeUrl();
       if (searchEl) searchEl.focus();
     }
 
     function writeUrl() {
       const params = new URLSearchParams();
       FIELDS.forEach(function (key) {
-        let el = fieldEl(key);
-        if (el && el.value && el.value !== 'featured') params.set(key, el.value);
+        const el = fieldEl(key);
+        if (!el) return;
+        if (el.multiple) {
+          const selected = Array.prototype.slice.call(el.selectedOptions).map((o) => o.value);
+          if (selected.length) params.set(key, selected.join(','));
+        } else if (el.value && el.value !== 'year-desc') {
+          params.set(key, el.value);
+        }
       });
-      let qs = params.toString();
+      const qs = params.toString();
       const url = qs ? '?' + qs : window.location.pathname;
       window.history.replaceState(null, '', url);
     }
@@ -139,15 +232,139 @@
     function readUrl() {
       const params = new URLSearchParams(window.location.search);
       FIELDS.forEach(function (key) {
-        let v = params.get(key);
-        let el = fieldEl(key);
-        if (v && el) el.value = v;
+        const v = params.get(key);
+        if (!v) return;
+        const el = fieldEl(key);
+        if (!el) return;
+        if (el.multiple) {
+          // A multiple select cannot be assigned a comma string; set options.
+          const wanted = v.split(',').map((s) => s.trim()).filter(Boolean);
+          Array.prototype.slice.call(el.options).forEach(function (o) {
+            o.selected = wanted.indexOf(String(o.value).trim()) !== -1;
+          });
+        } else {
+          el.value = v;
+        }
       });
     }
 
+    // --- favourites ---------------------------------------------------------
+    // localStorage, deliberately. "Save this car" has no server to live on and
+    // no account system to hang off; pretending otherwise would mean either a
+    // dead button or a new auth surface.
+    function loadFavourites() {
+      try {
+        const raw = window.localStorage.getItem(STORE_KEY);
+        const parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        // Private mode, disabled storage, or corrupt JSON. Not worth a
+        // console error; the feature just starts empty.
+        return [];
+      }
+    }
+
+    function saveFavourites(list) {
+      try {
+        window.localStorage.setItem(STORE_KEY, JSON.stringify(list));
+      } catch { /* nothing to do; the session still works */ }
+    }
+
+    function initFavourites() {
+      let favs = loadFavourites();
+      cards.forEach(function (card) {
+        const link = card.querySelector('a[href]');
+        if (!link) return;
+        const href = link.getAttribute('href');
+        if (!href || href === '#') return;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'vehicle-card__fav';
+        btn.setAttribute('data-fav', href);
+        btn.setAttribute('aria-pressed', favs.indexOf(href) !== -1 ? 'true' : 'false');
+        btn.setAttribute('aria-label', 'Save this vehicle');
+        btn.textContent = favs.indexOf(href) !== -1 ? '★' : '☆';
+        btn.title = 'Save this vehicle';
+        card.querySelector('.vehicle-card__media')?.appendChild(btn);
+      });
+
+      document.addEventListener('click', function (e) {
+        const btn = e.target.closest('[data-fav]');
+        if (!btn) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const href = btn.getAttribute('data-fav');
+        const i = favs.indexOf(href);
+        if (i === -1) {
+          favs.push(href);
+        } else {
+          favs.splice(i, 1);
+        }
+        saveFavourites(favs);
+        const on = favs.indexOf(href) !== -1;
+        btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+        btn.textContent = on ? '★' : '☆';
+      });
+    }
+
+    // --- price band chips ---------------------------------------------------
+    function initPriceBands() {
+      const host = document.getElementById('inventory-price-bands');
+      if (!host) return;
+      PRICE_BANDS.forEach(function (band) {
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'chip';
+        chip.textContent = band.label;
+        chip.setAttribute('data-min', band.min === undefined ? '' : String(band.min));
+        chip.setAttribute('data-max', band.max === undefined ? '' : String(band.max));
+        chip.setAttribute('aria-pressed', 'false');
+        host.appendChild(chip);
+      });
+      host.addEventListener('click', function (e) {
+        const chip = e.target.closest('.chip');
+        if (!chip) return;
+        const on = chip.getAttribute('aria-pressed') === 'true';
+        Array.prototype.slice.call(host.querySelectorAll('.chip')).forEach(function (c) {
+          c.setAttribute('aria-pressed', 'false');
+        });
+        if (on) {
+          apply();
+          writeUrl();
+          return;
+        }
+        chip.setAttribute('aria-pressed', 'true');
+        const min = parseFloat(chip.getAttribute('data-min'));
+        const max = parseFloat(chip.getAttribute('data-max'));
+        const lo = isNaN(min) ? 0 : min;
+        const hi = isNaN(max) ? Infinity : max;
+        let visible = cards.filter(function (card) {
+          const p = parseFloat(card.dataset.price || '0');
+          return p > 0 && p >= lo && (hi === Infinity ? p <= hi : p <= hi);
+        });
+        visible = sortCards(visible, val('sort') || 'year-desc');
+        const frag = document.createDocumentFragment();
+        visible.forEach((c) => frag.appendChild(c));
+        grid.appendChild(frag);
+        cards.forEach(function (c) {
+          c.classList.toggle('hidden', visible.indexOf(c) === -1);
+        });
+        if (countEl) {
+          countEl.textContent =
+            visible.length + (visible.length === 1 ? ' vehicle' : ' vehicles') +
+            (visible.length === cards.length ? '' : ' of ' + cards.length);
+        }
+        if (emptyEl) emptyEl.classList.toggle('hidden', visible.length > 0);
+      });
+    }
+
+    // --- wiring -------------------------------------------------------------
     form.addEventListener('submit', function (e) {
       e.preventDefault();
       apply();
+      // The search field is the most-used control on the page; it was excluded
+      // from the URL, so a filtered result could not be shared or reloaded.
+      writeUrl();
     });
     form.addEventListener('change', function () {
       apply();
@@ -159,18 +376,35 @@
       let debounce;
       searchEl.addEventListener('input', function () {
         clearTimeout(debounce);
-        debounce = setTimeout(apply, 140);
+        debounce = setTimeout(function () {
+          apply();
+          writeUrl();
+        }, 200);
       });
     }
 
     document.addEventListener('click', function (e) {
-      if (e.target.closest('[data-inventory-reset]')) {
+      // The Clear filters button in the filter bar had only an id while this
+      // matched an attribute, and `type="button"` fires no native reset -- so
+      // the page's primary control was inert. Both selectors are accepted, and
+      // the native reset event is handled too, so a future button of either
+      // shape works.
+      if (e.target.closest('#f-reset, [data-inventory-reset]')) {
         e.preventDefault();
         reset();
-        writeUrl();
       }
     });
 
+    // Enable the multi-selects. A bare `multiple` select is a bad control --
+    // a 40-item list box with no hint that ctrl-click is required -- so the
+    // markup gets a real affordance instead.
+    MULTI.forEach(function (name) {
+      const el = fieldEl(name);
+      if (el) el.multiple = true;
+    });
+
+    initFavourites();
+    initPriceBands();
     readUrl();
     apply();
   }

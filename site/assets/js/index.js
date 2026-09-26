@@ -15,12 +15,25 @@ import './navbar';
 import './forms';
 import './chrome'; // header/nav behaviour, previously an inline <script> in the header partial
 
-// Inventory filtering
-import './inventory-init';
+// Inventory filtering is NOT imported here. It used to be, via
+// ./inventory-init, which bootstrapped inventory/InventoryFilters.js. Both are
+// gone: the inventory page is server-rendered by Hugo and
+// inventory-filter.js only narrows the DOM. It is declared by
+// layouts/section/inventory.html through partials/entry.html, so it loads on
+// the one page that needs it and nowhere else.
 
-// Lazy image loading
-import 'lazysizes';
-import './lazyload';
+// Image loading needs no polyfill.
+//
+// This imported `lazysizes` and a `lazyload.js` shim that, on DOMContentLoaded,
+// walked every <img>, moved the real `src` to `data-src` and replaced `src` with
+// a 1x1 transparent GIF, relying on lazysizes to swap it back. That is strictly
+// worse than what partials/picture.html already emits -- a real <picture> with
+// AVIF/WebP/JPEG sources, a srcset, explicit width/height, and native
+// loading="lazy".
+//
+// It was also a resilience bug: with JavaScript disabled, slow, or failed, every
+// image on the site stayed a 1x1 GIF forever. The native attribute needs no
+// JavaScript at all.
 
 // Initialize service worker if supported
 if ('serviceWorker' in navigator) {
@@ -84,12 +97,13 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Handle responsive images
+  // Images written by hand in markdown, rather than by partials/picture.html.
+  // Give them the same treatment. No `lazyload` class: it existed only to feed
+  // the polyfill, and the browser honours the native attribute on its own.
   const images = document.querySelectorAll(".content img");
   images.forEach(img => {
-    img.classList.add("lazyload");
-    
-    // Add responsive image class
+    if (!img.hasAttribute("loading")) img.setAttribute("loading", "lazy");
+    if (!img.hasAttribute("decoding")) img.setAttribute("decoding", "async");
     if (!img.classList.contains("inline")) {
       img.classList.add("responsive-img");
     }

@@ -13,15 +13,23 @@
      never drift out of step with what is actually in stock. */}}
 {{- $models := slice -}}
 {{- $years := slice -}}
-{{- $bodies := slice -}}
+{{- $drivetrains := slice -}}
+{{- $transmissions := slice -}}
 {{- range $all -}}
   {{- with .Params.model }}{{ $models = $models | append . }}{{ end -}}
   {{- with .Params.year }}{{ $years = $years | append (int .) }}{{ end -}}
-  {{- with .Params.body_style }}{{ $bodies = $bodies | append . }}{{ end -}}
+  {{- with .Params.drivetrain }}{{ $drivetrains = $drivetrains | append . }}{{ end -}}
+  {{- with .Params.transmission }}{{ $transmissions = $transmissions | append . }}{{ end -}}
 {{- end -}}
 {{- $models = $models | uniq | sort -}}
 {{- $years = $years | uniq | sort -}}
-{{- $bodies = $bodies | uniq | sort -}}
+{{- /* body_style was collected here and rendered as a "Body" filter. 0 of 36
+       content files define it, so the control matched nothing. drivetrain and
+       transmission are present in 35 of 36 and were never surfaced at all.
+       The vocabulary is derived from the content either way, so an option can
+       only exist if a vehicle actually carries that value. */}}
+{{- $drivetrains = $drivetrains | uniq | sort -}}
+{{- $transmissions = $transmissions | uniq | sort -}}
 
 <section class="section inventory-page">
   <div class="container">
@@ -50,7 +58,7 @@
         {{ with $models }}
         <div class="form-field">
           <label for="f-model">Model</label>
-          <select class="select" id="f-model" name="model">
+          <select class="select select--multi" id="f-model" name="model" size="1">
             <option value="">All models</option>
             {{ range . }}<option value="{{ . }}">{{ . }}</option>{{ end }}
           </select>
@@ -60,18 +68,28 @@
         {{ with $years }}
         <div class="form-field">
           <label for="f-year">Year</label>
-          <select class="select" id="f-year" name="year">
+          <select class="select select--multi" id="f-year" name="year" size="1">
             <option value="">Any year</option>
             {{ range . }}<option value="{{ . }}">{{ . }}</option>{{ end }}
           </select>
         </div>
         {{ end }}
 
-        {{ with $bodies }}
+        {{ with $drivetrains }}
         <div class="form-field">
-          <label for="f-body">Body</label>
-          <select class="select" id="f-body" name="body_style">
-            <option value="">Any body</option>
+          <label for="f-drivetrain">Drivetrain</label>
+          <select class="select select--multi" id="f-drivetrain" name="drivetrain" size="1">
+            <option value="">Any drivetrain</option>
+            {{ range . }}<option value="{{ . }}">{{ . }}</option>{{ end }}
+          </select>
+        </div>
+        {{ end }}
+
+        {{ with $transmissions }}
+        <div class="form-field">
+          <label for="f-transmission">Transmission</label>
+          <select class="select select--multi" id="f-transmission" name="transmission" size="1">
+            <option value="">Any transmission</option>
             {{ range . }}<option value="{{ . }}">{{ . }}</option>{{ end }}
           </select>
         </div>
@@ -79,7 +97,7 @@
 
         <div class="form-field">
           <label for="f-condition">Condition</label>
-          <select class="select" id="f-condition" name="status">
+          <select class="select select--multi" id="f-condition" name="status" size="1">
             <option value="">Any</option>
             <option value="New">New</option>
             <option value="Certified Pre-Owned">Certified Pre-Owned</option>
@@ -102,20 +120,25 @@
         <div class="form-field">
           <label for="f-sort">Sort</label>
           <select class="select" id="f-sort" name="sort">
-            <option value="featured">Featured</option>
             <option value="price-asc">Price: low to high</option>
             <option value="price-desc">Price: high to low</option>
-            <option value="year-desc">Newest first</option>
+            <option value="year-desc" selected>Newest first</option>
             <option value="mileage-asc">Lowest mileage</option>
           </select>
         </div>
       </div>
 
+      {{/* Price bands. FilterManager.js:101-124 had these; the values match the
+           Max price select, which is kept as the precise control. */}}
+      <div class="inventory-price-bands" id="inventory-price-bands" role="group" aria-label="Price bands"></div>
+
       <div class="inventory-filters__actions">
+        <p class="inventory-filters__active hidden" id="inventory-active-filters" aria-live="polite"></p>
         <p class="inventory-count" id="inventory-count" role="status" aria-live="polite">
           {{ len $all }} {{ if eq (len $all) 1 }}vehicle{{ else }}vehicles{{ end }}
         </p>
-        <button class="btn btn-ghost btn-sm" type="button" id="f-reset">Clear filters</button>
+        <button class="btn btn-ghost btn-sm" type="button" id="f-reset"
+                  data-inventory-reset>Clear filters</button>
       </div>
     </form>
 
@@ -135,11 +158,11 @@
                data-title="{{ .Title | lower }}"
                data-model="{{ with .Params.model }}{{ . | lower }}{{ end }}"
                data-year="{{ with .Params.year }}{{ int . }}{{ end }}"
-               data-body="{{ with .Params.body_style }}{{ . | lower }}{{ end }}"
                data-status="{{ with .Params.status }}{{ . | lower }}{{ end }}"
                data-price="{{ $price }}"
                data-mileage="{{ with .Params.mileage }}{{ int . }}{{ end }}"
-               data-featured="{{ if .Params.featured }}1{{ else }}0{{ end }}">
+               data-drivetrain="{{ with .Params.drivetrain }}{{ . | lower }}{{ end }}"
+               data-transmission="{{ with .Params.transmission }}{{ . | lower }}{{ end }}">
         <a class="vehicle-card__media" href="{{ .RelPermalink }}" tabindex="-1" aria-hidden="true">
           {{ partial "vehicle-image.html" (dict "src" $img "alt" .Title "width" .Params.image_width "height" .Params.image_height) }}
           {{ with .Params.status }}
@@ -167,11 +190,14 @@
       {{ end }}
     </div>
 
-    <p class="inventory-empty hidden" id="inventory-empty">
-      No vehicles match those filters.
+    {{/* Two different situations share this block. The script rewrites the
+         message: "no matches" is undoable, "no stock" is not, and a page that
+         renders blank in the second case gives the visitor nothing to do. */}}
+    <div class="inventory-empty hidden" id="inventory-empty">
+      <p data-empty-message>No vehicles match those filters.</p>
       <button class="btn btn-ghost btn-sm" type="button" data-inventory-reset>Clear them</button>
       or <a href="/contact/">tell me what you're after</a> — stock turns over.
-    </p>
+    </div>
 
     {{ with .Params.show_cta | default true }}
     <div class="cta-band" style="margin-top: var(--space-8)">
