@@ -27,7 +27,18 @@ IMAGE="${IMAGE:-caddy-netlify-build:2026}"
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # Podman on the remote host needs the *remote* path of the repo. We sync the
 # working tree to a scratch dir there so we never mutate the real checkout.
-REMOTE_WORKDIR="${REMOTE_WORKDIR:-/var/tmp/caddy-build}"
+# Per-session workdir on the CI host.
+#
+# It used to be a single fixed /var/tmp/caddy-build for everyone. sync_to_ci
+# runs `rsync --delete`, so two sessions sharing it delete each other's
+# untracked files, and two concurrent builds in it delete each other's
+# site/resources mid-build. That is the real cause of the intermittent
+#
+#     ERROR Failed to publish Resource: file does not exist
+#
+# which reproduced 0/6 times in an isolated copy of the same tree and 2/3 times
+# in the shared one -- a flakiness that looked like a Hugo bug and was not.
+REMOTE_WORKDIR="${REMOTE_WORKDIR:-/var/tmp/caddy-build-$(id -u)-$$}"
 
 log() { printf '\n\033[1;36m==> %s\033[0m\n' "$*"; }
 die() { printf '\n\033[1;31mFATAL: %s\033[0m\n' "$*" >&2; exit 1; }

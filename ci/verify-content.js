@@ -327,6 +327,123 @@ if (orphans.length) {
   );
 }
 
+// --- element ids the front end binds but no template renders ----------------
+//
+// The contact form's submit handler was bound to `#contact-form`, and the layout
+// rendered `<form class="contact-form">` with no id. The handler matched
+// nothing, so the fetch, the success state, the error state and the
+// network-error state were all dead on the site's primary conversion form --
+// and `document.querySelector('#form-error').textContent` would have thrown on
+// null even if the form had submitted.
+//
+// Nothing caught it. The page built, the asset gate was green, the function
+// existed and was reachable. Both halves are valid; they simply disagree, and
+// only a check that reads one and compares it to the other sees that.
+function reachableJs() {
+  const JS_ROOT = path.join(ROOT, 'site', 'assets', 'js');
+  const entries = [];
+
+  // The GLOBAL bundle. assets.html builds site/assets/js/index.js onto every
+  // page and it is declared in no front matter, so a check that only reads
+  // `scripts:` cannot see the largest JavaScript file on the site. That is the
+  // same blind spot the endpoint gate had, and it is why this check passed
+  // straight over the very regression it was written for: index.js is what
+  // binds #contact-form.
+  if (fs.existsSync(path.join(JS_ROOT, 'index.js'))) entries.push('index.js');
+
+  for (const f of walk(path.join(ROOT, 'site', 'content'), (p) => p.endsWith('.md'))) {
+    const t = fs.readFileSync(f, 'utf8');
+    const m = t.match(/^scripts:\s*((?:\s*-\s*\S+\s*)+)/m);
+    if (m) for (const s of m[1].matchAll(/-\s*(\S+)/g)) entries.push(s[1]);
+  }
+  const seen = new Set();
+  const stack = entries.map((rel) => ({ rel, importer: null }));
+  const find = (rel, importer) => {
+    const cands = importer
+      ? [
+          path.resolve(JS_ROOT, rel),
+          path.resolve(path.dirname(importer), rel),
+          path.resolve(path.dirname(importer), rel + '.js'),
+        ]
+      : [path.resolve(JS_ROOT, rel), path.resolve(JS_ROOT, rel + '.js')];
+    return cands.find((c) => fs.existsSync(c) && fs.statSync(c).isFile()) || null;
+  };
+  while (stack.length) {
+    const next = stack.pop();
+    const f = find(next.rel, next.importer);
+    if (!f || seen.has(f)) continue;
+    seen.add(f);
+    const src = fs.readFileSync(f, 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, ' ')
+      .replace(/(^|[^:'"\`\/])\/\/[^\n]*/g, '$1 ');
+    const re = /(?:from|import)\s+['"]([^'"]+)['"]|require\(\s*['"]([^'"]+)['"]\s*\)/g;
+    for (const m of src.matchAll(re)) {
+      const r = m[1] || m[2];
+      if (r.startsWith('.')) stack.push({ rel: r, importer: f });
+    }
+  }
+  return [...seen];
+}
+
+function stripComments(src) {
+  return src
+    .replace(/\/\*[\s\S]*?\*\//g, ' ')
+    .replace(/(^|[^:'"\`\/])\/\/[^\n]*/g, '$1 ');
+}
+
+const danglingIds = [];
+{
+  const jsFiles = reachableJs();
+  const rendered = new Set();
+  for (const f of [
+    ...walk(path.join(ROOT, 'site', 'layouts'), (p) => p.endsWith('.html')),
+    ...walk(path.join(ROOT, 'site', 'content'), (p) => /\.(md|html)$/.test(p)),
+  ]) {
+    const src = fs.readFileSync(f, 'utf8');
+    for (const m of src.matchAll(/\bid=["']([^"']+)["']/g)) rendered.add(m[1]);
+    for (const m of src.matchAll(/\bid=(?:printf[^\n]*?|"([\w-]+)"|\s+([\w-]+))/g)) {
+      if (m[1]) rendered.add(m[1]);
+      if (m[2]) rendered.add(m[2]);
+    }
+  }
+  for (const f of jsFiles) {
+    const src = stripComments(fs.readFileSync(f, 'utf8'));
+    const used = new Set();
+    for (const m of src.matchAll(/getElementById\(\s*['"]([\w-]+)['"]\s*\)/g)) used.add(m[1]);
+    for (const m of src.matchAll(/querySelector(?:All)?\(\s*['"]#([\w-]+)['"]/g)) used.add(m[1]);
+
+    // A module may render its own UI. advanced-search.js builds
+    // `<div id="search-status">` and `<div id="results-list">` inside a template
+    // string and then queries both. The first version of this check knew only
+    // about templates and content, and reported 95 dangling ids -- almost all
+    // of them this pattern, which is correct code.
+    //
+    // So an id the SAME file emits counts as rendered. The defect this check
+    // exists for is narrower than it first appeared: an id bound in one file
+    // and rendered by nothing at all.
+    const selfRendered = new Set();
+    for (const m of src.matchAll(/\bid=["']([\w-]+)["']/g)) selfRendered.add(m[1]);
+
+    for (const id of used) {
+      if (!rendered.has(id) && !selfRendered.has(id)) {
+        danglingIds.push(
+          path.relative(ROOT, f) +
+            ' binds #' + id +
+            ', which no layout, content file or template string in this module renders'
+        );
+      }
+    }
+  }
+}
+if (danglingIds.length) {
+  drift.push(
+    danglingIds.length +
+      ' element id(s) bound by the front end but rendered nowhere:\n' +
+      danglingIds.map((d) => '      ' + d).join('\n') +
+      '\n      A bound id that nothing renders is a silently dead code path.'
+  );
+}
+
 // ---------------------------------------------------------------------------
 // report
 // ---------------------------------------------------------------------------

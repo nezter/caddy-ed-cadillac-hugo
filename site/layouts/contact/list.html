@@ -16,7 +16,18 @@
       <section class="contact-form-section">
         <h2>{{ .Params.form.heading | default "Contact Us" }}</h2>
         
-        <form class="contact-form" action="/api/contact" method="post" aria-describedby="form-description">
+        {{/* id="contact-form" is load-bearing: site/assets/js/index.js binds
+             `#contact-form` and was matching nothing, so the entire submit
+             handler -- fetch, success state, error state, network-error state
+             -- was dead on the site's primary conversion form. The ids below
+             are the two message hosts the handler writes into. Without them a
+             failure would have thrown on `.textContent` of null.
+
+             action/method remain so the form still works with JavaScript off:
+             a native POST to /api/contact, which is a [[redirects]] alias for
+             the contact-form function. The script enhances it, it is not the
+             only path. */}}
+        <form class="contact-form" id="contact-form" action="/api/contact" method="post" aria-describedby="form-description">
           <p id="form-description" class="visually-hidden">
             All fields marked with an asterisk (*) are required.
           </p>
@@ -58,6 +69,16 @@
           <div class="form-group">
             <button type="submit" class="btn btn-primary">{{ .Params.form.submit_button | default "Send Message" }}</button>
           </div>
+
+          {{/* Message hosts. role="status" so a screen reader announces the
+                 outcome; `aria-live` is redundant with it but harmless. The
+                 error host is a live region so a failure is not silent. */}}
+          <p class="form-message form-message--success hidden" id="form-success"
+             role="status">
+            Thanks -- your message is with Ed and you will hear back shortly.
+          </p>
+          <p class="form-message form-message--error hidden" id="form-error"
+             role="alert"></p>
         </form>
       </section>
       

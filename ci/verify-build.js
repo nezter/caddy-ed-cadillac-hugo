@@ -310,7 +310,43 @@ function main() {
   }
 
   // --- size budget ---------------------------------------------------------
-  const bundles = files.filter((f) => /\/(js|css)\//.test(f) && /\.(js|css)$/.test(f));
+  //
+  // Two families of file, and the filter used to only see one of them.
+  //
+  //   js/<name>.<sha512>.js    the global bundle, from assets.html
+  //   js/<name>.<sha512>       EVERY page-scoped bundle, from entry.html,
+  //                            which fingerprints to a bare name with no
+  //                            extension because the targetPath it passes
+  //                            already carries the stem
+  //
+  // Requiring \.js meant 13 of the 14 emitted JS bundles were never measured
+  // against a budget -- including admin/search, which is the largest front end
+  // on the site. A budget that silently exempts two thirds of what it exists to
+  // measure is worse than no budget, because it reports OK.
+  //
+  // Fingerprinted names are recognised by splitting on the final dot and
+  // checking the last segment is hex of sufficient length. A clever regex was
+  // tried first and matched only 1 of 14 emitted bundles, twice, for reasons
+  // that were not worth another round of debugging. This is obvious and it
+  // counts the files.
+  const isBundleName = (base) => {
+    const i = base.lastIndexOf('.');
+    if (i <= 0) return /\.(js|css)$/.test(base);
+    const ext = base.slice(i + 1);
+    const last = base.slice(i + 1);
+    // a trailing .js / .css: the hash is the segment before it
+    if (last === 'js' || last === 'css') {
+      const prev = base.slice(0, i);
+      const j = prev.lastIndexOf('.');
+      return j > 0 && /^[a-f0-9]{32,}$/.test(prev.slice(j + 1));
+    }
+    // no extension at all: the last segment is the hash
+    return /^[a-f0-9]{32,}$/.test(last);
+  };
+  const bundles = files.filter(
+    (f) => /\/(js|css)\//.test(f) && isBundleName(path.basename(f))
+  );
+
   if (bundles.length) {
     console.log(`\n  Front-end bundles:`);
     for (const b of bundles.sort()) {
