@@ -30,7 +30,22 @@ So: the brief must carry the spec, and the model should be chosen to *follow*
 it. That is why the routing below is organised by "how much judgement does this
 need", not by "how big is the file".
 
-## The routing table
+## CURRENT POLICY (supersedes the table below)
+
+The `opencode-go` provider is **exhausted** -- three dispatches in a row died
+with "Go usage limit exceeded" before any agent started. Until further notice:
+
+| Workload | Model |
+|---|---|
+| Judgement-heavy: reviews, decisions, contract reconciliation | `zai-coding-plan/glm-5.3-flash` |
+| Bulk and mechanical: sweeps, counting, gate-running, wiring from a spec | `zai-coding-plan/glm-5-turbo` |
+
+**Free tier only.** Do not use `glm-5.3`, `glm-5.2`, `glm-5.2-highspeed`,
+`glm-5.3-highspeed` (not available to this account), or `glm-4.7` -- they draw
+on the paid quota. Nothing outside the `zai-coding-plan` provider, and still
+never the OpenCode Zen provider.
+
+## The routing table (superseded, kept for the reasoning)
 
 | Workload | Model | Why |
 |---|---|---|

@@ -13,9 +13,23 @@
 # =============================================================================
 
 [build]
-  publish  = "site/public"
-  command  = "npm run build"
-  functions = "netlify/functions"
+  publish = "site/public"
+  # Remote builds are DISABLED on this site (`skip_automatic_builds`), and
+  # deploys upload a prebuilt directory instead, so this command is not normally
+  # run by Netlify. It is kept because the documented [build] keys are base,
+  # publish, command, environment and processing -- a site with no command
+  # inherits whatever the UI has, which is how this repo ended up running
+  # `yarn build` against a `dist/` that never existed.
+  #
+  # `functions` is NOT a [build] key. It sat here and was silently ignored; the
+  # functions directory is declared by [functions] directory below.
+  command = "npm run build"
+
+# Pretty URLs: Hugo writes inventory/index.html; this lets Netlify serve
+# /inventory/ from it without the filename. Netlify still prefers the explicit
+# file, so nothing breaks if the setting is ever lost.
+[build.processing.html]
+  pretty_urls = true
 
 [build.environment]
   # Keep in sync with .nvmrc, .tool-versions and ci/Containerfile.
@@ -63,7 +77,12 @@
 # `make dev-all` to run both.
 # -----------------------------------------------------------------------------
 [dev]
-  publish = "site/public"
+  # `publish` is resolved against `dir`, not against the repository root --
+  # netlify.toml paths are absolute relative to the base directory, and `dir`
+  # IS that base. With dir = "site" the correct value is therefore
+  # "public", not "site/public"; the old pair resolved to site/site/public and
+  # `netlify dev` served a 404 for every page.
+  publish = "public"
   port = 8888
   autoLaunch = false
   dir = "site"
@@ -91,10 +110,10 @@
   to = "/.netlify/functions/lead-form"
   status = 200
 
-[[redirects]]
-  from = "/api/inventory"
-  to = "/.netlify/functions/inventory-api"
-  status = 200
+# NOTE: there is deliberately NO /api/inventory alias. One pointed at
+# inventory-api, which was deleted in 45021f9 -- the inventory page is
+# server-rendered from the content files scripts/inventory/ writes, so a runtime
+# read endpoint has no consumer. The alias outlived its function and 404'd.
 
 # Netlify CMS. `cms.html` is served from site/static and loads /cms.js, which is
 # produced by the one remaining webpack build (webpack.cms.js).
@@ -119,10 +138,29 @@
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
+# /img/* holds two different kinds of file and they must not share a policy.
+#
+# Hugo's derived variants carry a content hash (home-jumbotron_hu_<hash>.avif),
+# so they are safe to cache forever. The rest have STABLE names -- favicon.ico,
+# logo.svg, og-image.jpg, the mstile set, safari-pinned-tab.svg -- and an
+# `immutable` year on those means a changed og-image.jpg could not reach a
+# returning visitor for 365 days. The hashed ones are matched by shape below.
 [[headers]]
   for = "/img/*"
   [headers.values]
+    Cache-Control = "public, max-age=86400, stale-while-revalidate=604800"
+
+# Content-hashed derivatives anywhere under /img: safe forever.
+[[headers]]
+  for = "/img/*_*"
+  [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
+
+# Icons and the social card change on a design edit, not on a deploy cadence.
+[[headers]]
+  for = "/img/*"
+  [headers.values]
+    Cache-Control = "public, max-age=86400, stale-while-revalidate=604800"
 
 # Vehicle photography. Mirrored once daily by scripts/inventory/images.js and
 # re-encoded at build time by Hugo's libvips, so every filename embeds a content
@@ -159,6 +197,12 @@
 [[headers]]
   for = "/*"
   [headers.values]
+    # Netlify terminates TLS and redirects to it, so HSTS belongs here. Without
+    # it a first visit can still be intercepted over plain http. `preload` is
+    # deliberately NOT requested: submitting a domain to the preload list is
+    # effectively irreversible, and that is the owner's call, not a build
+    # setting. max-age is a year, which is the value preload requires.
+    Strict-Transport-Security = "max-age=31536000"
     X-Content-Type-Options = "nosniff"
     X-Frame-Options = "SAMEORIGIN"
     Referrer-Policy = "strict-origin-when-cross-origin"

@@ -544,6 +544,54 @@ if (manifest) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// netlify.toml must not point at functions that do not exist
+// ---------------------------------------------------------------------------
+//
+// The /api/inventory alias pointed at inventory-api, which was deleted when the
+// page moved to being server-rendered. The alias outlived its function and
+// 404'd, and nothing noticed: a redirect is a config entry, not code, and the
+// endpoint gate only ever looked at what JavaScript calls.
+function tomlValue(key) {
+  const toml = fs.readFileSync(path.join(ROOT, 'netlify.toml'), 'utf8');
+  const m = toml.match(new RegExp(`^\\s*${key}\\s*=\\s*"([^"]+)"`, 'm'));
+  return m ? m[1] : null;
+}
+{
+  const toml = fs.readFileSync(path.join(ROOT, 'netlify.toml'), 'utf8');
+  const fnDir = path.join(ROOT, tomlValue('directory') || 'netlify/functions');
+  const onDisk = new Set();
+  try {
+    for (const f of fs.readdirSync(fnDir)) {
+      if (f.endsWith('.js') && !f.startsWith('_') && !f.startsWith('.')) {
+        onDisk.add(f.slice(0, -3));
+      }
+    }
+  } catch { /* directory missing; nothing to check */ }
+
+  const deadAliases = [];
+  for (const m of toml.matchAll(/to\s*=\s*"\/\.netlify\/functions\/([^/"]+)/g)) {
+    const name = m[1];
+    if (!onDisk.has(name)) deadAliases.push(name);
+  }
+  if (deadAliases.length) {
+    console.error(
+      `\n  ${red('FAIL')}  netlify.toml redirects to function(s) that do not exist: ` +
+        [...new Set(deadAliases)].join(', ')
+    );
+    console.error(
+      `    ${dim('A redirect is a config entry, not code, so nothing else notices when')}\n` +
+        `    ${dim('its function is deleted. The alias keeps serving a 404.')}`
+    );
+    process.exitCode = 1;
+  } else {
+    const aliasCount = (toml.match(/to\s*=\s*"\/\.netlify\/functions\//g) || []).length;
+    console.log(
+      `  ${grn('OK')}    all ${aliasCount} netlify.toml redirect alias(es) resolve to a real function`
+    );
+  }
+}
+
 if (process.exitCode) {
   console.error(`\n  ${red('ENDPOINT VERIFICATION FAILED')}\n`);
 } else {
