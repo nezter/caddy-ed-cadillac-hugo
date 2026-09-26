@@ -1,7 +1,7 @@
 const chalk = require('chalk');
 const fs = require('fs');
 const path = require('path');
-const { formatErrorMessage, formatWarningMessage } = require('../src/js/utils/build-error-reporter');
+const { formatErrorMessage, formatWarningMessage } = require('./lib/build-error-reporter');
 const { notifyError } = require('./build-notifier');
 
 /**

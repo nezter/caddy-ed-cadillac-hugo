@@ -1,5 +1,5 @@
 const chalk = require('chalk');
-const { formatErrorMessage, formatWarningMessage, summarizeWebpackStats } = require('../src/js/utils/build-error-reporter');
+const { formatErrorMessage, formatWarningMessage, summarizeWebpackStats } = require('./lib/build-error-reporter');
 
 /**
  * WebpackErrorReportingPlugin - A webpack plugin that enhances error and warning messages

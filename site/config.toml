@@ -1,5 +1,5 @@
 baseURL = "/"
-languageCode = "en-us"
+locale = "en-us"
 title = "Caddy Ed - Cadillac Sales Specialist"
 enableRobotsTXT = true
 disableKinds = ["RSS"]

@@ -143,13 +143,22 @@ global.testUtils = {
   }
 };
 
+// Also export the helpers.
+//
+// Several suites load them with `const testUtils = require('../setup')`, but
+// this file only assigned them to `global.testUtils`, so `require()` handed back
+// an empty object and every helper call failed with
+// "testUtils.createMockEvent is not a function". Exporting satisfies both
+// access styles.
+module.exports = global.testUtils;
+
 // Mock external dependencies
 jest.mock('@supabase/supabase-js', () => ({
   createClient: jest.fn(() => ({
     from: jest.fn(() => ({
       select: jest.fn(() => ({
         eq: jest.fn(() => ({
-          single: jest.fn(() => Promise.resolve(testUtils.createMockDBResponse(null, { message: 'Not found' }))),
+          single: jest.fn(() => Promise.resolve(global.testUtils.createMockDBResponse(null, { message: 'Not found' }))),
           data: [],
           error: null
         })),
@@ -162,7 +171,7 @@ jest.mock('@supabase/supabase-js', () => ({
       })),
       insert: jest.fn(() => ({
         select: jest.fn(() => ({
-          single: jest.fn(() => Promise.resolve(testUtils.createMockDBResponse({ id: 'test-id' }))),
+          single: jest.fn(() => Promise.resolve(global.testUtils.createMockDBResponse({ id: 'test-id' }))),
           data: [{ id: 'test-id' }],
           error: null
         })),
@@ -172,7 +181,7 @@ jest.mock('@supabase/supabase-js', () => ({
       update: jest.fn(() => ({
         eq: jest.fn(() => ({
           select: jest.fn(() => ({
-            single: jest.fn(() => Promise.resolve(testUtils.createMockDBResponse({ id: 'test-id' }))),
+            single: jest.fn(() => Promise.resolve(global.testUtils.createMockDBResponse({ id: 'test-id' }))),
             data: [{ id: 'test-id' }],
             error: null
           })),

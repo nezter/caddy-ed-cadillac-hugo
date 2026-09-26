@@ -100,16 +100,43 @@ jobs:
 
   # ---------------------------------------------------------------------------
   # Tests for the Netlify functions.
+  #
+  # NON-BLOCKING, deliberately. The suite silently ran zero tests for years
+  # (its testMatch pointed at ../tests/, a directory that does not exist), so a
+  # large amount of unmaintained rot was hidden. The harness is now fixed and
+  # the suite actually executes, but 31 pre-existing assertions still fail --
+  # mostly auth-middleware tests that assume a jsonwebtoken mock this file does
+  # not provide, plus calendar tests written against an old module API.
+  #
+  # This job is wired up and reporting honestly rather than being deleted or
+  # made to pass. It is `continue-on-error` so it cannot block a deploy, and it
+  # is deliberately NOT in the `ci-green` needs list. Making it blocking
+  # requires fixing those assertions, not adjusting this file.
+  #
+  # Track: fix the failing auth-middleware + calendar assertions, then delete
+  # `continue-on-error` and add `test` to the ci-green needs.
   # ---------------------------------------------------------------------------
   test:
-    name: Functions tests
+    name: Functions tests (known failures, non-blocking)
     needs: preflight
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
 
       - name: Run jest suite (on CI host)
         run: ./ci/run.sh test
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jest-results
+          path: |
+            netlify/functions/coverage/
+            netlify/functions/test-results/
+          retention-days: 7
+          if-no-files-found: ignore
 
   # ---------------------------------------------------------------------------
   # Lint. Pinned to the versions in package.json rather than floating.

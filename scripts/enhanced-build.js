@@ -1,6 +1,6 @@
 const { spawn } = require('child_process');
 const chalk = require('chalk');
-const { createProgressReporter, formatSuccessMessage, formatErrorMessage } = require('../src/js/utils/build-error-reporter');
+const { createProgressReporter, formatSuccessMessage, formatErrorMessage } = require('./lib/build-error-reporter');
 const { notifySuccess, notifyError } = require('./build-notifier');
 const { handleHugoErrors } = require('./hugo-error-handler');
 

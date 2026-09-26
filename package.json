@@ -28,7 +28,7 @@
     "dev:functions": "netlify dev --dir=site/public --functions=netlify/functions --port 8888",
     "dev:all": "npm-run-all --parallel dev:hugo dev:functions",
     "clean": "rimraf site/public site/resources dist",
-    "lint": "eslint site/assets/js src scripts ci --ext .js",
+    "lint": "eslint site/assets/js src scripts ci tests",
     "lint:fix": "npm run lint -- --fix",
     "test": "npm --prefix netlify/functions test",
     "test:coverage": "npm --prefix netlify/functions run test:coverage",

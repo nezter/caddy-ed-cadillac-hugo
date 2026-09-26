@@ -439,7 +439,7 @@ class FormManager {
       return await response.json();
     } catch (error) {
       // For demo/development, create a simulated success response
-      if (this.calendar.options.debug || process.env.NODE_ENV === 'development') {
+      if (this.calendar.options.debug || params.env === 'development') {
         console.warn('Using simulated appointment confirmation due to API error:', error);
         return new Promise(resolve => {
           setTimeout(() => {

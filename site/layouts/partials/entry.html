@@ -21,12 +21,14 @@
 {{- $page := .page -}}
 
 {{- with resources.Get (printf "js/%s" $entry) -}}
+  {{- $isProd := hugo.IsProduction -}}
   {{- $opts := dict
         "targetPath" (printf "js/%s" (path.BaseName $entry))
         "format" "iife"
-        "minify" hugo.IsProduction
-        "sourceMap" (cond (not hugo.IsProduction) "inline" "")
-        "target" (cond hugo.IsProduction "es2018" "es2017")
+        "minify" $isProd
+        "sourceMap" (cond (not $isProd) "inline" "")
+        "target" (cond $isProd "es2018" "es2017")
+        "params" (dict "env" (cond $isProd "production" "development"))
   -}}
   {{- $js := . | js.Build $opts -}}
   {{- if hugo.IsProduction -}}

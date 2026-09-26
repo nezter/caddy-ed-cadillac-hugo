@@ -55,13 +55,20 @@
 {{- /* ----------------------------------------------------------------- JS */ -}}
 {{- if or (eq $mode "js") (eq $mode "all") -}}
   {{- with resources.Get "js/index.js" -}}
+    {{- /* `params` is how Hugo Pipes injects build-time values into a bundle.
+           These modules used to read process.env.NODE_ENV, which webpack
+           auto-defined but a browser does not have -- that would have thrown
+           "process is not defined" at runtime and taken the inventory page
+           down. `params.env` is the supported replacement. */ -}}
     {{- $opts := dict
           "targetPath" "js/main.js"
           "format" "iife"
           "minify" $isProd
           "sourceMap" (cond (not $isProd) "inline" "")
           "target" (cond $isProd "es2018" "es2017")
-          "params" (dict "loader" (dict ".js" "js"))
+          "params" (dict
+            "env" (cond $isProd "production" "development")
+            "loader" (dict ".js" "js"))
     -}}
     {{- $js := . | js.Build $opts -}}
     {{- /* Fingerprint only in production so dev rebuilds stay cheap. */ -}}

@@ -100,5 +100,7 @@
   </div>
 </div>
 
-<script src="/js/inventory.js"></script>
+<!-- Inventory page bundle. Was a hardcoded /js/inventory.js, which no build
+     ever emitted -- the inventory page loaded none of its own logic. -->
+{{ partial "entry.html" (dict "entry" "inventory.js" "page" .) }}
 {{ end }}

@@ -1,5 +1,7 @@
 <!DOCTYPE html>
-<html lang="{{ .Site.LanguageCode | default "en" }}">
+{{/* .Site.LanguageCode was deprecated in Hugo 0.158; .Site.Language.Locale is
+     the replacement. The `default` keeps the attribute populated. */}}
+<html lang="{{ .Site.Language.Locale | default "en" }}">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">

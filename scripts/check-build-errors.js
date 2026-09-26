@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const chalk = require('chalk');
 const glob = require('glob');
-const { formatWarningMessage } = require('../src/js/utils/build-error-reporter');
+const { formatWarningMessage } = require('./lib/build-error-reporter');
 
 /**
  * Script to check for common build errors before starting the build process

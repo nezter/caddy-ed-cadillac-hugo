@@ -1,4 +1,12 @@
 /**
+ * @jest-environment jsdom
+ *
+ * The calendar module under test is browser code: it builds DOM nodes and
+ * attaches event listeners, so it needs a document. The suite-level
+ * `testEnvironment` is "node" (the serverless functions are not browser code),
+ * hence this per-file override.
+ */
+/**
  * Integration tests for the Calendar component
  */
 import { 
@@ -8,7 +16,7 @@ import {
   TimeSlotManager,
   FormManager,
   EventHandlers
-} from '../../../src/js/refactored/index';
+} from '../../../site/assets/js/refactored/index';
 
 describe('Calendar Integration Tests', () => {
   // Mock DOM elements before each test

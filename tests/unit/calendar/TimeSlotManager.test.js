@@ -1,7 +1,15 @@
 /**
+ * @jest-environment jsdom
+ *
+ * The calendar module under test is browser code: it builds DOM nodes and
+ * attaches event listeners, so it needs a document. The suite-level
+ * `testEnvironment` is "node" (the serverless functions are not browser code),
+ * hence this per-file override.
+ */
+/**
  * Unit tests for the TimeSlotManager component
  */
-import TimeSlotManager from '../../../src/js/refactored/TimeSlotManager';
+import TimeSlotManager from '../../../site/assets/js/refactored/TimeSlotManager';
 
 describe('TimeSlotManager', () => {
   let timeSlotManager;

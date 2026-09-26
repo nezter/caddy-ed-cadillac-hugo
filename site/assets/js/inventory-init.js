@@ -21,13 +21,13 @@ document.addEventListener('DOMContentLoaded', () => {
       resultsContainer: '#vehicle-inventory',
       resultsCountSelector: '.results-count',
       // Configure the endpoint based on environment
-      inventoryFetchEndpoint: process.env.NODE_ENV === 'production' 
+      inventoryFetchEndpoint: params.env === 'production' 
         ? '/.netlify/functions/inventory-proxy'
         : '/mock-data/inventory.json'
     });
     
     // Make it available globally for debugging purposes in development
-    if (process.env.NODE_ENV !== 'production') {
+    if (params.env !== 'production') {
       window.inventoryFilters = inventoryFilters;
     }
     
