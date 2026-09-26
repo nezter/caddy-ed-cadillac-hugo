@@ -12,7 +12,13 @@ disableKinds = ["RSS"]
   phone = "704-555-1234"
   email = "ed@caddyed.com"
   address = "123 Cadillac Drive, Charlotte, NC 28210"
-  hours = "Mon-Fri: 9AM-7PM | Sat: 9AM-5PM | Sun: Closed"
+  hours = "Mon-Fri 9am-7pm &middot; Sat 9am-5pm"
+  years_selling = "1999"
+
+  # Home page hero. Referenced by layouts/index.html; override per-page with
+  # `hero_image` in front matter.
+  hero_image = "img/home-jumbotron.jpg"
+  hero_image_alt = "A Cadillac on display at Caddy Ed Cadillac, South Charlotte"
   
 [menu]
   [[menu.main]]

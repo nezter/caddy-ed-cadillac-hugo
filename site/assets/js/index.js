@@ -13,6 +13,7 @@
 import './app';
 import './navbar';
 import './forms';
+import './chrome'; // header/nav behaviour, previously an inline <script> in the header partial
 
 // Inventory filtering
 import './inventory-init';

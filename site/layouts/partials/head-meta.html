@@ -1,0 +1,35 @@
+{{- /*
+  head-meta.html -- everything that belongs in <head>.
+
+  Extracted from partials/header.html, which was itself a full document and got
+  included inside baseof.html, putting two <!doctype>, two <html> and two
+  <body> on every page -- with the footer and all scripts emitted after the
+  inner </html>. All of this metadata was therefore landing in the body.
+*/ -}}
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+<title>{{ if .IsHome }}{{ .Site.Title }}{{ else }}{{ .Title }} &middot; {{ .Site.Title }}{{ end }}</title>
+<meta name="description" content="{{ .Description | default .Site.Params.description | plainify | truncate 160 }}">
+
+{{- with .Params.image | default .Site.Params.og_image }}
+<meta property="og:image" content="{{ . | absURL }}">
+{{- end }}
+<meta property="og:type" content="{{ if .IsPage }}article{{ else }}website{{ end }}">
+<meta property="og:site_name" content="{{ .Site.Title }}">
+<meta property="og:title" content="{{ if .IsHome }}{{ .Site.Title }}{{ else }}{{ .Title }}{{ end }}">
+<meta property="og:description" content="{{ .Description | default .Site.Params.description | plainify | truncate 160 }}">
+<meta property="og:url" content="{{ .Permalink }}">
+{{- if .IsHome }}<meta property="og:locale" content="en_US">{{ end }}
+<meta name="twitter:card" content="summary_large_image">
+
+{{- /* Canonical + trailing-slash consistency. */}}
+<link rel="canonical" href="{{ .Permalink }}">
+
+{{- /* Icons. Manifest and theme-color so the installed PWA matches the design. */}}
+<link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16x16.png">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#0b0d10" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">

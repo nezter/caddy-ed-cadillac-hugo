@@ -1,98 +1,237 @@
-{{ define "title" }}{{ .Site.Title }} | Luxury Cadillac Dealership in Charlotte{{ end }}
-
 {{ define "main" }}
-  <div class="home-hero">
-    <div class="hero-content">
-      <h1>{{ .Title }}</h1>
-      <p>{{ .Params.subtitle }}</p>
-      <div class="hero-buttons">
-        <a href="/inventory/" class="btn primary-btn">Browse Inventory</a>
-        <a href="/contact/" class="btn secondary-btn">Contact Us</a>
+{{- $phone := .Site.Params.phone | default "704-555-1234" -}}
+{{- $phoneHref := replace $phone "." "" -}}
+
+{{/* ------------------------------------------------------------------
+     Hero. One job: get the visitor to act. The primary action is browsing
+     inventory; the phone is the secondary path. The meta row answers the
+     three questions a buyer has before scrolling: is it local, is it
+     established, can I just call.
+     ------------------------------------------------------------------ */}}
+<section class="hero">
+  {{ with .Params.hero_image | default .Site.Params.hero_image }}
+  <div class="hero__media">
+    <img src="{{ . | relURL }}"
+         alt="{{ $.Params.hero_image_alt | default (printf "A Cadillac on display at %s" $.Site.Title) }}"
+         width="1600" height="900" fetchpriority="high" decoding="async">
+  </div>
+  {{ end }}
+
+  <div class="container hero__inner">
+    <div class="hero__content">
+      <p class="eyebrow">{{ .Params.hero_eyebrow | default "Cadillac Sales Specialist &middot; South Charlotte" | safeHTML }}</p>
+      <h1>{{ .Params.hero_heading | default (printf "Find the Cadillac you actually want." ) }}</h1>
+      {{ with .Params.hero_subheading | default .Params.subtitle }}
+      <p class="lede">{{ . }}</p>
+      {{ end }}
+
+      <div class="hero__actions">
+        <a class="btn btn-primary btn-lg" href="/inventory/">Browse inventory</a>
+        <a class="btn btn-inverse btn-lg" href="tel:+1{{ $phoneHref }}">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/>
+          </svg>
+          {{ $phone }}
+        </a>
+      </div>
+
+      <dl class="hero__meta">
+        <div>
+          <dt>Based in</dt>
+          <dd>South Charlotte, NC</dd>
+        </div>
+        <div>
+          <dt>Selling Cadillacs since</dt>
+          <dd>{{ .Site.Params.years_selling | default "1999" }}</dd>
+        </div>
+        <div>
+          <dt>Reply</dt>
+          <dd>Same day, always</dd>
+        </div>
+      </dl>
+    </div>
+  </div>
+</section>
+
+{{/* ------------------------------------------------------------------
+     Inventory preview. The core of a dealership site: real vehicles,
+     scannable in a grid, each with price and one clear action.
+     ------------------------------------------------------------------ */}}
+{{ $vehicles := where .Site.RegularPages "Section" "inventory" }}
+{{ if $vehicles }}
+<section class="section">
+  <div class="container">
+    <div class="section-head">
+      <p class="eyebrow">In stock now</p>
+      <h2>Current inventory</h2>
+      <p class="lede">Everything below is available today. If you want something
+        that isn't listed, ask — stock turns over fast and I can usually find it.</p>
+    </div>
+
+    <div class="vehicle-grid">
+      {{ range first 6 $vehicles }}
+      {{ $img := .Params.image | default "/img/placeholder-vehicle.jpg" }}
+      <article class="vehicle-card">
+        <a class="vehicle-card__media" href="{{ .RelPermalink }}" aria-label="{{ .Title }}">
+          <img src="{{ $img | relURL }}" alt="{{ .Title }}" width="640" height="427"
+               loading="lazy" decoding="async">
+          {{ with .Params.status }}
+          <span class="vehicle-card__badge{{ if eq . "New" }} vehicle-card__badge--accent{{ end }}">{{ . }}</span>
+          {{ end }}
+        </a>
+        <div class="vehicle-card__body">
+          <h3 class="vehicle-card__title">
+            <a href="{{ .RelPermalink }}">{{ .Title }}</a>
+          </h3>
+          {{ with .Params.subtitle }}<p class="vehicle-card__meta">{{ . }}</p>{{ end }}
+          <p class="vehicle-card__price">
+            {{ with .Params.price }}{{ printf "$%s" (delimit (split (printf "%v" .) ".") ",") }}{{ end }}
+            {{ with .Params.price_note }}<small>{{ . }}</small>{{ end }}
+          </p>
+          <div class="vehicle-card__actions">
+            <a class="btn btn-outline btn-sm" href="{{ .RelPermalink }}">Details</a>
+            <a class="btn btn-primary btn-sm" href="/contact/?vehicle={{ .Title | urlquery }}">Ask about this</a>
+          </div>
+        </div>
+      </article>
+      {{ end }}
+    </div>
+
+    <div class="cluster" style="margin-top: var(--space-7)">
+      <a class="btn btn-outline" href="/inventory/">See the full inventory</a>
+    </div>
+  </div>
+</section>
+{{ end }}
+
+{{/* ------------------------------------------------------------------
+     Trust row. A single seller's advantage over a franchise is that the
+     relationship does not end at the handover. Say that explicitly.
+     ------------------------------------------------------------------ */}}
+<section class="section section-subtle">
+  <div class="container">
+    <div class="feature-grid">
+      <div class="feature">
+        <div class="feature__icon" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        </div>
+        <h3>One person, start to finish</h3>
+        <p>You deal with me from the first question through delivery and
+          long after. No handoffs, no repeating yourself.</p>
+      </div>
+      <div class="feature">
+        <div class="feature__icon" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <h3>Honest numbers</h3>
+        <p>Realistic trade values and out-the-door pricing up front, not a
+          number that moves once you're committed.</p>
+      </div>
+      <div class="feature">
+        <div class="feature__icon" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        </div>
+        <h3>Answers on your schedule</h3>
+        <p>Call, text or email. Questions about a car you saw six months ago
+          are welcome.</p>
       </div>
     </div>
   </div>
+</section>
 
-  {{ if .Params.featured_vehicles }}
-  <section class="featured-vehicles">
-    <div class="container">
-      <h2>{{ .Params.featured_heading }}</h2>
-      <p>{{ .Params.featured_text }}</p>
-      
-      <div class="vehicle-grid">
-        {{ range .Params.featured_vehicles }}
-        <div class="vehicle-card">
-          <div class="vehicle-image">
-            <img 
-              src="/img/placeholder-vehicle.jpg" 
-              data-src="{{ .image }}" 
-              alt="{{ .year }} {{ .model }}" 
-              class="lazyload"
-              loading="lazy"
-              width="400" 
-              height="300">
-            <noscript>
-              <img src="{{ .image }}" alt="{{ .year }} {{ .model }}" width="400" height="300">
-            </noscript>
-          </div>
-          <div class="vehicle-details">
-            <h3>{{ .year }} {{ .model }}</h3>
-            <p class="vehicle-price">${{ .price }}</p>
-            <a href="/inventory/" class="btn secondary-btn">View Details</a>
-          </div>
-        </div>
-        {{ end }}
+{{/* ------------------------------------------------------------------
+     The three buying paths. Every visitor is in one of these states.
+     ------------------------------------------------------------------ */}}
+<section class="section">
+  <div class="container">
+    <div class="section-head">
+      <p class="eyebrow">Where are you starting?</p>
+      <h2>Three ways to get moving</h2>
+    </div>
+
+    <div class="grid grid-3">
+      <div class="card">
+        <h3>Buying a specific car</h3>
+        <p class="text-muted" style="margin-top: var(--space-2)">
+          Tell me the model, trim and budget. I'll check current stock, pull the
+          incentives, and tell you what it really costs including the dealer fees
+          people usually forget.
+        </p>
+        <a class="btn btn-outline btn-sm" style="margin-top: var(--space-4)" href="/contact/">Start a search</a>
+      </div>
+
+      <div class="card">
+        <h3>Selling or trading</h3>
+        <p class="text-muted" style="margin-top: var(--space-2)">
+          Get a straight appraisal before you go shopping anywhere else, so you
+          know exactly what you're working with. No obligation.
+        </p>
+        <a class="btn btn-outline btn-sm" style="margin-top: var(--space-4)" href="/trade-in/">Value your trade</a>
+      </div>
+
+      <div class="card">
+        <h3>Already own one</h3>
+        <p class="text-muted" style="margin-top: var(--space-2)">
+          Factory-trained service, parts, and the diagnostic questions you'd
+          otherwise get a vague answer to.
+        </p>
+        <a class="btn btn-outline btn-sm" style="margin-top: var(--space-4)" href="/service/">Book service</a>
       </div>
     </div>
-  </section>
-  {{ end }}
+  </div>
+</section>
 
-  {{ if .Params.latest_posts }}
-  <section class="latest-news bg-light">
-    <div class="container">
-      <h2>{{ .Params.blog_heading }}</h2>
-      <p>{{ .Params.blog_text }}</p>
-      
-      <div class="news-grid">
-        {{ range first 3 (where .Site.RegularPages "Section" "post") }}
-        <div class="news-card">
-          {{ if .Params.featured_image }}
-          <div class="news-image">
-            <img 
-              src="/img/placeholder-blog.jpg" 
-              data-src="{{ .Params.featured_image }}" 
-              alt="{{ .Title }}" 
-              class="lazyload"
-              loading="lazy"
-              width="350" 
-              height="200">
-            <noscript>
-              <img src="{{ .Params.featured_image }}" alt="{{ .Title }}" width="350" height="200">
-            </noscript>
-          </div>
-          {{ end }}
-          <div class="news-content">
-            <p class="news-date">{{ .Date.Format "January 2, 2006" }}</p>
-            <h3><a href="{{ .RelPermalink }}">{{ .Title }}</a></h3>
-            <p>{{ .Description | truncate 120 }}</p>
-            <a href="{{ .RelPermalink }}" class="read-more">Read More</a>
-          </div>
-        </div>
-        {{ end }}
+{{/* ------------------------------------------------------------------
+     Proof. Years and coverage, stated plainly.
+     ------------------------------------------------------------------ */}}
+<section class="section section-inverse">
+  <div class="container">
+    <div class="stat-row">
+      <div>
+        <p class="stat__value">25+</p>
+        <p class="stat__label">Years in Cadillac</p>
+      </div>
+      <div>
+        <p class="stat__value">{{ .Site.Params.years_selling | default "1999" }}</p>
+        <p class="stat__label">Serving Charlotte</p>
+      </div>
+      <div>
+        <p class="stat__value">Same day</p>
+        <p class="stat__label">Typical reply</p>
+      </div>
+      <div>
+        <p class="stat__value">No pressure</p>
+        <p class="stat__label">That's the point</p>
       </div>
     </div>
-  </section>
-  {{ end }}
+  </div>
+</section>
 
-  <section class="cta-section">
-    <div class="container">
-      <div class="cta-content">
-        <h2>Ready to find your perfect Cadillac?</h2>
-        <p>Visit our showroom or schedule a test drive today.</p>
-        <div class="cta-buttons">
-          <a href="/inventory/" class="btn primary-btn">Browse Inventory</a>
-          <a href="/contact/" class="btn secondary-btn">Contact Us</a>
-        </div>
+{{/* ------------------------------------------------------------------
+     Close. One decision, three ways to make it.
+     ------------------------------------------------------------------ */}}
+<section class="section">
+  <div class="container">
+    <div class="cta-band">
+      <div>
+        <p class="eyebrow">Ready when you are</p>
+        <h2 style="margin-top: var(--space-2)">Let's get you in a Cadillac.</h2>
+        <p class="lede" style="margin-top: var(--space-3)">
+          Browse what's in stock, send a question, or just call. Whichever is
+          easiest right now.
+        </p>
+      </div>
+      <div class="cta-band__actions">
+        <a class="btn btn-primary btn-lg" href="/contact/">Send a message</a>
+        <a class="btn btn-inverse btn-lg" href="tel:+1{{ $phoneHref }}">{{ $phone }}</a>
+        <a class="btn btn-ghost btn-lg" style="color:#fff" href="/inventory/">Browse inventory</a>
       </div>
     </div>
-  </section>
+  </div>
+</section>
+
+{{/* Content from _index.md renders after the designed sections so the
+     marketing copy stays editable without touching this template. */}}
+{{ with .Content }}<section class="section section-subtle"><div class="container prose">{{ . }}</div></section>{{ end }}
 {{ end }}

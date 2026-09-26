@@ -68,24 +68,42 @@
     <div class="inventory-grid" id="inventoryGrid">
       {{ range .Pages }}
       <div class="vehicle-card" data-make="{{ .Params.make }}" data-model="{{ .Params.model }}" data-year="{{ .Params.year }}" data-price="{{ .Params.price }}">
-        <div class="vehicle-image">
-          {{ if .Params.images }}
-            <img src="{{ index .Params.images 0 }}" alt="{{ .Title }}" loading="lazy">
-          {{ else }}
-            <img src="/images/placeholder-vehicle.jpg" alt="{{ .Title }}" loading="lazy">
-          {{ end }}
+        <div class="vehicle-card__media">
+          {{/* Accepts either `images` (list) or `image` (string) so front
+                 matter is not fussy. The fallback used to be
+                 /images/placeholder-vehicle.jpg -- a directory that does not
+                 exist; the file is /img/placeholder-vehicle.jpg. */}}
+          {{ $img := "" }}
+          {{ with .Params.images }}{{ $img = index . 0 }}{{ end }}
+          {{ if not $img }}{{ with .Params.image }}{{ $img = . }}{{ end }}{{ end }}
+          {{ if not $img }}{{ $img = "/img/placeholder-vehicle.jpg" }}{{ end }}
+          <img src="{{ $img | relURL }}" alt="{{ .Title }}" width="640" height="427"
+               loading="lazy" decoding="async">
         </div>
-        <div class="vehicle-info">
-          <h3 class="vehicle-title">{{ .Title }}</h3>
-          <div class="vehicle-details">
+        <div class="vehicle-card__body">
+          <h3 class="vehicle-card__title">{{ .Title }}</h3>
+          <p class="vehicle-card__meta">
             <span class="vehicle-year">{{ .Params.year }}</span>
             <span class="vehicle-mileage">{{ .Params.mileage | default "N/A" }} miles</span>
           </div>
-          <div class="vehicle-price">
-            {{ if .Params.price }}
-              ${{ .Params.price | lang.NumFmt 0 }}
+          <p class="vehicle-card__price">
+            {{- /* Front matter is not schema-checked, so a price can arrive as
+                   a string ("61500") or a number (61500). lang.NumFmt throws
+                   on a string, which failed the whole build. Coerce first. */}}
+            {{- $price := 0 }}
+            {{- with .Params.price }}{{ $price = int . }}{{ end }}
+            {{ if gt $price 0 }}
+              {{/* lang.NumFmt does not exist in Hugo 0.166 (it errors with
+                   "can't evaluate field NumFmt"). Prices here are whole US
+                   dollars, so format directly: 61500 -> "61,500". */}}
+              {{ $thousands := div (mod $price 1000000) 1000 }}
+              {{ $remainder  := mod $price 1000 }}
+              {{ $out := "" }}
+              {{ if gt $thousands 0 }}{{ $out = printf "%d," $thousands }}{{ end }}
+              {{ $out = printf "%s%03d" $out $remainder }}
+              ${{ $out }}
             {{ else }}
-              Call for Price
+              Call for price
             {{ end }}
           </div>
           <a href="{{ .Permalink }}" class="btn btn-primary">View Details</a>

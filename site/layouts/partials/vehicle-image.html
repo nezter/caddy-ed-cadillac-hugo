@@ -1,0 +1,56 @@
+{{- /*
+  vehicle-image.html -- resolve a vehicle image without inventing paths.
+
+  The inventory templates used to derive a lazyload placeholder by rewriting
+  "/img/foo.jpg" into "/img/placeholders/foo-placeholder.jpg". That directory
+  has never existed (the generator, scripts/generate-image-placeholders.js, was
+  never wired into any build), so every vehicle page requested an image that
+  could only 404.
+
+  This partial resolves in order of preference and only ever emits a path that
+  is known to exist:
+
+    1. an explicit `placeholder` in front matter
+    2. the derived placeholder, IF it is actually present in static/
+    3. the real image
+    4. a bundled fallback
+
+  Context (dict):
+    src        - the real image path
+    placeholder- optional explicit placeholder path
+    alt        - alt text (required)
+    sizes/class- optional passthrough
+
+  Native `loading="lazy"` is used instead of the lazysizes class: lazysizes is a
+  legacy polyfill for a browser feature that has been universally supported for
+  years, and the rewrite made the LCP image worse, not better.
+*/ -}}
+{{- $src := .src | default "" -}}
+{{- $alt := .alt | default "" -}}
+{{- $class := .class | default "" -}}
+{{- $loading := .loading | default "lazy" -}}
+{{- $fallback := "/img/placeholder-vehicle.jpg" -}}
+
+{{- $resolved := "" -}}
+{{- with .placeholder -}}
+  {{- if fileExists (printf "static%s" .) -}}{{- $resolved = . -}}{{- end -}}
+{{- end -}}
+
+{{- if not $resolved -}}
+  {{- with $src -}}
+    {{- $derived := replace . "/img/" "/img/placeholders/" -}}
+    {{- $derived = replace $derived (printf "\\.%s" (path.Ext $derived)) "-placeholder.jpg" -}}
+    {{- if fileExists (printf "static%s" $derived) -}}
+      {{- $resolved = $derived -}}
+    {{- else if fileExists (printf "static%s" .) -}}
+      {{- $resolved = . -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+
+{{- if not $resolved -}}{{- $resolved = $fallback -}}{{- end -}}
+
+<img src="{{ $resolved | relURL }}" alt="{{ $alt }}"
+     width="{{ .width | default 800 }}" height="{{ .height | default 600 }}"
+     loading="{{ $loading }}" decoding="async"
+     {{- with $class }} class="{{ . }}"{{ end }}>

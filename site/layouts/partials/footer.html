@@ -1,93 +1,72 @@
-</main>
-  
+{{- /*
+  footer.html -- site footer.
+
+  Two things fixed here:
+
+  1. It opened with a stray `</main>` (baseof already closes the main element),
+     and it was emitted after `</html>` because header.html used to be a whole
+     document. Both are gone now that the document structure is owned solely by
+     baseof.html.
+
+  2. It carried an inline <script> that dynamically imported four files --
+     /js/vehicle-inventory.js, /js/vehicle-detail.js, /js/finance-calculator.js
+     and /js/schedulingCalendar.js. None of them were ever emitted by any build,
+     so every one of those imports 404'd. Page behaviour is now declared through
+     front matter (`scripts:`) and bundled by partials/page-scripts.html, like
+     every other page in the site.
+*/ -}}
+{{- $phone := .Site.Params.phone | default "704-555-1234" -}}
+{{- $phoneHref := replace $phone "." "" -}}
 <footer class="site-footer">
   <div class="container">
-    <div class="footer-content">
-      <div class="footer-column">
-        <div class="footer-logo">
-          <img src="/img/logo.svg" alt="Caddy Ed Cadillac">
-        </div>
-        <p>Luxury vehicle sales and service in South Charlotte.</p>
-        <div class="footer-social">
-          <a href="#" aria-label="Facebook"><span class="icon icon-facebook"></span></a>
-          <a href="#" aria-label="Twitter"><span class="icon icon-twitter"></span></a>
-          <a href="#" aria-label="Instagram"><span class="icon icon-instagram"></span></a>
-          <a href="#" aria-label="YouTube"><span class="icon icon-youtube"></span></a>
-        </div>
+    <div class="footer-grid">
+      <div>
+        <a href="/" class="footer-logo" aria-label="{{ .Site.Title }} home">
+          <img src="/img/logo.svg" alt="{{ .Site.Title }}" width="180" height="34"
+               style="filter: brightness(0) invert(1); margin-bottom: var(--space-3)">
+        </a>
+        <p style="font-size: var(--text-sm)">
+          Luxury Cadillac sales and factory-trained service in South Charlotte.
+          One person, start to finish.
+        </p>
       </div>
-      
-      <div class="footer-column">
-        <h3>Contact Us</h3>
-        <p>9315 South Boulevard<br>Charlotte, NC 28273</p>
-        <p>Phone: (704) 555-1234</p>
-        <p>Email: info@caddyed.com</p>
+
+      <div>
+        <h2 class="footer-heading">Get in touch</h2>
+        <ul class="footer-list">
+          <li><a href="tel:+1{{ $phoneHref }}">{{ $phone }}</a></li>
+          <li><a href="mailto:{{ .Site.Params.email | default "ed@caddyed.com" }}">{{ .Site.Params.email | default "ed@caddyed.com" }}</a></li>
+          <li>{{ .Site.Params.address | default "South Charlotte, NC" }}</li>
+        </ul>
       </div>
-      
-      <div class="footer-column">
-        <h3>Hours</h3>
-        <p><strong>Sales:</strong><br>
-           Mon-Fri: 9AM-8PM<br>
-           Sat: 9AM-6PM<br>
-           Sun: Closed</p>
-        <p><strong>Service:</strong><br>
-           Mon-Fri: 7AM-7PM<br>
-           Sat: 8AM-5PM<br>
-           Sun: Closed</p>
-      </div>
-      
-      <div class="footer-column">
-        <h3>Quick Links</h3>
-        <ul class="footer-links">
+
+      <div>
+        <h2 class="footer-heading">Buying</h2>
+        <ul class="footer-list">
           <li><a href="/inventory/">Inventory</a></li>
+          <li><a href="/specials/">Specials &amp; offers</a></li>
           <li><a href="/financing/">Financing</a></li>
-          <li><a href="/service/">Service</a></li>
-          <li><a href="/about/">About Us</a></li>
-          <li><a href="/contact/">Contact Us</a></li>
-          <li><a href="/privacy-policy/">Privacy Policy</a></li>
+          <li><a href="/trade-in/">Trade-in valuation</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h2 class="footer-heading">Owners</h2>
+        <ul class="footer-list">
+          <li><a href="/service/">Service &amp; maintenance</a></li>
+          <li><a href="/customer/">Customer portal</a></li>
+          <li><a href="/about/">About Caddy Ed</a></li>
+          <li><a href="/contact/">Contact</a></li>
         </ul>
       </div>
     </div>
-    
+
     <div class="footer-bottom">
-      <p>&copy; {{ now.Format "2006" }} Caddy Ed Cadillac. All Rights Reserved.</p>
+      <p>&copy; {{ now.Format "2006" }} {{ .Site.Title }}. All rights reserved.</p>
+      <p class="cluster">
+        <a href="/privacy-policy/">Privacy</a>
+        <a href="/communication-preferences/">Communication preferences</a>
+      </p>
     </div>
   </div>
 </footer>
-
-{{/* JavaScript is loaded via header-scripts.html partial */}}
-
-<script>
-// Initialize specific page components based on page class
-document.addEventListener('DOMContentLoaded', function() {
-  // Detect page type and initialize relevant JS
-  const body = document.body;
-  
-  if (body.classList.contains('inventory-page')) {
-    // Initialize inventory filtering and comparison
-    import('/js/vehicle-inventory.js').then(module => {
-      new module.default();
-    });
-  }
-  
-  if (body.classList.contains('vehicle-detail-page')) {
-    // Initialize vehicle detail functionality
-    import('/js/vehicle-detail.js').then(module => {
-      new module.default();
-    });
-    
-    // Initialize the financing calculator
-    import('/js/finance-calculator.js').then(module => {
-      new module.default({
-        price: document.querySelector('.vehicle-detail')?.dataset.price
-      });
-    });
-  }
-  
-  // Initialize appointment scheduling if element exists
-  if (document.querySelector('.scheduling-calendar')) {
-    import('/js/schedulingCalendar.js').then(module => {
-      new module.default(document.querySelector('.scheduling-calendar'));
-    });
-  }
-});
-</script>

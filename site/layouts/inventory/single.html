@@ -1,60 +1,83 @@
 {{ define "title" }}{{ .Title }} | {{ .Site.Title }}{{ end }}
-{{ define "description" }}{{ .Params.year }} {{ .Params.make }} {{ .Params.model }} {{ .Params.trim }} - {{ .Params.mileage }} miles - {{ .Site.Title }}{{ end }}
+{{ define "description" }}{{ with .Params.subtitle }}{{ . }} — {{ end }}{{ .Site.Title }}{{ end }}
 
+{{/*
+  vehicle single page.
+
+  Image handling used to derive a lazyload placeholder by rewriting
+  "/img/foo.jpg" to "/img/placeholders/foo-placeholder.jpg". That directory has
+  never existed — the generator script was never wired into a build — so every
+  vehicle page requested a main image that could only 404. partials/
+  vehicle-image.html now resolves a path that is known to exist, and uses native
+  loading="lazy"/"eager" instead of the lazysizes polyfill.
+*/}}
 {{ define "main" }}
-<article class="vehicle-detail" id="vehicle-detail">
+{{- $price := 0 }}{{ with .Params.price }}{{ $price = int . }}{{ end }}
+<article class="section vehicle-detail" id="vehicle-detail">
   <div class="container">
-    <h1 class="vehicle-title">{{ .Title }}</h1>
-    
+    <nav aria-label="Breadcrumb" class="vehicle-breadcrumb">
+      <a href="/inventory/">Inventory</a>
+      <span aria-hidden="true">/</span>
+      <span aria-current="page">{{ .Title }}</span>
+    </nav>
+
+    <header class="vehicle-header">
+      {{ with .Params.status }}
+      <span class="badge {{ if eq . "New" }}badge--accent{{ else }}badge--success{{ end }}">{{ . }}</span>
+      {{ end }}
+      <h1 class="vehicle-title">{{ .Title }}</h1>
+      {{ with .Params.subtitle }}<p class="lede">{{ . }}</p>{{ end }}
+      {{ if gt $price 0 }}
+      <p class="vehicle-price">
+        {{- $thousands := div (mod $price 1000000) 1000 }}{{ $remainder := mod $price 1000 -}}
+        {{- $out := "" }}{{ if gt $thousands 0 }}{{ $out = printf "%d," $thousands }}{{ end -}}
+        {{- printf "$%s%03d" $out $remainder -}}
+        {{ with .Params.price_note }}<small>{{ . }}</small>{{ end }}
+      </p>
+      {{ end }}
+    </header>
+
     <div class="vehicle-gallery">
-      {{ if .Params.gallery }}
-      <div class="gallery-main image-placeholder-container">
-        {{ $mainImage := index .Params.gallery 0 | default .Params.image | default "/img/inventory/default-vehicle.jpg" }}
-        {{ $placeholderPath := replace $mainImage "/img/" "/img/placeholders/" }}
-        {{ $placeholderPath := replace $placeholderPath (printf "\\.%s" (path.Ext $placeholderPath)) "-placeholder.jpg" }}
-        
-        <img class="gallery-featured-image lazyload"
-             src="{{ $placeholderPath }}"
-             data-src="{{ $mainImage }}"
-             alt="{{ .Title }} - Main Image"
-             width="800"
-             height="600">
-      </div>
-      
-      <div class="gallery-thumbnails">
-        {{ range $index, $image := .Params.gallery }}
-        {{ $thumbPlaceholder := replace $image "/img/" "/img/placeholders/" }}
-        {{ $thumbPlaceholder := replace $thumbPlaceholder (printf "\\.%s" (path.Ext $thumbPlaceholder)) "-placeholder.jpg" }}
-        
-        <div class="gallery-thumbnail image-placeholder-container">
-          <img class="lazyload"
-               src="{{ $thumbPlaceholder }}"
-               data-src="{{ $image }}"
-               alt="{{ $.Title }} - Image {{ add $index 1 }}"
-               width="120"
-               height="90"
-               data-index="{{ $index }}">
-        </div>
-        {{ end }}
-      </div>
-      {{ else if .Params.image }}
-      <div class="gallery-main image-placeholder-container">
-        {{ $mainImage := .Params.image }}
-        {{ $placeholderPath := replace $mainImage "/img/" "/img/placeholders/" }}
-        {{ $placeholderPath := replace $placeholderPath (printf "\\.%s" (path.Ext $placeholderPath)) "-placeholder.jpg" }}
-        
-        <img class="gallery-featured-image lazyload"
-             src="{{ $placeholderPath }}"
-             data-src="{{ $mainImage }}"
-             alt="{{ .Title }}"
-             width="800"
-             height="600">
+      {{ partial "vehicle-image.html" (dict
+          "src" (and .Params.gallery (index .Params.gallery 0) | default .Params.image)
+          "alt" .Title
+          "class" "gallery-featured-image"
+          "loading" "eager"
+          "width" 1200 "height" 800) }}
+    </div>
+
+    {{ with .Params.gallery }}
+    {{ if gt (len .) 1 }}
+    <div class="gallery-thumbnails">
+      {{ range $index, $image := . }}
+      <div class="gallery-thumbnail">
+        {{ partial "vehicle-image.html" (dict
+            "src" $image
+            "alt" (printf "%s - image %d" $.Title (add $index 1))
+            "width" 160 "height" 120) }}
       </div>
       {{ end }}
     </div>
-    
-    <div class="vehicle-description">
-      {{ .Content }}
+    {{ end }}
+    {{ end }}
+
+    <div class="grid grid-2 vehicle-body">
+      <div class="prose">{{ .Content }}</div>
+
+      {{/* The two actions a vehicle page exists to drive. */}}
+      <aside class="vehicle-cta card">
+        <h2 class="card__title">Interested in this {{ with .Params.model }}{{ . }}{{ end }}?</h2>
+        <p class="text-muted">
+          Ask about availability, current incentives, or trade it in against a
+          better payment.
+        </p>
+        <div class="stack vehicle-cta__actions">
+          <a class="btn btn-primary btn-block"
+             href="/contact/?vehicle={{ .Title | urlquery }}">Ask about this vehicle</a>
+          <a class="btn btn-outline btn-block" href="/trade-in/">Value my trade</a>
+          <a class="btn btn-ghost btn-block" href="/financing/">See financing options</a>
+        </div>
+      </aside>
     </div>
   </div>
 </article>

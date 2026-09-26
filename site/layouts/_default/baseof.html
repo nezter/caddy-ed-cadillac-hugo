@@ -3,30 +3,11 @@
      the replacement. The `default` keeps the attribute populated. */}}
 <html lang="{{ .Site.Language.Locale | default "en" }}">
   <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ if .IsHome }}{{ .Site.Title }}{{ else }}{{ .Title }} | {{ .Site.Title }}{{ end }}</title>
-    <meta name="description" content="{{ with .Description }}{{ . }}{{ else }}{{ with .Summary }}{{ . }}{{ else }}{{ .Site.Params.description }}{{ end }}{{ end }}">
-    
-    <!-- Open Graph -->
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="{{ .Title }}">
-    <meta property="og:description" content="{{ with .Description }}{{ . }}{{ else }}{{ with .Summary }}{{ . }}{{ else }}{{ .Site.Params.description }}{{ end }}{{ end }}">
-    <meta property="og:url" content="{{ .Permalink }}">
-    <meta property="og:image" content="{{ with .Params.image }}{{ . | absURL }}{{ else }}{{ "/img/og-image.jpg" | absURL }}{{ end }}">
-    
-    <!-- Favicon -->
-    <link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16x16.png">
-    <link rel="manifest" href="/site.webmanifest">
-    
-    {{ if eq (getenv "HUGO_ENV") "production" | or (eq .Site.Params.env "production") }}
-    <!-- Service worker and PWA -->
-    <meta name="theme-color" content="#000000">
-    <link rel="manifest" href="/manifest.json">
-    {{ end }}
-    
+    {{/* All page metadata lives in one place. It used to be duplicated: once
+         here and once inside partials/header.html, which was itself a whole
+         <head> block nested in the body. */}}
+    {{ partial "head-meta.html" . }}
+
     {{ partial "critical-css.html" . }}
     {{/* Fingerprinted CSS emitted by Hugo Pipes. Replaces the hardcoded
          /css/main.css that used to point at a stale 6KB duplicate. */}}
