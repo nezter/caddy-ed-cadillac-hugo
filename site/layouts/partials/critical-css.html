@@ -1,42 +1,55 @@
 {{- /*
-  critical-css.html -- above-the-fold CSS.
+  critical-css.html -- above-the-fold CSS, inlined.
 
-  The old version of this file was the source of the site's broken styling: it
-  hardcoded `<link rel="stylesheet" href="/css/main.css">`, which resolved to
-  `site/static/css/main.css` -- a stale 6KB hand-written duplicate of the real
-  20KB `assets/css/main.css`. The real stylesheet was never served.
+  HISTORY, because this file is where the site's broken styling came from
+  twice and neither cause is obvious:
 
-  Stylesheets are now emitted (and fingerprinted) by `partials/assets.html`.
-  This partial only carries a small inline block for the most common above-the-
-  fold elements so first paint does not wait on the main stylesheet.
+  1. The old version of this file hardcoded
+     `<link rel="stylesheet" href="/css/main.css">`. That resolved to
+     `site/static/css/main.css` -- a stale 6KB hand-written duplicate of the
+     real 22KB `assets/css/main.css`. The real stylesheet was never served.
+
+  2. The inline block that replaced it defined `--primary-color`,
+     `--secondary-color`, `--accent-color`, `--light-grey`, `--text-color`
+     and `--white`. `main.css` defines NONE of those. It has 84 tokens with
+     different names: `--brand-red`, `--bg`, `--text`, `--grey-0`. So the
+     inline block was a stale duplicate that agreed with nothing, and it
+     hardcoded `body { color:#222; background:#fff }` while `main.css` is
+     dark-mode aware via `prefers-color-scheme`.
+
+  This version mirrors main.css's REAL token names and values for the handful
+  of properties that decide what the first paint looks like, and nothing else.
+  The reset, the header and the skip link are main.css's job -- duplicating
+  them here is what created the divergence in the first place.
+
+  If you change a value in main.css's :root, change it here too. The
+  consistency is checked by hand, not by a build step, because a build step
+  that reads main.css to generate this would be a build step.
 */ -}}
 <style>
-  /* Above-the-fold baseline: matches the CSS custom properties in
-     assets/css/main.css so there is no flash of unstyled colour. */
+  /* The six tokens that decide first paint. Names and values must match
+     main.css's :root. --bg/--text are overridden by main.css under
+     prefers-color-scheme: dark; the light values below are the fallback a
+     browser paints before that stylesheet arrives. */
   :root {
-    --primary-color: #1A2B49;
-    --secondary-color: #C8102E;
-    --accent-color: #B69F58;
-    --light-grey: #f4f4f4;
-    --white: #ffffff;
-    --text-color: #222;
+    --bg: #ffffff;          /* main.css: --bg: var(--grey-0); --grey-0:#ffffff */
+    --text: #161a20;        /* main.css: --text: var(--grey-900); --grey-900:#161a20 */
+    --text-muted: #515863;  /* main.css: --text-muted: var(--grey-600) */
+    --brand-red: #c8102e;
+    --focus: #1a73e8;
+    --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI Variable Text",
+                 "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   }
-  *, *::before, *::after { box-sizing: border-box; }
+  html { background: var(--bg); }
   body {
     margin: 0;
-    font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI',
-                 Roboto, 'Helvetica Neue', Arial, sans-serif;
-    color: var(--text-color);
+    font-family: var(--font-sans);
     line-height: 1.6;
-    background: var(--white);
+    color: var(--text);
+    background: var(--bg);
   }
-  .site-header { position: sticky; top: 0; z-index: 100; }
-  .skip-link {
-    position: absolute; left: -9999px;
-  }
-  .skip-link:focus {
-    left: 0; top: 0; z-index: 1000;
-    padding: .75rem 1rem; background: var(--primary-color); color: #fff;
-  }
+  /* Without this a full-width photograph blows the layout out sideways before
+     the real stylesheet arrives. main.css sets it too; this is the one
+     property where being early is worth the duplication. */
   img { max-width: 100%; height: auto; }
 </style>

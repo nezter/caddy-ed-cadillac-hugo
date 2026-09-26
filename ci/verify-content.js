@@ -83,6 +83,7 @@ function walk(dir, filter, out = []) {
 
 const problems = [];
 const warnings = [];
+const drift = [];   // design-system consistency, reported separately
 
 // --- content contamination -------------------------------------------------
 const contentFiles = walk(path.join(ROOT, 'site', 'content'), (p) => /\.(md|html)$/.test(p));
@@ -153,6 +154,73 @@ for (const file of layoutFiles) {
   if (tokens.size) tachyonsUsers.push([path.relative(ROOT, file), tokens]);
 }
 
+// --- critical CSS must agree with the design system -----------------------
+// site/layouts/partials/critical-css.html inlines a handful of custom
+// properties so the first paint is not white-on-white. It is a hand-maintained
+// duplicate of six lines of main.css's :root, and it has drifted before: the
+// previous version defined --primary-color / --secondary-color / --text-color,
+// none of which exist in main.css, while hardcoding a light background on a
+// site that is dark-mode aware.
+//
+// Nothing but a check stops that recurring, so compare the two.
+const CRITICAL = path.join(ROOT, 'site', 'layouts', 'partials', 'critical-css.html');
+const MAIN_CSS = path.join(ROOT, 'site', 'assets', 'css', 'main.css');
+
+function rootTokens(file) {
+  try {
+    // Comments must go first. The inline block documents each value with a
+    // trailing `/* main.css: --bg: var(--grey-0); --grey-0:#ffffff */`, and
+    // without stripping them the parser reads `--grey-0: #ffffff */` out of a
+    // comment and reports a phantom token.
+    const text = fs
+      .readFileSync(file, 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, '');
+    // the FIRST :root block is the light/default one
+    const m = text.match(/:root\s*\{([\s\S]*?)\n\s*\}/);
+    if (!m) return null;
+    const out = new Map();
+    for (const t of m[1].matchAll(/(--[\w-]+)\s*:\s*([^;]+);/g)) {
+      out.set(t[1], t[2].replace(/\s+/g, ' ').trim());
+    }
+    return out;
+  } catch {
+    return null;
+  }
+}
+
+if (fs.existsSync(CRITICAL) && fs.existsSync(MAIN_CSS)) {
+  const crit = rootTokens(CRITICAL);
+  const main = rootTokens(MAIN_CSS);
+  if (!crit) {
+    drift.push(
+      'site/layouts/partials/critical-css.html: no :root block found -- the inline first-paint tokens are gone'
+    );
+  } else if (main) {
+    const unknown = [...crit.keys()].filter((k) => !main.has(k));
+    if (unknown.length) {
+      drift.push(
+        `site/layouts/partials/critical-css.html: defines token(s) main.css does not -- ${unknown.join(', ')}. ` +
+          `A token main.css never reads is a stale duplicate.`
+      );
+    }
+    // Compare only the tokens whose main.css value is a literal. A var()
+    // reference cannot be compared without evaluating the chain, and chasing
+    // that here would need a CSS parser.
+    const mismatched = [];
+    for (const [k, v] of crit) {
+      const mv = main.get(k);
+      if (mv === undefined || mv.includes('var(')) continue;
+      const norm = (s) => s.replace(/["']/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
+      if (norm(v) !== norm(mv)) mismatched.push(`${k}: critical ${v} vs main.css ${mv}`);
+    }
+    if (mismatched.length) {
+      drift.push(
+        `site/layouts/partials/critical-css.html: token value(s) disagree with main.css -- ${mismatched.join('; ')}`
+      );
+    }
+  }
+}
+
 // ---------------------------------------------------------------------------
 // report
 // ---------------------------------------------------------------------------
@@ -178,6 +246,20 @@ if (problems.length) {
 if (warnings.length) {
   console.log(`\n  ${ylw('WARN')}  ${warnings.length} file(s) with possible demo copy:`);
   for (const w of warnings) console.log(`    ${w}`);
+}
+
+if (drift.length) {
+  console.error(`\n  ${red('FAIL')}  ${drift.length} design-system consistency problem(s):\n`);
+  for (const d of drift) console.error(`    ${d}`);
+  console.error(
+    `\n    ${dim('critical-css.html inlines a hand-maintained copy of six main.css tokens so the')}\n` +
+      `    ${dim('first paint is not white-on-white. It must not drift. Fix the value, not the check.')}\n`
+  );
+  process.exitCode = 1;
+} else if (fs.existsSync(CRITICAL)) {
+  console.log(
+    `  ${grn('OK')}    critical-css.html tokens agree with main.css (${rootTokens(CRITICAL).size} checked)`
+  );
 }
 
 if (tachyonsUsers.length) {

@@ -31,14 +31,15 @@ const API = {
 
 const SIGN_IN_URL = '/admin/dashboard';
 
+const ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+
 /** Escape text destined for innerHTML. Lead fields are user-supplied. */
 function escapeHtml(value) {
-  return String(value ?? '')
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;');
+  // A single global regex rather than String.prototype.replaceAll: entry.html
+  // compiles these bundles to an es2018 target and esbuild transpiles syntax,
+  // not built-ins, so replaceAll would be an undefined method on exactly the
+  // browsers that target is written to still cover.
+  return String(value ?? '').replace(/[&<>"']/g, (char) => ESCAPES[char]);
 }
 
 /**

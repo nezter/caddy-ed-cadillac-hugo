@@ -110,8 +110,9 @@
      that works without editing site/assets/js, which is out of scope here. The
      correct fix is to delete the rewriter; until then this is the opt-out. */ -}}
 {{- /* Empty on purpose: it is an attribute-PRESENCE marker for that selector,
-     and an empty value keeps `img.dataset.src` falsy for any other consumer. */ -}}
-{{- $exempt := cond $lazyloadExempt ` data-src=""` "" -}}
+     and an empty value keeps `img.dataset.src` falsy for any other consumer.
+     Emitted as a literal, not injected through safeHTML -- an interpolated
+     attribute name comes out of Go's html/template as `zgotmplz`. */ -}}
 
 {{- /* ---- normalise the path --------------------------------------------
      Content front matter writes "/img/x.jpg"; config.toml writes
@@ -181,6 +182,10 @@
          `(split ... | first)` is invalid here -- first takes a limit and a
          collection, not a piped value -- so index into the split result. */ -}}
     {{- $largestJpg := index (split (index $jpeg (sub (len $jpeg) 1)) " ") 0 -}}
+    {{- $naturalHeight := 0 -}}
+    {{- if gt $ratio 0 -}}
+      {{- $naturalHeight = int (mul (float (index $usable (sub (len $usable) 1))) $ratio) -}}
+    {{- end -}}
 
     <picture{{ with $class }} class="{{ . }}"{{ end }}{{ with $style }} style="{{ . }}"{{ end }}>
       <source type="image/avif" srcset="{{ delimit $avif ", " }}" sizes="{{ $sizes }}">
@@ -188,15 +193,22 @@
       <img src="{{ $largestJpg | relURL }}"
            srcset="{{ delimit $jpeg ", " }}" sizes="{{ $sizes }}"
            alt="{{ if $decorative }}{{ "" }}{{ else }}{{ $alt }}{{ end }}"
-           {{- /* The widest candidate IS the source width, so this is the true
-                  intrinsic box: the browser reserves the right aspect ratio
-                  before a byte arrives. That is the whole CLS fix. */}}
-           width="{{ index $usable 0 }}"
-           height="{{ cond (gt $ratio 0) (int (mul (float (index $usable 0)) $ratio)) 0 }}"
+           {{- /* The WIDEST candidate is the source width (rule 1 dropped
+                  everything above it), so this is the true intrinsic box and
+                  the browser reserves the right aspect ratio before a byte
+                  arrives. That is the whole CLS fix.
+
+                  Note picture.html uses `index $usable 0` here, which is the
+                  NARROWEST candidate -- the same aspect ratio, so the same CLS
+                  behaviour, but it misdeclares the image as 640px wide. Left
+                  alone there; it is not this partial's file to change. */}}
+           width="{{ index $usable (sub (len $usable) 1) }}"
+           height="{{ $naturalHeight }}"
            loading="{{ $loading }}"
            {{ if not $decorative }}decoding="async"{{ end }}
            {{ if eq $loading "eager" }}fetchpriority="high"{{ end }}
-           {{ with $attrs }}{{ . | safeHTML }}{{ end }}{{ $exempt | safeHTML }}>
+           {{ if $lazyloadExempt }} data-src=""{{ end }}
+           {{ with $attrs }}{{ . | safeHTML }}{{ end }}>
     </picture>
 
   {{- else -}}
@@ -211,9 +223,10 @@
          loading="{{ $loading }}"
          {{ if not $decorative }}decoding="async"{{ end }}
          {{ if eq $loading "eager" }}fetchpriority="high"{{ end }}
+         {{ if $lazyloadExempt }} data-src=""{{ end }}
          {{ with $class }} class="{{ . }}"{{ end }}
          {{ with $style }} style="{{ . }}"{{ end }}
-         {{ with $attrs }}{{ . | safeHTML }}{{ end }}{{ $exempt | safeHTML }}>
+         {{ with $attrs }}{{ . | safeHTML }}{{ end }}>
   {{- end -}}
 
 {{- else -}}
@@ -229,9 +242,10 @@
          loading="{{ $loading }}"
          {{ if not $decorative }}decoding="async"{{ end }}
          {{ if eq $loading "eager" }}fetchpriority="high"{{ end }}
+         {{ if $lazyloadExempt }} data-src=""{{ end }}
          {{ with $class }} class="{{ . }}"{{ end }}
          {{ with $style }} style="{{ . }}"{{ end }}
-         {{ with $attrs }}{{ . | safeHTML }}{{ end }}{{ $exempt | safeHTML }}>
+         {{ with $attrs }}{{ . | safeHTML }}{{ end }}>
   {{- else -}}
     {{- /* Neither. Fall back to the bundled placeholder rather than emitting a
            src that can only 404 -- a missing photograph must never become a
