@@ -64,6 +64,10 @@
   // Newest model year first, then the priciest, so "Fresh stock" reads as fresh.
   // Swap the key here if the feed exposes a real arrival date.
   function sortItems(items) {
+    // Guard against non-array input. window.CADDY_STOCK_FALLBACK is set by a
+    // Hugo partial; if that partial renders nothing (e.g. no inventory pages),
+    // `embedded` is undefined and items.slice() throws.
+    if (!Array.isArray(items)) return [];
     return items.slice().sort(function (a, b) {
       var ya = parseInt(a.year, 10) || 0;
       var yb = parseInt(b.year, 10) || 0;
