@@ -1,0 +1,398 @@
+#!/usr/bin/env node
+
+/**
+ * inventory:sync -- pull vehicle inventory into Hugo content.
+ *
+ *   npm run inventory:sync                       # uses INVENTORY_SOURCE_URL
+ *   npm run inventory:sync -- --dry-run          # show the plan, write nothing
+ *   npm run inventory:sync -- --source file --file site/data/inventory.json
+ *   npm run inventory:sync -- --validate         # check managed files only
+ *   npm run inventory:sync -- --prune            # remove managed files not in the feed
+ *   npm run inventory:sync -- --no-prune         # keep sold vehicles (default)
+ *
+ * Safety model
+ * ------------
+ *   - Only files carrying the `inventory_sync` marker are ever written or
+ *     removed. Hand-written pages in site/content/inventory/ are untouched.
+ *   - Existing prose is carried over, so a sync never wipes copy.
+ *   - Unchanged vehicles are not rewritten, so a no-op sync produces no diff.
+ *   - --dry-run is the default mental model; nothing lands without --write or
+ *     without being the normal path.
+ *
+ * There is no built-in default source. The previous tooling defaulted to
+ * scraping another dealership's inventory widget (which answers 403, and is not
+ * ours to read). Set INVENTORY_SOURCE_URL to a feed you control, or pass a file.
+ */
+
+'use strict';
+
+const fs = require('fs');
+const path = require('path');
+
+const { normalise, ValidationError, slugify, MANAGED_MARKER } = require('./schema');
+const { fromFile, fromHttp } = require('./sources');
+const crawler = require('./crawl');
+const { ensureDir, listManaged, contentPath, render, parseFrontMatter } = require('./content');
+
+/* ---------------------------------------------------------------- args -- */
+function parseArgs(argv) {
+  const args = { dryRun: false, prune: false, validate: false, source: null, file: null, write: false };
+  for (let i = 0; i < argv.length; i += 1) {
+    const a = argv[i];
+    if (a === '--dry-run' || a === '-n') args.dryRun = true;
+    else if (a === '--write' || a === '-w') args.write = true;
+    else if (a === '--force') args.force = true;
+    else if (a === '--window') args.window = true;
+    else if (a === '--prune') args.prune = true;
+    else if (a === '--no-prune') args.prune = false;
+    else if (a === '--validate') args.validate = true;
+    else if (a === '--source') args.source = argv[++i];
+    else if (a === '--file' || a === '-f') args.file = argv[++i];
+    else if (a === '--help' || a === '-h') args.help = true;
+    else if (!a.startsWith('-')) args.file = args.file || a;
+  }
+  return args;
+}
+
+const C = {
+  reset: '\x1b[0m', dim: '\x1b[2m', bold: '\x1b[1m',
+  green: '\x1b[32m', yellow: '\x1b[33m', red: '\x1b[31m', cyan: '\x1b[36m',
+};
+const log = (m = '') => console.log(m);
+const ok = (m) => console.log(`  ${C.green}ok${C.reset}    ${m}`);
+const warn = (m) => console.log(`  ${C.yellow}warn${C.reset}  ${m}`);
+const bad = (m) => console.log(`  ${C.red}fail${C.reset}  ${m}`);
+const info = (m) => console.log(`  ${C.dim}${m}${C.reset}`);
+
+function usage() {
+  log(`
+${C.bold}inventory:sync${C.reset} — pull vehicle inventory into Hugo content
+
+  --source file|http     where to read from (default: http)
+  --file, -f <path>      local JSON source
+  --dry-run, -n          report the plan, write nothing
+  --write, -w            no-op (writing is the default; use --dry-run to skip)
+  --force                bypass the once-a-day limit and the off-peak window (logged)
+  --window               skip the gate check and fetch the window status only
+  --prune                delete managed vehicles that left the feed
+  --validate             only validate what is already on disk
+  --help, -h
+
+Source (in order of preference):
+  1. default              the dealer group's own site, pulled politely
+  2. --source http        INVENTORY_SOURCE_URL, a feed you control
+  3. --source file        a local JSON file (fixtures, offline)
+
+  The default source is rate-limited to one pull per 24h inside an off-peak
+  window, honours robots.txt, sends conditional requests, identifies itself
+  honestly, and aborts rather than retrying a failing endpoint repeatedly.
+
+Env:
+  INVENTORY_SOURCE_URL    feed for --source http
+  INVENTORY_SOURCE_TOKEN  bearer token for that feed
+  INVENTORY_CRAWL_ORIGIN  dealer site origin (default: the dealer group's site)
+  INVENTORY_CRAWL_UA      user agent; put a real contact address in it
+  INVENTORY_CRAWL_MIN_HOURS      minimum hours between pulls (default 24)
+  INVENTORY_CRAWL_WINDOW_START   off-peak window start hour (default 1)
+  INVENTORY_CRAWL_WINDOW_END     off-peak window end hour   (default 5)
+  INVENTORY_CRAWL_DELAY_MS        min delay between requests (default 3000)
+`);
+}
+
+/**
+ * Load from the dealer group's own site, through the gated crawler.
+ *
+ * Falls back to the last cached payload when the site is unreachable or has not
+ * changed, so a flaky edge never blocks a build.
+ */
+async function loadFromCrawl(args) {
+  const cfg = crawler.config();
+  const { results, changed, aborted } = await crawler.crawl(cfg, {
+    force: args.force,
+    log: (m) => log(m),
+  });
+
+  const usable = results.filter((r) => r.body);
+
+  if (!usable.length) {
+    const cached = crawler.readCache();
+    if (cached && cached.results) {
+      warn(`nothing new from the site; using the cache from ${new Date(cached.at).toLocaleString()}`);
+      return shape(cached.results, 'cache', 'last good crawl');
+    }
+    if (aborted) throw new Error('aborted after repeated failures and no cached payload is available');
+    throw new Error('no inventory data returned and no cache exists yet');
+  }
+
+  if (changed) crawler.writeCache(results);
+  return shape(usable, 'crawl', cfg.origin);
+}
+
+function shape(results, source, location) {
+  // The dealer's inventory pages carry schema.org JSON-LD, which is the only
+  // complete server-rendered representation (the JSON API is deprecated and the
+  // React widget ships skeleton placeholders).
+  const { parseInventoryPage } = require('./structured');
+  const { DEFAULT_PAGES } = require('./structured');
+  const vehicles = results.flatMap((r, i) => {
+    const meta = DEFAULT_PAGES.find((p) => p.path === r.path) || {};
+    return parseInventoryPage(r.body, { condition: meta.condition }).records;
+  });
+  if (!vehicles.length) {
+    throw new Error(
+      'the site responded but the payload contained no recognisable vehicle list. ' +
+      'The dealer site layout has probably changed -- dump the response and check it ' +
+      'against scripts/inventory/sources.js extractList().'
+    );
+  }
+  return { vehicles, meta: { source, location, count: vehicles.length } };
+}
+
+/* ------------------------------------------------------------ validate -- */
+function validateOnDisk() {
+  const managed = listManaged();
+  log(`\n${C.bold}Validating${C.reset} ${managed.size} managed vehicle file(s) in site/content/inventory/`);
+  if (!managed.size) {
+    warn('no managed files yet — run a sync first');
+    return false;
+  }
+  let badCount = 0;
+  for (const [slug, entry] of managed) {
+    const text = fs.readFileSync(entry.path, 'utf8');
+    const { data } = parseFrontMatter(text);
+    const problems = [];
+    const advisories = [];
+    if (!data.title) problems.push('no title');
+    if (data.price !== undefined && data.price !== '' && Number.isNaN(Number(data.price))) {
+      problems.push(`price "${data.price}" is not a number`);
+    }
+    // No image is normal for a vehicle awaiting photography -- the
+    // vehicle-image partial substitutes a bundled placeholder, so this is worth
+    // flagging but is not a failure.
+    if (!data.image) advisories.push('no image (placeholder will be used)');
+    if (!data.status) advisories.push('no status');
+
+    if (problems.length) {
+      bad(`${slug}: ${problems.join('; ')}`);
+      badCount += 1;
+    } else {
+      ok(slug);
+      for (const a of advisories) warn(`  ${slug}: ${a}`);
+    }
+  }
+  log(badCount ? `\n  ${badCount} file(s) failed validation\n` : '\n  all managed files are valid\n');
+  return badCount === 0;
+}
+
+/* ---------------------------------------------------------------- main -- */
+async function main() {
+  const args = parseArgs(process.argv.slice(2));
+  if (args.help) return usage();
+
+  if (args.validate) {
+    process.exitCode = validateOnDisk() ? 0 : 1;
+    return;
+  }
+
+  // 0. Gate (crawl source only) --------------------------------------------
+  // Checked before anything else so a rate-limited or out-of-window run says so
+  // immediately instead of appearing to work.
+  const useCrawl = !args.file && args.source !== 'file' && args.source !== 'http';
+  if (useCrawl && !args.window) {
+    const cfg = crawler.config();
+    const g = crawler.gate(cfg, { force: args.force });
+    if (!g.allowed) {
+      log(`\n${C.bold}Inventory sync${C.reset}`);
+      warn(`${g.reason}`);
+      if (g.waitMs > 0) {
+        const when = new Date(Date.now() + g.waitMs);
+        const hours = g.waitMs / 3600000;
+        const whenText = hours >= 1
+          ? `${when.toLocaleString()} (in ${hours.toFixed(1)}h)`
+          : `${when.toLocaleTimeString()} (in ${Math.ceil(g.waitMs / 60000)} min)`;
+        log(`\n  Next permitted run: ${whenText}`);
+      }
+      log(`\n  ${C.dim}This is a deliberate limit: one pull per ${cfg.minIntervalHours}h,`);
+      log(`  off-peak only, so this never competes with the live site.${C.reset}`);
+      log(`  ${C.dim}Use --force for a deliberate out-of-band run (it is logged).${C.reset}\n`);
+      process.exitCode = 0;
+      return;
+    }
+  }
+
+  // 1. Load ---------------------------------------------------------------
+  log(`\n${C.bold}Reading inventory${C.reset}`);
+  let loaded;
+  try {
+    if (args.source === 'file' || (args.file && args.source !== 'http')) {
+      if (!args.file) throw new Error('--source file requires --file <path>');
+      loaded = fromFile(args.file);
+    } else if (args.source === 'http') {
+      const headers = {};
+      if (process.env.INVENTORY_SOURCE_TOKEN) {
+        headers.authorization = `Bearer ${process.env.INVENTORY_SOURCE_TOKEN}`;
+      }
+      loaded = await fromHttp(process.env.INVENTORY_SOURCE_URL, { headers });
+    } else {
+      // Default: a restrained pull from the dealer group's own site.
+      loaded = await loadFromCrawl(args);
+    }
+    ok(`${loaded.vehicles.length} record(s) from ${loaded.meta.source}: ${loaded.meta.location}`);
+  } catch (err) {
+    if (err instanceof crawler.GateError) {
+      warn(err.message);
+      process.exitCode = 0;
+      return;
+    }
+    bad(err.message);
+    process.exitCode = 1;
+    return;
+  }
+
+  // 2. Normalise ----------------------------------------------------------
+  log(`\n${C.bold}Normalising${C.reset}`);
+  const syncedAt = new Date().toISOString().slice(0, 10);
+  // Map<identityKey, {slug, vehicle}>. The identity is the VIN when present
+  // (one physical car, possibly listed on several dealer pages), otherwise
+  // the title. The filename is always slugified from the title, so it stays
+  // readable even when the key is a VIN.
+  const byKey = new Map();
+  const skipped = [];
+  const usedSlugs = new Set();
+  let duplicates = 0;
+
+  loaded.vehicles.forEach((raw, index) => {
+    const i = index;
+    try {
+      const v = normalise(raw, i);
+      v.__source = loaded.meta.location;
+      v.__synced = syncedAt;
+      // Dedupe by VIN, not slug. The same physical car is listed on more than
+      // one dealer page (new stock also appears under bargain inventory), and
+      // two different cars can share a marketing title ("2026 CADILLAC XT5
+      // Luxury" appears repeatedly with different trims and prices).
+      // VIN is the only stable identity the feed gives us.
+      const key = v.vin ? `vin:${v.vin}` : `title:${v.title.toLowerCase()}`;
+      // Distinct cars routinely share a marketing title ("2026 CADILLAC XT5
+      // Luxury" appears several times with different trims and prices), so a
+      // slug collision is expected. Disambiguate with the last six of the VIN --
+      // stable, unique, and still recognisable.
+      let slug = slugify(v.title);
+      if (usedSlugs.has(slug)) {
+        slug = `${slug}-${(v.vin || String(index)).slice(-6).toLowerCase()}`;
+      }
+      const existing = byKey.get(key);
+      if (existing) {
+        duplicates += 1;
+        // Prefer the more complete record; break ties toward New.
+        const score = (x) => Object.keys(x).length + (x.status === 'New' ? 100 : 0);
+        if (score(v) > score(existing.vehicle)) byKey.set(key, { slug: existing.slug, vehicle: v });
+        return;
+      }
+      usedSlugs.add(slug);
+      byKey.set(key, { slug, vehicle: v });
+    } catch (err) {
+      if (err instanceof ValidationError) {
+        skipped.push({ reason: err.message, raw });
+      } else {
+        throw err;
+      }
+    }
+  });
+
+  ok(`${byKey.size} valid vehicle(s)` +
+     (duplicates ? `, ${duplicates} duplicate listing(s) merged by VIN` : ''));
+  for (const s of skipped) warn(`skipped — ${s.reason}${s.title ? ` (${s.title})` : ''}`);
+
+  // 3. Diff ---------------------------------------------------------------
+  const existing = listManaged();
+  const plan = { create: [], update: [], unchanged: [], remove: [] };
+
+  for (const { slug, vehicle } of byKey.values()) {
+    const file = contentPath(slug);
+    if (!fs.existsSync(file)) {
+      plan.create.push({ slug, vehicle });
+      continue;
+    }
+    const { data, body } = parseFrontMatter(fs.readFileSync(file, 'utf8'));
+    if (!data[MANAGED_MARKER]) {
+      // A hand-written file is using this slug. Do not clobber it.
+      warn(`skipping ${slug} — a hand-written page already owns that slug`);
+      continue;
+    }
+    const next = render(vehicle, { body });
+    if (next === fs.readFileSync(file, 'utf8')) plan.unchanged.push(slug);
+    else plan.update.push({ slug, vehicle, previous: data });
+  }
+
+  if (args.prune) {
+    for (const slug of existing.keys()) {
+      if (!new Set([...byKey.values()].map((e) => e.slug)).has(slug)) plan.remove.push(slug);
+    }
+  }
+
+  // 4. Report -------------------------------------------------------------
+  log(`\n${C.bold}Plan${C.reset}`);
+  for (const s of plan.create) log(`  ${C.green}+${C.reset} ${s.slug}`);
+  for (const u of plan.update) {
+    const changes = diffFields(u.previous, u.vehicle);
+    log(`  ${C.yellow}~${C.reset} ${u.slug}  ${C.dim}${changes}${C.reset}`);
+  }
+  for (const slug of plan.unchanged) log(`  ${C.dim}= ${slug}${C.reset}`);
+  for (const r of plan.remove) log(`  ${C.red}-${C.reset} ${r}`);
+
+  const writeCount = plan.create.length + plan.update.length + plan.remove.length;
+  log(
+    `\n  ${plan.create.length} new · ${plan.update.length} updated · ` +
+      `${plan.unchanged.length} unchanged · ${plan.remove.length} removed`
+  );
+
+  if (!writeCount) {
+    log(`\n  ${C.green}Nothing to do.${C.reset} Inventory is already in sync.\n`);
+    return;
+  }
+
+  // Dry run is opt-in. An earlier version of this script defaulted to
+  // NOT writing unless --write was passed, so a plain `npm run inventory:sync`
+  // silently did nothing and still printed a plan.
+  if (args.dryRun) {
+    log(`\n  ${C.yellow}Dry run — nothing written.${C.reset}`);
+    log(`  Re-run without --dry-run to apply, then commit the result.\n`);
+    return;
+  }
+
+  // 5. Write --------------------------------------------------------------
+  log(`\n${C.bold}Writing${C.reset}`);
+  ensureDir();
+  for (const c of plan.create) {
+    fs.writeFileSync(contentPath(c.slug), render(c.vehicle));
+    ok(`created ${c.slug}.md`);
+  }
+  for (const u of plan.update) {
+    fs.writeFileSync(contentPath(u.slug), render(u.vehicle, { body: parseFrontMatter(fs.readFileSync(contentPath(u.slug), 'utf8')).body }));
+    ok(`updated ${u.slug}.md`);
+  }
+  for (const r of plan.remove) {
+    fs.unlinkSync(contentPath(r));
+    ok(`removed ${r}.md`);
+  }
+
+  log(`\n  ${C.green}Done.${C.reset} Next: ./ci/run.sh verify && ./ci/preview.sh up\n`);
+}
+
+function diffFields(prev, next) {
+  const changed = [];
+  for (const k of Object.keys(next)) {
+    if (k.startsWith('__')) continue;
+    const a = prev[k];
+    const b = next[k];
+    const same = Array.isArray(a) && Array.isArray(b) ? a.join() === b.join() : String(a ?? '') === String(b ?? '');
+    if (!same) changed.push(k);
+  }
+  return changed.join(', ') || 'metadata';
+}
+
+main().catch((err) => {
+  console.error(`\n  ${C.red}inventory:sync crashed${C.reset} ${err.stack || err.message}\n`);
+  process.exit(1);
+});

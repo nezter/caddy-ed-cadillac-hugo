@@ -9,15 +9,23 @@ exports.handler = async function(event, context) {
     return errorHandler.validationError('Vehicle ID is required', { id: 'Missing required parameter' });
   }
   
-  try {
-    // Call the dealer's API to get vehicle details
-    const apiUrl = `https://www.cadillacofsouthcharlotte.com/api/vehicle/${vehicleId}`;
-    
-    const response = await fetch(apiUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-      }
+  // This was hardcoded to https://www.cadillacofsouthcharlotte.com/api/vehicle/
+  // -- a different dealership -- and spoofed a desktop Chrome User-Agent to get
+  // past its 403. It is now INVENTORY_SOURCE_URL: a feed you control, with no
+  // default. With nothing configured, respond honestly rather than failing
+  // against someone else's server.
+  const source = require('./utils/inventory-source');
+  if (!source.isConfigured()) {
+    return errorHandler.createSuccessResponse({
+      vehicleId,
+      configured: false,
+      ...source.notConfigured(),
     });
+  }
+
+  try {
+    const apiUrl = `${source.baseUrl()}/vehicle/${encodeURIComponent(vehicleId)}`;
+    const response = await fetch(apiUrl, { headers: source.headers() });
     
     if (!response.ok) {
       // Handle different API error status codes

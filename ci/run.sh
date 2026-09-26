@@ -10,6 +10,8 @@
 #   ./ci/run.sh build        full production build (hugo + functions + verify)
 #   ./ci/run.sh functions    boot netlify dev (static site + all 51 functions)
 #   ./ci/run.sh fn-bundle    bundle the functions, report failures, exit
+#   ./ci/run.sh inventory    dry-run the inventory sync (report drift)
+#   ./ci/run.sh inventory-write   apply the inventory sync
 #   ./ci/run.sh verify       build + assert no broken asset references
 #   ./ci/run.sh test         unit + integration tests for netlify/functions
 #   ./ci/run.sh shell        interactive shell inside the build container
@@ -89,6 +91,28 @@ do_verify() {
   in_container 'node ci/verify-build.js'
 }
 
+do_inventory() {
+  sync_to_ci
+  require_image
+  log "Checking inventory feed on ${CI_HOST}"
+  # Read-only unless --write. Reports what the feed contains and whether the
+  # committed content matches it, so drift is visible without a deploy.
+  in_container 'node scripts/inventory/index.js --dry-run ${INVENTORY_ARGS:-}'
+}
+
+do_inventory_write() {
+  sync_to_ci
+  require_image
+  log "Applying inventory feed on ${CI_HOST}"
+  in_container 'node scripts/inventory/index.js ${INVENTORY_ARGS:-}'
+}
+
+do_inventory_validate() {
+  sync_to_ci
+  require_image
+  in_container 'node scripts/inventory/index.js --validate'
+}
+
 do_test() {
   sync_to_ci
   require_image
@@ -118,7 +142,10 @@ case "${1:-build}" in
   image)       sync_to_ci; build_image ;;
   deploy)      do_deploy "" ;;
   deploy-prod) do_deploy "--prod" ;;
-  sync)        sync_to_ci ;;
+  inventory)        do_inventory ;;
+  inventory-write)  do_inventory_write ;;
+  inventory-check)  do_inventory_validate ;;
+  sync)             sync_to_ci ;;
   functions)
     # Boot `netlify dev` on the CI host: the static site AND all 51 functions.
     # This is how the admin area gets exercised end to end.
@@ -138,5 +165,5 @@ case "${1:-build}" in
                    cd /site && timeout 120 netlify dev --port 8889 --dir=site/public --functions=netlify/functions 2>&1 \
                    | grep -E \"Loaded function|Failed to load|ERROR\"' || true"
     ;;
-  *)           sed -n '2,22p' "$0"; exit 1 ;;
+  *)           sed -n '2,26p' "$0"; exit 1 ;;
 esac

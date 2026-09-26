@@ -1,0 +1,22 @@
+---
+title: 2026 CADILLAC XT5 Luxury
+status: New
+price: 47120
+subtitle: FWD · Automatic · 211 mi
+image: https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1797/031fe67b9dd8b112710ff9a63295fd99x.jpg
+vin: 1GYKNAR40TZ111132
+stock: TZ111132
+year: 2026
+make: CADILLAC
+model: XT5
+trim: Luxury
+mileage: 211
+exterior_color: Stellar Black Metallic
+interior_color: Jet Black, Inteluxe Seats
+drivetrain: FWD
+transmission: Automatic
+engine: Turbo 4-cylinder engine
+inventory_sync: https://www.cadillacofsouthcharlotte.com
+inventory_sync_synced: 2026-09-26
+---
+FWD · Automatic · 211 mi. FWD drivetrain · Automatic · Turbo 4-cylinder engine · Stellar Black Metallic exterior · Jet Black, Inteluxe Seats interior. 211 miles. Full specification and availability on request — ask Caddy Ed for the details on this vehicle.

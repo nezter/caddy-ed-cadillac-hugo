@@ -956,3 +956,45 @@ tbody tr:hover { background: var(--bg-subtle); }
 @media (min-width: 64rem) {
   .vehicle-body { grid-template-columns: 1.6fr 1fr; }
 }
+
+/* --------------------------------------------------------------------------
+   Inventory index
+   -------------------------------------------------------------------------- */
+.inventory-head { margin-bottom: var(--space-6); max-width: 60ch; }
+.inventory-head h1 { margin-top: var(--space-2); }
+
+.inventory-filters {
+  padding: var(--space-5);
+  margin-bottom: var(--space-6);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+.inventory-filters__grid {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+}
+.inventory-filters__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border);
+}
+.inventory-count {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+.inventory-empty {
+  padding: var(--space-8) var(--space-5);
+  text-align: center;
+  color: var(--text-muted);
+  background: var(--bg-subtle);
+  border-radius: var(--radius-lg);
+}
+.inventory-empty a { color: var(--accent); text-decoration: underline; text-underline-offset: 0.2em; }

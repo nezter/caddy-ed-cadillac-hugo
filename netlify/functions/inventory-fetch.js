@@ -1,4 +1,7 @@
-const fetch = require('node-fetch');
+// node-fetch v2 is ESM-friendly but this function is CommonJS; Node 18+
+// provides a global fetch, so prefer it and keep node-fetch only as a fallback.
+const nodeFetch = require('node-fetch');
+const fetchImpl = globalThis.fetch || nodeFetch;
 const DOMParser = require('dom-parser');
 
 exports.handler = async function(event, context) {
@@ -12,22 +15,28 @@ exports.handler = async function(event, context) {
       'Cache-Control': 'public, max-age=3600' // Cache for 1 hour
     };
     
-    // Fetch inventory data from dealer API
-    const baseUrl = 'https://www.cadillacofsouthcharlotte.com/apis/inventory';
-    let requestUrl = `${baseUrl}?type=${type}&limit=${limit}&offset=${offset}`;
-    
-    if (model) {
-      requestUrl += `&model=${encodeURIComponent(model)}`;
+    // Fetch inventory from the configured source.
+    //
+    // This was hardcoded to https://www.cadillacofsouthcharlotte.com/apis/inventory
+    // -- a different dealership -- and spoofed a desktop Chrome User-Agent to
+    // get past its 403. Now it is INVENTORY_SOURCE_URL, a feed you control,
+    // with no default. When unset this returns an explicit, honest response
+    // rather than failing against someone else's server.
+    const source = require('./utils/inventory-source');
+    if (!source.isConfigured()) {
+      return {
+        statusCode: 200,
+        headers: { ...cacheHeaders, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ success: true, configured: false, count: 0, vehicles: [], ...source.notConfigured() }),
+      };
     }
     
-    console.log(`Fetching inventory from: ${requestUrl}`);
+    let requestUrl = `${source.baseUrl()}/inventory?type=${type}&limit=${limit}&offset=${offset}`;
+    if (model) requestUrl += `&model=${encodeURIComponent(model)}`;
     
-    const response = await fetch(requestUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-        'Accept': 'application/json'
-      }
-    });
+    console.log(`Fetching inventory from: ${source.baseUrl()}/inventory`);
+    
+    const response = await fetchImpl(requestUrl, { headers: source.headers() });
     
     if (!response.ok) {
       throw new Error(`API responded with status: ${response.status}`);

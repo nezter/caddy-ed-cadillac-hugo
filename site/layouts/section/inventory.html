@@ -1,124 +1,195 @@
 {{ define "main" }}
-<div class="inventory-page">
+{{- $all := .RegularPages }}
+{{- $phone := .Site.Params.phone | default "704-555-1234" -}}
+{{- $phoneHref := replace $phone "." "" -}}
+
+{{/* Build the filter vocabularies from the content itself, so the options can
+     never drift out of step with what is actually in stock. */}}
+{{- $models := slice -}}
+{{- $years := slice -}}
+{{- $bodies := slice -}}
+{{- range $all -}}
+  {{- with .Params.model }}{{ $models = $models | append . }}{{ end -}}
+  {{- with .Params.year }}{{ $years = $years | append (int .) }}{{ end -}}
+  {{- with .Params.body_style }}{{ $bodies = $bodies | append . }}{{ end -}}
+{{- end -}}
+{{- $models = $models | uniq | sort -}}
+{{- $years = $years | uniq | sort -}}
+{{- $bodies = $bodies | uniq | sort -}}
+
+<section class="section inventory-page">
   <div class="container">
-    <h1 class="inventory-title">Our Inventory</h1>
-    
-    <div class="inventory-filters">
-      <div class="filter-container">
-        <div class="filter-row">
-          <div class="filter">
-            <label for="makeFilter">Make</label>
-            <select id="makeFilter" class="form-control">
-              <option value="">All Makes</option>
-              <option value="Cadillac" selected>Cadillac</option>
-            </select>
-          </div>
-          
-          <div class="filter">
-            <label for="modelFilter">Model</label>
-            <select id="modelFilter" class="form-control">
-              <option value="">All Models</option>
-            </select>
-          </div>
-          
-          <div class="filter">
-            <label for="yearFilter">Year</label>
-            <select id="yearFilter" class="form-control">
-              <option value="">All Years</option>
-            </select>
-          </div>
-          
-          <div class="filter">
-            <label for="priceFilter">Price</label>
-            <select id="priceFilter" class="form-control">
-              <option value="">Any Price</option>
-              <option value="30000">Under $30,000</option>
-              <option value="50000">Under $50,000</option>
-              <option value="75000">Under $75,000</option>
-              <option value="100000">Under $100,000</option>
-            </select>
-          </div>
+
+    <header class="inventory-head">
+      <p class="eyebrow">Available now</p>
+      <h1>{{ .Title | default "Inventory" }}</h1>
+      {{ with .Content }}<div class="lede">{{ . }}</div>{{ end }}
+    </header>
+
+    {{/* ---------------------------------------------------------------
+         Filters. Progressive enhancement: the full list renders server-side
+         and is fully usable with JS off. This form only narrows what is
+         already in the DOM -- it never fetches, so browsing inventory does
+         not depend on the API or on a function being reachable.
+         --------------------------------------------------------------- */}}
+    <form class="inventory-filters" id="inventory-filters" role="search"
+          aria-label="Filter inventory" data-inventory-filters>
+      <div class="inventory-filters__grid">
+        <div class="form-field">
+          <label for="f-search">Search</label>
+          <input class="input" type="search" id="f-search" name="q"
+                 placeholder="Model or trim" autocomplete="off">
         </div>
-        
-        <div class="filter-buttons">
-          <button id="applyFilters" class="btn btn-primary">Filter Results</button>
-          <button id="resetFilters" class="btn btn-outline">Reset Filters</button>
+
+        {{ with $models }}
+        <div class="form-field">
+          <label for="f-model">Model</label>
+          <select class="select" id="f-model" name="model">
+            <option value="">All models</option>
+            {{ range . }}<option value="{{ . }}">{{ . }}</option>{{ end }}
+          </select>
         </div>
-      </div>
-    </div>
-    
-    <div class="inventory-results">
-      <div class="results-header">
-        <div class="results-count">
-          Showing <span id="resultCount">{{ len .Pages }}</span> vehicles
+        {{ end }}
+
+        {{ with $years }}
+        <div class="form-field">
+          <label for="f-year">Year</label>
+          <select class="select" id="f-year" name="year">
+            <option value="">Any year</option>
+            {{ range . }}<option value="{{ . }}">{{ . }}</option>{{ end }}
+          </select>
         </div>
-        <div class="results-sort">
-          <label for="sortBy">Sort By:</label>
-          <select id="sortBy" class="form-control">
+        {{ end }}
+
+        {{ with $bodies }}
+        <div class="form-field">
+          <label for="f-body">Body</label>
+          <select class="select" id="f-body" name="body_style">
+            <option value="">Any body</option>
+            {{ range . }}<option value="{{ . }}">{{ . }}</option>{{ end }}
+          </select>
+        </div>
+        {{ end }}
+
+        <div class="form-field">
+          <label for="f-condition">Condition</label>
+          <select class="select" id="f-condition" name="status">
+            <option value="">Any</option>
+            <option value="New">New</option>
+            <option value="Certified Pre-Owned">Certified Pre-Owned</option>
+            <option value="Pre-Owned">Pre-Owned</option>
+          </select>
+        </div>
+
+        <div class="form-field">
+          <label for="f-maxprice">Max price</label>
+          <select class="select" id="f-maxprice" name="max_price">
+            <option value="">No limit</option>
+            <option value="40000">Under $40,000</option>
+            <option value="55000">Under $55,000</option>
+            <option value="70000">Under $70,000</option>
+            <option value="90000">Under $90,000</option>
+            <option value="120000">Under $120,000</option>
+          </select>
+        </div>
+
+        <div class="form-field">
+          <label for="f-sort">Sort</label>
+          <select class="select" id="f-sort" name="sort">
             <option value="featured">Featured</option>
-            <option value="priceAsc">Price: Low to High</option>
-            <option value="priceDesc">Price: High to Low</option>
-            <option value="yearDesc">Newest First</option>
-            <option value="yearAsc">Oldest First</option>
+            <option value="price-asc">Price: low to high</option>
+            <option value="price-desc">Price: high to low</option>
+            <option value="year-desc">Newest first</option>
+            <option value="mileage-asc">Lowest mileage</option>
           </select>
         </div>
       </div>
-    </div>
 
-    <div class="inventory-grid" id="inventoryGrid">
-      {{ range .Pages }}
-      <div class="vehicle-card" data-make="{{ .Params.make }}" data-model="{{ .Params.model }}" data-year="{{ .Params.year }}" data-price="{{ .Params.price }}">
-        <div class="vehicle-card__media">
-          {{/* Accepts either `images` (list) or `image` (string) so front
-                 matter is not fussy. The fallback used to be
-                 /images/placeholder-vehicle.jpg -- a directory that does not
-                 exist; the file is /img/placeholder-vehicle.jpg. */}}
-          {{ $img := "" }}
-          {{ with .Params.images }}{{ $img = index . 0 }}{{ end }}
-          {{ if not $img }}{{ with .Params.image }}{{ $img = . }}{{ end }}{{ end }}
-          {{ if not $img }}{{ $img = "/img/placeholder-vehicle.jpg" }}{{ end }}
-          <img src="{{ $img | relURL }}" alt="{{ .Title }}" width="640" height="427"
-               loading="lazy" decoding="async">
-        </div>
+      <div class="inventory-filters__actions">
+        <p class="inventory-count" id="inventory-count" role="status" aria-live="polite">
+          {{ len $all }} {{ if eq (len $all) 1 }}vehicle{{ else }}vehicles{{ end }}
+        </p>
+        <button class="btn btn-ghost btn-sm" type="button" id="f-reset">Clear filters</button>
+      </div>
+    </form>
+
+    {{/* ---------------------------------------------------------------
+         The list. Server-rendered from content, filtered client-side.
+         data-* attributes carry the filter/sort keys so the script never has
+         to scrape text out of the markup.
+         --------------------------------------------------------------- */}}
+    <div class="vehicle-grid" id="vehicle-inventory">
+      {{ range $all }}
+      {{ $img := "" }}{{ with .Params.image }}{{ $img = . }}{{ end }}
+      {{ $price := 0 }}{{ with .Params.price }}{{ $price = int . }}{{ end }}
+      {{ $thousands := 0 }}{{ $remainder := 0 }}
+      {{ if gt $price 0 }}{{ $thousands = div (mod $price 1000000) 1000 }}{{ $remainder = mod $price 1000 }}{{ end }}
+      <article class="vehicle-card"
+               data-vehicle
+               data-title="{{ .Title | lower }}"
+               data-model="{{ with .Params.model }}{{ . | lower }}{{ end }}"
+               data-year="{{ with .Params.year }}{{ int . }}{{ end }}"
+               data-body="{{ with .Params.body_style }}{{ . | lower }}{{ end }}"
+               data-status="{{ with .Params.status }}{{ . | lower }}{{ end }}"
+               data-price="{{ $price }}"
+               data-mileage="{{ with .Params.mileage }}{{ int . }}{{ end }}"
+               data-featured="{{ if .Params.featured }}1{{ else }}0{{ end }}">
+        <a class="vehicle-card__media" href="{{ .RelPermalink }}" tabindex="-1" aria-hidden="true">
+          {{ partial "vehicle-image.html" (dict "src" $img "alt" .Title "width" 640 "height" 427) }}
+          {{ with .Params.status }}
+          <span class="vehicle-card__badge{{ if eq . "New" }} vehicle-card__badge--accent{{ end }}">{{ . }}</span>
+          {{ end }}
+        </a>
         <div class="vehicle-card__body">
-          <h3 class="vehicle-card__title">{{ .Title }}</h3>
-          <p class="vehicle-card__meta">
-            <span class="vehicle-year">{{ .Params.year }}</span>
-            <span class="vehicle-mileage">{{ .Params.mileage | default "N/A" }} miles</span>
-          </div>
+          <h2 class="vehicle-card__title"><a href="{{ .RelPermalink }}">{{ .Title }}</a></h2>
+          {{ with .Params.subtitle }}<p class="vehicle-card__meta">{{ . }}</p>{{ end }}
           <p class="vehicle-card__price">
-            {{- /* Front matter is not schema-checked, so a price can arrive as
-                   a string ("61500") or a number (61500). lang.NumFmt throws
-                   on a string, which failed the whole build. Coerce first. */}}
-            {{- $price := 0 }}
-            {{- with .Params.price }}{{ $price = int . }}{{ end }}
             {{ if gt $price 0 }}
-              {{/* lang.NumFmt does not exist in Hugo 0.166 (it errors with
-                   "can't evaluate field NumFmt"). Prices here are whole US
-                   dollars, so format directly: 61500 -> "61,500". */}}
-              {{ $thousands := div (mod $price 1000000) 1000 }}
-              {{ $remainder  := mod $price 1000 }}
-              {{ $out := "" }}
-              {{ if gt $thousands 0 }}{{ $out = printf "%d," $thousands }}{{ end }}
-              {{ $out = printf "%s%03d" $out $remainder }}
-              ${{ $out }}
+              {{- $out := "" }}{{ if gt $thousands 0 }}{{ $out = printf "%d," $thousands }}{{ end -}}
+              ${{ printf "%s%03d" $out $remainder }}
+              {{ with .Params.price_note }}<small>{{ . }}</small>{{ end }}
             {{ else }}
               Call for price
             {{ end }}
+          </p>
+          <div class="vehicle-card__actions">
+            <a class="btn btn-outline btn-sm" href="{{ .RelPermalink }}">Details</a>
+            <a class="btn btn-primary btn-sm" href="/contact/?vehicle={{ .Title | urlquery }}">Ask about this</a>
           </div>
-          <a href="{{ .Permalink }}" class="btn btn-primary">View Details</a>
         </div>
-      </div>
+      </article>
       {{ end }}
     </div>
 
-    <div class="pagination" id="pagination">
-      <!-- Pagination will be added by JavaScript -->
-    </div>
-  </div>
-</div>
+    <p class="inventory-empty hidden" id="inventory-empty">
+      No vehicles match those filters.
+      <button class="btn btn-ghost btn-sm" type="button" data-inventory-reset>Clear them</button>
+      or <a href="/contact/">tell me what you're after</a> — stock turns over.
+    </p>
 
-<!-- Inventory page bundle. Was a hardcoded /js/inventory.js, which no build
-     ever emitted -- the inventory page loaded none of its own logic. -->
-{{ partial "entry.html" (dict "entry" "inventory.js" "page" .) }}
+    {{ with .Params.show_cta | default true }}
+    <div class="cta-band" style="margin-top: var(--space-8)">
+      <div>
+        <h2>Not seeing it?</h2>
+        <p class="lede" style="margin-top: var(--space-2)">
+          Tell me the model and budget. I can usually source anything, new or
+          pre-owned, and you'll get a real number rather than a teaser.
+        </p>
+      </div>
+      <div class="cta-band__actions">
+        <a class="btn btn-primary btn-lg" href="/contact/">Send a message</a>
+        <a class="btn btn-inverse btn-lg" href="tel:+1{{ $phoneHref }}">{{ $phone }}</a>
+      </div>
+    </div>
+    {{ end }}
+  </div>
+</section>
+
+{{/* Client-side filtering. The list is server-rendered from content files; this
+     only narrows the DOM, so browsing inventory works with JS disabled and does
+     not depend on a function being reachable. Replaces the previous
+     inventory.js bundle, which looked for #vehicle-inventory /
+     #inventory-filters / #inventory-pagination -- none of which this layout
+     rendered -- and fetched everything from /.netlify/functions/inventory-api. */}}
+{{ partial "entry.html" (dict "entry" "inventory-filter.js" "page" .) }}
 {{ end }}
