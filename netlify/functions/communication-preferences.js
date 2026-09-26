@@ -4,14 +4,29 @@
  */
 
 const DatabaseService = require('./utils/database-service');
-const { createClient } = require('@supabase/supabase-js');
+// The module-scope `const supabase = createClient(process.env.SUPABASE_URL,
+// process.env.SUPABASE_ANON_KEY)` that used to live here has been removed.
+//
+// It was never referenced. Not once, anywhere in this file. The handler uses
+// DatabaseService, which creates its own client lazily and reports a missing
+// configuration as a message.
+//
+// So it was a second, unused storage client that:
+//   - threw at require time (`supabaseUrl is required.`) whenever SUPABASE_URL
+//     was unset, so the function 502'd before its auth check could even run.
+//     ci/verify-functions.js caught this: 2 of 5 load failures.
+//   - pulled all of @supabase/supabase-js into the bundle for a value nobody
+//     read. This file's bundle is dominated by a dependency that was dead.
+//
+// Note the direction of the fix. Making it lazy -- which is what
+// utils/database-service.js and utils/enhanced-database-service.js already do --
+// would have turned the throw into a 503 and left the dead client in place. That
+// is the shape of "make the check pass" rather than "remove the problem", and it
+// is the same mistake as inlining an endpoint literal to satisfy the endpoint
+// gate. The client was never used, so it is gone rather than guarded.
 const { authenticateRequest } = require('./utils/auth-middleware');
 const errorHandler = require('./utils/error-handler');
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_ANON_KEY
-);
 
 exports.handler = async (event, context) => {
   // Authenticate request with proper JWT validation

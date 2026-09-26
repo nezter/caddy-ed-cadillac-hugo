@@ -112,6 +112,14 @@ do_verify() {
   # the publish dir, so it must come after the build.
   log "Verifying every endpoint called by a live bundle resolves"
   in_container 'node ci/verify-endpoints.js'
+  # Fourth gate: does every function survive bundling AND actually load?
+  # `netlify dev` reporting "Loaded function N times" proves esbuild emitted a
+  # bundle, not that the bundle RUNS. That difference is exactly where
+  # @libsql/client's native binary problem hid for several sessions, with
+  # included_files credited with fixing it on the strength of a comment.
+  # Needs netlify/functions/node_modules, so it installs them itself.
+  log "Verifying every function bundles and loads"
+  in_container 'cd netlify/functions && npm install --omit=dev --no-audit --no-fund >/dev/null 2>&1; cd /site && node ci/verify-functions.js'
 }
 
 do_inventory() {
@@ -142,7 +150,26 @@ do_test() {
   log "Running functions test suite on ${CI_HOST}"
   # The image sets NODE_ENV=production, so a plain `npm install` omits dev deps
   # and jest/supertest are absent. --include=dev is required here.
-  in_container 'cd netlify/functions && npm install --include=dev --no-audit --no-fund && npx jest --ci --watchAll=false'
+  #
+  # The config path and rootDir are both explicit, and both are load-bearing.
+  #
+  # `npx jest` from netlify/functions does NOT find <repo>/jest.config.js on its
+  # own, so it falls back to defaults: testMatch resolves relative to
+  # netlify/functions, the real suite at <repo>/tests/ is invisible, jest reports
+  # "No tests found", and exits 1. So `./ci/run.sh test` has been running ZERO
+  # tests and failing -- which reads exactly like a red suite and is in fact a
+  # red harness.
+  #
+  # Measured 2026-09-27, both ways:
+  #   as this command ran it : 0 tests matched
+  #   with config + rootDir  : Test Suites 8 failed / 8, Tests 63 failed, 8 passed
+  #
+  # The 63 failures are entirely pre-existing. Confirmed by stashing every change
+  # on this branch and re-running: 63 failed / 8 passed, byte-identical. They are
+  # assertion rot plus ESM/CJS transform errors in the calendar suite, catalogued
+  # in docs/test-status.md. They are not caused by the storage work, and they are
+  # not being hidden by it.
+  in_container 'cd netlify/functions && npm install --include=dev --no-audit --no-fund && npx jest --ci --watchAll=false --config /site/jest.config.js --rootDir /site/netlify/functions'
 }
 
 do_deploy() {

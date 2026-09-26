@@ -4,12 +4,30 @@ const errorHandler = require('./utils/error-handler');
 const DatabaseService = require('./utils/database-service');
 const { checkRateLimit } = require('./utils/auth-middleware');
 const { handleCors, addCorsHeaders } = require('./utils/cors-middleware');
+const { isUnconfiguredContext } = require('./utils/jwt-secret');
 
-// JWT configuration - require JWT_SECRET to be set
-if (!process.env.JWT_SECRET) {
-  throw new Error('JWT_SECRET environment variable is required');
-}
-const JWT_SECRET = process.env.JWT_SECRET;
+// JWT configuration -- REQUIRED, no fallback, and a context marker counts as
+// absent.
+//
+// This used to be `process.env.JWT_SECRET || 'fallback-secret'`, and it then
+// became `if (!process.env.JWT_SECRET) throw` at module scope. The second
+// version is right about the secret and wrong about the consequence.
+//
+// netlify.toml sets the marker JWT_SECRET="deploy-preview-not-configured" on
+// deploy previews and branch deploys, precisely so those contexts provably
+// cannot use production tokens. A load-time throw therefore turns a
+// deliberate, documented configuration into an opaque 502 with a stack trace,
+// and the honest 503 never runs. ci/verify-functions.js found exactly that:
+// 5 of 34 functions failed to LOAD, every one for this reason.
+//
+// Signing is not permitted with a marker even once the throw is gone, because a
+// marker is a public string committed to netlify.toml, and signing with one
+// would hand anyone who has read this repository a working staff token --
+// 'fallback-secret' again, in a more convincing costume.
+//
+// Checked per request instead, as utils/auth-middleware.js does. See
+// utils/jwt-secret.js for the shared rule.
+const JWT_SECRET = process.env.JWT_SECRET || '';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '8h';
 
 /**
@@ -17,6 +35,22 @@ const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '8h';
  * Authenticates sales representatives and returns JWT token
  */
 exports.handler = async function(event, context) {
+
+  // Per-request, not at require time -- see the note above.
+  if (isUnconfiguredContext()) {
+    return addCorsHeaders({
+      statusCode: 503,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        error: 'This context has no JWT signing key configured',
+        detail:
+          'Signing in cannot work here by design. Deploy previews and branch ' +
+          'deploys deliberately run without a signing key so they cannot touch ' +
+          'production.'
+      })
+    });
+  }
+
   // Handle CORS preflight
   const corsResponse = handleCors(event);
   if (corsResponse) return corsResponse;

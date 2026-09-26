@@ -104,16 +104,21 @@ function initializeConnections() {
   }
 }
 
-// Mock database for development/fallback
-const mockDatabase = {
-  customers: [],
-  leads: [],
-  interactions: [],
-  appointments: [],
-  sales_reps: [],
-  vehicles: [],
-  tasks: []
-};
+  // A `mockDatabase` literal used to sit here: empty arrays for customers, leads,
+  // interactions, appointments, sales_reps, vehicles and tasks, under the comment
+  // "Mock database for development/fallback".
+  //
+  // It was referenced ZERO times. Nothing fell back to it. But it was one line
+  // away from being wired up as exactly the silent-failure path it looks like --
+  // a function with no database returning `[]` and a 200, which reads to a
+  // browser as "this rep has no customers" rather than "the database is not
+  // configured". For a car dealership that is the difference between an empty
+  // list and a lost lead.
+  //
+  // The real fallback is already in place and is honest: if neither Supabase nor
+  // Turso connects, `isDatabaseConfigured()` is false and the callers report
+  // misconfigured. Removed rather than left as an attractive nuisance.
+
 
 /**
  * Generic database query function with hybrid routing

@@ -44,6 +44,51 @@
   NPM_FLAGS    = "--no-audit --no-fund"
 
 # -----------------------------------------------------------------------------
+# Context scoping
+#
+# Netlify has FOUR contexts, not one: production, deploy-preview (every pull
+# request), branch-deploy (every other branch), and local `netlify dev`.
+#
+# This file previously declared NO context sections at all. That is not a
+# neutral default. Anything configured in the Netlify UI for "production" is
+# also offered to deploy previews, so a preview of a pull request can reach the
+# production database, the production CMS, or production API keys. For a site
+# whose open question Q3 is "where does the data live at all", an unreviewed
+# fork silently inheriting production credentials is the worst available default.
+#
+# So the guard is explicit rather than assumed. Previews and branch deploys get
+# a marker JWT_SECRET that the auth middleware treats as unconfigured, and empty
+# connection strings that database-service reports as misconfigured. A preview
+# therefore CANNOT mutate production, and it fails safe rather than failing open.
+#
+# The marker is deliberately not a secret and deliberately not a valid secret.
+[context.deploy-preview.environment]
+  JWT_SECRET              = "deploy-preview-not-configured"
+  DATABASE_URL            = ""
+  SUPABASE_DB_URL         = ""
+  TURSO_DATABASE_URL      = ""
+  TURSO_AUTH_TOKEN        = ""
+  SUPABASE_SERVICE_ROLE_KEY = ""
+
+[context.branch-deploy.environment]
+  JWT_SECRET              = "branch-deploy-not-configured"
+  DATABASE_URL            = ""
+  SUPABASE_DB_URL         = ""
+  TURSO_DATABASE_URL      = ""
+  TURSO_AUTH_TOKEN        = ""
+  SUPABASE_SERVICE_ROLE_KEY = ""
+
+# Local `netlify dev`. Same reasoning, and this is where a developer is most
+# likely to have a real DATABASE_URL in their shell and be surprised that
+# `netlify dev` can wipe production.
+[dev.environment]
+  DATABASE_URL            = ""
+  SUPABASE_DB_URL         = ""
+  TURSO_DATABASE_URL      = ""
+  TURSO_AUTH_TOKEN        = ""
+  SUPABASE_SERVICE_ROLE_KEY = ""
+
+# -----------------------------------------------------------------------------
 # Functions
 # -----------------------------------------------------------------------------
 [functions]

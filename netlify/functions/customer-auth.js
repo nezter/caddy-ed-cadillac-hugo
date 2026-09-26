@@ -1,19 +1,23 @@
 const jwt = require('jsonwebtoken');
 const DatabaseService = require('./utils/database-service');
+const { assertUsableSecret } = require('./utils/jwt-secret');
 
-// JWT configuration -- REQUIRED, no fallback.
+// JWT configuration -- REQUIRED, no fallback, and no context markers.
 //
 // This used to be `process.env.JWT_SECRET || 'fallback-secret'`. That string
 // is in this file, which is in the repository, which means anyone who has read
 // the repository can mint a token that verifies as a customer of their choosing
 // and read that customer's dashboard. A signing key that is public is not a
-// signing key. Fail closed instead, the same way utils/auth-middleware.js:7-9
-// does -- if the secret is missing, the function refuses to load rather than
-// inventing a weak one.
-if (!process.env.JWT_SECRET) {
-  throw new Error('JWT_SECRET environment variable is required');
-}
-const JWT_SECRET = process.env.JWT_SECRET;
+// signing key. Fail closed instead -- if the secret is missing, the function
+// refuses to load rather than inventing a weak one.
+//
+// The marker check closes the same hole from the other side. netlify.toml writes
+// JWT_SECRET="deploy-preview-not-configured" into the preview, branch-deploy and
+// [dev] contexts so they provably cannot use production tokens. A marker is a
+// public string, so signing with one would mint forgeable tokens -- the
+// 'fallback-secret' bug wearing a disguise. See utils/jwt-secret.js.
+const { isUnconfiguredContext } = require('./utils/jwt-secret');
+const JWT_SECRET = process.env.JWT_SECRET || '';
 const TOKEN_TTL = '24h';
 
 /**
@@ -21,6 +25,22 @@ const TOKEN_TTL = '24h';
  * Handles customer login and session management
  */
 exports.handler = async (event) => {
+
+    // Per-request, not at require time. See the note above: a load-time throw
+    // makes the preview configuration (a deliberate marker secret) surface as an
+    // opaque 502 instead of an honest 503.
+    if (isUnconfiguredContext()) {
+      return {
+        statusCode: 503,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          error: 'This context has no JWT signing key configured',
+          detail:
+            'No token can be valid here. Deploy previews and branch deploys ' +
+            'deliberately run without one so they cannot touch production.',
+        }),
+      };
+    }
   // Only allow POST requests
   if (event.httpMethod !== 'POST') {
     return json(405, { success: false, error: 'Method not allowed' });

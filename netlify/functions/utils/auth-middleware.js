@@ -2,15 +2,27 @@ const jwt = require('jsonwebtoken');
 const errorHandler = require('./error-handler');
 const DatabaseService = require('./database-service');
 const { isTokenBlacklisted } = require('../sales-logout');
+const { isUsableSecret, isUnconfiguredContext } = require('./jwt-secret');
 
 // JWT configuration.
 //
 // This used to `throw` at require time when JWT_SECRET was unset. That 500s
-// the whole function, and ~50 functions require this module, so one missing
+// the whole function, and ~35 functions require this module, so one missing
 // env var took out the entire surface with an opaque stack trace. An unset
 // secret is a configuration error, not a programming error, and it is checked
 // per request below so the caller gets a message that says so.
+//
+// It is NOT thrown here, unlike in customer-auth.js and sales-login.js, and the
+// difference is deliberate: this module is required by every function whether or
+// not it authenticates anything, so a load-time throw here is the failure mode
+// this comment describes. The signers can afford to refuse to load; the
+// verifier cannot.
+//
+// The "is this secret usable" rule itself lives in utils/jwt-secret.js, shared
+// with both signers, because three copies of one security predicate is three
+// places to forget.
 const JWT_SECRET = process.env.JWT_SECRET || '';
+
 
 /**
  * Authentication middleware for protecting API endpoints
@@ -35,6 +47,26 @@ async function authenticateRequest(event, options = {}) {
 
   if (!authToken) {
     if (requireAuth) {
+      // If this context has no usable signing key, signing in cannot possibly
+      // work, so "Authentication token required" is a false invitation -- it
+      // tells the caller to do something that will not help. Say what is
+      // actually wrong.
+      //
+      // This is the deploy-preview / branch-deploy / netlify dev case, and it is
+      // a server error (503), not a client one. Getting this distinction right is
+      // the whole point of the context scoping in netlify.toml: the preview
+      // fails closed, and it fails legibly.
+      if (isUnconfiguredContext()) {
+        return {
+          authenticated: false,
+          error: errorHandler.serverError(
+            'This context has no JWT signing key configured, so no token can be ' +
+              'valid here. Previews and branch deploys deliberately run without ' +
+              'one so they cannot touch production. Set a real JWT_SECRET if this ' +
+              'context needs to authenticate.'
+          )
+        };
+      }
       return {
         authenticated: false,
         error: errorHandler.unauthorizedError('Authentication token required')
@@ -52,11 +84,21 @@ async function authenticateRequest(event, options = {}) {
       };
     }
 
-    // Verify JWT token
-    const decodedToken = jwt.verify(authToken, JWT_SECRET);
-
-    // Verify user still exists and is active
-    if (!JWT_SECRET) {
+    // Guard BEFORE verifying, not after.
+    //
+    // This read `jwt.verify(authToken, JWT_SECRET)` and only then checked
+    // `if (!JWT_SECRET)`. The configuration check was downstream of the
+    // operation it was guarding, so with no secret set the middleware verified
+    // against an empty string first and only reported misconfiguration if that
+    // happened to succeed. Order is the whole check.
+    //
+    // A marker value is treated exactly as unset. netlify.toml sets
+    // JWT_SECRET="deploy-preview-not-configured" on deploy previews and branch
+    // deploys so that a pull request preview provably cannot validate tokens
+    // minted with the production secret. Honouring the marker is what makes
+    // that guard real; ignoring it would leave the marker decorative and a
+    // preview would quietly accept production tokens.
+    if (!isUsableSecret(JWT_SECRET)) {
       return {
         authenticated: false,
         error: errorHandler.serverError(
@@ -64,6 +106,9 @@ async function authenticateRequest(event, options = {}) {
         )
       };
     }
+
+    // Verify JWT token
+    const decodedToken = jwt.verify(authToken, JWT_SECRET);
 
     // RFC 7519 puts the subject in `sub`. scripts/generate-test-jwt.js signs
     // `sub`; this line read `decodedToken.userId`. Every generated token

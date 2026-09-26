@@ -8,6 +8,11 @@ gates' own warnings.
 Nothing here is a bug. Every one of these is a choice I could have made
 silently, and did not.
 
+**Two questions are now answered** and marked as such: Q14 (the `@libsql` native
+binary) and the deploy-preview exposure, both closed by measurement rather than
+by comment. Q3 is answered in structure — the analysis is done and only the
+choice of provider is left. See [`STORAGE.md`](STORAGE.md).
+
 ---
 
 ## Blocking — nothing reaches production until these are answered
@@ -35,22 +40,32 @@ That was defensible on measurement. It is still a brand decision.
 
 **Decision needed:** keep the old wordmark, or supply the real brand asset.
 
-### Q3. Database
+### Q3. Database — ANSWERED, only the pick is left
 
-There is **no Postgres anywhere** — not in the build image, not on the CI host.
-Every function that touches data has been verified as far as the auth boundary
-and no further. The agents proved the handler logic with only the SQL layer
-stubbed.
+**Full analysis: [`docs/STORAGE.md`](STORAGE.md).**
 
-This also means **sign-out cannot revoke anything**: Netlify bundles each
-function separately, so every function that reaches `sales-logout.js` gets its
-own inlined `new Set()`. One writes the blacklist, another reads a different
-always-empty one. Revocation across independently-bundled functions is
-structurally impossible in memory. What actually bounds a stolen staff token is
-the JWT's 8-hour expiry.
+Turso works on Netlify and **is already wired** —
+`netlify/functions/utils/database-service.js:94` creates a libSQL client from
+`TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN`. The blocker recorded against it for
+several sessions was a packaging problem in this repo, not a limit of Turso on
+Netlify, and that is now measured and closed.
 
-**Decision needed:** where does the data live, and does token revocation matter
-enough to need Redis or a table?
+Sign-out still cannot revoke: Netlify bundles each function separately, so every
+function reaching `sales-logout.js` gets its own inlined `new Set()`. Blobs
+would fix the sharing half (it is a real shared store, unlike an in-memory Set,
+and `onlyIfNew` gives the needed atomicity) but not the 60-second eventual
+consistency on delete. Against an 8-hour token that is probably fine; if
+revocation must be immediate, it belongs in a `revoked_tokens` table.
+
+**Still yours to decide:** Turso (two env vars, already coded), Netlify
+Database (managed Postgres, `pg` driver, no new service), or Blobs for the flat
+cases only.
+
+**And the recommendation that matters more than the pick:** delete
+`@supabase/supabase-js` and `ioredis`. Neither is configured, between them they
+account for a large share of a **51.56 MB** function-bundle total, and four
+competing clients where one runs is how the eleven inventory implementations
+happened.
 
 ---
 
@@ -151,13 +166,21 @@ for `INVENTORY_CRAWL_UA`? It currently carries a placeholder.
 
 ## Housekeeping
 
-### Q14. `@libsql/linux-x64-gnu`
+### Q14. `@libsql/linux-x64-gnu` — ANSWERED
 
-The native binary is unresolvable at bundle time; `netlify.toml`
-`included_files` ships the platform packages alongside. Unverified, because it
-only fails on a real deploy and Netlify remote builds are disabled.
+`included_files` does resolve it. Verified by `ci/verify-functions.js`, which
+bundles every function and then actually `require()`s it:
 
-**This resolves itself on the first deploy** — Q1.
+```
+bundle KB                : 1437.6
+external @libsql requires: (none -- fully inlined)
+require() that bundle    : THREW -> Cannot find module '@libsql/linux-x64-gnu'
+```
+
+The JavaScript is inlined; the `.node` binary is not. `included_files` ships
+it, and the gate now proves it on every build rather than on the first deploy.
+
+**No longer "resolves itself on first deploy."**
 
 ### Q15. `customer-auth.js` and the Turso programme
 
@@ -167,10 +190,20 @@ is really the same question.
 
 **Decision needed:** in scope now, or parked?
 
-### Q16. 31 test failures
+### Q16. The test suite — the number was wrong, and worse than that
 
-Auth-middleware and calendar suites, pre-existing assertion rot, catalogued in
-`docs/test-status.md`. CI marks the `test` job `continue-on-error` by design.
+`docs/test-status.md` recorded "31 pre-existing test failures". The real figure
+is **63 failed / 8 passed of 71**, and it was never being counted: `./ci/run.sh
+test` ran `npx jest` from `netlify/functions/`, which does not find
+`<repo>/jest.config.js`, so `testMatch` resolved against the wrong root, the
+suite at `<repo>/tests/` was invisible, and jest reported **"No tests found"**
+and exited 1. Zero tests ran. The driver is fixed and now names the config and
+rootDir explicitly.
+
+The 63 are pre-existing and unrelated to this work — confirmed by stashing every
+change on the branch and re-running: **63 failed / 8 passed, identical.** They
+are assertion rot plus ESM/CJS transform errors in the calendar suite. CI marks
+the `test` job `continue-on-error` by design.
 
 **Decision needed:** fix them, or accept and delete the misleading suites?
 

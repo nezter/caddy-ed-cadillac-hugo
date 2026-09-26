@@ -11,16 +11,30 @@ const DatabaseService = require('./utils/database-service');
 // `{customerId, type: 'customer'}` and read any customer's dashboard. Both
 // functions now require JWT_SECRET and throw at load time without it, so the
 // two can never silently disagree and neither can be forged.
-if (!process.env.JWT_SECRET) {
-  throw new Error('JWT_SECRET environment variable is required');
-}
-const JWT_SECRET = process.env.JWT_SECRET;
+const { isUnconfiguredContext } = require('./utils/jwt-secret');
+const JWT_SECRET = process.env.JWT_SECRET || '';
 
 /**
  * Customer Dashboard API
  * Provides customer data for the portal
  */
 exports.handler = async (event) => {
+
+    // Per-request, not at require time. See the note above: a load-time throw
+    // makes the preview configuration (a deliberate marker secret) surface as an
+    // opaque 502 instead of an honest 503.
+    if (isUnconfiguredContext()) {
+      return {
+        statusCode: 503,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          error: 'This context has no JWT signing key configured',
+          detail:
+            'No token can be valid here. Deploy previews and branch deploys ' +
+            'deliberately run without one so they cannot touch production.',
+        }),
+      };
+    }
   // Verify authentication
   const authHeader = event.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {

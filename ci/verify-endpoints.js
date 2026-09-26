@@ -588,6 +588,66 @@ function tomlValue(key) {
   }
 }
 
+// -----------------------------------------------------------------------------
+// The context markers in netlify.toml and the ones the code refuses must match.
+//
+// netlify.toml writes JWT_SECRET="deploy-preview-not-configured" into the
+// deploy-preview, branch-deploy and [dev] contexts. That is a PUBLIC string,
+// committed. Its entire value is that netlify/functions/utils/jwt-secret.js
+// treats it as "this context has no signing key" and refuses both to sign and
+// to verify.
+//
+// The two lists are in different files, in different languages, for a reason
+// nobody can reconstruct from the code alone, and the failure mode of drift is
+// silent and severe: a marker present in the toml but absent from the code is
+// a working signing key handed to anyone who reads the repository. That is the
+// 'fallback-secret' bug this whole mechanism was built to avoid, reintroduced
+// by a well-meaning rename.
+//
+// So: every marker-looking value in netlify.toml must be in SECRET_MARKERS, and
+// every entry in SECRET_MARKERS must be used somewhere in netlify.toml. Either
+// way of drifting fails here.
+{
+  const toml = fs.readFileSync(path.join(ROOT, 'netlify.toml'), 'utf8');
+  const { SECRET_MARKERS } = require('../netlify/functions/utils/jwt-secret.js');
+
+  // Pull the declared markers out of the toml by shape, not by list, so a newly
+  // added context is covered the moment it is written.
+  const tomlMarkers = new Set(
+    [...toml.matchAll(/^\s*JWT_SECRET\s*=\s*"([a-z-]*not-configured)"/gm)].map((m) => m[1])
+  );
+
+  const missingFromCode = [...tomlMarkers].filter((m) => !SECRET_MARKERS.includes(m));
+  const missingFromToml = SECRET_MARKERS.filter((m) => !tomlMarkers.has(m));
+
+  if (missingFromCode.length || missingFromToml.length) {
+    if (missingFromCode.length) {
+      console.error(
+        `\n  ${red('FAIL')}  netlify.toml sets a context marker the code does not refuse:\n` +
+          missingFromCode.map((m) => `    ${m}`).join('\n')
+      );
+      console.error(
+        `    ${dim('A marker the code treats as a real secret is a PUBLIC signing key.')}\n` +
+          `    ${dim('Add it to SECRET_MARKERS in netlify/functions/utils/jwt-secret.js.')}`
+      );
+    }
+    if (missingFromToml.length) {
+      console.error(
+        `\n  ${red('FAIL')}  the code refuses a context marker that no context uses:\n` +
+          missingFromToml.map((m) => `    ${m}`).join('\n')
+      );
+      console.error(
+        `    ${dim('Either netlify.toml lost a context block, or the marker list is stale.')}`
+      );
+    }
+    process.exitCode = 1;
+  } else {
+    console.log(
+      `  ${grn('OK')}    all ${tomlMarkers.size} context marker(s) in netlify.toml are refused by the code`
+    );
+  }
+}
+
 if (process.exitCode) {
   console.error(`\n  ${red('ENDPOINT VERIFICATION FAILED')}\n`);
 } else {
