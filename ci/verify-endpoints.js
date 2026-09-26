@@ -244,8 +244,27 @@ function resolves(url, aliasMap, fnSet) {
  */
 const ENDPOINT_LITERAL = /['"`]((\/(?:\.netlify\/functions|api)\/)[^'"`\s]*)['"`]/g;
 
+/**
+ * Strip comments before looking for endpoints.
+ *
+ * Scanning raw text matched a comment that *documents* the old broken path --
+ *
+ *     1. It fetched `/api/lead-scoring`. netlify.toml removed the blanket
+ *
+ * -- and reported it as a live call. Two separate agents hit this and both
+ * reworded their comments, which is the wrong fix: the right response to "the
+ * gate is complaining about a comment" is to fix the gate, not to stop writing
+ * the comment. A path in a comment is documentation; only a path in code is a
+ * request.
+ */
+function stripJsComments(src) {
+  return src
+    .replace(/\/\*[\s\S]*?\*\//g, ' ')
+    .replace(/(^|[^:'"\`\/])\/\/[^\n]*/g, '$1 ');
+}
+
 function scanFile(file) {
-  const t = fs.readFileSync(file, 'utf8');
+  const t = stripJsComments(fs.readFileSync(file, 'utf8'));
   const urls = new Set();
   for (const m of t.matchAll(ENDPOINT_LITERAL)) urls.add(m[1]);
   return [...urls];
@@ -412,10 +431,20 @@ if (manifest) {
   };
   const onDisk = new Set(fnNames);
 
-  const missing = Object.keys(declared).filter((n) => !onDisk.has(n));
+  // A `delete` entry is EXPECTED to be absent -- that is what delete means.
+  // Only the live buckets must exist, or the manifest is describing a function
+  // that was never built. The first version checked every bucket and so failed
+  // the build the moment a deletion succeeded, which is precisely backwards.
+  const liveBuckets = [
+    ...Object.keys(manifest.wired),
+    ...Object.keys(manifest.planned),
+    ...Object.keys(manifest.operational || {}),
+    ...Object.keys(manifest.notafunc),
+  ];
+  const missing = liveBuckets.filter((n) => !onDisk.has(n));
   if (missing.length) {
     console.error(
-      `\n  ${red('FAIL')}  manifest names function(s) that do not exist: ${missing.join(', ')}`
+      `\n  ${red('FAIL')}  manifest declares function(s) that do not exist: ${missing.join(', ')}`
     );
     process.exitCode = 1;
   }
