@@ -251,6 +251,22 @@ function scanFile(file) {
   return [...urls];
 }
 
+// ---------------------------------------------------------------------------
+// feature-manifest.json -- declared disposition per function
+//
+// A status board nobody checks is a wish list. This cross-checks the
+// declaration against reality: a function marked `wired` that no live bundle
+// can call is a FAILURE, not a note. That is the only way the ratio moves and
+// stays moved.
+// ---------------------------------------------------------------------------
+let manifest = null;
+try {
+  manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'ci', 'feature-manifest.json'), 'utf8'));
+} catch (e) {
+  console.log(`\n  ${red('FAIL')}  ci/feature-manifest.json could not be read: ${e.message}`);
+  process.exitCode = 1;
+}
+
 const entries = declaredEntries();
 const { files, unresolved } = reachableFrom(entries);
 const aliases = redirectAliases();
@@ -279,11 +295,26 @@ const KNOWN_MISSING = new Map([
 const liveProblems = [];
 const declared = [];
 const liveUrls = new Set();
+// Every function NAME a live bundle actually reaches. The manifest's `wired`
+// claim is checked against this, so it has to be the set of names resolved from
+// real call sites -- not inferred from the manifest.
+const liveFnNames = new Set();
 
 for (const f of files) {
   for (const url of scanFile(f)) {
     liveUrls.add(url);
-    if (resolves(url, aliases, fnNames)) continue;
+    if (resolves(url, aliases, fnNames)) {
+      const m = url.split('?')[0].match(/\/(?:\.netlify\/functions|api)\/([^/]+)/);
+      if (m && fnNames.has(m[1])) liveFnNames.add(m[1]);
+      // an /api/ alias still counts: the alias names the function it forwards to
+      const a = url.split('?')[0];
+      const hit = [...aliases.keys()].find((k) => a === k || a.startsWith(k));
+      if (hit) {
+        const to = aliases.get(hit).match(/functions\/([^/]+)/);
+        if (to && fnNames.has(to[1])) liveFnNames.add(to[1]);
+      }
+      continue;
+    }
     // Which function name was expected? For /api/x/y it is only knowable when
     // an alias exists, so a declared name matches anywhere in the path.
     const expected = (url.split('?')[0].match(/\/(?:\.netlify\/functions|api)\/([^/]+)/) || [])[1];
@@ -366,6 +397,82 @@ if (ALL) {
 
 if (unresolved.length && !process.env.QUIET) {
   console.log(`\n  ${dim(`bare/unresolved imports (npm packages, ignored): ${unresolved.join(', ')}`)}`);
+}
+
+// ---------------------------------------------------------------------------
+// reconcile the manifest against reality
+// ---------------------------------------------------------------------------
+if (manifest) {
+  const declared = {
+    ...manifest.wired,
+    ...manifest.planned,
+    ...manifest.delete,
+    ...manifest.notafunc,
+    ...manifest.operational,
+  };
+  const onDisk = new Set(fnNames);
+
+  const missing = Object.keys(declared).filter((n) => !onDisk.has(n));
+  if (missing.length) {
+    console.error(
+      `\n  ${red('FAIL')}  manifest names function(s) that do not exist: ${missing.join(', ')}`
+    );
+    process.exitCode = 1;
+  }
+
+  const undeclared = [...onDisk].filter((n) => !declared[n]);
+  if (undeclared.length) {
+    console.error(
+      `\n  ${red('FAIL')}  function(s) on disk with no disposition in ci/feature-manifest.json:\n` +
+        undeclared.map((n) => `    ${n}`).join('\n') +
+        `\n    ${dim('Every function must be declared wired/planned/delete/notafunc, with a reason.')}`
+    );
+    process.exitCode = 1;
+  }
+
+  // The load-bearing check.
+  const lyingWired = Object.keys(manifest.wired).filter((n) => !liveFnNames.has(n));
+  if (lyingWired.length) {
+    console.error(
+      `\n  ${red('FAIL')}  declared wired but no live bundle can call it: ` +
+        `${lyingWired.join(', ')}`
+    );
+    process.exitCode = 1;
+  }
+
+  // `operational` endpoints are reached by a monitor or an alias, not a page.
+  // Check them against the alias table instead of the bundle graph, so putting
+  // one here is not a way to dodge the `wired` check.
+  const ops = manifest.operational || {};
+  const lyingOps = Object.keys(ops).filter(
+    (n) => ![...aliases.values()].some((to) => to.includes(`functions/${n}`)) && !liveFnNames.has(n)
+  );
+  if (lyingOps.length) {
+    console.error(
+      `\n  ${red('FAIL')}  declared operational but no [[redirects]] alias or live call reaches it: ` +
+        lyingOps.join(', ')
+    );
+    process.exitCode = 1;
+  }
+
+  const stillPresent = Object.keys(manifest.delete).filter((n) => onDisk.has(n));
+  const stillCfgs = Object.keys(manifest.notafunc).filter((n) => onDisk.has(n));
+
+  const wiredN = Object.keys(manifest.wired).length;
+  const plannedN = Object.keys(manifest.planned).length;
+  const pct = Math.round((wiredN / (wiredN + plannedN)) * 100);
+
+  console.log(
+    `\n  ${dim(`feature coverage: ${wiredN} wired / ${plannedN} planned = ${pct}%`)}`
+  );
+  if (stillPresent.length) {
+    console.log(`  ${ylw('WARN')}  marked for deletion but still present: ${stillPresent.join(', ')}`);
+  }
+  if (stillCfgs.length) {
+    console.log(
+      `  ${ylw('WARN')}  ${stillCfgs.length} non-function file(s) still in netlify/functions/ (bundled as functions on every deploy): ${stillCfgs.join(', ')}`
+    );
+  }
 }
 
 if (process.exitCode) {

@@ -1,0 +1,77 @@
+{
+  "$comment": [
+    "Declared disposition for every file in netlify/functions/.",
+    "",
+    "ci/verify-endpoints.js cross-checks this against reality: a function",
+    "marked `wired` that no live bundle can call FAILS the build. That is the",
+    "point of the file -- a status board nobody checks is a wish list.",
+    "",
+    "disposition values:",
+    "  wired    a live page calls it. Must be provable, or the build fails.",
+    "  planned  real functionality, not yet reachable. Tracked, with the reason.",
+    "  delete   should not exist. Its presence is reported every build.",
+    "  notafunc config or an ad-hoc script that should never have been in here.",
+    "  operational  reachable by a monitor or an alias, not by a page bundle. Checked differently from `wired`."
+  ],
+  "wired": {
+    "communication-preferences": "/communication-preferences",
+    "contact-form": "/contact",
+    "email-templates": "used by sales-* notification paths",
+    "followup-analytics": "/admin/followup-campaigns",
+    "followup-campaigns": "/admin/followup-campaigns",
+    "followup-rules": "/admin/followup-campaigns",
+    "lead-duplicates": "/admin/leads",
+    "lead-merge": "/admin/leads",
+    "sales-add-note": "/admin/dashboard",
+    "sales-appointments": "/admin/dashboard",
+    "sales-complete-appointment": "/admin/dashboard",
+    "sales-leads": "/admin/dashboard",
+    "sales-metrics": "/admin/dashboard",
+    "sales-update-status": "/admin/dashboard",
+    "sms-templates": "used by sales-* notification paths"
+  },
+  "planned": {
+    "leads": "full lead CRUD; lead-management.js is the lighter path and is orphaned too",
+    "lead-management": "duplicate of `leads`; decide which survives, then wire it",
+    "lead-form": "public lead capture; leadCapture.js (10.4 KB) is written and dead",
+    "lead-scoring": "components/lead-scoring-dashboard.js (13.3 KB) is written and dead",
+    "lead-assignments": "components/lead-assignment-dashboard.js (13.5 KB) is written and dead, and hardcodes three fake reps",
+    "interactions": "components/interaction-timeline.js (16.2 KB) is written and dead",
+    "send-notification": "components/notification.js (5.9 KB) is a library with no consumer",
+    "sales-customers": "customerRelationship.js (10.5 KB) is written and dead",
+    "sales-login": "no staff sign-in page exists; the admin functions all require credentials",
+    "sales-logout": "no staff sign-in page exists",
+    "sales-auth-check": "called only by dead performanceTracker.js; needed once sales-login lands",
+    "customer-auth": "customer-portal.js has a login form but no session backend",
+    "customer-dashboard": "shortcode renders the markup; the function that would populate it is orphaned",
+    "schedule-test-drive": "no test-drive booking page; the form exists on the vehicle page",
+    "vehicle-details": "vehicle-detail.js (10.7 KB) is written and dead",
+    "contact-submission": "contact-form.js is written and dead; lifecycle events have no producer",
+    "submission-created": "depends on contact-submission",
+    "inventory-api": "the page is server-rendered, so it needs no runtime read path. Keep for programmatic access or delete.",
+    "inventory-advanced": "the page filters client-side over server-rendered cards. Decide with docs/inventory-consolidation.md.",
+    "inventory-proxy": "cross-origin fetch moved server-side into scripts/inventory/. Superseded.",
+    "inventory-fetch": "superseded by scripts/inventory/ (gated, once daily, server-side)",
+    "inventory-sync": "superseded by scripts/inventory/",
+    "search": "455-line function against a 31.4 KB front end that no page loads. IN PROGRESS - flip to wired only when a page really calls it."
+  },
+  "delete": {
+    "followup-campaigns-simple": "27 lines, superseded by followup-campaigns (588)"
+  },
+  "notafunc": {
+    "babel.config": "babel config; should live beside package.json",
+    "jest.config": "jest config; should live beside package.json",
+    "jest.config.simple": "duplicate jest config",
+    "lead-api": "0 bytes",
+    "test-basic.test": "ad-hoc probe",
+    "test-connection": "ad-hoc probe",
+    "test-health": "ad-hoc probe, no handler",
+    "test-minimal": "ad-hoc probe",
+    "test-performance": "ad-hoc probe, no handler",
+    "test-performance-simple": "ad-hoc probe, no handler",
+    "test-security": "ad-hoc probe, no handler"
+  },
+  "operational": {
+    "health-check": "reachable at /health via a [[redirects]] alias; called by a monitor, not by a page. Verified by curl, not by a bundle."
+  }
+}
