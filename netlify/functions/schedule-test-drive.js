@@ -1,33 +1,160 @@
 const nodemailer = require('nodemailer');
+const errorHandler = require('./utils/error-handler');
 const InteractionService = require('./utils/interaction-service');
 const FollowupService = require('./utils/followup-service');
 const DatabaseService = require('./utils/database-service');
+
+/**
+ * schedule-test-drive -- a booking request from the vehicle page
+ * (site/layouts/inventory/single.html) or /test-drive/.
+ *
+ * Reached by site/assets/js/vehicle-detail.js. The page prefills vehicleId
+ * from the vehicle's stock number, so that value is never guessed by a visitor.
+ *
+ * Contract bugs fixed here, all of which made a booking either impossible to
+ * make or invisible once made:
+ *
+ *   1. A body that was not JSON -- a browser's url-encoded form post, or an
+ *      empty POST -- hit `JSON.parse` and was reported as a 500 "please try
+ *      again later". The request was never going to work on a retry. It is a
+ *      400 now, and says what it wanted.
+ *   2. `if (!data[field])` accepted a whitespace-only value. "   " is truthy,
+ *      so a form full of spaces booked a drive under a name of nothing.
+ *      Every field is trimmed and re-checked.
+ *   3. Nothing checked the email shape. contact-form.js does. A request with
+ *      email "a" produced a lead nobody can answer, reported as a success.
+ *   4. `new Date(data.preferredDate + "T" + data.preferredTime)` was built
+ *      from unvalidated input, so "next tuesday" became an Invalid Date and
+ *      was written into the CRM as the next-action date of a real follow-up
+ *      task. Both parts are now shape-checked before anything is stored.
+ *   5. A booking is a request for a future time. A past date is a mistake in
+ *      the picker, not an appointment, and it is now rejected -- measured
+ *      against the dealer's own timezone, not the function's, so a request
+ *      sent at 9pm from Charlotte is not called "yesterday" by a UTC clock.
+ *   6. The SMTP password was read from process.env.SMTP_PASS. The variable
+ *      the project documents, and the one every other function and
+ *      .env.example uses, is SMTP_PASSWORD. With SMTP configured from the
+ *      documented environment, auth still failed because nothing ever set
+ *      SMTP_PASS. Both spellings are accepted now.
+ *   7. The recipient defaulted to 'sales@example.com' and the sender to
+ *      'website@example.com'. With neither set, the function accepted the
+ *      booking, mailed a dead address, and answered 200 "Test drive scheduled
+ *      successfully" -- every lead lost, reported as a win. An unconfigured
+ *      recipient is now a 503 with a message the page can show, instead of a
+ *      silent black hole.
+ */
+
+const REQUIRED_FIELDS = ['vehicleId', 'fullName', 'email', 'phone', 'preferredDate', 'preferredTime'];
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+// The dealer is in North Carolina; appointments are made in his timezone.
+const DEALER_TZ = 'America/New_York';
+
+/** Today in the dealer's timezone, as YYYY-MM-DD. */
+function dealerToday() {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: DEALER_TZ,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date());
+  const get = (type) => (parts.find((p) => p.type === type) || {}).value;
+  return `${get('year')}-${get('month')}-${get('day')}`;
+}
+
+/** Where booking notifications go. Absent means the feature is not configured. */
+function recipient() {
+  return process.env.EMAIL_TO || process.env.NOTIFICATION_EMAIL || '';
+}
 
 exports.handler = async function(event, context) {
   // Only allow POST
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
+      headers: { 'Content-Type': 'application/json', Allow: 'POST' },
       body: JSON.stringify({ success: false, message: 'Method Not Allowed' })
     };
   }
 
   try {
-    // Parse the JSON body
-    const data = JSON.parse(event.body);
-    
+    // Parse the JSON body. A malformed body is the caller's mistake and is
+    // reported as one; see bug 1.
+    let data;
+    try {
+      data = JSON.parse(event.body || 'null');
+    } catch (parseError) {
+      return errorHandler.validationError('Request body must be JSON');
+    }
+    if (!data || typeof data !== 'object' || Array.isArray(data)) {
+      return errorHandler.validationError('Request body must be a JSON object');
+    }
+
+    // Trim everything once, so a padded field is not a different value from
+    // the same field without the spaces. See bug 2.
+    const clean = {};
+    for (const [key, value] of Object.entries(data)) {
+      clean[key] = typeof value === 'string' ? value.trim() : value;
+    }
+    data = clean;
+
     // Validate required fields
-    const requiredFields = ['vehicleId', 'fullName', 'email', 'phone', 'preferredDate', 'preferredTime'];
-    for (const field of requiredFields) {
-      if (!data[field]) {
-        return {
-          statusCode: 400,
-          body: JSON.stringify({ 
-            success: false, 
-            message: `Missing required field: ${field}` 
-          })
-        };
-      }
+    const missing = {};
+    for (const field of REQUIRED_FIELDS) {
+      if (!data[field]) missing[field] = `${field} is required`;
+    }
+    if (Object.keys(missing).length) {
+      const first = REQUIRED_FIELDS.find((field) => !data[field]);
+      return errorHandler.validationError(`Missing required field: ${first}`, missing);
+    }
+
+    // Email shape. See bug 3.
+    if (!EMAIL_RE.test(data.email)) {
+      return errorHandler.validationError('Invalid email format', {
+        email: 'Please provide a valid email address',
+      });
+    }
+
+    // Date and time shape, and the booking has to be in the future.
+    // See bugs 4 and 5.
+    if (!DATE_RE.test(data.preferredDate)) {
+      return errorHandler.validationError('Invalid preferred date', {
+        preferredDate: 'Use YYYY-MM-DD',
+      });
+    }
+    if (!TIME_RE.test(data.preferredTime)) {
+      return errorHandler.validationError('Invalid preferred time', {
+        preferredTime: 'Use 24-hour HH:MM',
+      });
+    }
+    const today = dealerToday();
+    if (data.preferredDate < today) {
+      return errorHandler.validationError('Preferred date is in the past', {
+        preferredDate: `Choose ${today} or later`,
+      });
+    }
+    // The exact timestamp the interaction is filed under, built once from
+    // values that are known to parse.
+    const startsAt = new Date(`${data.preferredDate}T${data.preferredTime}:00`);
+
+    // Where does this booking actually go? See bug 7.
+    const to = recipient();
+    if (!to) {
+      console.error(
+        '[schedule-test-drive] EMAIL_TO / NOTIFICATION_EMAIL is not set. The request was ' +
+        'NOT delivered and NOT booked. Set one of them in the Netlify environment.'
+      );
+      return {
+        statusCode: 503,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          success: false,
+          message:
+            'Test-drive requests are not being received at the moment. Please call instead.',
+        }),
+      };
     }
 
     // Send email using nodemailer
@@ -38,7 +165,9 @@ exports.handler = async function(event, context) {
       secure: process.env.SMTP_SECURE === 'true',
       auth: {
         user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
+        // SMTP_PASSWORD is the documented name (.env.example); SMTP_PASS is
+        // accepted for older deployments. See bug 6.
+        pass: process.env.SMTP_PASSWORD || process.env.SMTP_PASS
       }
     });
 
@@ -58,12 +187,22 @@ exports.handler = async function(event, context) {
     `;
 
     // Send email
-    await transporter.sendMail({
-      from: process.env.EMAIL_FROM || 'website@example.com',
-      to: process.env.EMAIL_TO || 'sales@example.com',
-      subject: 'New Test Drive Request',
-      text: emailContent
-    });
+    try {
+      await transporter.sendMail({
+        from: process.env.EMAIL_FROM || 'website@example.com',
+        to,
+        replyTo: data.email,
+        subject: 'New Test Drive Request',
+        text: emailContent
+      });
+    } catch (emailError) {
+      // A mail transport failure is not a booking: saying otherwise would
+      // leave the visitor believing a drive is arranged when it is not.
+      console.error('Test drive notification email failed:', emailError);
+      return errorHandler.serverError(
+        'The request could not be delivered. Please try again, or call the dealership.'
+      );
+    }
 
     // Log the test drive request as an interaction
     try {
@@ -114,7 +253,7 @@ exports.handler = async function(event, context) {
           contact_details: `Email: ${data.email}, Phone: ${data.phone}`,
           outcome: 'appointment_set',
           next_action: 'Schedule test drive appointment',
-          next_action_date: new Date(`${data.preferredDate}T${data.preferredTime}`),
+          next_action_date: startsAt,
           metadata: {
             vehicle_id: data.vehicleId,
             preferred_date: data.preferredDate,
@@ -142,13 +281,15 @@ exports.handler = async function(event, context) {
     // Return success
     return {
       statusCode: 200,
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ success: true, message: 'Test drive scheduled successfully' })
     };
   } catch (error) {
     console.error('Error scheduling test drive:', error);
-    
+
     return {
       statusCode: 500,
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
         success: false, 
         message: 'Failed to schedule test drive. Please try again later.' 

@@ -35,15 +35,19 @@ need", not by "how big is the file".
 The `opencode-go` provider is **exhausted** -- three dispatches in a row died
 with "Go usage limit exceeded" before any agent started. Until further notice:
 
-| Workload | Model |
+| Model | Role |
 |---|---|
-| Judgement-heavy: reviews, decisions, contract reconciliation | `zai-coding-plan/glm-5.3-flash` |
-| Bulk and mechanical: sweeps, counting, gate-running, wiring from a spec | `zai-coding-plan/glm-5-turbo` |
+| `zai-coding-plan/glm-5.2` | judgement-heavy: reviews, decisions, contract reconciliation |
+| `zai-coding-plan/glm-5.2-highspeed` | medium tasks that benefit from the faster variant |
+| `zai-coding-plan/glm-5-turbo` | bulk and mechanical: sweeps, counting, gate-running, wiring from a spec |
+| `zai-coding-plan/glm-4.7` | simple, low-stakes work |
 
-**Free tier only.** Do not use `glm-5.3`, `glm-5.2`, `glm-5.2-highspeed`,
-`glm-5.3-highspeed` (not available to this account), or `glm-4.7` -- they draw
-on the paid quota. Nothing outside the `zai-coding-plan` provider, and still
-never the OpenCode Zen provider.
+**OFF LIMITS:** `glm-5.3-flash` (owner instruction, 2026-09-27), `glm-5.3`, and
+`glm-5.3-highspeed` (not available to this account). Nothing outside the
+`zai-coding-plan` provider, and never the OpenCode Zen (`opencode/*`) provider.
+
+One dispatch was already in flight on glm-5.3-flash when the instruction
+arrived; its work stands or falls on review, but no further dispatch uses it.
 
 ## The routing table (superseded, kept for the reasoning)
 

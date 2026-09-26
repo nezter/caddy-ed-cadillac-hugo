@@ -33,6 +33,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { stripJsComments } = require('./strip-comments');
 
 const ROOT = path.resolve(__dirname, '..');
 const STRICT = process.argv.includes('--strict');
@@ -407,7 +408,7 @@ const danglingIds = [];
     }
   }
   for (const f of jsFiles) {
-    const src = stripComments(fs.readFileSync(f, 'utf8'));
+    const src = stripJsComments(fs.readFileSync(f, 'utf8'));
     const used = new Set();
     for (const m of src.matchAll(/getElementById\(\s*['"]([\w-]+)['"]\s*\)/g)) used.add(m[1]);
     for (const m of src.matchAll(/querySelector(?:All)?\(\s*['"]#([\w-]+)['"]/g)) used.add(m[1]);
@@ -423,6 +424,10 @@ const danglingIds = [];
     // and rendered by nothing at all.
     const selfRendered = new Set();
     for (const m of src.matchAll(/\bid=["']([\w-]+)["']/g)) selfRendered.add(m[1]);
+    // And the lazy-create idiom: `root.id = 'crm-modal'` on a node the module
+    // appends itself. customerRelationship.js mounts its own modal that way, so
+    // the module legitimately binds an id that appears in no markup anywhere.
+    for (const m of src.matchAll(/\.id\s*=\s*["']([\w-]+)["']/g)) selfRendered.add(m[1]);
 
     for (const id of used) {
       if (!rendered.has(id) && !selfRendered.has(id)) {

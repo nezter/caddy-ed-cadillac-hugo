@@ -1,37 +1,58 @@
 const jwt = require('jsonwebtoken');
 const DatabaseService = require('./utils/database-service');
 
+// JWT configuration -- REQUIRED, no fallback, and it MUST be the same secret
+// customer-auth.js signs with.
+//
+// This used to be `process.env.JWT_SECRET || 'fallback-secret'`, identical to
+// the string customer-auth.js fell back to, which is what made the pair
+// interoperate. It also meant the signing key was the literal text
+// "fallback-secret", published in the repository: anyone could forge
+// `{customerId, type: 'customer'}` and read any customer's dashboard. Both
+// functions now require JWT_SECRET and throw at load time without it, so the
+// two can never silently disagree and neither can be forged.
+if (!process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is required');
+}
+const JWT_SECRET = process.env.JWT_SECRET;
+
 /**
  * Customer Dashboard API
  * Provides customer data for the portal
  */
-exports.handler = async (event, context) => {
+exports.handler = async (event) => {
   // Verify authentication
   const authHeader = event.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return {
-      statusCode: 401,
-      body: JSON.stringify({ success: false, error: 'Authentication required' })
-    };
+    return json(401, { success: false, error: 'Authentication required' });
   }
 
   try {
     const token = authHeader.substring(7); // Remove 'Bearer ' prefix
 
     // Verify JWT token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret');
+    const decoded = jwt.verify(token, JWT_SECRET);
 
+    // A staff token signs {userId, email, role, permissions} and no `type`.
+    // Both sides share one secret, so this check is the only thing stopping a
+    // sales session being replayed as a customer session.
     if (decoded.type !== 'customer') {
-      return {
-        statusCode: 403,
-        body: JSON.stringify({ success: false, error: 'Invalid token type' })
-      };
+      return json(403, { success: false, error: 'Invalid token type' });
     }
 
     const customerId = decoded.customerId;
 
-    // Get customer data based on the request path/query
-    const pathParts = event.path.split('/');
+    // Get customer data based on the request path/query.
+    // `event.path` is the function URL, e.g.
+    // /.netlify/functions/customer-dashboard/appointments.
+    //
+    // filter(Boolean) drops empty segments. Without it a trailing slash
+    // (".../appointments/") made `action` the empty string, which fell through
+    // to `default` and returned the WHOLE dashboard where the caller asked for
+    // one section -- a wrong-data bug that looked like correct data.
+    const pathParts = String(event.path || '')
+      .split('/')
+      .filter(Boolean);
     const action = pathParts[pathParts.length - 1]; // Last part of path
 
     let data;
@@ -54,34 +75,46 @@ exports.handler = async (event, context) => {
         data = await getCustomerDashboard(customerId);
     }
 
-    return {
-      statusCode: 200,
-      body: JSON.stringify({
-        success: true,
-        data: data
-      })
-    };
-
+    return json(200, { success: true, data: data });
   } catch (error) {
     console.error('Customer dashboard error:', error);
 
-    if (error.name === 'JsonWebTokenError') {
-      return {
-        statusCode: 401,
-        body: JSON.stringify({ success: false, error: 'Invalid token' })
-      };
+    // The two 401s are distinguished because the front end has to be able to
+    // tell the user "your session expired, sign in again" rather than
+    // "something went wrong". To a browser they are the same thing: 401.
+    if (error.name === 'TokenExpiredError') {
+      return json(401, { success: false, error: 'Session expired', code: 'token_expired' });
     }
 
-    return {
-      statusCode: 500,
-      body: JSON.stringify({
-        success: false,
-        error: 'Failed to load dashboard data',
-        details: error.message
-      })
-    };
+    if (error.name === 'JsonWebTokenError') {
+      return json(401, { success: false, error: 'Invalid token' });
+    }
+
+    // error.message used to be echoed to the client, where on a database
+    // failure it described the internal schema.
+    return json(500, {
+      success: false,
+      error: 'Failed to load dashboard data'
+    });
   }
 };
+
+/**
+ * Every response from this function is a customer's personal data behind a
+ * bearer token. None of them may be cached by the browser, a CDN, or the
+ * service worker: a cached copy outlives the session that authorised it.
+ */
+function json(statusCode, body) {
+  return {
+    statusCode,
+    headers: {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-store',
+      'X-Content-Type-Options': 'nosniff'
+    },
+    body: JSON.stringify(body)
+  };
+}
 
 /**
  * Get customer dashboard overview
@@ -106,8 +139,10 @@ async function getCustomerDashboard(customerId) {
  * Get customer appointments
  */
 async function getCustomerAppointments(customerId) {
-  // In a real implementation, this would query the database
-  // For now, return mock data
+  // MOCK DATA. The JWT is verified above, so the caller is a real customer, but
+  // `customerId` is then thrown away and everyone is shown the same fabricated
+  // Escalade test drive for a 2024 date. This function authenticates and does
+  // not authorise a real record. See the report.
   return {
     upcoming: [
       {
@@ -129,8 +164,7 @@ async function getCustomerAppointments(customerId) {
  * Get customer preferences
  */
 async function getCustomerPreferences(customerId) {
-  // In a real implementation, this would query the database
-  // For now, return mock data
+  // MOCK DATA -- see getCustomerAppointments.
   return {
     vehicle_type: 'SUV',
     budget_min: 40000,
@@ -144,8 +178,7 @@ async function getCustomerPreferences(customerId) {
  * Get customer recent activity
  */
 async function getCustomerActivity(customerId, limit = 10) {
-  // In a real implementation, this would query the database
-  // For now, return mock data
+  // MOCK DATA -- see getCustomerAppointments.
   return [
     {
       id: 'activity_1',
@@ -175,8 +208,7 @@ async function getCustomerActivity(customerId, limit = 10) {
  * Get customer's assigned sales representative
  */
 async function getCustomerSalesRep(customerId) {
-  // In a real implementation, this would query the database
-  // For now, return mock data
+  // MOCK DATA -- see getCustomerAppointments.
   return {
     name: 'Sarah Johnson',
     title: 'Sales Representative',

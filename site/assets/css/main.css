@@ -740,6 +740,18 @@ p { text-wrap: pretty; }
 }
 .hidden { display: none !important; }
 
+/* --- Lead capture form -------------------------------------------------- */
+.lead-form-section {
+  max-width: var(--container-narrow);
+}
+.lead-form-section .lede {
+  margin-bottom: var(--space-6);
+}
+.form-field--honeypot {
+  position: absolute;
+  left: -9999px;
+}
+
 /* --- Cards / panels ----------------------------------------------------- */
 .card {
   padding: var(--space-5);

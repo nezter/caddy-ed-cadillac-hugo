@@ -195,27 +195,33 @@ async function logInteraction(event) {
     });
   }
 
-   try {
-     const interaction = await InteractionService.logCustomerInteraction(customerData);
+    try {
+      // Was `InteractionService.logCustomerInteraction(customerData)` -- two
+      // defects in one line. `customerData` is declared in a *different*
+      // function's scope, so every POST /log died with a ReferenceError and a
+      // 500; and the handler it called is the customer-initiated one, which
+      // forces direction:'inbound'. POST /log is the general entry point, so it
+      // calls the general service and keeps the direction the caller sent.
+      const interaction = await InteractionService.logInteraction(interactionData);
 
-     // Schedule follow-ups based on the customer interaction
-     try {
-       await FollowupService.scheduleFollowups(interaction.customer_id, interaction.lead_id, 'interaction_added');
-       console.log(`Follow-ups scheduled for customer interaction ${interaction.id}`);
-     } catch (followupError) {
-       console.error('Error scheduling follow-ups for customer interaction:', followupError);
-       // Continue with success response even if follow-up scheduling fails
-     }
+      // Schedule follow-ups based on the interaction
+      try {
+        await FollowupService.scheduleFollowups(interaction.customer_id, interaction.lead_id, 'interaction_added');
+        console.log(`Follow-ups scheduled for interaction ${interaction.id}`);
+      } catch (followupError) {
+        console.error('Error scheduling follow-ups for interaction:', followupError);
+        // Continue with success response even if follow-up scheduling fails
+      }
 
-     return errorHandler.createSuccessResponse({
-       message: 'Customer interaction logged successfully',
-       interaction
-     });
+      return errorHandler.createSuccessResponse({
+        message: 'Interaction logged successfully',
+        interaction
+      });
 
-   } catch (error) {
-     console.error('Error logging customer interaction:', error);
-     return errorHandler.serverError('Failed to log customer interaction', error);
-   }
+    } catch (error) {
+      console.error('Error logging interaction:', error);
+      return errorHandler.serverError('Failed to log interaction', error);
+    }
 }
 
 /**
@@ -282,27 +288,32 @@ async function logSalesInteraction(event) {
     });
   }
 
-   try {
-     const interaction = await InteractionService.logInteraction(interactionData);
+    try {
+      // Was `InteractionService.logInteraction(interactionData)`, and
+      // `interactionData` is declared in logInteraction's scope, not this one --
+      // so POST /log-sales died with a ReferenceError and a 500. This handler
+      // takes a rep-logged interaction, so it calls logSalesInteraction, which
+      // stamps initiated_by:'sales_rep' and adds the `sales` tag.
+      const interaction = await InteractionService.logSalesInteraction(salesData);
 
-     // Schedule follow-ups based on the interaction
-     try {
-       await FollowupService.scheduleFollowups(interaction.customer_id, interaction.lead_id, 'interaction_added');
-       console.log(`Follow-ups scheduled for interaction ${interaction.id}`);
-     } catch (followupError) {
-       console.error('Error scheduling follow-ups for interaction:', followupError);
-       // Continue with success response even if follow-up scheduling fails
-     }
+      // Schedule follow-ups based on the sales interaction
+      try {
+        await FollowupService.scheduleFollowups(interaction.customer_id, interaction.lead_id, 'interaction_added');
+        console.log(`Follow-ups scheduled for sales interaction ${interaction.id}`);
+      } catch (followupError) {
+        console.error('Error scheduling follow-ups for sales interaction:', followupError);
+        // Continue with success response even if follow-up scheduling fails
+      }
 
-     return errorHandler.createSuccessResponse({
-       message: 'Interaction logged successfully',
-       interaction
-     });
+      return errorHandler.createSuccessResponse({
+        message: 'Sales interaction logged successfully',
+        interaction
+      });
 
-   } catch (error) {
-     console.error('Error logging interaction:', error);
-     return errorHandler.serverError('Failed to log interaction', error);
-   }
+    } catch (error) {
+      console.error('Error logging sales interaction:', error);
+      return errorHandler.serverError('Failed to log sales interaction', error);
+    }
 }
 
 /**
@@ -325,27 +336,33 @@ async function logCustomerInteraction(event) {
     });
   }
 
-   try {
-     const interaction = await InteractionService.logSalesInteraction(salesData);
+    try {
+      // Was `InteractionService.logSalesInteraction(salesData)`. `salesData` is
+      // declared in logSalesInteraction's scope, not this one, so every
+      // POST /log-customer died with a ReferenceError and a 500. This handler
+      // takes a customer-initiated interaction, so it calls the service method
+      // for exactly that (which forces direction:'inbound' and tags the row
+      // customer_initiated).
+      const interaction = await InteractionService.logCustomerInteraction(customerData);
 
-     // Schedule follow-ups based on the sales interaction
-     try {
-       await FollowupService.scheduleFollowups(interaction.customer_id, interaction.lead_id, 'interaction_added');
-       console.log(`Follow-ups scheduled for sales interaction ${interaction.id}`);
-     } catch (followupError) {
-       console.error('Error scheduling follow-ups for sales interaction:', followupError);
-       // Continue with success response even if follow-up scheduling fails
-     }
+      // Schedule follow-ups based on the customer interaction
+      try {
+        await FollowupService.scheduleFollowups(interaction.customer_id, interaction.lead_id, 'interaction_added');
+        console.log(`Follow-ups scheduled for customer interaction ${interaction.id}`);
+      } catch (followupError) {
+        console.error('Error scheduling follow-ups for customer interaction:', followupError);
+        // Continue with success response even if follow-up scheduling fails
+      }
 
-     return errorHandler.createSuccessResponse({
-       message: 'Sales interaction logged successfully',
-       interaction
-     });
+      return errorHandler.createSuccessResponse({
+        message: 'Customer interaction logged successfully',
+        interaction
+      });
 
-   } catch (error) {
-     console.error('Error logging sales interaction:', error);
-     return errorHandler.serverError('Failed to log sales interaction', error);
-   }
+    } catch (error) {
+      console.error('Error logging customer interaction:', error);
+      return errorHandler.serverError('Failed to log customer interaction', error);
+    }
 }
 
 /**
@@ -377,14 +394,23 @@ async function getInteractionTypes(event) {
  */
 async function getInteraction(event, interactionId) {
   try {
-    const interactions = await DatabaseService.getCustomerInteractions(null, 1, interactionId);
+    // Was `DatabaseService.getCustomerInteractions(null, 1, interactionId)`.
+    // That method takes (customerId, limit) -- the third argument is ignored --
+    // and the first was hardcoded to null, so the query was always
+    // `WHERE customer_id = NULL`, which matches no row in SQL. GET
+    // /interactions/<id> therefore answered 404 for every id, existing or not.
+    // Look the row up by its own primary key instead.
+    const result = await DatabaseService.query(
+      'SELECT * FROM interactions WHERE id = $1 LIMIT 1',
+      [interactionId]
+    );
 
-    if (!interactions || interactions.length === 0) {
+    if (!result.rows || result.rows.length === 0) {
       return errorHandler.notFoundError('Interaction not found');
     }
 
     return errorHandler.createSuccessResponse({
-      interaction: interactions[0]
+      interaction: result.rows[0]
     });
 
   } catch (error) {

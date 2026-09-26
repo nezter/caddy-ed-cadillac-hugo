@@ -274,11 +274,7 @@ const ENDPOINT_LITERAL = /['"`]((\/(?:\.netlify\/functions|api)\/)[^'"`\s]*)['"`
  * the comment. A path in a comment is documentation; only a path in code is a
  * request.
  */
-function stripJsComments(src) {
-  return src
-    .replace(/\/\*[\s\S]*?\*\//g, ' ')
-    .replace(/(^|[^:'"\`\/])\/\/[^\n]*/g, '$1 ');
-}
+const { stripJsComments } = require('./strip-comments');
 
 function scanFile(file) {
   const t = stripJsComments(fs.readFileSync(file, 'utf8'));

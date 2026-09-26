@@ -31,10 +31,27 @@ exports.handler = async function(event, context) {
   const rateLimit = checkRateLimit(`login_${clientIP}`, 5, 15 * 60 * 1000); // 5 attempts per 15 minutes
 
   if (!rateLimit.allowed) {
-    return addCorsHeaders(errorHandler.createSuccessResponse({
-      message: 'Too many login attempts. Please try again later.',
-      retryAfter: Math.ceil((rateLimit.resetTime - Date.now()) / 1000)
-    }, 'Rate limited', 429));
+    // This used to call `createSuccessResponse(payload, 'Rate limited', 429)`.
+    // createSuccessResponse takes TWO arguments and hardcodes statusCode 200, so
+    // the third was discarded and a locked-out client got
+    // `{success: true, message: "Rate limited"}` with HTTP 200. The rate limit
+    // was not merely mislabelled, it was invisible: any client checking
+    // `response.ok` or `body.success` walked straight past it.
+    const retryAfter = Math.ceil((rateLimit.resetTime - Date.now()) / 1000);
+    return addCorsHeaders({
+      statusCode: 429,
+      headers: {
+        'Content-Type': 'application/json',
+        'Retry-After': String(Math.max(1, retryAfter)),
+        'Cache-Control': 'no-store'
+      },
+      body: JSON.stringify({
+        success: false,
+        message: 'Too many login attempts. Please try again later.',
+        errorCode: 429,
+        retryAfter
+      })
+    });
   }
 
   try {
@@ -74,7 +91,28 @@ exports.handler = async function(event, context) {
       last_login: new Date().toISOString()
     });
 
-    return addCorsHeaders(errorHandler.createSuccessResponse({
+    // ------------------------------------------------------------------
+    // TOKEN CONTRACT -- this is what the front end stores and what
+    // utils/auth-middleware.js verifies on every later call. Keep the three
+    // in step; they were silently out of step for the whole life of this
+    // function.
+    //
+    //   signed payload : { userId, email, role, permissions }
+    //                   auth-middleware.js:56 reads `decodedToken.userId`
+    //                   and looks the row up again, so revoking access is a
+    //                   status change, not a token change.
+    //   signing key    : process.env.JWT_SECRET (required, throws at load if
+    //                   absent -- see auth-middleware.js:7-9). There is
+    //                   deliberately NO fallback secret here.
+    //   wire format    : the token is NOT a top-level field of the response.
+    //                   createSuccessResponse wraps everything as
+    //                   {success, message, data, timestamp}, so the token is
+    //                   at `body.data.token`. Reading `body.token` yields
+    //                   undefined forever and the UI looks empty, not broken.
+    //   transport      : the caller sends it back as `Authorization: Bearer`.
+    //                   It is never placed in a URL or query string.
+    // ------------------------------------------------------------------
+    const success = errorHandler.createSuccessResponse({
       token,
       user: {
         id: authResult.user.id,
@@ -85,7 +123,17 @@ exports.handler = async function(event, context) {
         permissions: authResult.user.permissions
       },
       expiresIn: JWT_EXPIRES_IN
-    }, 'Login successful'));
+    }, 'Login successful');
+
+    return addCorsHeaders({
+      ...success,
+      headers: {
+        ...success.headers,
+        // This body contains a bearer token. It must never be written to a
+        // shared cache, a browser disk cache, or a service worker cache.
+        'Cache-Control': 'no-store'
+      }
+    });
 
   } catch (error) {
     console.error('Login error:', error);

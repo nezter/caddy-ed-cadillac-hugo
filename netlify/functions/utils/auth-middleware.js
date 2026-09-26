@@ -3,11 +3,14 @@ const errorHandler = require('./error-handler');
 const DatabaseService = require('./database-service');
 const { isTokenBlacklisted } = require('../sales-logout');
 
-// JWT configuration - require JWT_SECRET to be set
-if (!process.env.JWT_SECRET) {
-  throw new Error('JWT_SECRET environment variable is required');
-}
-const JWT_SECRET = process.env.JWT_SECRET;
+// JWT configuration.
+//
+// This used to `throw` at require time when JWT_SECRET was unset. That 500s
+// the whole function, and ~50 functions require this module, so one missing
+// env var took out the entire surface with an opaque stack trace. An unset
+// secret is a configuration error, not a programming error, and it is checked
+// per request below so the caller gets a message that says so.
+const JWT_SECRET = process.env.JWT_SECRET || '';
 
 /**
  * Authentication middleware for protecting API endpoints
@@ -53,7 +56,28 @@ async function authenticateRequest(event, options = {}) {
     const decodedToken = jwt.verify(authToken, JWT_SECRET);
 
     // Verify user still exists and is active
-    const user = await DatabaseService.getSalesRep(decodedToken.userId);
+    if (!JWT_SECRET) {
+      return {
+        authenticated: false,
+        error: errorHandler.serverError(
+          'Server is misconfigured: JWT_SECRET is not set'
+        )
+      };
+    }
+
+    // RFC 7519 puts the subject in `sub`. scripts/generate-test-jwt.js signs
+    // `sub`; this line read `decodedToken.userId`. Every generated token
+    // therefore authenticated as `undefined`, and every call 401'd with "User
+    // account is no longer active" -- an error that blames the account rather
+    // than the token, which is why it went unnoticed.
+    // Read `sub`, fall back to `userId` so a token already issued with that
+    // claim keeps working.
+    const userId = decodedToken.sub || decodedToken.userId;
+
+    // The role and permission checks below read the DATABASE row, not the
+    // token. A token's `permissions` claim is decorative and never consulted;
+    // generate-test-jwt.js grants an array that looks load-bearing and is not.
+    const user = await DatabaseService.getSalesRep(userId);
     if (!user || user.status !== 'active') {
       return {
         authenticated: false,

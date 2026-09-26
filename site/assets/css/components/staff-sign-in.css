@@ -1,0 +1,83 @@
+/* =============================================================================
+   staff-sign-in.css — /admin/sign-in only.
+
+   Everything visual on that page is already in components/admin.css (.admin-signin,
+   .admin-alert, .form-group, .btn, .login-prompt, .dashboard-error). These are
+   the handful of rules that page needs and no other admin page does.
+
+   Deliberately NOT added to main.css: this is a single page's stylesheet and the
+   project rule is that a component sheet must not win the cascade site-wide.
+   Loaded from `styles:` in site/content/admin/sign-in.md, so it ships only with
+   that page.
+   ========================================================================== */
+
+.staff-sign-in {
+  /* admin.css gives .admin-signin the panel treatment; this is the floor for
+     the form columns so a long email does not push the button off-screen. */
+  max-width: 26rem;
+}
+
+.staff-sign-in__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.staff-sign-in__form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.staff-sign-in__form input {
+  width: 100%;
+  /* 16px: anything smaller makes iOS Safari zoom on focus, which moves the
+     submit button out from under the person typing. */
+  font-size: 1rem;
+}
+
+.staff-sign-in__form button[type='submit'] {
+  align-self: flex-start;
+}
+
+.staff-sign-in__help {
+  margin-block-start: var(--space-4);
+  color: var(--text-muted, inherit);
+  font-size: 0.9rem;
+}
+
+/* The signed-in replacement block: real buttons, laid out in a row that wraps
+   rather than overflowing on a phone. */
+#sign-in-success p {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-block: var(--space-3) 0;
+}
+
+#sign-in-success #sign-in-who {
+  display: block;
+  margin-block-end: var(--space-2);
+  font-weight: 600;
+}
+
+/* The status line is only shown while something is happening; admin.css gives
+   .admin-alert padding and a border, which looks like a permanent empty box
+   when the text is "". */
+#sign-in-status:empty {
+  display: none;
+}
+
+/* The error box carries server-supplied text (a 429's message, a network
+   failure's). It is set with textContent, never innerHTML, so this is belt and
+   braces rather than the primary defence. */
+#sign-in-error {
+  text-align: start;
+  overflow-wrap: anywhere;
+}
+
+/* The spinner span is a sibling of .button-text inside the submit button; give it
+   the same optical weight so the button does not change width mid-submit. */
+.staff-sign-in__form .loading-spinner {
+  font-size: 0.95rem;
+}

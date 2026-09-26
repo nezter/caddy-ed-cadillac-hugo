@@ -43,12 +43,32 @@ exports.handler = async function(event, context) {
       });
     }
 
-    // Check for duplicates
-    const deduplicationService = new DeduplicationService();
-    const duplicateCheck = await deduplicationService.checkForDuplicates(leadData, {
-      confidenceThreshold: 0.8,
-      maxResults: 5
-    });
+    // Check for duplicates.
+    //
+    // CONTRACT FIX: DeduplicationService's documented behaviour is fail-open
+    // ("In case of error, assume not duplicate to avoid blocking lead
+    // submission" -- utils/deduplication-service.js), but its CONSTRUCTOR
+    // calls supabase's createClient(process.env.SUPABASE_URL, ...) with no
+    // guard, and supabase-js throws `supabaseUrl is required.` when the env
+    // var is unset. That throw happens *before* checkForDuplicates' own
+    // try/catch can help, so an unconfigured Supabase turned every submission
+    // into a 500 -- from a caller's point of view, the endpoint did not
+    // exist. Guard the whole leg instead: if the dedup service cannot be
+    // built or queried, accept the lead without a duplicate check, which is
+    // exactly what the service already promises on its own failure path.
+    let duplicateCheck = { isDuplicate: false, duplicates: [], confidence: 0 };
+    try {
+      const deduplicationService = new DeduplicationService();
+      duplicateCheck = await deduplicationService.checkForDuplicates(leadData, {
+        confidenceThreshold: 0.8,
+        maxResults: 5
+      });
+    } catch (dedupError) {
+      console.error(
+        'Deduplication unavailable; accepting lead without a duplicate check:',
+        dedupError.message
+      );
+    }
 
     if (duplicateCheck.isDuplicate) {
       console.log(`Duplicate lead detected. Confidence: ${duplicateCheck.confidence}`);

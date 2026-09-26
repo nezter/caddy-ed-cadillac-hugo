@@ -424,6 +424,62 @@
   margin-right: 1rem;
 }
 
+/* ---------------------------------------------------------------------------
+   Session messages.
+
+   A rejected sign-in and an expired session are the two states this portal used
+   to render as nothing at all — indistinguishable from a page that had not
+   loaded. customer-portal.js now puts a message in the visible panel for both,
+   and this is that message.
+
+   In-flow rather than fixed, and above the form it belongs to, because a
+   "please sign in again" notice that is below the fold is not a notice.
+   Colours reuse the .notification-* palette above so the toast and the banner
+   read as the same system.
+   --------------------------------------------------------------------------- */
+.customer-session-message {
+  display: block;
+  padding: 0.85rem 1rem;
+  margin-bottom: 1.25rem;
+  border-radius: 4px;
+  border-left: 4px solid;
+  background: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  /* Long enough to hold a full sentence, and it wraps rather than overflowing
+     on a phone. */
+  overflow-wrap: anywhere;
+}
+
+.customer-session-message--error {
+  border-left-color: #dc3545;
+  color: #721c24;
+  background: #f8d7da;
+}
+
+.customer-session-message--warning {
+  border-left-color: #ffc107;
+  color: #856404;
+  background: #fff3cd;
+}
+
+.customer-session-message--success {
+  border-left-color: #28a745;
+  color: #155724;
+  background: #d4edda;
+}
+
+.customer-session-message--info {
+  border-left-color: #17a2b8;
+  color: #0c5460;
+  background: #d1ecf1;
+}
+
+/* The per-panel error text the loaders write. Kept because a load that fails for
+   a reason OTHER than a 401 still has to be visible. */
+.dashboard-card p.error {
+  color: #721c24;
+}
+
 .notification-close {
   background: none;
   border: none;

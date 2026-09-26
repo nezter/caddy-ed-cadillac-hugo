@@ -1,34 +1,67 @@
 const nodemailer = require('nodemailer');
+const errorHandler = require('./utils/error-handler');
+
+const MIN_FILL_MS = 2000; // same threshold as the front-end timing gate
 
 exports.handler = async function(event, context) {
   // Only allow POST
   if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: 'Method Not Allowed' };
+    return errorHandler.forbiddenError('Method not allowed');
   }
 
-  // Parse the form data
+  // Parse the JSON body
   let data;
   try {
     data = JSON.parse(event.body);
   } catch (error) {
-    return { statusCode: 400, body: 'Invalid JSON' };
+    return errorHandler.validationError('Invalid JSON in request body');
   }
 
-  // Validate required fields
-  const { name, email, phone, message, formType } = data;
-  
-  if (!name || !email || !phone) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ success: false, error: 'Missing required fields' })
-    };
+  // Honeypot check: a field bots usually fill but humans never see
+  if (data.website && String(data.website).trim() !== '') {
+    return errorHandler.validationError('Submission rejected');
   }
-  
+
+  // Validate required fields and build field-level errors
+  const { name, email, phone, message, formType } = data;
+  const fieldErrors = {};
+
+  if (!name || String(name).trim() === '') {
+    fieldErrors.name = 'Name is required';
+  }
+
+  if (!email || String(email).trim() === '') {
+    fieldErrors.email = 'Email is required';
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    fieldErrors.email = 'Please provide a valid email address';
+  }
+
+  if (!phone || String(phone).trim() === '') {
+    fieldErrors.phone = 'Phone is required';
+  } else {
+    const digits = String(phone).replace(/\D/g, '');
+    if (digits.length < 10 || digits.length > 15) {
+      fieldErrors.phone = 'Please provide a valid phone number';
+    }
+  }
+
+  // Simple timing gate: reject forms completed implausibly fast
+  const startedAt = data.startedAt ? new Date(data.startedAt).getTime() : null;
+  const submittedAt = data.submittedAt ? new Date(data.submittedAt).getTime() : null;
+  const elapsed = startedAt && submittedAt ? submittedAt - startedAt : null;
+  if (elapsed !== null && elapsed < MIN_FILL_MS) {
+    return errorHandler.validationError('Submission rejected');
+  }
+
+  if (Object.keys(fieldErrors).length > 0) {
+    return errorHandler.validationError('Please check the highlighted fields', fieldErrors);
+  }
+
   try {
     // Determine email recipient based on form type
-    let recipient = process.env.DEFAULT_FORM_RECIPIENT || 'sales@caddyed.com';
-    let subject = 'New Website Inquiry';
-    
+    let recipient = process.env.DEFAULT_FORM_RECIPIENT || process.env.NOTIFICATION_EMAIL || 'sales@caddyed.com';
+    let subject = 'New Website Lead';
+
     switch (formType) {
       case 'test-drive':
         recipient = process.env.TEST_DRIVE_RECIPIENT || recipient;
@@ -43,51 +76,53 @@ exports.handler = async function(event, context) {
         subject = 'New Service Appointment Request';
         break;
     }
-    
-    // Save to CRM if API key is provided
+
+    // Save to CRM if API key is provided (errors are logged, not fatal)
     if (process.env.CRM_API_KEY) {
-      await saveToCRM(data);
+      try {
+        await saveToCRM(data);
+      } catch (crmError) {
+        console.error('CRM save failed:', crmError);
+      }
     }
-    
+
     // Send email notification
-    const emailResult = await sendEmailNotification(data, recipient, subject);
-    
-    // Return success
-    return {
-      statusCode: 200,
-      body: JSON.stringify({ 
-        success: true, 
-        message: 'Form submission successful'
-      })
-    };
+    await sendEmailNotification(data, recipient, subject);
+
+    // Return success using the same shape as the rest of the repo
+    return errorHandler.createSuccessResponse(
+      { submitted: new Date().toISOString() },
+      'Thank you — your details have been sent and Ed will be in touch shortly.'
+    );
   } catch (error) {
-    console.error('Error processing form submission:', error);
-    
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ 
-        success: false, 
-        error: 'Error processing form submission' 
-      })
-    };
+    console.error('Error processing lead form submission:', error);
+    return errorHandler.serverError('Error processing form submission', error);
   }
 };
 
 // Helper function to send email notifications
 async function sendEmailNotification(data, recipient, subject) {
   const { name, email, phone, message, ...additionalFields } = data;
-  
-  // Create transporter using environment variables
+
+  // Align SMTP variable names with the rest of the repo.
+  // .env.example documents SMTP_USER/SMTP_PASSWORD; other functions also accept SMTP_PASS.
+  const smtpUser = process.env.SMTP_USER;
+  const smtpPass = process.env.SMTP_PASSWORD || process.env.SMTP_PASS;
+
+  if (!process.env.SMTP_HOST || !smtpUser || !smtpPass) {
+    throw new Error('SMTP is not configured');
+  }
+
   const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST,
-    port: process.env.SMTP_PORT || 587,
+    port: parseInt(process.env.SMTP_PORT || '587', 10),
     secure: process.env.SMTP_SECURE === 'true',
     auth: {
-      user: process.env.SMTP_USERNAME,
-      pass: process.env.SMTP_PASSWORD
+      user: smtpUser,
+      pass: smtpPass
     }
   });
-  
+
   // Build email content
   let emailContent = `
     <h2>${subject}</h2>
@@ -95,36 +130,36 @@ async function sendEmailNotification(data, recipient, subject) {
     <p><strong>Email:</strong> ${email}</p>
     <p><strong>Phone:</strong> ${phone}</p>
   `;
-  
+
   if (message) {
-    emailContent += `<p><strong>Message:</strong> ${message}</p>`;
+    emailContent += `<p><strong>Message:</strong> ${message.replace(/\n/g, '<br>')}</p>`;
   }
-  
+
   // Add any additional fields
   for (const [key, value] of Object.entries(additionalFields)) {
-    if (key !== 'formType') {
+    if (key !== 'formType' && key !== 'leadSource' && key !== 'pageUrl' && key !== 'startedAt' && key !== 'submittedAt') {
       const formattedKey = key.replace(/([A-Z])/g, ' $1')
         .replace(/^./, str => str.toUpperCase());
       emailContent += `<p><strong>${formattedKey}:</strong> ${value}</p>`;
     }
   }
-  
+
   // Send the email
   const info = await transporter.sendMail({
-    from: `"Caddy Ed Website" <${process.env.SMTP_FROM || 'noreply@caddyed.com'}>`,
+    from: `"Caddy Ed Website" <${process.env.SMTP_FROM || smtpUser || 'noreply@caddyed.com'}>`,
     to: recipient,
     subject: subject,
-    html: emailContent
+    html: emailContent,
+    replyTo: email
   });
-  
+
   return info;
 }
 
 // Helper function to save lead to CRM
 async function saveToCRM(data) {
   const { name, email, phone, message, formType } = data;
-  
-  // Example CRM API integration
+
   try {
     const response = await fetch(process.env.CRM_API_ENDPOINT, {
       method: 'POST',
@@ -144,11 +179,11 @@ async function saveToCRM(data) {
         additionalData: data
       })
     });
-    
+
     if (!response.ok) {
       throw new Error(`CRM API error: ${response.status}`);
     }
-    
+
     return await response.json();
   } catch (error) {
     console.error('Error saving to CRM:', error);

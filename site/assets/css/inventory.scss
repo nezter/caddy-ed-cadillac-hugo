@@ -366,7 +366,18 @@
   }
 }
 
-.btn {
+/* --------------------------------------------------------------------------
+   Scoped to the inventory section.
+
+   These three selectors are the only page-level names in this file that are
+   not prefixed. They were harmless while only /inventory/ loaded this sheet;
+   the vehicle detail layout loads it too (main.css owns the vehicle detail
+   shell, this file owns the specification table and the booking form), and an
+   unscoped `.btn` there overrode the design system's button -- square corners,
+   14px, #007bff -- on every page that includes it. Specificity is raised
+   rather than the rules removed, so /inventory/ is unchanged.
+   -------------------------------------------------------------------------- */
+.inventory-page .btn {
   display: inline-block;
   font-weight: 500;
   text-align: center;
@@ -404,6 +415,228 @@
     }
   }
 }
+
+.inventory-page .no-results,
+.inventory-page .error-message {
+  background-color: #fff;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+  text-align: center;
+  grid-column: 1 / -1;
+
+  h3 {
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    font-size: 1.5rem;
+  }
+
+  p {
+    margin-bottom: 1.5rem;
+    color: #666;
+  }
+
+  .retry-btn {
+    display: inline-block;
+  }
+}
+
+.inventory-page .spinner {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  vertical-align: -0.125em;
+}
+
+/* --------------------------------------------------------------------------
+   Vehicle detail: the specification table.
+
+   A real <dl>, because a car has named attributes and not columns. The value
+   column is wide so an interior colour -- "Noir with Sky Cool Gray accents,
+   Full Leather seat" -- wraps instead of being truncated, and a field the
+   dealer feed did not supply is stated rather than left blank.
+   -------------------------------------------------------------------------- */
+.vehicle-specs {
+  margin-bottom: var(--space-6);
+}
+
+.vehicle-specs__heading {
+  font-size: var(--text-lg);
+  margin-bottom: var(--space-3);
+}
+
+.vehicle-specs__list {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  border-top: 1px solid var(--border);
+}
+
+.vehicle-specs__row {
+  display: grid;
+  grid-template-columns: minmax(8rem, 12rem) 1fr;
+  gap: var(--space-3);
+  padding-block: var(--space-3);
+  border-bottom: 1px solid var(--border);
+}
+
+.vehicle-specs__row dt {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.vehicle-specs__row dd {
+  margin: 0;
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+
+/* A VIN is typed into a dealer trade-in form, so it stays selectable and
+   unbroken rather than being letter-spaced or truncated. */
+.vehicle-specs__mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: var(--text-xs);
+  letter-spacing: 0.02em;
+}
+
+/* "Not listed" is information: the dealer did not publish this attribute.
+   It is muted rather than hidden so the row still lines up with its
+   neighbours, and it never reads as a layout failure. */
+.vehicle-specs__absent {
+  color: var(--text-faint);
+  font-style: italic;
+}
+
+@media (max-width: 30rem) {
+  .vehicle-specs__row { grid-template-columns: 1fr; gap: var(--space-1); }
+}
+
+/* --------------------------------------------------------------------------
+   Vehicle detail: the booking form.
+   -------------------------------------------------------------------------- */
+.vehicle-booking {
+  margin-top: var(--space-7);
+}
+
+.vehicle-booking__form {
+  margin-top: var(--space-4);
+  max-width: 44rem;
+}
+
+.vehicle-booking__subject {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.vehicle-booking__stock {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.vehicle-booking__note,
+.vehicle-booking__noscript {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+/* Per-field validation message, written by vehicle-detail.js next to the
+   control it belongs to and linked to it by aria-invalid. */
+.field-error {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: #a1122a;
+}
+@media (prefers-color-scheme: dark) {
+  .field-error { color: #ff9aad; }
+}
+.input.is-invalid,
+.select.is-invalid,
+.textarea.is-invalid {
+  border-color: #a1122a;
+  box-shadow: 0 0 0 1px #a1122a;
+}
+@media (prefers-color-scheme: dark) {
+  .input.is-invalid,
+  .select.is-invalid,
+  .textarea.is-invalid { border-color: #ff9aad; box-shadow: 0 0 0 1px #ff9aad; }
+}
+
+/* The success/failure state. It is a live region, so it must be visible when
+   it has content -- `hidden` in the markup is what keeps it silent until
+   there is something to say. */
+.vehicle-booking__status {
+  margin-top: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  border-radius: var(--radius);
+  border: 1px solid transparent;
+}
+.vehicle-booking__status.is-success {
+  color: #0a6b3d;
+  background: #e7f6ee;
+  border-color: #0a6b3d;
+}
+.vehicle-booking__status.is-error {
+  color: #a1122a;
+  background: #fdeaee;
+  border-color: #a1122a;
+}
+.vehicle-booking__status.is-pending {
+  color: var(--text-muted);
+  background: var(--bg-subtle);
+  border-color: var(--border);
+}
+@media (prefers-color-scheme: dark) {
+  .vehicle-booking__status.is-success {
+    color: #7ee2b0;
+    background: rgba(126, 226, 176, 0.12);
+    border-color: rgba(126, 226, 176, 0.4);
+  }
+  .vehicle-booking__status.is-error {
+    color: #ff9aad;
+    background: rgba(255, 154, 173, 0.12);
+    border-color: rgba(255, 154, 173, 0.4);
+  }
+}
+
+/* A phone number in the sticky sidebar is the fallback for everyone who does
+   not want to fill in a form. */
+.vehicle-cta__phone {
+  margin-top: var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+/* --------------------------------------------------------------------------
+   Gallery. A thumbnail is a <button>, so it needs the control chrome reset;
+   the image rules themselves live in main.css next to the featured image.
+   -------------------------------------------------------------------------- */
+.gallery-thumbnail {
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: var(--radius);
+  background: none;
+  line-height: 0;
+  cursor: pointer;
+}
+.gallery-thumbnail img { cursor: pointer; }
+.gallery-thumbnail:hover { border-color: var(--border-strong); }
+.gallery-thumbnail.is-active { border-color: var(--accent); }
+.gallery-thumbnail:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 
 /* Responsive adjustments */
 @media (max-width: 992px) {

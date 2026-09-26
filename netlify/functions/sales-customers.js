@@ -4,6 +4,52 @@ const { authenticateRequest } = require('./utils/auth-middleware');
 const { sanitizeCustomerData } = require('./utils/input-sanitizer');
 
 /**
+ * Upper bound on the row count used to derive `total` for pagination. It exists
+ * only because searchCustomers cannot be asked for "every row" -- see the note
+ * in handleGetCustomers. A one-person dealership will never reach it; it is here
+ * so that a bad `page` parameter cannot ask the database for the whole table.
+ */
+const TOTAL_COUNT_CEILING = 10000;
+
+// Columns a caller is allowed to sort by. Anything else falls back to the
+// default rather than reaching the SQL string.
+const SORTABLE_COLUMNS = new Set([
+  'last_name',
+  'first_name',
+  'created_at',
+  'updated_at',
+  'customer_type',
+  'status',
+  'last_activity_date',
+  'email'
+]);
+
+const DEFAULT_PAGE_SIZE = 20;
+const MAX_PAGE_SIZE = 200;
+
+function clampLimit(raw) {
+  const n = parseInt(raw, 10);
+  if (!Number.isFinite(n) || n <= 0) return DEFAULT_PAGE_SIZE;
+  return Math.min(n, MAX_PAGE_SIZE);
+}
+
+function clampOffset(rawPage, limit) {
+  const p = parseInt(rawPage, 10);
+  if (!Number.isFinite(p) || p <= 0) return 0;
+  return (p - 1) * limit;
+}
+
+function pickSortColumn(raw) {
+  const value = String(raw || '').trim().toLowerCase();
+  return SORTABLE_COLUMNS.has(value) ? value : 'last_activity_date';
+}
+
+function pickSortOrder(raw) {
+  const value = String(raw || '').trim().toLowerCase();
+  return value === 'asc' ? 'asc' : 'desc';
+}
+
+/**
  * Sales Customers API
  * CRUD operations for customer management
  */
@@ -51,7 +97,7 @@ exports.handler = async function(event, context) {
 };
 
 /**
- * GET /api/sales/customers - List customers with optional filtering
+ * GET /.netlify/functions/sales-customers - List customers with optional filtering
  */
 async function handleGetCustomers(event, user) {
   const params = event.queryStringParameters || {};
@@ -63,31 +109,50 @@ async function handleGetCustomers(event, user) {
       customer_type: params.type || '',
       status: params.status || '',
       assigned_sales_rep_id: user.id, // Only show customers assigned to this rep
-      limit: parseInt(params.limit) || 20,
-      offset: ((parseInt(params.page) || 1) - 1) * (parseInt(params.limit) || 20),
-      sort_by: params.sortBy || 'last_activity_date',
-      sort_order: params.sortOrder || 'desc'
+      limit: clampLimit(params.limit),
+      offset: clampOffset(params.page, clampLimit(params.limit)),
+      // searchCustomers interpolates sort_by/sort_order into the SQL string
+      // rather than binding them (utils/database-service.js:383-384), so
+      // anything the caller sends here lands in the statement verbatim.
+      // `?sortBy=id; DROP TABLE customers --` was a live injection point in
+      // this handler. Allowlist the columns instead of trusting the parameter.
+      sort_by: pickSortColumn(params.sortBy),
+      sort_order: pickSortOrder(params.sortOrder)
     };
 
     // Get customers from database
     const customers = await DatabaseService.searchCustomers(filters);
 
-    // Get total count for pagination
+    // Get total count for pagination.
+    //
+    // This used to pass `limit: null, offset: null` on the theory that
+    // searchCustomers would treat them as "no limit". It does not: those are
+    // destructuring DEFAULTS, so they only apply to `undefined` -- a null sails
+    // straight through into the SQL as `LIMIT $9 OFFSET $10` bound to null, and
+    // PostgreSQL rejects that with "LIMIT must not be null". The handler then
+    // threw and returned 500, so the customer list never worked for anybody,
+    // ever. Confirmed against a live database.
     const totalCustomers = await DatabaseService.searchCustomers({
       ...filters,
-      limit: null,
-      offset: null
+      limit: TOTAL_COUNT_CEILING,
+      offset: 0
     });
 
     const page = parseInt(params.page) || 1;
-    const limit = parseInt(params.limit) || 20;
+    const limit = filters.limit;
+    const total = totalCustomers.length;
 
     return errorHandler.createSuccessResponse({
       customers: customers,
-      total: totalCustomers.length,
+      // `total` is the number of rows we could actually see, not a COUNT(*).
+      // searchCustomers has no count method, so the honest number is the
+      // fetched length -- and it is clamped, which `totalPages` below accounts
+      // for. A bigger number here would only be a nicer lie.
+      total,
+      totalTruncated: total >= TOTAL_COUNT_CEILING,
       page,
       limit,
-      totalPages: Math.ceil(totalCustomers.length / limit)
+      totalPages: Math.max(1, Math.ceil(total / limit))
     });
 
   } catch (error) {
@@ -257,6 +322,14 @@ async function handleDeleteCustomer(event, user) {
   // TODO: Check permissions (only admins can delete)
   // TODO: Soft delete customer from database
 
+  // THIS FUNCTION LIES. It performs no delete and no permission check of its
+  // own, then returns `{deleted: true}` with HTTP 200. A caller that trusts the
+  // response believes a customer row has been removed when nothing happened.
+  // It is left as-is rather than "fixed" because the honest fix needs a schema
+  // decision (hard delete vs `status = 'archived'`, which the customers table
+  // already permits via its CHECK constraint) and that is not a contract bug --
+  // it is a missing feature. See the report. No front end calls DELETE on this
+  // endpoint, so nothing currently depends on the lie.
   return errorHandler.createSuccessResponse({
     id: customerId,
     deleted: true,
@@ -266,64 +339,25 @@ async function handleDeleteCustomer(event, user) {
 }
 
 /**
- * Helper function to check authentication
+ * DELETED: `checkAuthentication(event)` and its `getCookieValue` helper.
+ *
+ * Neither was ever called -- every request goes through
+ * `authenticateRequest(event, {requiredPermissions: [...]})` at the top of the
+ * handler, which verifies the signature, the expiry, the blacklist AND the live
+ * `sales_reps` row. So the dead copy was not a second way in.
+ *
+ * It was left in as a trap, though: it verified tokens with
+ * `process.env.JWT_SECRET || 'your-secret-key-change-in-production'`. A
+ * fallback signing key in a dead authentication helper is one careless
+ * `authCheck = await checkAuthentication(event)` away from being a live bypass,
+ * and `'your-secret-key-change-in-production'` is a string anybody has typed
+ * before. Removed rather than left to rot.
  */
-async function checkAuthentication(event) {
-  const jwt = require('jsonwebtoken');
-  const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
-
-  const authToken = event.headers.authorization?.replace('Bearer ', '') ||
-                    event.headers['x-auth-token'] ||
-                    getCookieValue(event.headers.cookie, 'auth_token');
-
-  if (!authToken) {
-    return { authenticated: false };
-  }
-
-  // Validate JWT token
-  let decodedToken;
-  try {
-    decodedToken = jwt.verify(authToken, JWT_SECRET);
-  } catch (tokenError) {
-    return { authenticated: false };
-  }
-
-  // Verify user still exists and is active
-  try {
-    const user = await DatabaseService.getSalesRep(decodedToken.userId);
-    if (!user || user.status !== 'active') {
-      return { authenticated: false };
-    }
-
-    return {
-      authenticated: true,
-      user: {
-        id: user.id,
-        firstName: user.first_name,
-        lastName: user.last_name,
-        email: user.email,
-        role: user.role,
-        permissions: user.permissions || ['view_customers', 'manage_leads']
-      }
-    };
-  } catch (error) {
-    console.error('User verification error:', error);
-    return { authenticated: false };
-  }
-}
 
 /**
- * Helper function to extract cookie value
+ * DELETED: `handleDeleteCustomer` reports success without deleting.
+ *
+ * See the function body -- it is preserved below with a note. It is NOT called
+ * by anything in the front end, and the TODO it carries is the honest state of
+ * that feature.
  */
-function getCookieValue(cookieString, cookieName) {
-  if (!cookieString) return null;
-
-  const cookies = cookieString.split(';');
-  for (const cookie of cookies) {
-    const [name, value] = cookie.trim().split('=');
-    if (name === cookieName) {
-      return decodeURIComponent(value);
-    }
-  }
-  return null;
-}

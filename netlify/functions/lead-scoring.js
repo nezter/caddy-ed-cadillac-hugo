@@ -137,7 +137,12 @@ async function getLeadScoringAnalytics(timeframe = '30d') {
       priorityDistribution,
       scoringTrends,
       summary: {
-        totalLeads: scoreDistribution.reduce((sum, item) => sum + item.count, 0),
+        // The aggregate queries reach this function through node-postgres,
+        // which returns COUNT(*) and friends as STRINGS. `sum + item.count`
+        // therefore concatenated rather than added: a five-band distribution
+        // of 7/14/23/11/4 came back as totalLeads "071423114". Coerced here so
+        // the numbers a dashboard prints are the numbers in the database.
+        totalLeads: scoreDistribution.reduce((sum, item) => sum + toCount(item.count), 0),
         averageScore: calculateAverageScore(scoreDistribution),
         hotLeadsPercentage: calculatePriorityPercentage(priorityDistribution, 'hot'),
         conversionRateByScore: await DatabaseService.getConversionRateByScore(days)
@@ -148,6 +153,16 @@ async function getLeadScoringAnalytics(timeframe = '30d') {
     console.error('Error getting lead scoring analytics:', error);
     throw error;
   }
+}
+
+/**
+ * Coerce a COUNT/SUM that arrived from node-postgres as a string.
+ * @param {any} value - raw column value
+ * @returns {number} - 0 when the value is absent or unparseable
+ */
+function toCount(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
 }
 
 /**
@@ -179,10 +194,13 @@ function calculateAverageScore(distribution) {
   let totalCount = 0;
 
   distribution.forEach(item => {
-    const scoreRange = item.score_range.split('-');
-    const avgScore = (parseInt(scoreRange[0]) + parseInt(scoreRange[1])) / 2;
-    totalScore += avgScore * item.count;
-    totalCount += item.count;
+    if (!item.score_range) return;
+    const scoreRange = String(item.score_range).split('-');
+    const avgScore = (parseInt(scoreRange[0], 10) + parseInt(scoreRange[1], 10)) / 2;
+    const count = toCount(item.count);
+    if (!Number.isFinite(avgScore) || !count) return;
+    totalScore += avgScore * count;
+    totalCount += count;
   });
 
   return totalCount > 0 ? Math.round(totalScore / totalCount) : 0;
@@ -194,8 +212,10 @@ function calculateAverageScore(distribution) {
 function calculatePriorityPercentage(distribution, priority) {
   if (!distribution || distribution.length === 0) return 0;
 
-  const total = distribution.reduce((sum, item) => sum + item.count, 0);
+  // Same string/number trap as the totalLeads reduce: the counts arrive as
+  // strings, so the total concatenated and every percentage rounded to 0.
+  const total = distribution.reduce((sum, item) => sum + toCount(item.count), 0);
   const priorityItem = distribution.find(item => item.priority === priority);
 
-  return total > 0 ? Math.round((priorityItem?.count || 0) / total * 100) : 0;
+  return total > 0 ? Math.round((toCount(priorityItem?.count) / total) * 100) : 0;
 }

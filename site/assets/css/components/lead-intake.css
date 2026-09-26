@@ -1,0 +1,98 @@
+/* --------------------------------------------------------------------------
+   lead-intake.css -- the manual lead entry form on /admin/leads-intake.
+   --------------------------------------------------------------------------
+   Loaded by that page's `styles:` front matter, alongside components/admin.css
+   (which supplies the shell, .form-group, .form-row, .btn and .empty-state).
+   This file only covers what the intake module emits that nothing else does:
+   the inline field errors, the field valid/invalid states, the submit-button
+   states (including the in-button spinner), and the success/error banners
+   `setFormState` inserts above the form.
+
+   Colour comes from tokens (main.css :root, admin.css §1). The only hex values
+   in the admin area are admin.css's own --admin-* ramp; none are added here.
+   -------------------------------------------------------------------------- */
+
+.lead-intake-form {
+  display: grid;
+  gap: var(--space-4);
+  max-inline-size: 44rem;
+  margin-block-start: var(--space-5);
+}
+
+/* --- inline field errors (validateField) -------------------------------- */
+.lead-intake-form .field-error {
+  margin-block-start: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--accent);
+}
+
+/* --- field states -------------------------------------------------------- */
+.lead-intake-form input.invalid,
+.lead-intake-form select.invalid,
+.lead-intake-form textarea.invalid {
+  border-color: var(--accent);
+}
+
+.lead-intake-form input.valid,
+.lead-intake-form select.valid,
+.lead-intake-form textarea.valid {
+  border-color: color-mix(in srgb, var(--admin-ok) 55%, var(--border));
+}
+
+/* --- consent row --------------------------------------------------------- */
+.lead-intake-form .form-group--consent label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.lead-intake-form .form-group--consent input {
+  inline-size: 1rem;
+  block-size: 1rem;
+  margin: 0;
+}
+
+/* --- submit button states ------------------------------------------------ */
+/* admin.css's .spinner is a 2.5rem block-centred loader; inside a button it
+   needs to sit inline and small. Scoped here rather than restyled globally. */
+.lead-intake-form .btn .spinner {
+  display: inline-block;
+  inline-size: 1rem;
+  block-size: 1rem;
+  margin-inline: 0 var(--space-2);
+  border-width: 2px;
+  vertical-align: -0.125em;
+}
+
+.lead-intake-form .form-loading button[type="submit"] {
+  opacity: 0.7;
+}
+
+/* --- success / error banners (setFormState) ------------------------------- */
+/* main.css styles .form-message (padding, radius, size) but its colour
+   modifiers are .form-message--success / --error; this module emits
+   .success-message / .error-message, so those variants live here. */
+.lead-intake-form .form-message.success-message {
+  color: var(--admin-ok);
+  border: 1px solid color-mix(in srgb, var(--admin-ok) 40%, transparent);
+  background: color-mix(in srgb, var(--admin-ok) 8%, var(--surface));
+}
+
+.lead-intake-form .form-message.error-message {
+  color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+}
+
+.lead-intake-form .form-message h3 {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-lg);
+  line-height: var(--leading-snug);
+  color: inherit;
+}
+
+.lead-intake-form .form-message p {
+  margin: 0;
+}

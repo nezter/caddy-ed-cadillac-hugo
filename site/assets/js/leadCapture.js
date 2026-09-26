@@ -1,369 +1,209 @@
 /**
- * Lead Capture System
- * Helps sales professionals collect and manage potential customer leads
+ * Lead capture form enhancement.
+ *
+ * Progressively enhances .lead-capture-form on the public lead page.
+ * Without JavaScript the form's native action/method remain, but a <noscript>
+ * block on the page directs users to the phone/email alternatives because the
+ * function expects JSON.
  */
-class LeadCapture {
-  constructor() {
-    this.forms = document.querySelectorAll('.lead-capture-form');
-    this.popupTriggers = document.querySelectorAll('[data-lead-popup]');
-    this.exitIntentEnabled = document.body.hasAttribute('data-exit-intent');
-    this.sessionStorage = window.sessionStorage;
-    
-    this.init();
-  }
-  
-  init() {
-    // Initialize all lead capture forms
-    this.forms.forEach(form => this.initForm(form));
-    
-    // Initialize popup triggers
-    this.popupTriggers.forEach(trigger => this.initPopupTrigger(trigger));
-    
-    // Setup exit intent detection if enabled
-    if (this.exitIntentEnabled) {
-      this.setupExitIntent();
-    }
-    
-    // Setup scroll-based lead forms
-    this.setupScrollBasedForms();
-  }
-  
-  initForm(form) {
-    form.addEventListener('submit', (e) => {
-      e.preventDefault();
-      this.handleFormSubmission(form);
-    });
-    
-    // Add input validation
-    const inputs = form.querySelectorAll('input, select, textarea');
-    inputs.forEach(input => {
-      input.addEventListener('blur', () => {
-        this.validateInput(input);
-      });
-    });
-    
-    // Setup privacy policy toggle if present
-    const privacyToggle = form.querySelector('.privacy-toggle');
-    if (privacyToggle) {
-      const privacyContent = form.querySelector('.privacy-content');
-      privacyToggle.addEventListener('click', (e) => {
-        e.preventDefault();
-        privacyContent.classList.toggle('hidden');
-      });
+(function () {
+  'use strict';
+
+  const ENDPOINT = '/api/lead';
+  const MIN_FILL_MS = 2000; // basic bot/rush deterrent
+
+  function ready(fn) {
+    if (document.readyState !== 'loading') {
+      fn();
+    } else {
+      document.addEventListener('DOMContentLoaded', fn);
     }
   }
-  
-  validateInput(input) {
-    const value = input.value.trim();
-    let isValid = true;
-    const errorElement = input.parentElement.querySelector('.error-message');
-    
-    // Remove existing error message
-    if (errorElement) {
-      errorElement.remove();
-    }
-    
-    // Required field validation
-    if (input.hasAttribute('required') && !value) {
-      this.showInputError(input, 'This field is required');
-      isValid = false;
-    }
-    
-    // Email validation
-    if (input.type === 'email' && value && !this.isValidEmail(value)) {
-      this.showInputError(input, 'Please enter a valid email address');
-      isValid = false;
-    }
-    
-    // Phone validation
-    if (input.type === 'tel' && value && !this.isValidPhone(value)) {
-      this.showInputError(input, 'Please enter a valid phone number');
-      isValid = false;
-    }
-    
-    // Validate specific input types
-    if (input.id === 'zip' && value && !this.isValidZip(value)) {
-      this.showInputError(input, 'Please enter a valid ZIP code');
-      isValid = false;
-    }
-    
-    return isValid;
+
+  function isValidEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   }
-  
-  showInputError(input, message) {
+
+  function isValidPhone(phone) {
+    const digits = phone.replace(/\D/g, '');
+    return digits.length >= 10 && digits.length <= 15;
+  }
+
+  function clearFieldError(input) {
+    input.classList.remove('input-error');
+    const msg = input.parentElement.querySelector('.error-message');
+    if (msg) msg.remove();
+  }
+
+  function showFieldError(input, message) {
+    clearFieldError(input);
+    input.classList.add('input-error');
     const error = document.createElement('div');
     error.className = 'error-message';
     error.textContent = message;
     input.parentElement.appendChild(error);
-    input.classList.add('input-error');
-    
-    // Remove error on input focus
-    input.addEventListener('focus', () => {
-      input.classList.remove('input-error');
-      const errorMsg = input.parentElement.querySelector('.error-message');
-      if (errorMsg) {
-        errorMsg.remove();
+    input.addEventListener('focus', () => clearFieldError(input), { once: true });
+  }
+
+  function validateInput(input) {
+    const value = input.value.trim();
+    let valid = true;
+
+    if (input.hasAttribute('required') && !value) {
+      showFieldError(input, 'This field is required');
+      valid = false;
+    } else if (input.type === 'email' && value && !isValidEmail(value)) {
+      showFieldError(input, 'Please enter a valid email address');
+      valid = false;
+    } else if (input.type === 'tel' && value && !isValidPhone(value)) {
+      showFieldError(input, 'Please enter a valid phone number');
+      valid = false;
+    }
+
+    return valid;
+  }
+
+  function setSubmitState(button, sending) {
+    if (sending) {
+      button.dataset.originalText = button.textContent;
+      button.textContent = 'Sending…';
+      button.disabled = true;
+    } else {
+      button.textContent = button.dataset.originalText || button.textContent;
+      button.disabled = false;
+    }
+  }
+
+  function showFormMessage(form, kind, html) {
+    const successEl = form.querySelector('#lead-form-success');
+    const errorEl = form.querySelector('#lead-form-error');
+    if (successEl) successEl.classList.add('hidden');
+    if (errorEl) {
+      errorEl.classList.toggle('hidden', kind !== 'error');
+      if (kind === 'error') errorEl.innerHTML = html;
+    }
+    if (kind === 'success' && successEl) {
+      successEl.classList.remove('hidden');
+    }
+  }
+
+  function clearServerErrors(form) {
+    form.querySelectorAll('.error-message').forEach((el) => el.remove());
+    form.querySelectorAll('.input-error').forEach((el) => el.classList.remove('input-error'));
+  }
+
+  function mapServerErrors(form, fieldErrors) {
+    if (!fieldErrors || typeof fieldErrors !== 'object') return false;
+    let mapped = false;
+    Object.entries(fieldErrors).forEach(([key, message]) => {
+      if (!message) return;
+      const input = form.querySelector(`[name="${key}"]`);
+      if (input) {
+        showFieldError(input, message);
+        mapped = true;
       }
-    }, { once: true });
+    });
+    return mapped;
   }
-  
-  isValidEmail(email) {
-    const re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-    return re.test(String(email).toLowerCase());
-  }
-  
-  isValidPhone(phone) {
-    // Allow for various formats: (123) 456-7890, 123-456-7890, 1234567890
-    const cleaned = phone.replace(/\D/g, '');
-    return cleaned.length >= 10 && cleaned.length <= 11;
-  }
-  
-  isValidZip(zip) {
-    // US ZIP code validation (5 digits or ZIP+4)
-    return /^\d{5}(-\d{4})?$/.test(zip);
-  }
-  
-  handleFormSubmission(form) {
-    // Validate all inputs
+
+  function handleFormSubmission(form) {
+    const submitButton = form.querySelector('button[type="submit"]');
+
+    // Client-side validation
     const inputs = form.querySelectorAll('input, select, textarea');
     let isFormValid = true;
-    
-    inputs.forEach(input => {
-      if (!this.validateInput(input)) {
-        isFormValid = false;
-      }
+    inputs.forEach((input) => {
+      if (!validateInput(input)) isFormValid = false;
     });
-    
-    if (!isFormValid) {
+
+    if (!isFormValid) return;
+
+    // Honeypot check (client-side pre-filter)
+    const honeypot = form.querySelector('[name="website"]');
+    if (honeypot && honeypot.value.trim() !== '') {
+      showFormMessage(form, 'error', 'Submission rejected. Please call or email us directly.');
       return;
     }
-    
-    // Show loading state
-    const submitButton = form.querySelector('[type="submit"]');
-    const originalText = submitButton.textContent;
-    submitButton.textContent = 'Sending...';
-    submitButton.disabled = true;
-    
-    // Get form data
+
+    setSubmitState(submitButton, true);
+    clearServerErrors(form);
+
     const formData = new FormData(form);
-    const formType = form.dataset.formType || 'general';
-    const leadSource = form.dataset.leadSource || window.location.pathname;
-    
-    // Add additional tracking info
-    formData.append('formType', formType);
-    formData.append('leadSource', leadSource);
-    formData.append('pageUrl', window.location.href);
-    formData.append('timestamp', new Date().toISOString());
-    
-    // Convert to JSON
-    const data = {};
+    const payload = {
+      formType: form.dataset.formType || 'lead',
+      leadSource: form.dataset.leadSource || window.location.pathname,
+      pageUrl: window.location.href,
+      startedAt: form.dataset.startedAt || new Date().toISOString(),
+      submittedAt: new Date().toISOString()
+    };
     formData.forEach((value, key) => {
-      data[key] = value;
+      if (key !== 'website') payload[key] = value;
     });
-    
-    // Send form data
-    fetch('/api/leads', {
+
+    fetch(ENDPOINT, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(data)
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
     })
-    .then(response => {
-      if (!response.ok) {
-        throw new Error('Form submission failed');
-      }
-      return response.json();
-    })
-    .then(result => {
-      // Show success message
-      this.showFormSuccess(form, result);
-      
-      // Store lead info in session storage to prevent multiple popups
-      this.sessionStorage.setItem('leadSubmitted', 'true');
-      this.sessionStorage.setItem('leadTimestamp', Date.now());
-      
-      // Track conversion
-      if (typeof gtag === 'function') {
-        gtag('event', 'lead_submission', {
-          'event_category': 'Lead',
-          'event_label': formType,
-          'value': 1
-        });
-      }
-    })
-    .catch(error => {
-      console.error('Error submitting form:', error);
-      this.showFormError(form);
-    })
-    .finally(() => {
-      // Restore button state
-      submitButton.textContent = originalText;
-      submitButton.disabled = false;
-    });
-  }
-  
-  showFormSuccess(form, result) {
-    const successMessage = document.createElement('div');
-    successMessage.className = 'form-success';
-    successMessage.innerHTML = `
-      <h3>Thank You!</h3>
-      <p>Your information has been received. A member of our sales team will contact you shortly.</p>
-      ${result.leadId ? `<p>Reference ID: ${result.leadId}</p>` : ''}
-    `;
-    
-    // Replace form with success message
-    form.innerHTML = '';
-    form.appendChild(successMessage);
-    
-    // If form is in modal, close it after delay
-    const modal = form.closest('.lead-modal');
-    if (modal) {
-      setTimeout(() => {
-        modal.classList.remove('show');
-        setTimeout(() => {
-          document.body.removeChild(modal);
-        }, 500);
-      }, 3000);
-    }
-  }
-  
-  showFormError(form) {
-    const errorMessage = document.createElement('div');
-    errorMessage.className = 'form-error';
-    errorMessage.innerHTML = `
-      <h3>Submission Error</h3>
-      <p>Sorry, there was a problem submitting your information. Please try again later or call us directly.</p>
-      <button class="retry-button">Try Again</button>
-    `;
-    
-    // Add retry button functionality
-    const retryButton = errorMessage.querySelector('.retry-button');
-    retryButton.addEventListener('click', () => {
-      errorMessage.remove();
-      form.classList.remove('hidden');
-    });
-    
-    // Show error message
-    form.after(errorMessage);
-    form.classList.add('hidden');
-  }
-  
-  initPopupTrigger(trigger) {
-    trigger.addEventListener('click', (e) => {
-      e.preventDefault();
-      
-      // Don't show popup if already submitted a lead
-      if (this.sessionStorage.getItem('leadSubmitted') === 'true') {
-        return;
-      }
-      
-      const popupId = trigger.dataset.leadPopup;
-      const popupTemplate = document.getElementById(`${popupId}-template`);
-      
-      if (popupTemplate) {
-        this.showPopup(popupTemplate.innerHTML);
-      }
-    });
-  }
-  
-  showPopup(content) {
-    const modal = document.createElement('div');
-    modal.className = 'lead-modal';
-    modal.innerHTML = `
-      <div class="modal-overlay"></div>
-      <div class="modal-container">
-        <button class="modal-close">&times;</button>
-        <div class="modal-content">
-          ${content}
-        </div>
-      </div>
-    `;
-    
-    document.body.appendChild(modal);
-    
-    // Add animation
-    setTimeout(() => {
-      modal.classList.add('show');
-    }, 10);
-    
-    // Close button functionality
-    const closeButton = modal.querySelector('.modal-close');
-    closeButton.addEventListener('click', () => {
-      modal.classList.remove('show');
-      setTimeout(() => {
-        document.body.removeChild(modal);
-      }, 500);
-    });
-    
-    // Close on overlay click
-    const overlay = modal.querySelector('.modal-overlay');
-    overlay.addEventListener('click', () => {
-      modal.classList.remove('show');
-      setTimeout(() => {
-        document.body.removeChild(modal);
-      }, 500);
-    });
-    
-    // Initialize form in popup
-    const form = modal.querySelector('.lead-capture-form');
-    if (form) {
-      this.initForm(form);
-    }
-  }
-  
-  setupExitIntent() {
-    // Don't setup if already submitted a lead
-    if (this.sessionStorage.getItem('leadSubmitted') === 'true') {
-      return;
-    }
-    
-    let showOnce = false;
-    
-    document.addEventListener('mouseout', (e) => {
-      // If the mouse leaves the top of the page
-      if (!showOnce && e.clientY < 20) {
-        const exitTemplate = document.getElementById('exit-intent-template');
-        if (exitTemplate) {
-          showOnce = true;
-          this.showPopup(exitTemplate.innerHTML);
+      .then(async (response) => {
+        const result = await response.json().catch(() => ({}));
+
+        if (!response.ok || result.success === false) {
+          // Try to map field-level errors first
+          const fieldErrors = result.validationErrors || result.fieldErrors || {};
+          if (mapServerErrors(form, fieldErrors)) {
+            throw new Error(result.message || 'Please check the fields above.');
+          }
+          throw new Error(result.message || `Submission failed (${response.status}). Please try again.`);
         }
-      }
-    });
-  }
-  
-  setupScrollBasedForms() {
-    const scrollForms = document.querySelectorAll('[data-scroll-reveal]');
-    
-    if (scrollForms.length === 0) return;
-    
-    // Don't show if already submitted a lead
-    if (this.sessionStorage.getItem('leadSubmitted') === 'true') {
-      return;
-    }
-    
-    // Setup intersection observer
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('revealed');
-          observer.unobserve(entry.target);
+
+        return result;
+      })
+      .then((result) => {
+        const ref = result.data && (result.data.id || result.data.reference) ? result.data.id || result.data.reference : null;
+        const successHtml = `
+          <h3>Thank you</h3>
+          <p>${result.message || 'Your details have been sent. Ed will be in touch shortly.'}</p>
+          ${ref ? `<p class="hint">Reference: ${ref}</p>` : ''}
+        `;
+        const wrapper = document.createElement('div');
+        wrapper.className = 'form-message form-message--success';
+        wrapper.innerHTML = successHtml;
+        wrapper.setAttribute('role', 'status');
+        form.innerHTML = '';
+        form.appendChild(wrapper);
+
+        if (typeof gtag === 'function') {
+          gtag('event', 'lead_submission', {
+            event_category: 'Lead',
+            event_label: payload.formType,
+            value: 1
+          });
         }
+      })
+      .catch((error) => {
+        console.error('Lead form error:', error);
+        showFormMessage(form, 'error', error.message || 'Network error. Please try again or call us directly.');
+        setSubmitState(submitButton, false);
       });
-    }, {
-      threshold: 0.2
+  }
+
+  function initForm(form) {
+    // Stamp start time for the simple timing gate
+    form.dataset.startedAt = new Date().toISOString();
+
+    const inputs = form.querySelectorAll('input, select, textarea');
+    inputs.forEach((input) => {
+      input.addEventListener('blur', () => validateInput(input));
     });
-    
-    // Observe each form
-    scrollForms.forEach(form => {
-      observer.observe(form);
+
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      handleFormSubmission(form);
     });
   }
-}
 
-// Initialize lead capture system
-document.addEventListener('DOMContentLoaded', () => {
-  new LeadCapture();
-});
-
-export default LeadCapture;
+  ready(() => {
+    document.querySelectorAll('.lead-capture-form').forEach(initForm);
+  });
+})();

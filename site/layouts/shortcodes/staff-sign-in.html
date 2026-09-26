@@ -1,0 +1,77 @@
+{{- /*
+  staff-sign-in.html -- the staff sign-in form.
+
+  There was no sign-in page anywhere on this site, which is why the three
+  sales-* auth functions had never once been able to authenticate anybody: they
+  were correct, and unreachable. This is the page that makes them reachable.
+
+  The element ids are the contract with site/assets/js/components/staff-sign-in.js.
+  They have to be stable, because the script binds them in its constructor and a
+  renamed id is a form that silently does nothing on submit.
+
+  Every failure surface is an element that already exists, not one that would be
+  nice to have:
+    #sign-in-error   the reason the last attempt failed (401, 429, network)
+    #sign-in-status  polite live region for the checking / signed-out states
+    #sign-in-success shown instead of the form once a session exists
+
+  The classes are all from components/admin.css, which this page already loads
+  via `styles:` in its front matter — .admin-alert for the two message boxes,
+  .admin-signin for the panel, .form-group / .btn for the rest. Nothing new in
+  CSS was needed, and this shortcode deliberately does not inline a <style>.
+*/ -}}
+<div class="admin-signin staff-sign-in" id="staff-sign-in">
+  <form id="staff-sign-in-form" class="staff-sign-in__form" novalidate>
+    <div class="form-group">
+      <label for="sign-in-email">Work email</label>
+      <input
+        type="email"
+        id="sign-in-email"
+        name="email"
+        autocomplete="username"
+        required
+        placeholder="you@caddyed.com">
+    </div>
+
+    <div class="form-group">
+      <label for="sign-in-password">Password</label>
+      <input
+        type="password"
+        id="sign-in-password"
+        name="password"
+        autocomplete="current-password"
+        required>
+    </div>
+
+    <button type="submit" class="btn btn-primary" id="sign-in-submit">
+      <span class="button-text">Sign in</span>
+      <span class="loading-spinner" style="display: none;">Signing in&hellip;</span>
+    </button>
+
+    {{- /* Hidden, not absent. A form with no error element gives the script
+           nowhere to put the reason, which is precisely how "sign-in failed"
+           became "nothing happened". role="alert" so a screen reader announces
+           a rejected attempt without the person having to go looking. */ -}}
+    <div
+      id="sign-in-error"
+      class="admin-alert admin-alert--error"
+      role="alert"
+      style="display: none; margin-block-start: var(--space-4);"></div>
+
+    <p class="staff-sign-in__help">
+      Staff accounts only. Customers sign in at the
+      <a href="/customer/">customer portal</a>.
+    </p>
+  </form>
+
+  <div id="sign-in-status" class="admin-alert admin-alert--info" role="status" aria-live="polite"></div>
+
+  <div id="sign-in-success" class="admin-alert admin-alert--success" style="display: none;">
+    <p id="sign-in-who"></p>
+    <p>
+      <a class="btn btn-primary" href="/admin/dashboard">Sales dashboard</a>
+      <a class="btn btn-secondary" href="/admin/leads">Leads</a>
+      <button type="button" class="btn btn-outline" id="sign-in-signout">Sign out</button>
+    </p>
+  </div>
+</div>

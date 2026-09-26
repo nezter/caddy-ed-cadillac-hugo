@@ -2,6 +2,14 @@
 {{ define "description" }}{{ with .Params.subtitle }}{{ . }} — {{ end }}{{ .Site.Title }}{{ end }}
 
 {{/*
+  The vehicle detail stylesheet. main.css carries the shell (breadcrumb, price,
+  gallery) but the specification table and the booking form are new, and
+  inventory.scss is where vehicle styles belong. The inventory section layout
+  declares the same sheet for the same reason.
+*/}}
+{{ define "headStyles" }}{{ partial "stylesheet.html" "inventory.scss" }}{{ end }}
+
+{{/*
   vehicle single page.
 
   Image handling used to derive a lazyload placeholder by rewriting
@@ -10,9 +18,69 @@
   vehicle page requested a main image that could only 404. partials/
   vehicle-image.html now resolves a path that is known to exist, and uses native
   loading="lazy"/"eager" instead of the lazysizes polyfill.
+
+  What the page used to throw away: the front matter carries 21 fields per
+  vehicle and this template rendered six of them. vin, stock, trim, mileage,
+  exterior_color, interior_color, drivetrain, transmission and engine were in
+  site/content/inventory/*.md for 35 of 35 vehicles and appeared nowhere on the
+  page — a shopper comparing drivetrain or looking up a VIN by hand had nothing
+  to read. They are rendered below as a real <dl>; a field the dealer feed did
+  not supply says "Not listed" rather than rendering an empty cell, because a
+  blank cell reads as "blank because the layout forgot" and the spec table is
+  the reason this page exists.
 */}}
 {{ define "main" }}
 {{- $price := 0 }}{{ with .Params.price }}{{ $price = int . }}{{ end }}
+{{- $phone := .Site.Params.phone | default "704-555-1234" -}}
+{{- $phoneHref := replace $phone "." "" -}}
+
+{{/* The identifier the dealer quotes: stock number, then VIN, then the title. */}}
+{{- $vehicleId := "" -}}
+{{- with .Params.stock }}{{ $vehicleId = . }}{{ else }}{{ with .Params.vin }}{{ $vehicleId = . }}{{ else }}{{ $vehicleId = .Title }}{{ end }}{{ end -}}
+
+{{/* "77725" -> "77,725", "4" -> "4". The zero-padding only applies once a
+     thousands group exists: the price arithmetic this copies pads to three
+     digits because no car costs less than $1,000, but a delivery-mile car has
+     4 miles and must not read "004 mi". */}}
+{{- $miles := "" -}}
+{{- with .Params.mileage -}}
+  {{- $m := int . }}{{ $t := div (mod $m 1000000) 1000 }}{{ $r := mod $m 1000 -}}
+  {{- if gt $t 0 -}}
+    {{- $miles = printf "%d,%03d" $t $r -}}
+  {{- else -}}
+    {{- $miles = printf "%d" $r -}}
+  {{- end -}}
+{{- end -}}
+
+{{/*
+  The dealer feed prefixes some engine values with the field name ("Engine,
+  none"). Inside a row already labelled Engine that reads as a template bug, so
+  the redundant prefix is dropped and nothing else is touched.
+*/}}
+{{- $engine := "" -}}
+{{- with .Params.engine -}}
+  {{- $engine = trim (replaceRE "(?i)^engine[,:]?\\s+" "" (printf "%v" .)) "" -}}
+{{- end -}}
+
+{{- $synced := "" -}}
+{{- with .Params.inventory_sync_synced -}}
+  {{- $synced = (time.AsTime (printf "%v" .)).Format "2 January 2006" -}}
+{{- end -}}
+
+{{/* Every row of the table, present or not, so a gap is visible rather than implied. */}}
+{{- $specs := slice
+      (dict "label" "Condition"          "value" (printf "%v" (.Params.status | default "")))
+      (dict "label" "Trim"               "value" (printf "%v" (.Params.trim | default "")))
+      (dict "label" "Stock number"       "value" (printf "%v" (.Params.stock | default "")))
+      (dict "label" "VIN"                "value" (printf "%v" (.Params.vin | default "")) "mono" true)
+      (dict "label" "Mileage"            "value" (cond (ne $miles "") (printf "%s mi" $miles) ""))
+      (dict "label" "Drivetrain"         "value" (printf "%v" (.Params.drivetrain | default "")))
+      (dict "label" "Transmission"       "value" (printf "%v" (.Params.transmission | default "")))
+      (dict "label" "Engine"             "value" (cond (ne $engine "") (humanize $engine) ""))
+      (dict "label" "Exterior colour"    "value" (printf "%v" (.Params.exterior_color | default "")))
+      (dict "label" "Interior colour"    "value" (printf "%v" (.Params.interior_color | default "")))
+      (dict "label" "Stock last checked" "value" $synced) -}}
+
 <article class="section vehicle-detail" id="vehicle-detail">
   <div class="container">
     <nav aria-label="Breadcrumb" class="vehicle-breadcrumb">
@@ -37,35 +105,68 @@
       {{ end }}
     </header>
 
-    <div class="vehicle-gallery">
+    <div class="vehicle-gallery" data-vehicle-gallery>
       {{ partial "vehicle-image.html" (dict
           "src" (and .Params.gallery (index .Params.gallery 0) | default .Params.image)
           "alt" .Title
           "width" .Params.image_width
           "height" .Params.image_height
           "class" "gallery-featured-image"
+          "sizes" "(max-width: 64rem) 92vw, 720px"
           "loading" "eager") }}
     </div>
 
+    {{/*
+      Thumbnails start at index 1: the featured image above already IS the
+      first gallery entry, and listing it again as its own thumbnail is a
+      duplicate. 0 of 36 vehicles carry a gallery today, so this renders
+      nothing -- but it is correct the day one does.
+    */}}
     {{ with .Params.gallery }}
     {{ if gt (len .) 1 }}
-    <div class="gallery-thumbnails">
+    <div class="gallery-thumbnails" data-gallery-thumbs>
       {{ range $index, $image := . }}
-      <div class="gallery-thumbnail">
+      {{ if gt $index 0 }}
+      <button class="gallery-thumbnail" type="button" data-gallery-thumb
+              data-gallery-index="{{ $index }}"
+              aria-label="{{ printf "Show image %d of %d" (add $index 1) (len .) }}">
         {{ partial "vehicle-image.html" (dict
             "src" $image
-            "alt" (printf "%s - image %d" $.Title (add $index 1))
-            "width" 160 "height" 120) }}
-      </div>
+            "alt" ""
+            "width" 160 "height" 120
+            "sizes" "96px"
+            "decorative" true) }}
+      </button>
+      {{ end }}
       {{ end }}
     </div>
     {{ end }}
     {{ end }}
 
     <div class="grid grid-2 vehicle-body">
-      <div class="prose">{{ .Content }}</div>
+      <div>
+        <section class="vehicle-specs" aria-labelledby="vehicle-specs-heading">
+          <h2 class="vehicle-specs__heading" id="vehicle-specs-heading">Specification</h2>
+          <dl class="vehicle-specs__list">
+            {{ range $specs }}
+            <div class="vehicle-specs__row">
+              <dt>{{ .label }}</dt>
+              <dd>
+                {{- if .value -}}
+                  {{- if .mono }}<span class="vehicle-specs__mono">{{ .value }}</span>{{ else }}{{ .value }}{{ end -}}
+                {{- else -}}
+                  <span class="vehicle-specs__absent">Not listed</span>
+                {{- end -}}
+              </dd>
+            </div>
+            {{ end }}
+          </dl>
+        </section>
 
-      {{/* The two actions a vehicle page exists to drive. */}}
+        <div class="prose">{{ .Content }}</div>
+      </div>
+
+      {{/* The four actions a vehicle page exists to drive. */}}
       <aside class="vehicle-cta card">
         <h2 class="card__title">Interested in this {{ with .Params.model }}{{ . }}{{ end }}?</h2>
         <p class="text-muted">
@@ -73,13 +174,125 @@
           better payment.
         </p>
         <div class="stack vehicle-cta__actions">
-          <a class="btn btn-primary btn-block"
+          <a class="btn btn-primary btn-block" href="#book-a-test-drive">Book a test drive</a>
+          <a class="btn btn-outline btn-block"
              href="/contact/?vehicle={{ .Title | urlquery }}">Ask about this vehicle</a>
-          <a class="btn btn-outline btn-block" href="/trade-in/">Value my trade</a>
+          <a class="btn btn-ghost btn-block" href="/trade-in/">Value my trade</a>
           <a class="btn btn-ghost btn-block" href="/financing/">See financing options</a>
         </div>
+        <p class="vehicle-cta__phone">
+          Prefer to talk it through? <a href="tel:+1{{ $phoneHref }}">{{ $phone }}</a>
+        </p>
       </aside>
     </div>
+
+    {{/*
+      Test-drive booking.
+
+      schedule-test-drive.js requires vehicleId, fullName, email, phone,
+      preferredDate and preferredTime; every one of them is below, and
+      vehicleId is prefilled from this vehicle's stock number at build time so
+      it cannot be wrong. Without JavaScript the endpoint is a JSON API: a
+      browser would post url-encoded form data, the function would fail to
+      parse it, and the visitor would get a JSON error page. So the form is
+      hidden by <noscript> and the phone number is offered instead, rather than
+      leaving a control that cannot work looking like it can. See
+      site/content/test-drive.md for the standalone booking page.
+    */}}
+    <section class="vehicle-booking card" id="book-a-test-drive"
+             aria-labelledby="vehicle-booking-heading">
+      <h2 class="card__title" id="vehicle-booking-heading">Book a test drive</h2>
+      <p class="text-muted">
+        Half an hour on your own route, or just around the block. Send the
+        request and I'll come back with a time that suits you.
+      </p>
+
+      <noscript>
+        <style>.vehicle-booking__form{display:none}</style>
+        <p class="vehicle-booking__noscript">
+          Sending this request needs JavaScript. Call
+          <a href="tel:+1{{ $phoneHref }}">{{ $phone }}</a> or
+          <a href="/contact/">send a message</a> instead and I'll get you behind
+          the wheel.
+        </p>
+      </noscript>
+
+      <form class="form vehicle-booking__form" id="vehicle-test-drive" method="post"
+            action="/.netlify/functions/schedule-test-drive" data-test-drive-form
+            data-phone="{{ $phone }}" novalidate>
+        <input type="hidden" name="vehicleId" value="{{ $vehicleId }}">
+        <input type="hidden" name="vehicleTitle" value="{{ .Title }}">
+        <input type="hidden" name="vin" value="{{ with .Params.vin }}{{ . }}{{ end }}">
+        <p class="vehicle-booking__subject">
+          <span class="text-muted">Vehicle</span>
+          <strong>{{ .Title }}</strong>
+          {{ with .Params.stock }}<span class="vehicle-booking__stock">Stock {{ . }}</span>{{ end }}
+        </p>
+
+        <div class="form-grid form-grid-2">
+          <div class="form-field">
+            <label for="vtd-name">Full name</label>
+            <input class="input" id="vtd-name" name="fullName" type="text"
+                   autocomplete="name" required>
+          </div>
+          <div class="form-field">
+            <label for="vtd-phone">Phone</label>
+            <input class="input" id="vtd-phone" name="phone" type="tel"
+                   autocomplete="tel" required>
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label for="vtd-email">Email</label>
+          <input class="input" id="vtd-email" name="email" type="email"
+                 autocomplete="email" required>
+        </div>
+
+        <div class="form-grid form-grid-2">
+          <div class="form-field">
+            <label for="vtd-date">Preferred date</label>
+            <input class="input" id="vtd-date" name="preferredDate" type="date" required>
+            <p class="hint">Today or later.</p>
+          </div>
+          <div class="form-field">
+            <label for="vtd-time">Preferred time</label>
+            <select class="select" id="vtd-time" name="preferredTime" required>
+              <option value="">Choose a time</option>
+              {{/* 24h values because the function builds a timestamp from them
+                   (`new Date(preferredDate + "T" + preferredTime)`); a label
+                   like "9:00 AM" parses as an Invalid Date. The visible text
+                   is converted to 12-hour form. */}}
+              {{ range seq 9 18 }}
+              {{- $h12 := add (mod (add . 11) 12) 1 }}
+              <option value="{{ printf "%02d:00" . }}">{{ $h12 }}:00 {{ if ge . 12 }}pm{{ else }}am{{ end }}</option>
+              {{ end }}
+            </select>
+            <p class="hint">Drive times are 9am&ndash;6pm, Monday to Saturday.</p>
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label for="vtd-comments">Anything I should know? (optional)</label>
+          <textarea class="textarea" id="vtd-comments" name="comments" rows="3"
+                    placeholder="Trade-in in tow, child seat needed, only mornings…"></textarea>
+        </div>
+
+        <button class="btn btn-primary" type="submit">Request this test drive</button>
+        <p class="vehicle-booking__note">
+          I take these myself, so you'll hear back from a person. Prefer to
+          call? <a href="tel:+1{{ $phoneHref }}">{{ $phone }}</a>
+        </p>
+
+        {{/* Filled in by vehicle-detail.js. Server-rendered and empty, so the
+             success and failure states are styled whether or not the script
+             ever runs. */}}
+        <div class="vehicle-booking__status" data-test-drive-status
+             role="status" aria-live="polite" hidden></div>
+      </form>
+    </section>
   </div>
 </article>
+
+{{/* Progressive enhancement only. Everything above this line is complete markup. */}}
+{{ partial "entry.html" (dict "entry" "vehicle-detail.js" "page" .) }}
 {{ end }}

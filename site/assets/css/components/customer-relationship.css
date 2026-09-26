@@ -1,0 +1,339 @@
+/* --------------------------------------------------------------------------
+   customer-relationship.css -- the CRM panel on /admin/customers.
+   --------------------------------------------------------------------------
+   Loaded by that page's `styles:` front matter, alongside components/admin.css
+   (shell, inputs, .btn, .form-group, .modal and .empty-state). This file
+   covers what customerRelationship.js emits that nothing else does: the
+   toolbar, the two-column panel layout, customer cards, the appointment
+   list, the "this is not implemented" notes, the sign-in prompt, the error
+   banner and the toasts.
+
+   Colour comes from tokens (main.css :root, admin.css §1's --admin-* ramp).
+   No new hex values.
+   -------------------------------------------------------------------------- */
+
+/* --- toolbar -------------------------------------------------------------- */
+.crm-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-4);
+  margin-block-end: var(--space-5);
+}
+
+.crm-toolbar__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.crm-toolbar__field label {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.crm-toolbar__field input,
+.crm-toolbar__field select {
+  min-inline-size: 14rem;
+}
+
+/* --- panel layout ---------------------------------------------------------- */
+.crm-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.9fr) minmax(0, 1fr);
+  gap: var(--space-5);
+  align-items: start;
+}
+
+@media (max-width: 60rem) {
+  .crm-grid { grid-template-columns: 1fr; }
+}
+
+.crm-section {
+  min-inline-size: 0;
+}
+
+.crm-section h2 {
+  margin: 0 0 var(--space-4);
+}
+
+.crm-side {
+  display: grid;
+  gap: var(--space-5);
+}
+
+/* --- states: loading, error, sign-in ---------------------------------------- */
+.crm-loading {
+  margin: 0;
+  padding: var(--space-5);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text-faint);
+  text-align: center;
+}
+
+.crm-error,
+.crm-error-banner {
+  color: var(--accent);
+}
+
+.crm-error-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  margin-block-end: var(--space-4);
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+  font-size: var(--text-sm);
+}
+
+/* A 401 lands here, visibly, instead of an empty table. */
+.crm-login-prompt {
+  padding: var(--space-6);
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
+  border-radius: var(--radius-lg);
+  background: var(--bg-subtle);
+  text-align: center;
+}
+
+.crm-login-prompt h3 {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-xl);
+  line-height: var(--leading-snug);
+  color: var(--text);
+}
+
+.crm-login-prompt p {
+  max-inline-size: 34rem;
+  margin: 0 auto var(--space-4);
+  color: var(--text-muted);
+}
+
+/* --- "not implemented" notes (loadActivity / showInteractionModal) ---------- */
+.crm-unavailable {
+  padding: var(--space-4);
+  border: 1px solid color-mix(in srgb, var(--admin-info) 40%, transparent);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--admin-info) 8%, var(--surface));
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.crm-unavailable p { margin: 0 0 var(--space-2); }
+.crm-unavailable p:last-child { margin-block-end: 0; }
+.crm-unavailable strong { color: var(--text); }
+.crm-unavailable code {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+/* --- customer list ----------------------------------------------------------- */
+.customer-list {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.crm-summary { margin: 0 0 var(--space-2); }
+
+.crm-count {
+  font-size: var(--text-sm);
+  color: var(--text-faint);
+  font-weight: 400;
+}
+
+.customer-card {
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+
+.customer-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-block-end: var(--space-3);
+}
+
+.customer-header h3 {
+  margin: 0;
+  font-size: var(--text-lg);
+  line-height: var(--leading-snug);
+}
+
+.customer-type {
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-xs);
+  text-transform: capitalize;
+  color: var(--text-muted);
+}
+
+.customer-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: var(--space-4);
+  margin-block-end: var(--space-3);
+}
+
+.customer-contact p,
+.customer-info p {
+  margin: 0 0 var(--space-1);
+  font-size: var(--text-sm);
+}
+
+.customer-contact a { color: var(--accent); }
+
+.customer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* The module emits plain buttons without .btn; give them the admin button
+   treatment without reaching for classes the module does not emit. */
+.customer-actions button,
+.modal-actions button {
+  padding: var(--space-2) var(--space-4);
+  min-block-size: 2.25rem;
+  font-family: inherit;
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.customer-actions button:hover,
+.modal-actions button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* --- appointments panel ------------------------------------------------------ */
+.crm-section-heading {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-base);
+}
+
+.followup-group h4 {
+  margin: var(--space-3) 0 var(--space-2);
+  font-size: var(--text-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-faint);
+}
+
+.followup-group.overdue h4 { color: var(--admin-warn); }
+
+.followup-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: var(--space-1) var(--space-3);
+  padding: var(--space-3);
+  margin-block-end: var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: var(--text-sm);
+}
+
+.followup-group.overdue .followup-item {
+  border-color: color-mix(in srgb, var(--admin-warn) 45%, var(--border));
+}
+
+.followup-date {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.followup-customer {
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.followup-type,
+.followup-status {
+  color: var(--text-faint);
+}
+
+.followup-notes {
+  grid-column: 1 / -1;
+  color: var(--text-muted);
+}
+
+/* --- toasts -------------------------------------------------------------------- */
+.crm-toast {
+  position: fixed;
+  inset-block-end: var(--space-5);
+  inset-inline-end: var(--space-5);
+  z-index: var(--admin-z-loader);
+  max-inline-size: 22rem;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  color: var(--text);
+  font-size: var(--text-sm);
+}
+
+.crm-toast--success {
+  border-color: color-mix(in srgb, var(--admin-ok) 45%, var(--border-strong));
+}
+
+/* --- modal details list ------------------------------------------------------------ */
+.modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-block-start: var(--space-4);
+}
+
+.modal-close {
+  padding: var(--space-1) var(--space-3);
+  border: none;
+  background: none;
+  font-size: var(--text-xl);
+  line-height: 1;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.modal-close:hover { color: var(--accent); }
+
+.customer-details-list {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.detail-row {
+  display: grid;
+  grid-template-columns: 9rem minmax(0, 1fr);
+  gap: var(--space-3);
+  padding-block: var(--space-1);
+  border-block-end: 1px solid var(--border);
+  font-size: var(--text-sm);
+}
+
+.detail-row:last-child { border-block-end: none; }
+
+.detail-row dt {
+  margin: 0;
+  color: var(--text-faint);
+}
+
+.detail-row dd {
+  margin: 0;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}

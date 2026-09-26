@@ -1,0 +1,152 @@
+{{ define "title" }}{{ .Title }} | {{ .Site.Title }}{{ end }}
+{{ define "description" }}{{ with .Params.subtitle }}{{ . }} — {{ end }}{{ .Site.Title }}{{ end }}
+
+{{/*
+  test-drive/single.html -- the standalone booking page (site/content/test-drive.md).
+
+  It exists as a layout rather than as raw HTML in the markdown for two
+  measured reasons, not for style:
+
+    1. Go template syntax in a .md body is NOT evaluated here. Verified on
+       hugo 0.166.0 extended against this project: a page whose body read
+       `MARKER-A={{ .Title }}` published `MARKER-A={{ .Title }}` to the
+       browser. ci/verify-build.js fails the build on exactly that ("unrendered
+       template syntax in output"), which is how it was caught. So the dealer
+       phone number and the inventory list cannot be interpolated from a
+       content file -- they would ship as literal braces.
+    2. The vehicle list has to come from the content, not from a hand-kept
+       copy. `where .Site.RegularPages "Section" "inventory"` is the same
+       source the inventory section builds its filters from, so an option can
+       only exist if that vehicle is actually in stock.
+
+  The booking form itself is deliberately duplicated from
+  layouts/inventory/single.html rather than extracted into partials/, which
+  was out of scope for this change. The two copies must stay in step: the
+  field names are the schedule-test-drive.js contract.
+*/}}
+{{ define "headStyles" }}{{ partial "stylesheet.html" "inventory.scss" }}{{ end }}
+
+{{ define "main" }}
+{{- $phone := .Site.Params.phone | default "704-555-1234" -}}
+{{- $phoneHref := replace $phone "." "" -}}
+{{- $vehicles := sort (where .Site.RegularPages "Section" "inventory") "Params.year" "desc" -}}
+<article class="section test-drive-page">
+  <div class="container">
+    <nav aria-label="Breadcrumb" class="vehicle-breadcrumb">
+      <a href="/">Home</a>
+      <span aria-hidden="true">/</span>
+      <span aria-current="page">{{ .Title }}</span>
+    </nav>
+
+    <header class="vehicle-header">
+      <h1>{{ .Title }}</h1>
+      {{ with .Params.subtitle }}<p class="lede">{{ . }}</p>{{ end }}
+    </header>
+
+    <div class="prose">{{ .Content }}</div>
+
+    <section class="vehicle-booking card" id="book-a-test-drive"
+             aria-labelledby="test-drive-heading">
+      <h2 class="card__title" id="test-drive-heading">Request a drive</h2>
+
+      <noscript>
+        <style>.test-drive-page__form{display:none}</style>
+        <p>
+          Sending this request needs JavaScript — the booking form posts to a
+          JSON endpoint, so a plain HTML submission would arrive unparsed and
+          come back as an error. Call
+          <a href="tel:+1{{ $phoneHref }}">{{ $phone }}</a> instead, or
+          <a href="/contact/">send a message</a> with the car and the day, and
+          I will set it up.
+        </p>
+      </noscript>
+
+      <form class="form test-drive-page__form" id="test-drive-request" method="post"
+            action="/.netlify/functions/schedule-test-drive" data-test-drive-form
+            data-phone="{{ $phone }}" novalidate>
+        <div class="form-field">
+          <label for="ttd-vehicle">Which car?</label>
+          <select class="select" id="ttd-vehicle" name="vehicleId" required>
+            <option value="">Choose from current inventory</option>
+            {{ range $vehicles }}
+            <option value="{{ with .Params.stock }}{{ . }}{{ else }}{{ .Title }}{{ end }}">{{ .Title }}{{ with .Params.status }} — {{ . }}{{ end }}</option>
+            {{ end }}
+            <option value="other">Something else — I'll describe it below</option>
+          </select>
+          <p class="hint">
+            Not seeing the one you want? Pick &ldquo;something else&rdquo; and
+            say what you are after — I can usually source it.
+          </p>
+        </div>
+
+        <div class="form-grid form-grid-2">
+          <div class="form-field">
+            <label for="ttd-name">Full name</label>
+            <input class="input" id="ttd-name" name="fullName" type="text"
+                   autocomplete="name" required>
+          </div>
+          <div class="form-field">
+            <label for="ttd-phone">Phone</label>
+            <input class="input" id="ttd-phone" name="phone" type="tel"
+                   autocomplete="tel" required>
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label for="ttd-email">Email</label>
+          <input class="input" id="ttd-email" name="email" type="email"
+                 autocomplete="email" required>
+        </div>
+
+        <div class="form-grid form-grid-2">
+          <div class="form-field">
+            <label for="ttd-date">Preferred date</label>
+            <input class="input" id="ttd-date" name="preferredDate" type="date" required>
+            <p class="hint">Today or later.</p>
+          </div>
+          <div class="form-field">
+            <label for="ttd-time">Preferred time</label>
+            <select class="select" id="ttd-time" name="preferredTime" required>
+              <option value="">Choose a time</option>
+              {{/* 24h values: the function builds a timestamp from them
+                   (`new Date(preferredDate + "T" + preferredTime)`), and
+                   "9:00 AM" is an Invalid Date. The label is converted to
+                   12-hour form. */}}
+              {{ range seq 9 18 }}
+              {{- $h12 := add (mod (add . 11) 12) 1 }}
+              <option value="{{ printf "%02d:00" . }}">{{ $h12 }}:00 {{ if ge . 12 }}pm{{ else }}am{{ end }}</option>
+              {{ end }}
+            </select>
+            <p class="hint">Drive times are 9am&ndash;6pm, Monday to Saturday.</p>
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label for="ttd-comments">Anything I should know? (optional)</label>
+          <textarea class="textarea" id="ttd-comments" name="comments" rows="4"
+                    placeholder="Which car, if you picked &quot;something else&quot; — trade-in in tow, child seat needed, only mornings…"></textarea>
+        </div>
+
+        <button class="btn btn-primary" type="submit">Request this test drive</button>
+        <p class="vehicle-booking__note">
+          No obligation, and no one else phoning you. Prefer to talk it
+          through? <a href="tel:+1{{ $phoneHref }}">{{ $phone }}</a>
+        </p>
+
+        {{/* Filled in by vehicle-detail.js. Server-rendered and empty, so the
+             success and failure states are styled whether or not the script
+             ever runs. */}}
+        <div class="vehicle-booking__status" data-test-drive-status
+             role="status" aria-live="polite" hidden></div>
+      </form>
+    </section>
+
+    <p class="vehicle-booking__note">
+      Rather talk it through? Call <a href="tel:+1{{ $phoneHref }}">{{ $phone }}</a>,
+      or <a href="/contact/">send a message</a> and I'll come back to you.
+    </p>
+  </div>
+</article>
+
+{{ partial "entry.html" (dict "entry" "vehicle-detail.js" "page" .) }}
+{{ end }}

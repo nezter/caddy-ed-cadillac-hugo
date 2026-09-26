@@ -32,6 +32,8 @@ exports.handler = async function(event, context) {
         return await manualAssignLead(event);
       case 'GET /unassigned':
         return await getUnassignedLeads(event);
+      case 'GET /reps':
+        return await getSalesReps(event);
       default:
         return errorHandler.notFoundError('Endpoint not found');
     }
@@ -132,6 +134,45 @@ async function manualAssignLead(event) {
   } catch (error) {
     console.error('Error manually assigning lead:', error);
     return errorHandler.serverError('Failed to assign lead', error);
+  }
+}
+
+/**
+ * Get active sales reps, for the assignment picker.
+ *
+ * The front end needs a roster to populate POST /assign, and there was no way
+ * to get one from this function: the analytics carry a workload rollup keyed on
+ * display name but no rep id, and the dashboard was filling the dropdown with
+ * three invented people. Invented names are worse than an empty picker: the
+ * assignment writes that `sales_rep_id` straight into the leads table.
+ *
+ * Only active reps, matching the check manualAssignLead already enforces, so
+ * the picker cannot offer a choice the server will reject with a 400.
+ */
+async function getSalesReps(event) {
+  const includeAll = event.queryStringParameters?.include_inactive === 'true';
+
+  try {
+    const reps = await DatabaseService.getAllSalesReps();
+
+    const formatted = reps
+      .filter((rep) => includeAll || rep.status === 'active')
+      .map((rep) => ({
+        id: rep.id,
+        name: `${rep.first_name} ${rep.last_name}`.trim(),
+        email: rep.email,
+        role: rep.role,
+        status: rep.status
+      }));
+
+    return errorHandler.createSuccessResponse({
+      reps: formatted,
+      total: formatted.length
+    }, 'Sales representatives retrieved successfully');
+
+  } catch (error) {
+    console.error('Error getting sales reps:', error);
+    return errorHandler.serverError('Failed to get sales representatives', error);
   }
 }
 
