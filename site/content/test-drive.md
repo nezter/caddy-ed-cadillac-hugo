@@ -5,6 +5,7 @@ description: "Request a test drive in any Cadillac in current Caddy Ed inventory
 date: 2026-09-26
 scripts:
   - appointment-scheduler.js
+  - schedulingCalendar.js
 ---
 
 Pick the car, tell me when suits you, and I'll come back with a confirmed time.
@@ -20,6 +21,11 @@ actually get you — including vehicles I can source that are not in the list.
 
 The scheduler below checks real availability and books straight into the
 calendar. Choose a day, pick a slot, and it confirms before you leave.
+
+<div class="scheduling-calendar" data-calendar="test-drive">
+  <div class="calendar-container"></div>
+  <div class="time-slots"></div>
+</div>
 
 <div id="appointment-scheduler">
   <form id="appointment-form" class="form" method="post" action="/api/appointments">

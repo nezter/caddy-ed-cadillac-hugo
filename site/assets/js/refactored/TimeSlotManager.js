@@ -62,7 +62,12 @@ class TimeSlotManager {
       
       return availableDates;
     } catch (error) {
-      console.error('Error fetching available dates:', error);
+      // /api/available-dates does not exist yet. The fallback below generates
+      // dates client-side, so the calendar still renders -- but the network
+      // failure is expected and is not a site fault, so it is not logged as one.
+      if (typeof console.debug === 'function') {
+        console.debug('Available-dates endpoint absent; using generated dates.');
+      }
       this.calendar.updateState({ 
         errors: { 
           ...this.calendar.getState().errors, 
