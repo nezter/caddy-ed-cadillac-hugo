@@ -69,6 +69,34 @@ function declaredEntries() {
     }
   };
   walk(path.join(ROOT, 'site', 'content'));
+
+  // Templates declare entries too: {{ partial "entry.html" (dict "entry"
+  // "inventory-filter.js" ...) }}. A pure JS import graph cannot see those, and
+  // the first version of this script missed both inventory-filter.js and
+  // customer-portal.js because of it -- under-reporting coverage while still
+  // reporting "OK", which is worse than not checking.
+  const walkTpl = (dir) => {
+    let ents;
+    try {
+      ents = fs.readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const e of ents) {
+      const f = path.join(dir, e.name);
+      if (e.isDirectory()) walkTpl(f);
+      else if (e.name.endsWith('.html')) {
+        const t = fs.readFileSync(f, 'utf8');
+        for (const m of t.matchAll(
+          /partial\s+"entry\.html"[\s\S]{0,120}?"entry"\s+"([\w./-]+\.js)"/g
+        )) {
+          entries.add(m[1]);
+        }
+      }
+    }
+  };
+  walkTpl(path.join(ROOT, 'site', 'layouts'));
+
   entries.delete('--');
   return [...entries];
 }
@@ -228,13 +256,41 @@ const { files, unresolved } = reachableFrom(entries);
 const aliases = redirectAliases();
 const fnNames = functionNames();
 
+// A known-missing endpoint must be DECLARED, with a reason, or it fails the
+// build. The alternative -- a silent skip list -- is how the original defect
+// survived: someone had to have decided /api/lead-scoring was fine.
+//
+// Each entry names a function that a live bundle calls and that does not exist.
+// It is not a workaround; it is a receipt for unimplemented functionality, and
+// it is expected to shrink to empty.
+const KNOWN_MISSING = new Map([
+  [
+    'schedule-appointment',
+    'customer-portal.js "schedule appointment" form has no implementation. ' +
+      'It POSTs {type, scheduled_date, scheduled_time, notes, customer_*} to a ' +
+      'function that does not exist. The nearest candidate, schedule-test-drive, ' +
+      'requires a vehicleId the form never collects -- these are two different ' +
+      'features (service appointment vs test drive), not one broken call. ' +
+      'Needs a storage decision first; see docs/PROGRAMME.md. ' +
+      'TRACKED: build a schedule-appointment function, or remove the form.',
+  ],
+]);
+
 const liveProblems = [];
+const declared = [];
 const liveUrls = new Set();
 
 for (const f of files) {
   for (const url of scanFile(f)) {
     liveUrls.add(url);
     if (resolves(url, aliases, fnNames)) continue;
+    // Which function name was expected? For /api/x/y it is only knowable when
+    // an alias exists, so a declared name matches anywhere in the path.
+    const expected = (url.split('?')[0].match(/\/(?:\.netlify\/functions|api)\/([^/]+)/) || [])[1];
+    if (expected && KNOWN_MISSING.has(expected)) {
+      declared.push(`${expected}  (called by ${path.relative(ROOT, f)})`);
+      continue;
+    }
     const isApi = url.split('?')[0].startsWith('/api/');
     liveProblems.push(
       `${path.relative(ROOT, f)}  ->  ${url}  (${
@@ -255,6 +311,22 @@ const ylw = (s) => `\x1b[1;33m${s}\x1b[0m`;
 console.log(
   `\n  Endpoint check (${entries.length} declared entries, ${files.length} reachable JS file(s), ${fnNames.size} functions, ${aliases.size} redirect aliases)`
 );
+
+if (declared.length) {
+  console.log(
+    `\n  ${ylw('DECLARED')} ${declared.length} known-missing endpoint(s) -- unimplemented, declared with a reason in ci/verify-endpoints.js:`
+  );
+  for (const d of declared) console.log(`    ${d}`);
+  for (const [name, why] of KNOWN_MISSING) {
+    if (declared.some((d) => d.startsWith(name))) {
+      console.log(`      ${dim(`${name}: ${why}`)}`);
+    }
+  }
+  console.log(
+    `    ${dim('These are real gaps, not waivers. Each one is functionality a page')}\n` +
+      `    ${dim('offers and does not deliver. This list should reach zero.')}`
+  );
+}
 
 if (liveProblems.length === 0) {
   console.log(

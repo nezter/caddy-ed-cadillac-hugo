@@ -105,6 +105,25 @@ the never-emitted `lang.NumFmt` — none of which any other check noticed.
 
 ## Open work, in dependency order
 
+### 0. The wiring gap, quantified — see `docs/feature-inventory.md`
+
+| | |
+|---|---|
+| Real, working functions | 42 |
+| Reachable from a live page | **15** |
+| Orphaned, no page can call | **27** |
+| JS modules on disk / live / dead | 71 / 7 / **64** (469 KB) |
+| Files in `netlify/functions/` that are not functions | 9 (config + ad-hoc test scripts) |
+
+The highest-value single item: `components/advanced-search.js` (31.4 KB of
+finished UI) against a 455-line `search` function. Work done on both sides, join
+missing. Same shape for lead scoring, lead assignment, the interaction timeline
+and notifications.
+
+`ci/verify-endpoints.js` now measures this on every build and carries one
+`KNOWN_MISSING` declaration with a reason — a receipt for unimplemented
+functionality, not a waiver. It should reach zero.
+
 ### 1. Admin front-end wiring — **largest gap**
 The backend exists; the UI does not. `netlify/functions/` has lead scoring,
 rep assignment, interactions, follow-up campaigns, analytics, search and GDPR
