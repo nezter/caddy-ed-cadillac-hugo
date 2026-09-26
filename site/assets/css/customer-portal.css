@@ -1,5 +1,21 @@
 /* Customer Portal Styles */
 
+
+/* ---------------------------------------------------------------------------
+   These rules used to be duplicated here with Bootstrap-3 values
+   (#007bff / #6c757d). assets.html loaded this file AFTER main.css on every
+   page of the site, so the component sheet won the cascade and every
+   .btn-primary on every page painted Bootstrap blue instead of the design
+   system's Cadillac red. .btn-secondary was worse: nothing in main.css defined
+   it, so this component stylesheet was the only reason buttons outside the
+   customer portal had a secondary variant at all.
+
+   Generic components (.btn*, .loading) are owned by main.css now. Keep this
+   file to portal-specific selectors only -- if you need a global component
+   style, add it to main.css next to its siblings rather than shadowing it
+   here, because load order makes "last writer wins" and this file is last.
+   --------------------------------------------------------------------------- */
+
 .customer-portal {
   min-height: 80vh;
   padding: 2rem 0;
@@ -72,52 +88,13 @@
   box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
 }
 
-.btn {
-  display: inline-block;
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: 4px;
-  text-align: center;
-  text-decoration: none;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s ease-in-out;
-}
 
-.btn-primary {
-  background-color: #007bff;
-  color: white;
-}
 
-.btn-primary:hover {
-  background-color: #0056b3;
-}
 
-.btn-secondary {
-  background-color: #6c757d;
-  color: white;
-}
 
-.btn-secondary:hover {
-  background-color: #545b62;
-}
 
-.btn-outline {
-  background-color: transparent;
-  border: 1px solid #6c757d;
-  color: #6c757d;
-}
 
-.btn-outline:hover {
-  background-color: #6c757d;
-  color: white;
-}
 
-.btn:disabled {
-  opacity: 0.65;
-  cursor: not-allowed;
-}
 
 .login-help {
   text-align: center;
@@ -188,12 +165,6 @@
   font-weight: 500;
 }
 
-.loading {
-  color: #6c757d;
-  font-style: italic;
-  text-align: center;
-  padding: 2rem;
-}
 
 /* Appointments */
 .appointments-list {

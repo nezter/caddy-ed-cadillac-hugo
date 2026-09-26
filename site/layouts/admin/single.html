@@ -1,5 +1,5 @@
 {{ define "main" }}
-<main class="admin-page">
+<div class="admin-page">
   <div class="container">
     <header class="admin-header">
       <h1>{{ .Title }}</h1>
@@ -7,6 +7,7 @@
       <nav class="admin-nav">
         <a href="/admin/leads">Leads</a>
         <a href="/admin/dashboard">Dashboard</a>
+        <a href="/admin/followup-campaigns">Follow-up Campaigns</a>
         <a href="/">← Back to Site</a>
       </nav>
     </header>
@@ -15,5 +16,5 @@
       {{ .Content }}
     </div>
   </div>
-</main>
+</div>
 {{ end }}

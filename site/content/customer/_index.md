@@ -5,7 +5,6 @@ layout: customer-portal
 criticalCss: "customer"
 ---
 
-# Customer Portal
 
 Welcome to your personal Cadillac customer portal. Here you can:
 

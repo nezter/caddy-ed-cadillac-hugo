@@ -1,16 +1,26 @@
 {{- /*
-  assets.html -- front-end asset pipeline (Hugo Pipes).
+  assets.html -- global front-end asset pipeline (Hugo Pipes).
 
   Replaces the webpack build for the public site. Hugo's `js.Build` (esbuild)
-  and `css.Sass` (libsass) are built into Hugo Extended, so the front end no
-  longer needs a separate bundler, a `dist/` directory, or a manifest that had
-  to be kept in sync with the templates.
+  is built into Hugo Extended, so the front end no longer needs a separate
+  bundler, a `dist/` directory, or a manifest that had to be kept in sync with
+  the templates.
 
   Why this exists: templates used to hardcode `/js/index.js` and `/css/main.css`
   while webpack emitted `main.<hash>.js` / `styles.<hash>.css` into `dist/`, and
   the Netlify build never ran webpack at all -- so every page shipped with a
   404 for its JavaScript. Fingerprinted resources emitted straight from Hugo
   make that class of bug impossible: the URL is always correct by construction.
+
+  SCOPE: this partial is for assets that EVERY page needs, and nothing else.
+
+  It used to also emit customer-portal.css and inventory.scss here. That put
+  12.5 KB of section-specific CSS on all 56 pages, and -- worse -- because
+  those files loaded after main.css they won the cascade, so the customer
+  portal's Bootstrap-blue `.btn-primary` repainted every primary button on the
+  entire site. Section stylesheets are now attached by the section layouts
+  through the `headStyles` block, which is the only place a page's own
+  stylesheet can be declared.
 
   Usage:
     {{ partial "assets.html" (dict "page" . "mode" "css") }}   -> CSS <link>s
@@ -24,32 +34,10 @@
 {{- $page := .page -}}
 {{- $mode := .mode | default "all" -}}
 {{- $isProd := hugo.IsProduction -}}
-{{- /* Hugo's fingerprint takes a hash algorithm, not a boolean. sha512 is
-       what SRI expects and what Netlify's CDN serves best. */ -}}
-{{- $algo := "sha512" -}}
-{{- $withIntegrity := true -}}
 
 {{- /* ---------------------------------------------------------------- CSS */ -}}
 {{- if or (eq $mode "css") (eq $mode "all") -}}
-  {{- with resources.Get "css/main.css" -}}
-    {{- $css := . | minify | fingerprint $algo -}}
-    <link rel="stylesheet" href="{{ $css.RelPermalink }}"
-          {{- if $withIntegrity }}{{ with $css.Data.Integrity }} integrity="{{ . }}" crossorigin="anonymous"{{ end }}{{ end }}>
-  {{- end -}}
-
-  {{- with resources.Get "css/customer-portal.css" -}}
-    {{- $css := . | minify | fingerprint $algo -}}
-    <link rel="stylesheet" href="{{ $css.RelPermalink }}"
-          {{- if $withIntegrity }}{{ with $css.Data.Integrity }} integrity="{{ . }}" crossorigin="anonymous"{{ end }}{{ end }}>
-  {{- end -}}
-
-  {{- /* inventory.scss is compiled by Hugo's built-in libsass when present. */ -}}
-  {{- with resources.Get "css/inventory.scss" -}}
-    {{- $opts := dict "targetPath" "css/inventory.css" "outputStyle" (cond $isProd "compressed" "expanded") -}}
-    {{- $css := . | toCSS $opts | minify | fingerprint $algo -}}
-    <link rel="stylesheet" href="{{ $css.RelPermalink }}"
-          {{- if $withIntegrity }}{{ with $css.Data.Integrity }} integrity="{{ . }}" crossorigin="anonymous"{{ end }}{{ end }}>
-  {{- end -}}
+  {{- partial "stylesheet.html" "main.css" -}}
 {{- end -}}
 
 {{- /* ----------------------------------------------------------------- JS */ -}}
@@ -73,9 +61,9 @@
     {{- $js := . | js.Build $opts -}}
     {{- /* Fingerprint only in production so dev rebuilds stay cheap. */ -}}
     {{- if $isProd -}}
-      {{- $js = $js | fingerprint $algo -}}
+      {{- $js = $js | fingerprint "sha512" -}}
     {{- end -}}
     <script src="{{ $js.RelPermalink }}" defer
-            {{- if $withIntegrity }}{{ with $js.Data.Integrity }} integrity="{{ . }}" crossorigin="anonymous"{{ end }}{{ end }}></script>
+            {{- with $js.Data.Integrity }} integrity="{{ . }}" crossorigin="anonymous"{{ end }}></script>
   {{- end -}}
 {{- end -}}

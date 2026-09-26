@@ -22,8 +22,16 @@
     <div class="footer-grid">
       <div>
         <a href="/" class="footer-logo" aria-label="{{ .Site.Title }} home">
-          <img src="/img/logo.svg" alt="{{ .Site.Title }}" width="180" height="34"
-               style="filter: brightness(0) invert(1); margin-bottom: var(--space-3)">
+          {{/* An SVG wordmark: already a vector, already 265 KB of embedded
+               raster that libvips cannot improve on. `passthrough` keeps this
+               a single <img> -- a srcset of one icon is noise. */}}
+          {{ partial "static-picture.html" (dict
+              "src" "/img/logo.svg"
+              "alt" .Site.Title
+              "width" 180
+              "height" 34
+              "passthrough" true
+              "style" "filter: brightness(0) invert(1); margin-bottom: var(--space-3)") }}
         </a>
         <p style="font-size: var(--text-sm)">
           Luxury Cadillac sales and factory-trained service in South Charlotte.

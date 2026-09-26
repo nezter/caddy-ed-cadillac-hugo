@@ -346,11 +346,29 @@ p { text-wrap: pretty; }
 .btn:hover { transform: translateY(-1px); box-shadow: var(--shadow); }
 .btn:active { transform: translateY(0); }
 
+/* The hover lift must not apply to a control the user cannot act on, and a
+   disabled control has to say so. Was defined only in customer-portal.css. */
+.btn:disabled,
+.btn[aria-disabled="true"] {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
 .btn-primary    { --btn-bg: var(--accent); --btn-fg: #fff; }
 .btn-primary:hover { --btn-bg: var(--accent-hover); }
 
 .btn-inverse    { --btn-bg: var(--grey-0); --btn-fg: var(--grey-900); }
 .btn-inverse:hover { --btn-bg: var(--grey-50); }
+
+/* .btn-secondary is used by vehicle-card.html, about/list.html and the
+   inventory section -- but until now the ONLY definition of it lived in
+   customer-portal.css, which assets.html loaded on every page. A component
+   stylesheet was accidentally load-bearing for the whole site. It belongs
+   here, in the design system, next to its siblings. */
+.btn-secondary  { --btn-bg: var(--grey-100); --btn-fg: var(--text); --btn-border: var(--border); }
+.btn-secondary:hover { --btn-bg: var(--grey-50); --btn-border: var(--border-strong); }
 
 .btn-outline    { --btn-bg: transparent; --btn-fg: var(--text); --btn-border: var(--border-strong); }
 .btn-outline:hover { --btn-bg: var(--bg-subtle); --btn-border: var(--text); }

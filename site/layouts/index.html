@@ -10,10 +10,20 @@
      ------------------------------------------------------------------ */}}
 <section class="hero">
   {{ with .Params.hero_image | default .Site.Params.hero_image }}
+  {{/* The LCP element on the most-viewed page in the site. It is therefore
+       eager + fetchpriority=high and it gets the full codec/width ladder, so a
+       1920w source is served at 23 KB AVIF instead of 138 KB of one-size JPEG.
+       It is NOT lazy-loaded: deferring the LCP image is the single most
+       expensive optimisation mistake available on this page.
+       `.hero__media img { width:100%; height:100%; object-fit:cover }` still
+       applies -- <picture> is transparent to that descendant selector. */}}
   <div class="hero__media">
-    <img src="{{ . | relURL }}"
-         alt="{{ $.Params.hero_image_alt | default (printf "A Cadillac on display at %s" $.Site.Title) }}"
-         width="1600" height="900" fetchpriority="high" decoding="async">
+    {{ partial "static-picture.html" (dict
+        "src" .
+        "alt" ($.Params.hero_image_alt | default (printf "A Cadillac on display at %s" $.Site.Title))
+        "sizes" "100vw"
+        "widths" (slice 640 1024 1600 1920)
+        "loading" "eager") }}
   </div>
   {{ end }}
 

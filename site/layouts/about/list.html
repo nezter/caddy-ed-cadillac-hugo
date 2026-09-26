@@ -28,9 +28,19 @@
         <div class="team-member">
           <div class="team-photo">
             {{ if .photo }}
-            <img src="{{ .photo }}" alt="{{ .name }}" class="lazyload">
+            {{ partial "static-picture.html" (dict
+                "src" .photo
+                "alt" .name
+                "sizes" "(max-width: 40rem) 92vw, 22vw"
+                "widths" (slice 320 640)
+                "loading" "lazy") }}
             {{ else }}
-            <img src="/img/placeholder-person.jpg" alt="{{ .name }}" class="lazyload">
+            {{ partial "static-picture.html" (dict
+                "src" "/img/placeholder-person.jpg"
+                "alt" .name
+                "sizes" "300px"
+                "widths" (slice 300)
+                "loading" "lazy") }}
             {{ end }}
           </div>
           <div class="team-info">
@@ -106,7 +116,15 @@
       <div class="gallery-grid">
         {{ range . }}
         <div class="gallery-item">
-          <img src="{{ .res.RelPermalink }}" alt="{{ .alt }}" class="lazyload" loading="lazy">
+          {{/* The Resource was already resolved above, to decide whether the
+               file exists. Hand it straight over so the gallery gets the same
+               codec ladder and the same width/height box as everything else. */}}
+          {{ partial "static-picture.html" (dict
+              "resource" .res
+              "alt" .alt
+              "sizes" "(max-width: 40rem) 92vw, 30vw"
+              "widths" (slice 400 800 1200)
+              "loading" "lazy") }}
         </div>
         {{ end }}
       </div>

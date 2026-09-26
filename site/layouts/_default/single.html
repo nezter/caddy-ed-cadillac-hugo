@@ -25,17 +25,17 @@
       <main class="main-content">
         {{ if .Params.featured_image }}
         <figure class="featured-image">
-          <img 
-            src="/img/placeholder-blog.jpg" 
-            data-src="{{ .Params.featured_image }}" 
-            alt="{{ .Title }}" 
-            class="lazyload"
-            loading="lazy"
-            width="800" 
-            height="450">
-          <noscript>
-            <img src="{{ .Params.featured_image }}" alt="{{ .Title }}" width="800" height="450">
-          </noscript>
+          {{/* Was a lazysizes + <noscript> pair: a 350x200 placeholder stretched
+               to an 800x450 slot, swapped by a polyfill in the JS bundle. Native
+               loading="lazy" plus a real srcset does it in markup, and the
+               <noscript> twin went away with it because there is no script
+               left to need a twin. */}}
+          {{ partial "static-picture.html" (dict
+              "src" .Params.featured_image
+              "alt" .Title
+              "sizes" "(max-width: 40rem) 92vw, 800px"
+              "widths" (slice 400 800 1200 1600)
+              "loading" "lazy") }}
           {{ if .Params.image_caption }}
           <figcaption>{{ .Params.image_caption }}</figcaption>
           {{ end }}
@@ -93,17 +93,12 @@
               {{ if .Params.featured_image }}
               <div class="post-image">
                 <a href="{{ .RelPermalink }}">
-                  <img 
-                    src="/img/placeholder-blog.jpg" 
-                    data-src="{{ .Params.featured_image }}" 
-                    alt="{{ .Title }}" 
-                    class="lazyload"
-                    loading="lazy"
-                    width="350" 
-                    height="200">
-                  <noscript>
-                    <img src="{{ .Params.featured_image }}" alt="{{ .Title }}" width="350" height="200">
-                  </noscript>
+                  {{ partial "static-picture.html" (dict
+                      "src" .Params.featured_image
+                      "alt" .Title
+                      "sizes" "(max-width: 40rem) 46vw, 350px"
+                      "widths" (slice 320 640)
+                      "loading" "lazy") }}
                 </a>
               </div>
               {{ end }}

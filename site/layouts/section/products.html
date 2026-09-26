@@ -24,7 +24,17 @@
 </div>
 
 <!-- Full-width image -->
-<img src="{{ .Params.full_image }}" alt="" class="db w-100">
+{{/* `db w-100` (Tachyons) on the old <img>; the class now rides on the
+     <picture> so the full-bleed box is unchanged while the browser gets to pick
+     the AVIF variant at the width it actually needs. */}}
+{{ partial "static-picture.html" (dict
+    "src" .Params.full_image
+    "alt" ""
+    "decorative" true
+    "class" "db w-100"
+    "sizes" "100vw"
+    "widths" (slice 640 1024 1600 1920)
+    "loading" "lazy") }}
 
 {{ partial "table" .Params.pricing }}
 

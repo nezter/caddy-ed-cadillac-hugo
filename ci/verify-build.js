@@ -49,6 +49,137 @@ function warn(msg) {
   console.log(`  \x1b[1;33mWARN\x1b[0m  ${msg}`);
 }
 
+// ---------------------------------------------------------------------------
+// checkStructure -- document-level validity that nothing else inspects.
+//
+// A browser silently repairs invalid HTML, so these defects render as
+// "looks fine" in a screenshot while being wrong:
+//
+//   * nested <main>          -- the accessibility tree gets two main landmarks
+//   * zero or many <h1>     -- one h1 per page is the document's subject;
+//                              zero leaves screen readers with no title
+//   * duplicate id=          -- getElementById becomes order-dependent, and
+//                              <label for=>/aria-* stop resolving
+//   * an unrendered {{ ... }} template leaking into the document. Hugo does
+//     NOT evaluate Go templates inside markdown bodies, so a `{{ .Params.x }}`
+//     written in a content file ships to the browser verbatim. This one leaked
+//     internal template syntax and a broken default value into production HTML.
+//   * <img> without alt     -- not fatal (alt="" is legitimate for
+//     decoration) but flagged when alt is missing entirely
+//
+// Returns { problems: string[] }.
+// ---------------------------------------------------------------------------
+function checkStructure(htmlFiles) {
+  const problems = [];
+  const seenPerPage = [];
+
+  for (const file of htmlFiles) {
+    const rel = path.relative(PUBLIC_DIR, file) || path.basename(file);
+    const html = fs.readFileSync(file, 'utf8');
+    // Strip script/style bodies: their contents are code, not markup, and
+    // scanning them produces phantom tag matches.
+    const body = html
+      .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ')
+      .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, ' ')
+      .replace(/<!--[\s\S]*?-->/g, ' ');
+
+    // 1. nested <main>
+    const mainOpen = (body.match(/<main\b[^>]*>/gi) || []).length;
+    if (mainOpen > 1) {
+      problems.push(
+        `${rel}: ${mainOpen} <main> elements (nested landmarks; baseof.html already emits one)`
+      );
+    }
+
+    // 2. h1 count -- exactly one, on every page
+    //
+    // Exempt: noindex application shells. /cms.html is a hand-written Decap CMS
+    // document that mounts an editor into <body> at runtime; it is not a
+    // content page and has no heading of its own by design.
+    const isNoindex = /<meta[^>]+name=["']?robots["']?[^>]*noindex/i.test(body);
+    const h1s = body.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/gi) || [];
+    if (h1s.length === 0) {
+      if (!isNoindex) problems.push(`${rel}: no <h1> (the page has no document subject)`);
+    } else if (h1s.length > 1) {
+      const texts = h1s
+        .map((h) => h.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().slice(0, 40))
+        .filter(Boolean);
+      problems.push(
+        `${rel}: ${h1s.length} <h1> elements [${texts.join(' | ')}] -- the layout and the markdown both emit one`
+      );
+    }
+
+    // 3. duplicate ids
+    const ids = [...body.matchAll(/\sid=(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi)].map((m) =>
+      (m[1] || m[2] || m[3] || '').trim()
+    );
+    const counts = new Map();
+    for (const id of ids) {
+      if (!id) continue;
+      counts.set(id, (counts.get(id) || 0) + 1);
+    }
+    const dupes = [...counts].filter(([, n]) => n > 1).map(([id, n]) => `${id} x${n}`);
+    if (dupes.length) {
+      problems.push(`${rel}: duplicate id attribute(s): ${dupes.slice(0, 6).join(', ')}`);
+    }
+
+    // 4. an unevaluated Go template in the output
+    const leaked = body.match(/\{\{[\s\S]{0,120}?\}\}/g);
+    if (leaked) {
+      const uniq = [...new Set(leaked.map((s) => s.replace(/\s+/g, ' ').trim()))];
+      problems.push(
+        `${rel}: unrendered template syntax in output: ${uniq.slice(0, 3).join(' | ').slice(0, 200)}`
+      );
+    }
+
+    // 5. third-party image hotlinks
+    //
+    // Every visitor loading an <img> from someone else's host is a request
+    // against their edge, their bandwidth bill and their uptime, and it hands
+    // them our traffic analytics. That is exactly what the vehicle-image work
+    // removed for dealer.com; this catches the same class of bug anywhere else
+    // in the markup. content/tech.md hotlinked a cloudfront.net logo and shipped
+    // it to production before this check existed.
+    //
+    // Allowed: the dealer's own site (linked from inventory copy) and Netlify
+    // Identity, which the CMS auth flow genuinely needs.
+    const ALLOWED_HOSTS = /(^|\.)(netlify\.com|netlify\.com\.au|cadillacofsouthcharlotte\.com)$/i;
+    const hotlinks = [];
+    for (const m of body.matchAll(/<img\b[^>]*\bsrc=(?:"([^"]+)"|'([^']+)'|([^\s>]+))/gi)) {
+      const src = m[1] || m[2] || m[3] || '';
+      if (!/^https?:\/\//i.test(src)) continue;
+      let host = '';
+      try {
+        host = new URL(src).hostname;
+      } catch {
+        continue;
+      }
+      if (!ALLOWED_HOSTS.test(host)) hotlinks.push(host);
+    }
+    if (hotlinks.length) {
+      const uniq = [...new Set(hotlinks)];
+      problems.push(
+        `${rel}: third-party <img> hotlink(s) to ${uniq.slice(0, 4).join(', ')} -- mirror the asset instead`
+      );
+    }
+
+    // 6. <img> with an empty or missing src
+    for (const m of body.matchAll(/<img\b([^>]*)>/gi)) {
+      const attrs = m[1] || '';
+      const sm = attrs.match(/\bsrc=(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i);
+      const val = (sm && (sm[1] ?? sm[2] ?? sm[3])) || '';
+      if (val.trim() === '') {
+        problems.push(`${rel}: <img> with an empty src attribute`);
+        break;
+      }
+    }
+
+    seenPerPage.push(rel);
+  }
+
+  return { problems };
+}
+
 function main() {
   if (!fs.existsSync(PUBLIC_DIR)) {
     console.error(`\n  \x1b[1;31mFAIL\x1b[0m  publish dir missing: ${PUBLIC_DIR}`);
@@ -123,6 +254,25 @@ function main() {
     process.exitCode = 1;
   } else {
     console.log(`  \x1b[1;32mOK\x1b[0m    all referenced assets exist`);
+  }
+
+  // --- structural HTML ----------------------------------------------------
+  // These are the defects that survived every other check because nothing
+  // looks at document structure: a browser repairs invalid HTML silently, so
+  // a nested <main> or a duplicate id looks fine in a screenshot and is
+  // invisible to an asset-existence check.
+  const structural = checkStructure(htmlFiles);
+  if (structural.problems.length === 0) {
+    console.log(
+      `  \x1b[1;32mOK\x1b[0m    document structure valid (one h1, one main, unique ids)`
+    );
+  } else {
+    console.error(
+      `\n  \x1b[1;31mFAIL\x1b[0m  ${structural.problems.length} document structure problem(s):\n`
+    );
+    for (const p of structural.problems) console.error(`    ${p}`);
+    console.error('');
+    process.exitCode = 1;
   }
 
   // --- size budget ---------------------------------------------------------

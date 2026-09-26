@@ -1,3 +1,9 @@
+{{- /* This section owns its stylesheet. It used to be emitted by
+     partials/assets.html on EVERY page, which put the weight of one
+     section on all 56 -- and, for customer-portal.css, let a
+     component sheet win the cascade over main.css site-wide. */ -}}
+{{ define "headStyles" }}{{ partial "stylesheet.html" "customer-portal.css" }}{{ end }}
+
 {{ define "main" }}
 <div class="customer-portal">
   <div class="container">

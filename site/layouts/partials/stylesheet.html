@@ -1,0 +1,62 @@
+{{- /*
+  stylesheet.html -- build, minify and fingerprint one stylesheet.
+
+  There are three places that used to each hand-roll this and each got it
+  slightly wrong:
+
+    assets.html          -- emitted customer-portal.css and inventory.scss
+                            unconditionally, on every page, because there was
+                            no other way to attach a stylesheet to a section
+    page-scripts.html    -- could only handle plain .css (resources.Get), so
+                            an .scss could never be requested by a page
+    the old webpack build -- emitted into dist/ behind a manifest
+
+  One partial, one code path: plain .css goes through minify, .scss goes
+  through libsass first, and both are fingerprinted with sha512 so the URL is
+  always correct by construction and SRI is available.
+
+  Usage:  {{ partial "stylesheet.html" "inventory.scss" }}
+          {{ partial "stylesheet.html" (dict "name" "main.css") }}
+
+  Context: a string, or a dict with:
+    name   - path under assets/css/ (required)
+    media  - optional media attribute
+    inline - if true, return the CSS text instead of a <link> (rare)
+*/ -}}
+
+{{- $name := "" -}}
+{{- $media := "" -}}
+{{- $inline := false -}}
+{{- if reflect.IsMap . -}}
+  {{- $name = .name | default "" -}}
+  {{- $media = .media | default "" -}}
+  {{- $inline = .inline | default false -}}
+{{- else -}}
+  {{- $name = . | default "" -}}
+{{- end -}}
+
+{{- $isProd := hugo.IsProduction -}}
+
+{{- with resources.Get (printf "css/%s" $name) -}}
+  {{- $css := . -}}
+  {{- /* .scss needs libsass before it is CSS. .css is already CSS.
+         Keyed off the extension, not MediaType.SubType: that resolves to
+         "scss" on the resource but the comparison is not dependable across
+         Hugo versions, and minify() has no minifier for text/x-scss. */ -}}
+  {{- if in (slice "scss" "sass") (path.Ext $name | strings.TrimPrefix ".") -}}
+    {{- $css = $css | toCSS (dict
+          "targetPath" (printf "css/%s.css" (path.BaseName $name))
+          "outputStyle" (cond $isProd "compressed" "expanded")
+          "enableSourceMap" (not $isProd)) -}}
+  {{- end -}}
+  {{- if $inline -}}
+    {{- $css.Content -}}
+  {{- else -}}
+    {{- $css = $css | minify | fingerprint "sha512" -}}
+    <link rel="stylesheet" href="{{ $css.RelPermalink }}"
+      {{- with $media }} media="{{ . }}"{{ end }}
+      {{- with $css.Data.Integrity }} integrity="{{ . }}" crossorigin="anonymous"{{ end }}>
+  {{- end -}}
+{{- else -}}
+  {{- warnf "stylesheet.html: no such asset css/%s" $name -}}
+{{- end -}}

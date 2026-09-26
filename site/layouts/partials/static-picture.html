@@ -1,0 +1,258 @@
+{{- /*
+  static-picture.html -- the site's OWN imagery, responsive and codec-negotiated.
+
+  partials/picture.html is the same idea for dealer photography: it works on
+  resources.Get from assets/vehicles/. This partial is its counterpart for the
+  pictures that used to live in site/static/img/ and were served raw -- one size,
+  no codec negotiation, no responsive widths, no width/height, so every one of
+  them was a layout-shift and a wasted-bandwidth bug.
+
+  WHY THE FILES MOVED OUT OF static/ INSTEAD OF BEING PROCESSED IN PLACE
+  --------------------------------------------------------------------
+  Hugo's image pipeline (resources.Get / .Resize / .Fill) reads the ASSET
+  filesystem. site/static/ is a publish-only mount: Hugo copies it byte for byte
+  and offers no way to turn a file inside it into a Resource. There is no
+  resources.GetStatic, no resources.FromString-for-static, and the only
+  static-to-resource bridge is resources.GetRemote -- i.e. re-fetching our own
+  files over HTTP at build time, which makes the build depend on the network and
+  would still need somewhere to put the answer. So: static/ cannot be optimised
+  in place, full stop.
+
+  The content imagery (photographs a visitor actually looks at) was therefore
+  MOVED to site/assets/img/. Hugo publishes assets/ to the site root preserving
+  the subpath, so assets/img/home-jumbotron.jpg is still served at
+  /img/home-jumbotron.jpg -- every existing URL, every front-matter `image:` and
+  every partial that hardcodes the path keeps working, byte for byte. Nothing
+  outside this partial had to change to keep the site green.
+
+  The UI assets stay in static/ on purpose. A 512-byte SVG icon, a 16x16
+  favicon and a 265 KB wordmark are not candidates for a codec ladder: there is
+  no second format that makes an SVG smaller, and re-encoding a 16px PNG through
+  libvips produces a bigger file with less information. When a caller asks for
+  something that only exists under static/, this partial emits a single plain
+  <img> with the attributes it was given and gets out of the way.
+
+  THE TWO RULES (inherited from picture.html, not reinvented here)
+  ----------------------------------------------------------------
+  1. NEVER UPSCALE. Re-encoding a 1024w source to 1600w measured +48% LARGER
+     with no added detail. Unlike picture.html, which needs an `image_width` in
+     front matter, this partial reads the true intrinsic width straight off the
+     Resource (.Width), so the cap is exact by construction and cannot drift out
+     of sync with the file.
+
+  2. ONE ORIGINAL SERVES EVERY SIZE. The visitor's browser picks from the
+     srcset, so a 380px card and a full-bleed hero can share one original and
+     the card never pays for the hero.
+
+  Context (dict):
+    src        - required. "img/foo.jpg", "/img/foo.jpg", "static/img/foo.jpg"
+                 and "assets/img/foo.jpg" all normalise to the same thing.
+    resource   - a Resource you already resolved yourself, instead of `src`.
+                 Useful when a caller needed resources.Get anyway just to decide
+                 whether the file exists at all.
+    alt        - alt text (required unless decorative)
+    class      - class attribute. Lands on the OUTERMOST element emitted, i.e.
+                 the <picture> when a ladder is built and the <img> otherwise,
+                 so it always means "style this image" and never both.
+    style      - style attribute, same placement rule as `class`.
+    attrs      - raw extra attribute string, e.g. `data-foo="bar"`, always on the
+                 <img>. Used to absorb markup of hand-written <img> tags this
+                 partial does not own.
+    widths     - candidate widths, descending. Default [320 640 1024 1600 1920].
+                 Anything wider than the source is dropped.
+    sizes      - the sizes attribute, so the browser chooses before download
+    loading    - "lazy" (default) | "eager" for above-the-fold
+    width      - optional hard cap in px, for when a caller knows a narrower
+                 display box than the source
+    height     - optional intrinsic height for the static/ passthrough path,
+                 which cannot measure the file
+    decorative - if set, emit an empty alt and skip decoding="async"
+    passthrough - force the single-size <img> path even for a file in assets/
+                 (how a UI asset stays a UI asset)
+    fallback   - used when src does not resolve. Default
+                 "img/placeholder-vehicle.jpg".
+    lazyloadExempt - set false to opt out of the data-src marker described below.
+                 Default: set.
+*/ -}}
+
+{{- $src := .src | default .image | default "" -}}
+{{- $alt := .alt | default "" -}}
+{{- $class := .class | default "" -}}
+{{- $style := .style | default "" -}}
+{{- $attrs := .attrs | default "" -}}
+{{- $loading := .loading | default "lazy" -}}
+{{- /* `| false` is not a pipeline stage; an absent key is already falsy. */ -}}
+{{- $decorative := .decorative -}}
+{{- $passthrough := .passthrough -}}
+{{- $sizes := .sizes | default "(max-width: 64rem) 92vw, 1200px" -}}
+{{- $fallback := .fallback | default "img/placeholder-vehicle.jpg" -}}
+{{- $capWidth := .width | default 0 -}}
+{{- $declaredHeight := .height | default 0 -}}
+{{- $candidates := .widths | default (slice 320 640 1024 1600 1920) -}}
+{{- $lazyloadExempt := true -}}
+{{- if eq .lazyloadExempt false -}}{{- $lazyloadExempt = false -}}{{- end -}}
+
+{{- /* ---- the legacy lazysizes rewriter, and why we dodge it -------------
+     assets/js ships a DOMContentLoaded block that selects
+     `img:not(.lazyload):not([data-src])` and, for every image it finds, moves
+     `src` to `data-src`, replaces `src` with a 1x1 GIF, and adds `.lazyload` --
+     and `.lazyload { opacity: 0 }` in components/lazy-loading.css. It is in the
+     production main bundle today, so it is already reloading the home page hero
+     and every vehicle card through a polyfill that native `loading="lazy"`
+     made obsolete eight years ago.
+
+     Emitting `data-src` makes the selector not match, so the rewriter leaves
+     the element alone: no GIF swap, no opacity:0 flash, and -- the point of
+     this exercise -- the browser gets to choose the AVIF variant itself
+     instead of lazysizes handing it the widest JPEG after the fact.
+
+     `data-src` is the only marker that selector honours, so it is the only one
+     that works without editing site/assets/js, which is out of scope here. The
+     correct fix is to delete the rewriter; until then this is the opt-out. */ -}}
+{{- /* Empty on purpose: it is an attribute-PRESENCE marker for that selector,
+     and an empty value keeps `img.dataset.src` falsy for any other consumer. */ -}}
+{{- $exempt := cond $lazyloadExempt ` data-src=""` "" -}}
+
+{{- /* ---- normalise the path --------------------------------------------
+     Content front matter writes "/img/x.jpg"; config.toml writes
+     "img/x.jpg"; this partial wants one assets-relative path. */ -}}
+{{- $path := $src -}}
+{{- range (slice "assets/" "static/" "./") -}}
+  {{- if hasPrefix $path . -}}{{- $path = strings.TrimPrefix . $path -}}{{- end -}}
+{{- end -}}
+{{- if hasPrefix $path "/" -}}{{- $path = strings.TrimPrefix "/" $path -}}{{- end -}}
+
+{{- /* Raster formats libvips can re-encode. Everything else (svg, ico) is
+     already as small as it is going to get in a second format. */ -}}
+{{- $raster := slice "jpeg" "jpg" "png" "webp" "tiff" -}}
+
+{{- /* ---- resolve ---------------------------------------------------------
+     A caller that already holds a Resource hands it over; otherwise we look the
+     path up ourselves. */ -}}
+{{- $res := .resource -}}
+{{- if not $res -}}
+  {{- if $path -}}
+    {{- $res = resources.Get $path -}}
+  {{- end -}}
+{{- end -}}
+
+{{- with $res -}}
+  {{- $orig := . -}}
+  {{- $sub := $orig.MediaType.SubType | lower -}}
+  {{- $isRaster := in $raster $sub -}}
+
+  {{- if and $isRaster (not $passthrough) -}}
+    {{- /* ================= derived ladder ================= */ -}}
+
+    {{- /* Rule 1: the true source width caps every candidate. */ -}}
+    {{- $sourceWidth := $orig.Width -}}
+    {{- if and $capWidth (gt $capWidth 0) (lt $capWidth $sourceWidth) -}}
+      {{- $sourceWidth = $capWidth -}}
+    {{- end -}}
+
+    {{- $usable := slice -}}
+    {{- range $candidates -}}
+      {{- if le . $sourceWidth -}}{{- $usable = $usable | append . -}}{{- end -}}
+    {{- end -}}
+    {{- if not $usable -}}{{- $usable = slice $sourceWidth -}}{{- end -}}
+
+    {{- $ratio := 1.0 -}}
+    {{- if and $orig.Height $sourceWidth -}}
+      {{- $ratio = div (float $orig.Height) (float $sourceWidth) -}}
+    {{- end -}}
+
+    {{- $avif := slice -}}{{- $webp := slice -}}{{- $jpeg := slice -}}
+    {{- range $usable -}}
+      {{- $w := . -}}
+      {{- $h := cond (gt $ratio 0) (int (mul (float $w) $ratio)) 0 -}}
+      {{- $box := cond (gt $h 0) (printf "%dx%d" $w $h) (printf "%dx" $w) -}}
+
+      {{- $a := $orig.Resize (printf "%s avif q60 fit" $box) -}}
+      {{- $avif = $avif | append (printf "%s %dw" $a.RelPermalink $w) -}}
+
+      {{- $p := $orig.Resize (printf "%s webp q80" $box) -}}
+      {{- $webp = $webp | append (printf "%s %dw" $p.RelPermalink $w) -}}
+
+      {{- $j := $orig.Resize (printf "%s jpg q80" $box) -}}
+      {{- $jpeg = $jpeg | append (printf "%s %dw" $j.RelPermalink $w) -}}
+    {{- end -}}
+
+    {{- /* Widest JPEG is the <img> fallback; the <source> sets carry the rest.
+         `(split ... | first)` is invalid here -- first takes a limit and a
+         collection, not a piped value -- so index into the split result. */ -}}
+    {{- $largestJpg := index (split (index $jpeg (sub (len $jpeg) 1)) " ") 0 -}}
+
+    <picture{{ with $class }} class="{{ . }}"{{ end }}{{ with $style }} style="{{ . }}"{{ end }}>
+      <source type="image/avif" srcset="{{ delimit $avif ", " }}" sizes="{{ $sizes }}">
+      <source type="image/webp" srcset="{{ delimit $webp ", " }}" sizes="{{ $sizes }}">
+      <img src="{{ $largestJpg | relURL }}"
+           srcset="{{ delimit $jpeg ", " }}" sizes="{{ $sizes }}"
+           alt="{{ if $decorative }}{{ "" }}{{ else }}{{ $alt }}{{ end }}"
+           {{- /* The widest candidate IS the source width, so this is the true
+                  intrinsic box: the browser reserves the right aspect ratio
+                  before a byte arrives. That is the whole CLS fix. */}}
+           width="{{ index $usable 0 }}"
+           height="{{ cond (gt $ratio 0) (int (mul (float (index $usable 0)) $ratio)) 0 }}"
+           loading="{{ $loading }}"
+           {{ if not $decorative }}decoding="async"{{ end }}
+           {{ if eq $loading "eager" }}fetchpriority="high"{{ end }}
+           {{ with $attrs }}{{ . | safeHTML }}{{ end }}{{ $exempt | safeHTML }}>
+    </picture>
+
+  {{- else -}}
+    {{- /* ================= single-size passthrough =================
+           An SVG icon, a favicon, or anything a caller marked `passthrough`.
+           One file, no srcset -- because a srcset of a single 24x24 icon is
+           noise, and libvips cannot sharpen a favicon into a better favicon. */ -}}
+    <img src="{{ $orig.RelPermalink }}"
+         alt="{{ if $decorative }}{{ "" }}{{ else }}{{ $alt }}{{ end }}"
+         {{- with $orig.Width }} width="{{ . }}"{{ end }}
+         {{- with $orig.Height }} height="{{ . }}"{{ end }}
+         loading="{{ $loading }}"
+         {{ if not $decorative }}decoding="async"{{ end }}
+         {{ if eq $loading "eager" }}fetchpriority="high"{{ end }}
+         {{ with $class }} class="{{ . }}"{{ end }}
+         {{ with $style }} style="{{ . }}"{{ end }}
+         {{ with $attrs }}{{ . | safeHTML }}{{ end }}{{ $exempt | safeHTML }}>
+  {{- end -}}
+
+{{- else -}}
+  {{- /* Not in assets/. It may still be a legitimate static/ UI asset: check
+         before giving up, because the alternative is a 404. */ -}}
+  {{- if fileExists (printf "static/%s" $path) -}}
+    <img src="{{ $path | relURL }}"
+         alt="{{ if $decorative }}{{ "" }}{{ else }}{{ $alt }}{{ end }}"
+         {{- /* static/ is outside the asset pipeline, so Hugo cannot measure
+                the file for us. Only emit a box we were actually told. */}}
+         {{- with $capWidth }} width="{{ . }}"{{ end }}
+         {{- with $declaredHeight }} height="{{ . }}"{{ end }}
+         loading="{{ $loading }}"
+         {{ if not $decorative }}decoding="async"{{ end }}
+         {{ if eq $loading "eager" }}fetchpriority="high"{{ end }}
+         {{ with $class }} class="{{ . }}"{{ end }}
+         {{ with $style }} style="{{ . }}"{{ end }}
+         {{ with $attrs }}{{ . | safeHTML }}{{ end }}{{ $exempt | safeHTML }}>
+  {{- else -}}
+    {{- /* Neither. Fall back to the bundled placeholder rather than emitting a
+           src that can only 404 -- a missing photograph must never become a
+           missing image element. */ -}}
+    {{- $fb := strings.TrimPrefix "/" $fallback -}}
+    {{- $fb = strings.TrimPrefix "assets/" $fb -}}
+    {{- $fb = strings.TrimPrefix "img/" $fb -}}
+    {{- if ne $fb $path -}}
+      {{- partial "static-picture.html" (dict
+          "src" (printf "img/%s" $fb)
+          "alt" $alt
+          "class" $class
+          "style" $style
+          "attrs" $attrs
+          "sizes" $sizes
+          "widths" $candidates
+          "loading" $loading
+          "decorative" $decorative
+          "passthrough" true
+          "fallback" ""
+      ) -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}

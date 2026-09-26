@@ -89,6 +89,12 @@ do_verify() {
   do_build
   log "Verifying build output has no dangling asset references"
   in_container 'node ci/verify-build.js'
+  # Source-tree check. Runs before the output check would have any chance of
+  # passing anyway, because the failure it catches (starter-template demo
+  # content, e.g. the Kaldi Coffee pricing page) produces a perfectly valid
+  # build. Order is deliberate: fail on the real problem first.
+  log "Verifying source content is not starter-template filler"
+  in_container 'node ci/verify-content.js'
 }
 
 do_inventory() {

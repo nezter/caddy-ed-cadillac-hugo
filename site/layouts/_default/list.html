@@ -17,17 +17,12 @@
           {{ if .Params.featured_image }}
           <div class="post-image">
             <a href="{{ .RelPermalink }}">
-              <img 
-                src="/img/placeholder-blog.jpg" 
-                data-src="{{ .Params.featured_image }}" 
-                alt="{{ .Title }}" 
-                class="lazyload"
-                loading="lazy"
-                width="300" 
-                height="200">
-              <noscript>
-                <img src="{{ .Params.featured_image }}" alt="{{ .Title }}" width="300" height="200">
-              </noscript>
+              {{ partial "static-picture.html" (dict
+                  "src" .Params.featured_image
+                  "alt" .Title
+                  "sizes" "(max-width: 40rem) 46vw, 300px"
+                  "widths" (slice 320 640)
+                  "loading" "lazy") }}
             </a>
           </div>
           {{ end }}
@@ -59,35 +54,27 @@
             <div class="vehicle-image">
               <a href="{{ .RelPermalink }}">
                 {{ if .Params.images }}
-                <img 
-                  src="/img/placeholder-vehicle.jpg" 
-                  data-src="{{ index .Params.images 0 }}" 
-                  alt="{{ .Title }}" 
-                  class="lazyload"
-                  loading="lazy"
-                  width="300" 
-                  height="200">
-                <noscript>
-                  <img src="{{ index .Params.images 0 }}" alt="{{ .Title }}" width="300" height="200">
-                </noscript>
+                {{ partial "static-picture.html" (dict
+                    "src" (index .Params.images 0)
+                    "alt" .Title
+                    "sizes" "(max-width: 40rem) 46vw, 300px"
+                    "widths" (slice 320 640)
+                    "loading" "lazy") }}
                 {{ else if .Params.featured_image }}
-                <img 
-                  src="/img/placeholder-vehicle.jpg" 
-                  data-src="{{ .Params.featured_image }}" 
-                  alt="{{ .Title }}" 
-                  class="lazyload"
-                  loading="lazy"
-                  width="300" 
-                  height="200">
-                <noscript>
-                  <img src="{{ .Params.featured_image }}" alt="{{ .Title }}" width="300" height="200">
-                </noscript>
+                {{ partial "static-picture.html" (dict
+                    "src" .Params.featured_image
+                    "alt" .Title
+                    "sizes" "(max-width: 40rem) 46vw, 300px"
+                    "widths" (slice 320 640)
+                    "loading" "lazy") }}
                 {{ else }}
-                <img 
-                  src="/img/vehicle-placeholder.jpg" 
-                  alt="{{ .Title }}" 
-                  width="300" 
-                  height="200">
+                {{ partial "static-picture.html" (dict
+                    "src" "/img/placeholder-vehicle.jpg"
+                    "alt" .Title
+                    "sizes" "300px"
+                    "widths" (slice 320)
+                    "loading" "lazy"
+                    "fallback" "") }}
                 {{ end }}
               </a>
               <button class="favorite-toggle" aria-label="Add to favorites" aria-checked="false">
@@ -100,7 +87,7 @@
               <p class="vehicle-price">{{ if .Params.price }}${{ .Params.price | lang.NumFmt 0 }}{{ else }}Call for Price{{ end }}</p>
               {{ if .Params.mileage }}<p class="vehicle-mileage">{{ .Params.mileage | lang.NumFmt 0 }} miles</p>{{ end }}
               <div class="vehicle-actions">
-                <a href="{{ .RelPermalink }}" class="btn primary-btn">View Details</a>
+                <a href="{{ .RelPermalink }}" class="btn btn-primary">View Details</a>
                 <button class="compare-button" data-vehicle-id="{{ .Params.id }}">Compare</button>
               </div>
             </div>

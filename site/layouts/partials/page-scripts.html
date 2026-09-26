@@ -19,6 +19,14 @@
   A page can also pull in the matching component stylesheet automatically by
   naming the script's directory (e.g. components/x.js -> components/x.css),
   which is why `styles` is usually unnecessary.
+
+  Both .css and .scss are accepted; .scss is compiled with libsass first.
+  Stylesheets are emitted through partials/stylesheet.html, the same code path
+  the global bundle uses.
+
+  NOTE: a *section* stylesheet belongs in the section layout's `headStyles`
+  block, not here. This is for the one-off additions a single page makes. A
+  stylesheet in front matter is silently absent if a future page forgets it.
 */ -}}
 
 {{- $page := . -}}
@@ -33,14 +41,11 @@
   {{- range . -}}
     {{- $dir := path.Dir . -}}
     {{- $stem := path.BaseName . -}}
-    {{- $candidate := "" -}}
     {{- if ne $dir "." -}}
-      {{- $candidate = printf "%s/%s.css" $dir $stem -}}
-    {{- end -}}
-    {{- with $candidate -}}
-      {{- with resources.Get (printf "css/%s" .) -}}
-        {{- if not (in $styles .) -}}
-          {{- $styles = $styles | append . -}}
+      {{- $candidate := printf "css/%s/%s.css" $dir $stem -}}
+      {{- if fileExists (printf "assets/%s" $candidate) -}}
+        {{- if not (in $styles (strings.TrimPrefix "css/" $candidate)) -}}
+          {{- $styles = $styles | append (strings.TrimPrefix "css/" $candidate) -}}
         {{- end -}}
       {{- end -}}
     {{- end -}}
@@ -48,12 +53,7 @@
 {{- end -}}
 
 {{- range $styles -}}
-  {{- with resources.Get (printf "css/%s" .) -}}
-    {{- $css := . -}}
-    {{- if hugo.IsProduction -}}{{- $css = $css | minify | fingerprint "sha512" -}}{{- end -}}
-    <link rel="stylesheet" href="{{ $css.RelPermalink }}"
-          {{- if hugo.IsProduction }}{{ with $css.Data.Integrity }} integrity="{{ . }}" crossorigin="anonymous"{{ end }}{{ end }}>
-  {{- end -}}
+  {{- partial "stylesheet.html" . -}}
 {{- end -}}
 
 {{- /* --- page-scoped scripts ------------------------------------------ */ -}}
