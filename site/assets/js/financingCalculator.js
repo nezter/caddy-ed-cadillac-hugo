@@ -430,11 +430,57 @@ class FinancingCalculator {
   }
 
   /**
-   * Mount.
+   * Mount, on request only.
+   *
+   * This used to run on DOMContentLoaded, which meant the calculator was live
+   * on every visit to /financing/. Two of its code paths call endpoints that do
+   * not exist -- loadVehiclePrice hits /api/vehicle/<id>, and the pre-approval
+   * modal posts to /api/pre-approval -- so a visitor who filled the form in saw
+   * either a silent failure or a fake confirmation.
+   *
+   * It is now opt-in. The page renders a toggle that is OFF by default; the
+   * calculator does not exist in the DOM until the visitor turns it on, and
+   * until then no field is focusable and no handler is attached. That is a dead
+   * form, which is the correct state for a calculator that cannot honestly
+   * finish what it starts.
+   *
+   * When the endpoints exist this becomes a one-line change back: call
+   * mountFinancingCalculator() from the toggle's click handler without the gate,
+   * or drop the hidden attribute from the container.
    */
-  document.addEventListener('DOMContentLoaded', () => {
+  function mountFinancingCalculator() {
     const el = document.getElementById('financing-calculator');
-    if (el) new FinancingCalculator(el);
-  });
+    if (!el || el.dataset.mounted === 'true') return;
+    el.dataset.mounted = 'true';
+    el.hidden = false;
+    el.setAttribute('aria-hidden', 'false');
+    return new FinancingCalculator(el);
+  }
+
+  function initFinancingToggle() {
+    const toggle = document.getElementById('financing-calculator-toggle');
+    const el = document.getElementById('financing-calculator');
+    if (!toggle || !el) return;
+
+    // The container starts hidden and stays that way until the visitor acts.
+    el.hidden = true;
+    el.setAttribute('aria-hidden', 'true');
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.setAttribute('aria-controls', 'financing-calculator');
+
+    toggle.addEventListener('click', () => {
+      const open = toggle.getAttribute('aria-expanded') === 'true';
+      toggle.setAttribute('aria-expanded', String(!open));
+      if (open) {
+        el.hidden = true;
+        el.setAttribute('aria-hidden', 'true');
+      } else {
+        mountFinancingCalculator();
+      }
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', initFinancingToggle);
 
   export default FinancingCalculator;
+  export { mountFinancingCalculator, initFinancingToggle };

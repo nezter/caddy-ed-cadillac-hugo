@@ -39,7 +39,12 @@ Every field below is optional except the three that matter: price, rate and
 term. The rest refine it. Sales tax is applied to the full price before the
 down payment and trade-in are subtracted, which is how most lenders quote it.
 
-<div id="financing-calculator" class="financing-calculator">
+<button type="button" id="financing-calculator-toggle" class="btn btn-secondary" aria-expanded="false" aria-controls="financing-calculator">
+  Show payment calculator
+</button>
+<p class="financing-toggle-hint">The calculator is off until the quote endpoints it depends on exist. Turn it on to experiment; the numbers it produces are estimates only.</p>
+
+<div id="financing-calculator" class="financing-calculator" hidden aria-hidden="true">
   <div class="calculator-grid">
     <div class="form-group">
       <label for="vehicle-price">Vehicle price</label>
