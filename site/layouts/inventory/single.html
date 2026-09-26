@@ -14,7 +14,7 @@
   modal on demand and reads the price off the button's data attributes -- so it
   only needs to be loaded, not mounted. It was built and never referenced.
 */}}
-{{ define "scripts" }}<script>window.__pageScripts = ['calculator.js'];</script>{{ end }}
+{{ define "scripts" }}{{ partial "entry.html" (dict "entry" "calculator.js" "page" .) }}{{ end }}
 
 {{/*
   vehicle single page.
