@@ -10,6 +10,13 @@
 {{ define "headStyles" }}{{ partial "stylesheet.html" "inventory.scss" }}{{ end }}
 
 {{/*
+  The payment calculator. calculator.js is self-contained -- it builds its own
+  modal on demand and reads the price off the button's data attributes -- so it
+  only needs to be loaded, not mounted. It was built and never referenced.
+*/}}
+{{ define "scripts" }}<script>window.__pageScripts = ['calculator.js'];</script>{{ end }}
+
+{{/*
   vehicle single page.
 
   Image handling used to derive a lazyload placeholder by rewriting
@@ -175,6 +182,11 @@
         </p>
         <div class="stack vehicle-cta__actions">
           <a class="btn btn-primary btn-block" href="#book-a-test-drive">Book a test drive</a>
+          <button type="button" class="btn btn-outline btn-block calculate-payment"
+                  data-price="{{ $price }}"
+                  data-year="{{ .Params.year }}"
+                  data-make="{{ .Params.make }}"
+                  data-model="{{ .Params.model }}">Estimate payment</button>
           <a class="btn btn-outline btn-block"
              href="/contact/?vehicle={{ .Title | urlquery }}">Ask about this vehicle</a>
           <a class="btn btn-ghost btn-block" href="/trade-in/">Value my trade</a>
