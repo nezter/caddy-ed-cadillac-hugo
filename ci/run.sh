@@ -9,7 +9,7 @@
 #
 #   ./ci/run.sh build        full production build (hugo + functions + verify)
 #   ./ci/run.sh functions    boot netlify dev (static site + all 51 functions)
-#   ./ci/run.sh fn-bundle    bundle the functions, report failures, exit
+#   ./ci/run.sh fn-bundle    bundle all functions and report failures    bundle the functions, report failures, exit
 #   ./ci/run.sh inventory    dry-run the inventory sync (report drift)
 #   ./ci/run.sh inventory-write   apply the inventory sync
 #   ./ci/run.sh verify       build + assert no broken asset references
@@ -65,6 +65,7 @@ in_container() {
       -e CI=true \
       -e NETLIFY_TELEMETRY_DISABLED=1 \
       -e HUGO_BASEURL="${HUGO_BASEURL:-https://caddyed.com/}" \
+      -e JWT_SECRET="${JWT_SECRET:-}" \
       --user root \
       ${IMAGE} bash -lc $(printf '%q' "$inner")"
 }
@@ -158,8 +159,19 @@ case "${1:-build}" in
   inventory-check)  do_inventory_validate ;;
   sync)             sync_to_ci ;;
   functions)
-    # Boot `netlify dev` on the CI host: the static site AND all 51 functions.
+    # Boot `netlify dev` on the CI host: the static site AND every function.
     # This is how the admin area gets exercised end to end.
+    #
+    # JWT_SECRET is passed through by in_container. Without it every protected
+    # function answers 500 "Server is misconfigured" rather than 401, so a
+    # signed-out staff member would be told the server is broken instead of
+    # being invited to sign in -- which is the exact failure the admin error
+    # states exist to avoid. Export a real value before running this; the
+    # dev-only fallback below keeps the command usable out of the box.
+    if [ -z "${JWT_SECRET:-}" ]; then
+      export JWT_SECRET="dev-only-not-a-real-secret-$(date +%s)"
+      log "JWT_SECRET was unset -- using a throwaway dev value. Never do this for a deploy."
+    fi
     sync_to_ci
     require_image
     log "Booting netlify dev on ${CI_HOST} (functions + static site)"

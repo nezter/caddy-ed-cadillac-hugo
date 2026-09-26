@@ -431,6 +431,29 @@ if (manifest) {
   };
   const onDisk = new Set(fnNames);
 
+  // A function must be in exactly ONE bucket.
+  //
+  // The reconciliation merges with {...wired, ...planned}, so when a function is
+  // in both, `planned` silently wins and the `wired` claim -- the thing the
+  // check below exists to verify -- is discarded without a word. That is a
+  // contradiction between two declarations, and it rendered as silence.
+  const bucketOf = new Map();
+  for (const b of ['wired', 'planned', 'operational', 'delete', 'notafunc']) {
+    for (const name of Object.keys(manifest[b] || {})) {
+      if (!bucketOf.has(name)) bucketOf.set(name, []);
+      bucketOf.get(name).push(b);
+    }
+  }
+  const contradictions = [...bucketOf].filter(([, bs]) => bs.length > 1);
+  if (contradictions.length) {
+    console.error(
+      `\n  ${red('FAIL')}  function(s) declared in more than one bucket -- the merge order silently discards all but the last:\n` +
+        contradictions.map(([n, bs]) => `    ${n}: ${bs.join(' + ')}`).join('\n') +
+        `\n    ${dim('A function has exactly one disposition. Which bucket is it in?')}`
+    );
+    process.exitCode = 1;
+  }
+
   // A `delete` entry is EXPECTED to be absent -- that is what delete means.
   // Only the live buckets must exist, or the manifest is describing a function
   // that was never built. The first version checked every bucket and so failed
