@@ -167,8 +167,28 @@ class LeadManagementApp {
       this.renderSignIn();
       return;
     }
+    // Only renderStats(). There is no renderControls() on this class.
+    //
+    // It used to be called here and it does not exist, so every successful load
+    // threw:
+    //
+    //     TypeError: this.renderControls is not a function
+    //
+    // which means the dedupe page broke on the HAPPY path -- the one where the
+    // API call succeeds and there is something to show. The signed-out path
+    // returns early and looked fine, so it was not obvious.
+    //
+    // It is a leftover from a refactor that folded the controls into
+    // renderStats(): the duplicate-check form, the merge form, both result
+    // sections and all their event wiring are rendered there now, ending at the
+    // `[data-action="open-check"]` and `#duplicate-form` handlers. Compare
+    // interaction-timeline.js, which genuinely has a renderControls() and
+    // genuinely needs it.
+    //
+    // Found by loading /admin/leads/ in a real browser on 2026-09-27. No build
+    // gate can see this: the file parses, bundles, and every id it references
+    // really does exist.
     this.renderStats();
-    this.renderControls();
   }
 
   renderSignIn() {

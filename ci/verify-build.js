@@ -340,9 +340,32 @@ function main() {
       const j = prev.lastIndexOf('.');
       return j > 0 && /^[a-f0-9]{32,}$/.test(prev.slice(j + 1));
     }
-    // no extension at all: the last segment is the hash
-    return /^[a-f0-9]{32,}$/.test(last);
+    // NO EXTENSION IS NOT A BUNDLE.
+    //
+    // This used to `return /^[a-f0-9]{32,}$/.test(last)` here, accepting
+    // `inventory-filter.<sha512>` as a valid bundle. That is not a harmless
+    // relaxation -- it codified a production outage as acceptable.
+    //
+    // Without the extension the CDN cannot know the file is JavaScript and
+    // serves it as application/octet-stream. netlify.toml sets
+    // `X-Content-Type-Options: nosniff`, and under nosniff a browser refuses to
+    // execute a classic script that is not a JavaScript MIME type. So every
+    // extensionless bundle silently refuses to run in production, while the
+    // preview (which had no nosniff) and all four gates reported success.
+    //
+    // A gate that cannot tell a file that will run from one the browser will
+    // refuse is not checking the thing that breaks. Return false; the explicit
+    // check below names each offender.
+    return false;
   };
+  // Fingerprinted output under /js/ or /css/ that is NOT a recognised bundle is
+  // almost always a bundle that lost its extension. Reported explicitly, by
+  // name, because the failure mode is invisible: the file exists, every asset
+  // reference resolves, and the browser simply refuses to run it.
+  const extensionless = files.filter(
+    (f) => /\/(js|css)\//.test(f) && !isBundleName(path.basename(f)) &&
+      /[a-f0-9]{32,}$/.test(path.basename(f))
+  );
   const bundles = files.filter(
     (f) => /\/(js|css)\//.test(f) && isBundleName(path.basename(f))
   );
@@ -369,6 +392,26 @@ function main() {
   const anyJs = bundles.some((f) => f.endsWith('.js'));
   if (!anyJs) {
     fail('no JavaScript was emitted -- the front end is inert');
+  }
+
+  // --- every bundle must carry its extension ------------------------------
+  // This is the check that would have caught the production outage on
+  // 2026-09-27, and it costs one array pass. See isBundleName above.
+  if (extensionless.length) {
+    fail(
+      `${extensionless.length} bundle(s) emitted WITHOUT a file extension: ` +
+        extensionless.map((f) => path.relative(PUBLIC_DIR, f)).join(', ')
+    );
+    console.error(
+      '    A bundle with no .js/.css extension is served as application/octet-stream.\n' +
+        '    netlify.toml sets X-Content-Type-Options: nosniff, and under nosniff a\n' +
+        '    browser REFUSES to execute a classic script that is not a JavaScript MIME\n' +
+        '    type. The file exists, every asset reference resolves, and the script\n' +
+        '    silently never runs. Check "targetPath" in the Hugo Pipes js.Build / toCSS\n' +
+        '    options under site/layouts/partials/.'
+    );
+  } else {
+    console.log(`  \x1b[1;32mOK\x1b[0m    every emitted bundle carries a .js/.css extension`);
   }
 
   if (process.exitCode) {

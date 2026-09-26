@@ -10,6 +10,30 @@
   `js.Build` pipeline as the main bundle, so the URL is always correct and
   fingerprinted.
 
+  THE .js EXTENSION IS LOAD-BEARING. Do not "tidy" targetPath back to
+  `js/<basename>`.
+
+  With no extension, the emitted file is `inventory-filter.<sha512>` and the
+  static host has no idea it is JavaScript, so it serves it as
+  `application/octet-stream`. That is invisible until it is fatal:
+
+    * ci/preview.sh's nginx sets no security headers, and Firefox executes an
+      octet-stream classic script anyway when there is no nosniff. So the
+      preview looked perfect.
+    * netlify.toml:251 sets `X-Content-Type-Options = "nosniff"`, and under
+      nosniff a browser REFUSES to execute a classic script that is not a
+      JavaScript MIME type.
+
+  So on production every one of these bundles -- all 12 admin dashboards, the
+  customer portal, staff sign-in, vehicle detail, the inventory filter -- would
+  silently refuse to run, while the preview and all four build gates reported
+  success. The gates check that the referenced file EXISTS. They cannot check
+  how the CDN labels it, because that is a serving concern, not a build one.
+
+  Found by loading the site in a real browser on 2026-09-27, not by any gate.
+  `loader` is declared for the same reason assets.html declares it: an explicit
+  esbuild loader for `.js`, so the file type does not depend on the target path.
+
   Usage: {{ partial "entry.html" (dict "entry" "customer-portal.js" "page" .) }}
 
   Context (dict):
@@ -23,12 +47,14 @@
 {{- with resources.Get (printf "js/%s" $entry) -}}
   {{- $isProd := hugo.IsProduction -}}
   {{- $opts := dict
-        "targetPath" (printf "js/%s" (path.BaseName $entry))
+        "targetPath" (printf "js/%s.js" (path.BaseName $entry))
         "format" "iife"
         "minify" $isProd
         "sourceMap" (cond (not $isProd) "inline" "")
         "target" (cond $isProd "es2018" "es2017")
-        "params" (dict "env" (cond $isProd "production" "development"))
+        "params" (dict
+          "env" (cond $isProd "production" "development")
+          "loader" (dict ".js" "js"))
   -}}
   {{- $js := . | js.Build $opts -}}
   {{- if hugo.IsProduction -}}

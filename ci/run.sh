@@ -61,6 +61,36 @@ sync_to_ci() {
     "$REPO_DIR/" "${CI_USER}@${CI_HOST}:${REMOTE_WORKDIR}/"
 }
 
+# Every run gets its own REMOTE_WORKDIR so concurrent sessions cannot
+# rsync --delete each other out from under a running build. The cost is that
+# each one is a full copy of the tree INCLUDING netlify/functions/node_modules --
+# about 450 MB.
+#
+# Nothing cleaned them up. By 2026-09-27 there were 20 of them occupying 12 GB
+# of the 17 GB free on the CI host. `df` reported 100% full with 285 MB free on
+# the machine that runs 12 GitLab runners, and a `podman pull` there failed with
+# ENOSPC. One full disk would have failed every runner on the box, not just this
+# project. The 20 directories were then removed by hand, freeing 11.3 GB.
+#
+# So the per-run workdir is now removed on exit, whatever the outcome.
+# CLEANUP=0 opts out. A hand-picked REMOTE_WORKDIR is never auto-removed, because
+# it may be the directory ci/preview.sh is serving and deleting that would take a
+# live preview down with no obvious cause.
+cleanup_workdir() {
+  local rc=$?
+  case "${REMOTE_WORKDIR:-}" in
+    *caddy-build-*|*caddy-*-[0-9]*)
+      if [ "${CLEANUP:-1}" = "1" ]; then
+        log "Removing per-run workdir ${REMOTE_WORKDIR} on ${CI_HOST}"
+        ssh -o ConnectTimeout=8 "${CI_USER}@${CI_HOST}" \
+          "rm -rf '${REMOTE_WORKDIR}'" >/dev/null 2>&1 || true
+      fi
+      ;;
+  esac
+  return $rc
+}
+trap cleanup_workdir EXIT INT TERM
+
 require_image() {
   ssh "${CI_USER}@${CI_HOST}" "podman image exists ${IMAGE}" 2>/dev/null \
     || die "Build image ${IMAGE} not present on ${CI_HOST}. Run: ./ci/run.sh image"

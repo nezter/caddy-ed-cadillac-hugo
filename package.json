@@ -25,7 +25,7 @@
   "scripts": {
     "build": "node scripts/build-for-netlify.js",
     "build:production": "node scripts/build-for-netlify.js",
-    "build:hugo": "hugo --source=site --destination=../site/public --minify --gc",
+    "build:hugo": "hugo --source=site --destination=../site/public --minify --gc --cleanDestinationDir",
     "build:cms": "webpack --config webpack.cms.js",
     "verify": "node ci/verify-build.js",
     "dev": "hugo server --source=site --port 1313 --buildDrafts --buildFuture",
