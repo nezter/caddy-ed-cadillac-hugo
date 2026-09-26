@@ -200,3 +200,130 @@ class VehicleComparison {
             this.saveComparisonList();
             this.updateComparisonUI();
           }
+
+          /**
+           * Render the comparison tray and, when two or more vehicles are selected,
+           * the comparison table itself.
+           *
+           * The table is built from the front matter of each vehicle page, so it can
+           * only compare fields that every vehicle in the comparison actually has.
+           * A column that is blank for one car and filled for another is exactly what
+           * a shopper is looking for, so absence is shown as an em dash rather than
+           * being hidden.
+           */
+          async updateComparisonUI() {
+            const tray = document.getElementById('comparison-tray');
+            const table = document.getElementById('comparison-table');
+            if (!tray) return;
+
+            tray.hidden = this.comparisonList.length === 0;
+
+            if (this.comparisonList.length === 0) {
+              if (table) table.hidden = true;
+              return;
+            }
+
+            tray.innerHTML = this.comparisonList
+              .map(
+                (id) => `
+              <span class="comparison-tray__chip">
+                ${escapeHtml(id)}
+                <button type="button" data-remove-comparison="${escapeHtml(id)}"
+                        aria-label="Remove ${escapeHtml(id)} from comparison">&times;</button>
+              </span>`
+              )
+              .join('');
+
+            tray.querySelectorAll('[data-remove-comparison]').forEach((btn) => {
+              btn.addEventListener('click', () => this.removeFromComparison(btn.dataset.removeComparison));
+            });
+
+            // One car has nothing to compare against, so the table stays hidden and
+            // the tray says so plainly instead of showing a single-column table.
+            if (!table) return;
+            if (this.comparisonList.length < 2) {
+              table.hidden = true;
+              return;
+            }
+
+            const rows = await Promise.all(
+              this.comparisonList.map((id) => this.fetchVehicle(id))
+            );
+
+            const FIELDS = [
+              ['price', 'Price'],
+              ['mileage', 'Mileage'],
+              ['drivetrain', 'Drivetrain'],
+              ['transmission', 'Transmission'],
+              ['exterior_color', 'Exterior'],
+              ['interior_color', 'Interior'],
+              ['stock', 'Stock #'],
+            ];
+
+            const head = `
+              <thead><tr><th scope="col">Field</th>${rows
+                .map((r) => `<th scope="col">${escapeHtml(r.slug)}</th>`)
+                .join('')}</tr></thead>`;
+
+            const body = FIELDS
+              .map(([key, label]) => {
+                const cells = rows
+                  .map((r) => `<td>${r.vehicle[key] ? escapeHtml(r.vehicle[key]) : '&mdash;'}</td>`)
+                  .join('');
+                return `<tr><th scope="row">${label}</th>${cells}</tr>`;
+              })
+              .join('');
+
+            table.innerHTML = `${head}<tbody>${body}</tbody>`;
+            table.hidden = false;
+          }
+
+          async fetchVehicle(id) {
+            try {
+              // Vehicle pages are server-rendered, so the slug alone identifies the
+              // page. A 404 means the car has sold, which is worth saying rather than
+              // showing a permanent dash in the table.
+              const res = await fetch(`/inventory/${id}/`);
+              if (!res.ok) return { slug: id, vehicle: {} };
+              const text = await res.text();
+              const doc = new DOMParser().parseFromString(text, 'text/html');
+              const card = doc.querySelector('[data-vehicle]');
+              return {
+                slug: id,
+                vehicle: card
+                  ? Object.assign({}, card.dataset, { title: card.dataset.title || id })
+                  : {},
+              };
+            } catch (error) {
+              console.warn(`[vehicle-comparison] could not load ${id}:`, error);
+              return { slug: id, vehicle: {} };
+            }
+          }
+        }
+
+        function escapeHtml(value) {
+          return String(value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+        }
+
+        /**
+         * Mount.
+         *
+         * Looks for the comparison tray and the per-vehicle "add to comparison"
+         * buttons. Both are optional: a page that renders neither gets no
+         * comparison behaviour, which is the correct outcome for every page that
+         * is not the inventory or a vehicle detail page.
+         */
+        document.addEventListener('DOMContentLoaded', () => {
+          const app = new VehicleComparison();
+          document.querySelectorAll('[data-add-comparison]').forEach((btn) => {
+            btn.addEventListener('click', () => app.addToComparison(btn.dataset.addComparison));
+          });
+          app.updateComparisonUI();
+        });
+
+        export default VehicleComparison;

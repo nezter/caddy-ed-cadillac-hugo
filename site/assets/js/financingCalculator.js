@@ -66,7 +66,10 @@ class FinancingCalculator {
   
   loadVehiclePrice(vehicleId) {
     fetch(`/api/vehicle/${vehicleId}`)
-      .then(response => response.json())
+      .then(response => {
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            return response.json();
+          })
       .then(data => {
         if (this.vehiclePrice) {
           this.vehiclePrice.value = data.price;
@@ -414,4 +417,24 @@ class FinancingCalculator {
               <ul>
                 <li>Review your email for confirmation details</li>
                 <li>Gather required documents (proof of income, ID, etc.)</li>
-                <li>Our finance
+                <li>Our finance specialist will call to walk through rates and terms</li>
+                  <li>Bring a driver's licence and proof of income to the appointment</li>
+                </ul>
+              </div>
+              <button type="button" class="close-modal">Done</button>
+            </div>
+          `;
+        });
+      });
+    }
+  }
+
+  /**
+   * Mount.
+   */
+  document.addEventListener('DOMContentLoaded', () => {
+    const el = document.getElementById('financing-calculator');
+    if (el) new FinancingCalculator(el);
+  });
+
+  export default FinancingCalculator;
