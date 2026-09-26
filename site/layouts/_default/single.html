@@ -22,7 +22,11 @@
   
   <div class="container">
     <div class="content-wrapper">
-      <main class="main-content">
+      {{/* Was <main class="main-content">. baseof.html already opens the page's
+           single <main role="main" id="main-content">, so this was a nested
+           landmark -- invisible in the markup until a structural gate started
+           counting them. The class is unchanged, so the CSS is unchanged. */}}
+      <div class="main-content">
         {{ if .Params.featured_image }}
         <figure class="featured-image">
           {{/* Was a lazysizes + <noscript> pair: a 350x200 placeholder stretched
@@ -70,7 +74,7 @@
           </section>
         </footer>
         {{ end }}
-      </main>
+      </div>
       
       {{ if .Params.sidebar }}
       <aside class="sidebar">
