@@ -83,6 +83,19 @@ function checkStructure(htmlFiles) {
       .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, ' ')
       .replace(/<!--[\s\S]*?-->/g, ' ');
 
+    // 0. Redirect stubs are not documents.
+    //
+    // Hugo emits a 246-byte alias page for a paginator's first page
+    // (/inventory/page/1/ -> /inventory/). It is a meta-refresh and a canonical
+    // link, nothing else. Demanding an <h1> of it is a false positive, and the
+    // alternative -- loosening the rule for every small file -- would let a real
+    // page slip through. Recognise the shape instead.
+    const isAlias =
+      body.length < 2000 &&
+      /http-equiv=["']?refresh|http-equiv=refresh/i.test(html) &&
+      /rel=["']?canonical/i.test(html);
+    if (isAlias) continue;
+
     // 1. nested <main>
     const mainOpen = (body.match(/<main\b[^>]*>/gi) || []).length;
     if (mainOpen > 1) {

@@ -21,7 +21,16 @@ exports.handler = async function(event, context) {
   }
 
   try {
-    const path = event.path.replace('/.netlify/functions/search', '');
+    // Netlify delivers the FULL request path, so a request to
+    // /.netlify/functions/search replaces to the EMPTY STRING, not "/".
+    // The old code switched on that raw value against `case 'GET /'`, which
+    // can therefore never match a bare-function request: every search 404'd
+    // with "Endpoint not found" even with a valid staff token, and only a
+    // request to the trailing-slash form /.netlify/functions/search/ got
+    // through. health-check.js handles both '' and '/' for exactly this
+    // reason. Normalise once here so every case keeps its canonical form.
+    const rawPath = (event.path || '').replace('/.netlify/functions/search', '');
+    const path = rawPath || '/';
     const method = event.httpMethod;
 
     // Parse path parameters

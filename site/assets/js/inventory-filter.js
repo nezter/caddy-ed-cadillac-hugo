@@ -64,6 +64,14 @@
     const searchEl = form.querySelector('#f-search');
     const badgeEl = document.getElementById('inventory-active-filters');
 
+    // The list is paginated at build time (24 per page), so `cards` is this
+    // page only. Filtering narrows within the page; pageTotals is the whole
+    // inventory, so the count can say "4 of 24 shown, 35 in stock" rather than
+    // implying the page is the whole set.
+    const pageTotals = parseInt(grid.dataset.total || '0', 10) || 0;
+    const pageSize = parseInt(grid.dataset.pageSize || '0', 10) || 0;
+    const paginated = pageTotals > cards.length;
+
     // Zero inventory is a different situation from zero matches. A filter that
     // matches nothing can be undone; an empty dealership cannot, and the page
     // used to render blank with no explanation and no way forward.
@@ -117,6 +125,8 @@
         vals('transmission').length || vals('status').length || numVal('max_price') !== null;
     }
 
+    let priceBand = null;
+
     function matches(card, q, model, year, drivetrain, transmission, status, maxPrice) {
       if (q && (card.dataset.title || '').indexOf(q) === -1) return false;
       if (model.length && model.indexOf(card.dataset.model || '') === -1) return false;
@@ -127,6 +137,10 @@
       if (maxPrice !== null) {
         const p = parseFloat(card.dataset.price || '0');
         if (!(p > 0 && p <= maxPrice)) return false;
+      }
+      if (priceBand) {
+        const p = parseFloat(card.dataset.price || '0');
+        if (!(p > 0 && p >= priceBand.lo && p <= priceBand.hi)) return false;
       }
       return true;
     }
@@ -197,9 +211,15 @@
       }
 
       if (countEl) {
-        countEl.textContent =
-          visible.length + (visible.length === 1 ? ' vehicle' : ' vehicles') +
-          (visible.length === cards.length ? '' : ' of ' + cards.length);
+        let text =
+          visible.length + (visible.length === 1 ? ' vehicle' : ' vehicles');
+        if (visible.length !== cards.length) {
+          text += ' of ' + cards.length + ' on this page';
+        }
+        if (paginated) {
+          text += ' (' + pageTotals + ' in stock)';
+        }
+        countEl.textContent = text;
       }
       if (emptyEl) emptyEl.classList.toggle('hidden', visible.length > 0);
       updateActiveFilterCount();
@@ -207,6 +227,13 @@
 
     function reset() {
       form.reset();
+      priceBand = null;
+      const host = document.getElementById('inventory-price-bands');
+      if (host) {
+        Array.prototype.slice.call(host.querySelectorAll('.chip')).forEach(function (c) {
+          c.setAttribute('aria-pressed', 'false');
+        });
+      }
       apply();
       writeUrl();
       if (searchEl) searchEl.focus();
@@ -324,13 +351,12 @@
       host.addEventListener('click', function (e) {
         const chip = e.target.closest('.chip');
         if (!chip) return;
-        const on = chip.getAttribute('aria-pressed') === 'true';
+        const wasOn = chip.getAttribute('aria-pressed') === 'true';
         Array.prototype.slice.call(host.querySelectorAll('.chip')).forEach(function (c) {
           c.setAttribute('aria-pressed', 'false');
         });
-        if (on) {
+        if (wasOn) {
           apply();
-          writeUrl();
           return;
         }
         chip.setAttribute('aria-pressed', 'true');
@@ -338,23 +364,12 @@
         const max = parseFloat(chip.getAttribute('data-max'));
         const lo = isNaN(min) ? 0 : min;
         const hi = isNaN(max) ? Infinity : max;
-        let visible = cards.filter(function (card) {
-          const p = parseFloat(card.dataset.price || '0');
-          return p > 0 && p >= lo && (hi === Infinity ? p <= hi : p <= hi);
-        });
-        visible = sortCards(visible, val('sort') || 'year-desc');
-        const frag = document.createDocumentFragment();
-        visible.forEach((c) => frag.appendChild(c));
-        grid.appendChild(frag);
-        cards.forEach(function (c) {
-          c.classList.toggle('hidden', visible.indexOf(c) === -1);
-        });
-        if (countEl) {
-          countEl.textContent =
-            visible.length + (visible.length === 1 ? ' vehicle' : ' vehicles') +
-            (visible.length === cards.length ? '' : ' of ' + cards.length);
-        }
-        if (emptyEl) emptyEl.classList.toggle('hidden', visible.length > 0);
+        // Bands are an AND with the other filters, and they compose with the
+        // sort and the count rather than reimplementing them -- the first
+        // version of this handler had its own copy of the counting logic and
+        // disagreed with apply() about pagination.
+        priceBand = { lo: lo, hi: hi };
+        apply();
       });
     }
 

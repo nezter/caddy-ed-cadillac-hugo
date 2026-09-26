@@ -15,6 +15,10 @@
 {{- $years := slice -}}
 {{- $drivetrains := slice -}}
 {{- $transmissions := slice -}}
+{{- $drivetrains := slice -}}
+{{- $transmissions := slice -}}
+{{- $models := slice -}}
+{{- $years := slice -}}
 {{- range $all -}}
   {{- with .Params.model }}{{ $models = $models | append . }}{{ end -}}
   {{- with .Params.year }}{{ $years = $years | append (int .) }}{{ end -}}
@@ -26,10 +30,56 @@
 {{- /* body_style was collected here and rendered as a "Body" filter. 0 of 36
        content files define it, so the control matched nothing. drivetrain and
        transmission are present in 35 of 36 and were never surfaced at all.
-       The vocabulary is derived from the content either way, so an option can
-       only exist if a vehicle actually carries that value. */}}
+       Every vocabulary is derived from the content, so an option can only
+       exist if a vehicle actually carries that value. */}}
 {{- $drivetrains = $drivetrains | uniq | sort -}}
 {{- $transmissions = $transmissions | uniq | sort -}}
+
+{{- /* ---------------------------------------------------------------------
+     Pagination is build-time, server-side, and crawlable.
+
+     A dealership's inventory grows. Measured cost of one card in the built
+     page: 1,892 bytes and 3 image elements.
+
+         35 vehicles ->   73 KB of grid HTML,  105 elements
+        150 vehicles ->  277 KB,                 450 elements
+        300 vehicles ->  554 KB,                 900 elements
+
+     So the list is paginated here to 24 per page. The DOM stays bounded no
+     matter how much stock there is, every page is reachable by a crawler, and
+     only the current page's photographs are fetched. A dealership's inventory
+     IS the product; it has to be indexable.
+
+     Filtering, by contrast, is client-side, and that is a platform limit
+     rather than a preference: Hugo 0.166 no longer exposes the request query
+     string to templates. `$.Get` and `site.Get` were removed, and `$.Params`
+     carries front matter only -- verified against hugo 0.166.0, not assumed.
+     A static build therefore cannot filter by ?drivetrain=awd, and the honest
+     options are to pre-generate a page per facet combination (26 pages for
+     this inventory: 10 models, 7 years, 4 drivetrains, 2 transmissions,
+     3 conditions) or to filter in the browser. The browser is what is here
+     today; the facet pages are the follow-up, and they are worth doing
+     because each one is a real, indexable URL.
+
+     The form is still method="get", because the query string is what makes a
+     filtered view shareable: the script writes it, and re-reads it on load.
+     With scripting off the form is hidden rather than left as a control that
+     cannot work -- see the noscript block below.
+     --------------------------------------------------------------------- */}}
+{{- $perPage := 24 -}}
+{{- $fSort := "" -}}
+{{- with $.Params.sort }}{{ $fSort = . }}{{ end -}}
+{{- $sorted := $all -}}
+{{- if eq $fSort "price-asc" }}{{ $sorted = $sorted.ByParams "price" }}{{ end -}}
+{{- if eq $fSort "price-desc" }}{{ $sorted = $sorted.ByParams "price" "desc" }}{{ end -}}
+{{- if eq $fSort "year-desc" }}{{ $sorted = $sorted.ByParams "year" "desc" }}{{ end -}}
+{{- if eq $fSort "mileage-asc" }}{{ $sorted = $sorted.ByParams "mileage" }}{{ end -}}
+{{- $totalMatched := len $sorted -}}
+
+{{- $paginator := .Paginate $sorted $perPage -}}
+{{- $totalMatched := len $sorted -}}
+{{- $totalAll := len $all -}}
+
 
 <section class="section inventory-page">
   <div class="container">
@@ -46,7 +96,20 @@
          already in the DOM -- it never fetches, so browsing inventory does
          not depend on the API or on a function being reachable.
          --------------------------------------------------------------- */}}
+    {{/* The script intercepts submit and filters in place. The query string is
+         what makes a filtered view shareable, so the form stays method="get".
+         With scripting off this control cannot work -- Hugo 0.166 cannot read
+         the query string -- so it is hidden rather than left as a dead button;
+         see the noscript note below the grid. */}}
+    <noscript>
+      <style>.inventory-filters{display:none}</style>
+      <p class="inventory-noscript-note">
+        Filtering needs JavaScript. The full inventory is below, {{ $perPage }} vehicles
+        to a page, and every page is a normal link.
+      </p>
+    </noscript>
     <form class="inventory-filters" id="inventory-filters" role="search"
+          method="get" action="{{ "/inventory/" | relURL }}"
           aria-label="Filter inventory" data-inventory-filters>
       <div class="inventory-filters__grid">
         <div class="form-field">
@@ -135,20 +198,61 @@
       <div class="inventory-filters__actions">
         <p class="inventory-filters__active hidden" id="inventory-active-filters" aria-live="polite"></p>
         <p class="inventory-count" id="inventory-count" role="status" aria-live="polite">
-          {{ len $all }} {{ if eq (len $all) 1 }}vehicle{{ else }}vehicles{{ end }}
+          {{ if eq $totalMatched $totalAll -}}
+            {{ $totalAll }} {{ if eq $totalAll 1 }}vehicle{{ else }}vehicles{{ end }}
+          {{- else -}}
+            {{ $totalMatched }} of {{ $totalAll }} vehicles
+          {{- end }}
         </p>
         <button class="btn btn-ghost btn-sm" type="button" id="f-reset"
                   data-inventory-reset>Clear filters</button>
       </div>
     </form>
 
+{{- /* Pagination. Server-rendered and crawlable. It is not a JS
+       enhancement: with scripting off these are ordinary links. */ -}}
+    {{ if gt $paginator.TotalPages 1 }}
+    <nav class="inventory-pagination" aria-label="Inventory pages">
+      {{ if $paginator.HasPrev }}
+        <a class="btn btn-ghost btn-sm" rel="prev" href="{{ $paginator.Prev.URL }}">&larr; Previous</a>
+      {{ else }}
+        <span class="btn btn-ghost btn-sm" aria-disabled="true">&larr; Previous</span>
+      {{ end }}
+
+      <ol class="inventory-pagination__pages">
+        {{ range $paginator.Pagers }}
+          {{ if eq . $paginator }}
+            <li><span class="inventory-pagination__page inventory-pagination__page--current"
+                      aria-current="page">{{ .PageNumber }}</span></li>
+          {{ else }}
+            <li><a class="inventory-pagination__page"
+                      href="{{ .URL }}"
+                      aria-label="Page {{ .PageNumber }}">{{ .PageNumber }}</a></li>
+          {{ end }}
+        {{ end }}
+      </ol>
+
+      {{ if $paginator.HasNext }}
+        <a class="btn btn-ghost btn-sm" rel="next" href="{{ $paginator.Next.URL }}">Next &rarr;</a>
+      {{ else }}
+        <span class="btn btn-ghost btn-sm" aria-disabled="true">Next &rarr;</span>
+      {{ end }}
+    </nav>
+    <p class="inventory-pagination__summary">
+      Showing {{ len $paginator.Pages }} of {{ $totalMatched }}
+      {{ if eq $totalMatched 1 }}vehicle{{ else }}vehicles{{ end }}
+      {{- if gt $paginator.TotalPages 1 }}, page {{ $paginator.PageNumber }} of {{ $paginator.TotalPages }}{{ end }}.
+    </p>
+    {{ end }}
+
     {{/* ---------------------------------------------------------------
          The list. Server-rendered from content, filtered client-side.
          data-* attributes carry the filter/sort keys so the script never has
          to scrape text out of the markup.
          --------------------------------------------------------------- */}}
-    <div class="vehicle-grid" id="vehicle-inventory">
-      {{ range $all }}
+    <div class="vehicle-grid" id="vehicle-inventory"
+         data-total="{{ $totalMatched }}" data-page-size="{{ $perPage }}">
+      {{ range $paginator.Pages }}
       {{ $img := "" }}{{ with .Params.image }}{{ $img = . }}{{ end }}
       {{ $price := 0 }}{{ with .Params.price }}{{ $price = int . }}{{ end }}
       {{ $thousands := 0 }}{{ $remainder := 0 }}
