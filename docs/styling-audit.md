@@ -188,16 +188,143 @@ node ci/verify-content.js         # content gate alone
 node ci/verify-content.js --strict  # Tachyons usage becomes a failure
 ```
 
+## 7. Assets
+
+`scripts/image-audit.js` counts the bytes a browser actually fetches for one
+page view, modelling viewport width, `sizes`, device pixel ratio and codec
+preference — not the sum of every file in the publish directory, which
+overstates the result and is the number most asset "optimisations" are
+reported against.
+
+```bash
+node scripts/image-audit.js site/public
+```
+
+It found the largest single defect in the audit. `/img/logo.svg` was a 450×450
+SVG wrapping a 197 KB base64 PNG — a photograph of a person — rendered at
+180×34 and referenced twice per page (header and footer):
+
+| | before | after |
+|---|---|---|
+| home, mobile 390×844 dpr3 | 626.5 KB | **112.0 KB** |
+| home, laptop 1440×900 dpr2 | 875.6 KB | **361.1 KB** |
+| logo, per load | 265,392 B | **1,965 B** |
+| logo, per page view | 530,784 B | **3,930 B** |
+
+`site/static/img/logo.old.svg` was the real wordmark all along: a 109×24 vector,
+1,965 bytes. It had also been stretched — 4.54:1 in the file, 5.29:1 in the
+markup. Both call sites now declare 180×40, the true ratio.
+
+`site/static/img/` went from 3.7 MB / 47 files to **168 KB / 15 files**. The 26
+removed were unreferenced: Kaldi Coffee page imagery, four unused headshots, a
+Cadillac wallpaper, five social icons for a footer with no social links.
+`favicon.ico`, the `mstile` set and `safari-pinned-tab` were on disk and
+referenced by nothing, so they are now genuinely referenced — `favicon.ico` via
+an explicit `<link>`, the tiles via a new `browserconfig.xml`.
+
+`ci/verify-content.js` warns on unreferenced media, scoped to media and
+URL-requested files. Scoping matters: `site/static` also holds the Decap CMS
+bundle, whose webpack chunks reference each other by numeric filename from
+inside `cms.js`, so a naive basename scan reports 111 phantom orphans.
+
+## 8. Metadata and identity
+
+**`baseURL = "/"` with nothing overriding it.** Every page emitted
+`<link rel=canonical href=/>` and `<meta property="og:url" content="/"/>`. A
+relative canonical is not a warning, it is an identity failure — every page
+claimed to be the same URL as every other page, and the build stayed green
+throughout. Now `https://caddyed.com/`, with `HUGO_BASEURL` threaded through
+`ci/run.sh` and `scripts/build-for-netlify.js` so a preview build does not ship
+production canonicals to a dev host.
+
+**No social card on 18 of 54 pages.** `head-meta.html` read
+`.Site.Params.og_image`; the config defined `images = [...]` — the wrong key —
+naming a file that did not exist. Only pages that set `.Params.image` got a
+card. The home page shared nothing.
+
+**The PWA manifest pointed at icons that do not exist.** `site.webmanifest`
+named `/img/icon-192x192.png`; the files are `android-chrome-192x192.png`. An
+installed PWA had no icons. `site/static/manifest.json` was a stale duplicate
+of the same broken manifest, referenced by nothing.
+
+All three are now gated: `checkStructure` fails on a relative `canonical` or
+`og:url`, proven against quoted, unquoted and non-`canonical` `rel` values.
+
+## 9. Unrouted function calls
+
+`netlify.toml` removed the blanket `/api/* → /.netlify/functions/$1` rewrite
+and nothing updated the call sites. 20 JS files still fetched `/api/lead-scoring`,
+`/api/contact-form`, `/api/inventory` and so on. Not a crash — `fetch` returns
+404, the code takes an error branch, the page renders empty.
+
+Only two of those files reach a browser (`communication-preferences.js`, 3 calls;
+`followup-analytics-dashboard.js`, 1). Establishing that required resolving the
+import graph from the declared entries, which is what `ci/verify-endpoints.js`
+now does every build.
+
+Two design points in that gate, both learned by getting them wrong first:
+
+- **The two namespaces are resolved differently.** `/.netlify/functions/<name>`
+  resolves if a function file exists. `/api/...` resolves *only* where a
+  `[[redirects]]` alias matches the whole path. Accepting `/api/x/y` because a
+  function named `x` exists is the false negative that let the defect through.
+- **Match endpoint literals, not `fetch()` arguments.** `lead-management.js`
+  holds its endpoints in a constant and calls `fetch(url, …)`. Matching inside
+  the call reported "everything resolves" while the file contained a typo.
+
+## Design system reference
+
+`site/assets/css/main.css` is ordered tokens → reset → typography → layout →
+components → utilities → motion, and is driven entirely by custom properties
+in the `:root` block:
+
+| token | value | role |
+|---|---|---|
+| `--brand-red` | `#c8102e` | Cadillac red; `--accent` aliases it |
+| `--brand-navy` | `#1a2b49` | primary dark |
+| `--accent-gold` | `#b69f58` | metallic accent |
+| `--space-*`, `--radius-*`, `--dur*`, `--ease` | scale | spacing, shape, motion |
+
+Component stylesheets must not redefine anything `main.css` owns. Because
+`main.css` loads first, "last writer wins" means a component sheet that
+redefines a generic class silently becomes global authority. Put shared
+components in `main.css` next to their siblings; keep component sheets to
+component-specific selectors.
+
+`partials/critical-css.html` inlines six of those tokens so the first paint is
+not white-on-white. It is a hand-maintained duplicate and it has drifted before
+— it used to define `--primary-color` / `--secondary-color` / `--text-color`,
+none of which `main.css` has. `ci/verify-content.js` parses the `:root` block
+out of both files and fails on an unknown token or a disagreeing value.
+
+## Running the checks
+
+```bash
+./ci/run.sh verify     # build + asset gate + structure gate + content gate
+                       #           + endpoint gate
+```
+
+| gate | catches |
+|---|---|
+| `ci/verify-build.js` | missing assets, nested `<main>`, 0 or >1 `<h1>`, duplicate ids, unrendered `{{ }}`, third-party `<img>` hotlinks, empty `src`, relative `canonical`/`og:url` |
+| `ci/verify-content.js` | starter-template content, critical-CSS drift, Tachyons usage, unreferenced media |
+| `ci/verify-endpoints.js` | function calls from a live bundle that resolve to nothing |
+
 ## Remaining
 
-- [ ] The `products` / `values` cluster and its 8 Tachyons partials are dead
-      but not yet deleted (an agent was mid-edit on `section/products.html`).
-      Deleting them takes Tachyons usage to zero, after which
-      `verify-content.js --strict` can be made the default.
-- [ ] `_default/single.html` still emits a nested `<main>` on two pages
-      (`/404`, `/communication-preferences`).
-- [ ] Design tokens vs. the inline `:root` block in `partials/critical-css.html`
-      disagree: the critical block defines `--primary-color` / `--accent-color`
-      / `--text-color`, which `main.css` does not use. It is not causing a
-      visible fault today because `main.css` loads after it and wins, but it is
-      the same class of stale duplicate that caused the original outage.
+- [ ] **`/products/` and `/values/` have no replacement.** The Kaldi Coffee
+      pages are gone and the layouts that served them are deleted, but the
+      navigation never linked to them, so nothing is broken. If a "Values" page
+      is wanted it needs real content and the design system — not the starter
+      markup.
+- [ ] **The `mstile` / `safari-pinned-tab` assets are conventional, not
+      verified in a browser.** They are now referenced from
+      `browserconfig.xml` and `head-meta.html`; whether Windows and Safari
+      actually pick them up needs a real device.
+- [ ] **Seven pre-existing component stylesheets are still Bootstrap-era**
+      (`advanced-search.css`, `followup-campaign-manager.css` and five others,
+      28–30 Bootstrap hex values each). They load only on admin pages and are
+      correctly ordered after `admin.css`, so they win where they apply. Only
+      `admin.css` was migrated.
+- [ ] **31 test failures** in the auth-middleware and calendar suites are
+      pre-existing assertion rot, catalogued in `docs/test-status.md`.

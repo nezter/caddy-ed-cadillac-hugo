@@ -34,19 +34,34 @@ Read this file first in any new session. Do not re-derive what is settled here.
 
 ## Gates — all must pass before any commit
 
+`./ci/run.sh verify` runs four gates. Each exists because a real defect got
+through the gates that existed before it, and each was proven by deliberately
+re-introducing the defect and confirming the failure.
+
+| gate | what it caught |
+|---|---|
+| `ci/verify-build.js` | missing assets; nested `<main>`; 0 or >1 `<h1>`; duplicate ids; unrendered `{{ }}` reaching the browser; third-party `<img>` hotlinks; relative `canonical`/`og:url` |
+| `ci/verify-content.js` | starter-template content; critical-CSS token drift; Tachyons usage; unreferenced media in `site/static` |
+| `ci/verify-endpoints.js` | function calls from a live bundle that resolve to nothing |
+| `ci/verify-content.js --strict` | makes Tachyons a hard failure (it is now clean, so strict is the default) |
+
+Two of these exist because the defect produced a **perfectly valid build**:
+
+- The fork of Netlify's `victor-hugo` still carried the demo content, so
+  `/products/` was the Kaldi Coffee pricing page (37 mentions of coffee, a
+  3 lbs/month subscription table) and `/values/` was "Shade-grown coffee".
+  Neither was in the navigation, so nobody noticed. No output-inspecting gate
+  can see it -- the pages built fine.
+- `netlify.toml` removed the blanket `/api/*` rewrite and nothing updated 20
+  call sites. `fetch` returns 404, the code takes an error branch, the page
+  renders empty. Green build, empty page.
+
 ```bash
-./ci/run.sh verify     # build + asset gate + content gate -> PASSED
+./ci/run.sh verify     # all four gates -> PASSED
 ./ci/run.sh fn-bundle  # all functions compile   -> loaded 51 failed 0 errors 0
 npm run lint           # 0 errors (warnings allowed)
+node scripts/image-audit.js site/public   # bytes fetched per page view
 ```
-
-`ci/verify-content.js` runs as part of `verify`. It exists because the single
-worst defect found so far produced a **perfectly valid build**: the fork of
-Netlify's `victor-hugo` starter still carried the demo content, so
-`/products/` was the Kaldi Coffee pricing page (37 mentions of coffee, a
-3 lbs/month subscription table) and `/values/` was "Shade-grown coffee" and
-"Direct sourcing". Neither was in the navigation, so nobody noticed. No
-output-inspecting gate can catch that -- the pages built fine.
 
 The asset gate (`ci/verify-build.js`) has earned its keep repeatedly: it caught
 the `/images/` plural path, the non-existent `/img/placeholders/` directory, and
@@ -74,7 +89,18 @@ the never-emitted `lang.NumFmt` — none of which any other check noticed.
   The build asserts `+extended` and fails loudly otherwise.
 - **Inventory sync works.** `scripts/inventory/` — reads the dealer site's
   schema.org JSON-LD, mirrors images, writes Hugo content, idempotent, gated.
-- **Images.** 78% smaller, zero dealer.com hotlinks. `docs/images.md`.
+- **Images.** 78% smaller per vehicle card, zero dealer.com hotlinks.
+  `docs/images.md`. The site's own imagery followed: `/img/logo.svg` turned out
+  to be a 265 KB SVG wrapping a 197 KB photograph, used twice per page. Home
+  page image weight 626.5 KB -> 112.0 KB on mobile. `docs/styling-audit.md`.
+- **`baseURL` is absolute.** It was `"/"`, so every canonical URL and every
+  `og:url` on the site was relative. Now `https://caddyed.com/`, overridable per
+  build via `HUGO_BASEURL`.
+- **Styling audit done.** `docs/styling-audit.md` -- the cascade bug that made
+  every primary button Bootstrap blue, the 12.5 KB of section CSS on every
+  page, the layout shadowing that hid the contact form, the starter-template
+  content, and 21 unreachable layouts and partials removed. Tachyons usage is
+  zero.
 - **Decap CMS** replaced `netlify-cms-app` (unmaintained) and unblocked React 19.
 
 ## Open work, in dependency order
@@ -91,25 +117,26 @@ opt-out. Almost none of it is reachable from a page.
 - No auth gate on the admin *pages* (the function calls 401 correctly). Needs a
   product decision — see "Open questions".
 
-### 2. Static site imagery
-Only vehicle photos are optimised. The site's own images (`site/static/img/`)
-are still raw JPEGs served at one size, and the home hero is a plain `<img>`.
-Migrating them to `site/assets/img/` + `partials/picture.html` is the same work
-already done for vehicles.
+### 2. Contact / lead capture
+`site/layouts/contact/list.html` now renders (it was shadowed by a starter
+layout, so the site's main conversion page had no form, no phone, no address
+and no hours). It has never been exercised in a browser against a real
+function. The functions return 401 without credentials.
 
-### 3. Contact / lead capture
-`site/layouts/partials/contact-form.html` and the `/api/contact` redirect are
-unverified end to end. The functions return 401 without credentials; the form
-path has never been exercised in a browser.
+### 3. Admin component stylesheets
+Seven pre-existing component stylesheets are still Bootstrap-era
+(`advanced-search.css`, `followup-campaign-manager.css` and five others, 28-30
+Bootstrap hex values each). They load only on admin pages, correctly ordered
+after `admin.css`. Only `admin.css` was migrated to the design system.
 
 ### 4. Test suite
 41/72. The 31 failures are pre-existing assertion rot, catalogued in
 `docs/test-status.md`. Non-blocking in CI by design.
 
-### 5. Dead code to reap
-`site/assets/js/` still holds unreachable modules with latent bugs (documented
-in `docs/test-status.md` → "Known dead files"), plus `vehicle-inventory.js` and
-`src/lib/` leftovers.
+### 5. Dead JS modules
+`site/assets/js/` holds unreachable modules with latent bugs, documented in
+`docs/test-status.md` → "Known dead files". `ci/verify-endpoints.js --all`
+lists the ones still carrying unrouted `/api/` calls. Twenty of them do.
 
 ## Open questions for the owner
 
@@ -133,3 +160,4 @@ in `docs/test-status.md` → "Known dead files"), plus `vehicle-inventory.js` an
 | 3 | k3s preview, full stack modernisation, Decap migration | netlify-cli 27, @netlify/build 37, preview live |
 | 4 | Admin diagnosis, functions bundling | 51/51 functions; `docs/admin-testing.md` |
 | 5 | Redesign, structural bugs, inventory sync | 57 pages, sync working, images −78% |
+| 6 | Image pipeline, styling audit, asset routing, gates | 54 pages, home page 626 KB → 112 KB, four gates, starter content gone |
