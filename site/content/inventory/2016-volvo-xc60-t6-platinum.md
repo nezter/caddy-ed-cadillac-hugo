@@ -3,7 +3,9 @@ title: 2016 Volvo XC60 T6 Platinum
 status: Pre-Owned
 price: 11899
 subtitle: AWD · Automatic · 123,832 mi
-image: https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0171/819124e58bba46d6e972442c5886af88x.jpg
+image: vehicles/yv4902rm8g2791401-af1171e4e4.jpg
+image_width: 1024
+image_height: 768
 vin: YV4902RM8G2791401
 stock: YG2791401
 year: 2016

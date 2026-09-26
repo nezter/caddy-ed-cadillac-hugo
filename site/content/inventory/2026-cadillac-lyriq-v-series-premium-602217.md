@@ -3,7 +3,9 @@ title: 2026 CADILLAC LYRIQ V-Series Premium
 status: New
 price: 97072
 subtitle: AWD · N/A · 4 mi
-image: https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1051/92ffba785fc7d94696ec0a7d1584de04x.jpg
+image: vehicles/1gyxp3rl5tz602217-a4943463d9.jpg
+image_width: 1600
+image_height: 1200
 vin: 1GYXP3RL5TZ602217
 stock: TZ602217
 year: 2026

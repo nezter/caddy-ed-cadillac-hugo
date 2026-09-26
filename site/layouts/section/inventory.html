@@ -135,7 +135,7 @@
                data-mileage="{{ with .Params.mileage }}{{ int . }}{{ end }}"
                data-featured="{{ if .Params.featured }}1{{ else }}0{{ end }}">
         <a class="vehicle-card__media" href="{{ .RelPermalink }}" tabindex="-1" aria-hidden="true">
-          {{ partial "vehicle-image.html" (dict "src" $img "alt" .Title "width" 640 "height" 427) }}
+          {{ partial "vehicle-image.html" (dict "src" $img "alt" .Title "width" .Params.image_width "height" .Params.image_height) }}
           {{ with .Params.status }}
           <span class="vehicle-card__badge{{ if eq . "New" }} vehicle-card__badge--accent{{ end }}">{{ . }}</span>
           {{ end }}

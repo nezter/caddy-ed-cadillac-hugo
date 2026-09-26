@@ -1,56 +1,74 @@
 {{- /*
-  vehicle-image.html -- resolve a vehicle image without inventing paths.
+  vehicle-image.html -- single entry point for every vehicle image on the site.
 
-  The inventory templates used to derive a lazyload placeholder by rewriting
-  "/img/foo.jpg" into "/img/placeholders/foo-placeholder.jpg". That directory
-  has never existed (the generator, scripts/generate-image-placeholders.js, was
-  never wired into any build), so every vehicle page requested an image that
-  could only 404.
+  It used to hand-roll a lazyload placeholder convention: rewrite
+  /img/foo.jpg to /img/placeholders/foo-placeholder.jpg. That directory has
+  never existed (the generator was never wired into a build), so every vehicle
+  page requested a main image that could only 404.
 
-  This partial resolves in order of preference and only ever emits a path that
-  is known to exist:
+  Now it delegates to partials/picture.html, which does the real work:
+    - resolves a path that is known to exist, preferring a real photograph over
+      any derived placeholder
+    - asks Hugo's built-in libvips for an AVIF / WebP / JPEG ladder
+    - never upscales past the source width
+    - uses native loading="lazy"/"eager" rather than the lazysizes polyfill
 
-    1. an explicit `placeholder` in front matter
-    2. the derived placeholder, IF it is actually present in static/
-    3. the real image
-    4. a bundled fallback
-
-  Context (dict):
-    src        - the real image path
-    placeholder- optional explicit placeholder path
-    alt        - alt text (required)
-    sizes/class- optional passthrough
-
-  Native `loading="lazy"` is used instead of the lazysizes class: lazysizes is a
-  legacy polyfill for a browser feature that has been universally supported for
-  years, and the rewrite made the LCP image worse, not better.
+  Context (dict) -- all optional:
+    src, image          path under assets/, e.g. "vehicles/abc.jpg"
+    gallery             array of paths; the first is used
+    width, height       true source dimensions, so nothing is upscaled
+    alt                 required unless decorative
+    class, sizes, loading, fallback
 */ -}}
-{{- $src := .src | default "" -}}
+
+{{- $src := .src | default .image | default "" -}}
+{{- $width := .width | default 0 -}}
+{{- $height := .height | default 0 -}}
 {{- $alt := .alt | default "" -}}
 {{- $class := .class | default "" -}}
 {{- $loading := .loading | default "lazy" -}}
-{{- $fallback := "/img/placeholder-vehicle.jpg" -}}
+{{- $sizes := .sizes | default "" -}}
 
-{{- $resolved := "" -}}
-{{- with .placeholder -}}
-  {{- if fileExists (printf "static%s" .) -}}{{- $resolved = . -}}{{- end -}}
+{{- /* A vehicle front matter may use `image` or a `gallery` list. */ -}}
+{{- if and (not $src) .gallery -}}
+  {{- with index .gallery 0 -}}{{- $src = . -}}{{- end -}}
 {{- end -}}
 
-{{- if not $resolved -}}
-  {{- with $src -}}
-    {{- $derived := replace . "/img/" "/img/placeholders/" -}}
-    {{- $derived = replace $derived (printf "\\.%s" (path.Ext $derived)) "-placeholder.jpg" -}}
-    {{- if fileExists (printf "static%s" $derived) -}}
-      {{- $resolved = $derived -}}
-    {{- else if fileExists (printf "static%s" .) -}}
-      {{- $resolved = . -}}
-    {{- end -}}
+{{- /* Historical paths: /img/... and /images/... both resolve under static/. */ -}}
+{{- if and $src (hasPrefix $src "/") -}}
+  {{- $src = strings.TrimPrefix "/" $src -}}
+{{- end -}}
+{{- if and $src (hasPrefix $src "img/") -}}
+  {{- $src = strings.TrimPrefix "img/" $src -}}
+{{- end -}}
+{{- if and $src (hasPrefix $src "images/") -}}
+  {{- $src = strings.TrimPrefix "images/" $src -}}
+{{- end -}}
+{{- if and $src (hasPrefix $src "static/") -}}
+  {{- $src = strings.TrimPrefix "static/" $src -}}
+{{- end -}}
+
+{{- /* Remote URLs were mirrored by scripts/inventory/images.js. If one is still
+       remote the site would hotlink the dealer CDN on every view, so fall back
+       to the bundled placeholder rather than doing that. */ -}}
+{{- if hasPrefix $src "http" -}}
+  {{- $src = "" -}}
+{{- end -}}
+
+{{- if $src -}}
+  {{- if not (fileExists (printf "assets/%s" $src)) -}}
+    {{- $src = "" -}}
   {{- end -}}
 {{- end -}}
 
-{{- if not $resolved -}}{{- $resolved = $fallback -}}{{- end -}}
-
-<img src="{{ $resolved | relURL }}" alt="{{ $alt }}"
-     width="{{ .width | default 800 }}" height="{{ .height | default 600 }}"
-     loading="{{ $loading }}" decoding="async"
-     {{- with $class }} class="{{ . }}"{{ end }}>
+{{- partial "picture.html" (dict
+    "src" $src
+    "alt" $alt
+    "width" $width
+    "widths" (slice 320 640 1024 1600)
+    "sizes" (cond (eq $sizes "") "(max-width: 40rem) 92vw, (max-width: 64rem) 46vw, 380px" $sizes)
+    "loading" $loading
+    "class" $class
+    "fallback" "img/placeholder-vehicle.jpg"
+    "decorative" (.decorative | default false)
+) -}}

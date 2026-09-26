@@ -74,8 +74,7 @@
       {{ $img := .Params.image | default "/img/placeholder-vehicle.jpg" }}
       <article class="vehicle-card">
         <a class="vehicle-card__media" href="{{ .RelPermalink }}" aria-label="{{ .Title }}">
-          <img src="{{ $img | relURL }}" alt="{{ .Title }}" width="640" height="427"
-               loading="lazy" decoding="async">
+          {{ partial "vehicle-image.html" (dict "src" $img "alt" .Title "width" .Params.image_width "height" .Params.image_height) }}
           {{ with .Params.status }}
           <span class="vehicle-card__badge{{ if eq . "New" }} vehicle-card__badge--accent{{ end }}">{{ . }}</span>
           {{ end }}

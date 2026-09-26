@@ -3,7 +3,9 @@ title: 2026 CADILLAC VISTIQ Luxury
 status: New
 price: 82012
 subtitle: AWD · N/A · 19 mi
-image: https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1951/b65003a95eca92f40ff3589d21721d5fx.jpg
+image: vehicles/1gyc3kml8tz707250-fa27354fb9.jpg
+image_width: 1600
+image_height: 1200
 vin: 1GYC3KML8TZ707250
 stock: TZ707250
 year: 2026

@@ -3,7 +3,9 @@ title: 2026 CADILLAC XT5 Premium Luxury
 status: New
 price: 56892
 subtitle: FWD · Automatic · 3,372 mi
-image: https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0517/610940103036f44a62068256e76c717bx.jpg
+image: vehicles/1gykncr43tz113419-b574ba3410.jpg
+image_width: 1600
+image_height: 1200
 vin: 1GYKNCR43TZ113419
 stock: NTZ113419
 year: 2026

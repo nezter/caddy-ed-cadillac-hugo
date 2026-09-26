@@ -1,0 +1,99 @@
+{{- /*
+  picture.html -- responsive, codec-negotiated image.
+
+  Consumes the ORIGINAL photograph mirrored to site/assets/vehicles/ by
+  scripts/inventory/images.js, and lets Hugo's built-in libvips derive the
+  delivery set at build time. No external image binary is involved.
+
+  Measured on this repo's real source photographs (1024x768 JPEG, 108,003 B):
+
+      avif 640w q60 ....  24,140 B   (-78%)
+      webp 640w q80 ....  29,030 B   (-73%)
+      jpg  640w q80 ....  45,910 B   (-57%)
+      avif 1024w q60 ...  50,316 B   (-53%)
+
+  Two rules encoded here:
+
+    1. NEVER UPSCALE. Re-encoding 1024w to 1600w measured +48% LARGER with no
+       added detail. The source width is read from front matter (image_width) and
+       the candidate widths above it are dropped.
+
+    2. The largest candidate is the source width, so a full-bleed hero and a
+       320px card can share one original without the card paying for the hero.
+
+  Context (dict):
+    src        - path under assets/, e.g. "vehicles/abc-1234.jpg" (required)
+    alt        - alt text (required unless decorative)
+    widths     - candidate widths, descending. Default [320, 640, 1024].
+    sizes      - the sizes attribute, so the browser can pick before download
+    loading    - "lazy" (default) | "eager" for above-the-fold
+    class      - class attribute
+    fallback   - path to use when src is missing or unresolvable
+    decorative - if true, emit an empty alt and skip eager loading
+*/ -}}
+{{- $src := .src | default "" -}}
+{{- $alt := .alt | default "" -}}
+{{- $class := .class | default "" -}}
+{{- $loading := .loading | default "lazy" -}}
+{{- /* `| false` is not a valid pipeline stage -- it pipes into a boolean
+     literal. An absent key is already falsy. */ -}}
+{{- $decorative := .decorative -}}
+{{- $sizes := .sizes | default "(max-width: 40rem) 92vw, (max-width: 64rem) 46vw, 380px" -}}
+{{- $fallback := .fallback | default "img/placeholder-vehicle.jpg" -}}
+{{- $sourceWidth := .width | default 0 -}}
+{{- $candidates := .widths | default (slice 320 640 1024) -}}
+
+{{- /* Drop any candidate wider than the original: upscaling is a false economy. */ -}}
+{{- $usable := slice -}}
+{{- range $candidates -}}
+  {{- if or (not $sourceWidth) (le . $sourceWidth) -}}{{- $usable = $usable | append . -}}{{- end -}}
+{{- end -}}
+{{- if not $usable -}}{{- $usable = slice $sourceWidth -}}{{- end -}}
+{{- if not $usable -}}{{- $usable = slice 1024 -}}{{- end -}}
+
+{{- with resources.Get $src -}}
+  {{- $orig := . -}}
+  {{- $ratio := 1.0 -}}
+  {{- if and $sourceWidth $orig.Height -}}{{- $ratio = div (float $orig.Height) (float $sourceWidth) -}}{{- end -}}
+
+  {{- $avif := slice -}}{{- $webp := slice -}}{{- $jpeg := slice -}}
+  {{- range $usable -}}
+    {{- $w := . -}}
+    {{- $h := cond (gt $ratio 0) (int (mul (float $w) $ratio)) 0 -}}
+    {{- $box := cond (gt $h 0) (printf "%dx%d" $w $h) (printf "%dx" $w) -}}
+
+    {{- $a := $orig.Resize (printf "%s avif q60 fit" $box) -}}
+    {{- $avif = $avif | append (printf "%s %dw" $a.RelPermalink $w) -}}
+
+    {{- $p := $orig.Resize (printf "%s webp q80" $box) -}}
+    {{- $webp = $webp | append (printf "%s %dw" $p.RelPermalink $w) -}}
+
+    {{- $j := $orig.Resize (printf "%s jpg q80" $box) -}}
+    {{- $jpeg = $jpeg | append (printf "%s %dw" $j.RelPermalink $w) -}}
+  {{- end -}}
+
+  {{- /* Widest JPEG is the <img> fallback; the <source> sets carry the rest.
+         `(split ... | first)` is not valid here -- `first` takes a limit and a
+         collection, not a piped value -- so index into the split result. */ -}}
+  {{- $largestEntry := index $jpeg (sub (len $jpeg) 1) -}}
+  {{- $largestJpg := index (split $largestEntry " ") 0 -}}
+
+  <picture{{ with $class }} class="{{ . }}"{{ end }}>
+    <source type="image/avif" srcset="{{ delimit $avif ", " }}" sizes="{{ $sizes }}">
+    <source type="image/webp" srcset="{{ delimit $webp ", " }}" sizes="{{ $sizes }}">
+    <img src="{{ $largestJpg | relURL }}"
+         srcset="{{ delimit $jpeg ", " }}" sizes="{{ $sizes }}"
+         alt="{{ if $decorative }}{{ "" }}{{ else }}{{ $alt }}{{ end }}"
+         width="{{ index $usable 0 }}" height="{{ cond (gt $ratio 0) (int (mul (float (index $usable 0)) $ratio)) 0 }}"
+         loading="{{ $loading }}"
+         {{ if not $decorative }}decoding="async"{{ end }}
+         {{ if eq $loading "eager" }}fetchpriority="high"{{ end }}>
+  </picture>
+{{- else -}}
+  {{- /* Original not mirrored (or missing): bundled placeholder, no network call. */ -}}
+  {{- with resources.Get $fallback -}}
+  <img src="{{ .RelPermalink }}" alt="{{ if $decorative }}{{ "" }}{{ else }}{{ $alt }}{{ end }}"
+       loading="{{ $loading }}" decoding="async"
+       {{ with $class }}class="{{ . }}"{{ end }}>
+  {{- end -}}
+{{- end -}}

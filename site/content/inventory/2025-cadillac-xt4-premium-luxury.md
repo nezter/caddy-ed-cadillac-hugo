@@ -3,7 +3,9 @@ title: 2025 CADILLAC XT4 Premium Luxury
 status: Certified Pre-Owned
 price: 32388
 subtitle: AWD · Automatic · 44,721 mi
-image: https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0017/0dbdcfa674d01ba550deec905f4ad87fx.jpg
+image: vehicles/1gyfzdr43sf159179-b5fc4fab81.jpg
+image_width: 1600
+image_height: 1200
 vin: 1GYFZDR43SF159179
 stock: BSF159179
 year: 2025

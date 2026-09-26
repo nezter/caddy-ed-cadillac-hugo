@@ -3,7 +3,9 @@ title: 2027 CADILLAC VISTIQ Sport
 status: New
 price: 82850
 subtitle: AWD · N/A · 46 mi
-image: https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1100/7c0b16270dcee57c4d7d2399700412c8x.jpg
+image: vehicles/1gyc3nml9vz700246-33798a7aee.jpg
+image_width: 1600
+image_height: 1200
 vin: 1GYC3NML9VZ700246
 stock: VZ700246
 year: 2027

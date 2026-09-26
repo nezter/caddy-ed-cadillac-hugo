@@ -32,6 +32,7 @@ const path = require('path');
 const { normalise, ValidationError, slugify, MANAGED_MARKER } = require('./schema');
 const { fromFile, fromHttp } = require('./sources');
 const crawler = require('./crawl');
+const images = require('./images');
 const { ensureDir, listManaged, contentPath, render, parseFrontMatter } = require('./content');
 
 /* ---------------------------------------------------------------- args -- */
@@ -302,6 +303,31 @@ async function main() {
 
   ok(`${byKey.size} valid vehicle(s)` +
      (duplicates ? `, ${duplicates} duplicate listing(s) merged by VIN` : ''));
+
+  // 2b. Mirror photography locally.
+  //
+  // The feed points at pictures.web.dealer.com. Serving those directly would
+  // send every visitor to this site to the dealer group's CDN -- load on their
+  // edge, a third party in our LCP path. One polite daily batch instead, then
+  // Hugo derives AVIF/WebP/JPEG at build time.
+  const remote = [...byKey.values()].filter((e) => /^https?:\/\//i.test(e.vehicle.image || ''));
+  if (remote.length && !args.noImages) {
+    log(`\n${C.bold}Mirroring images${C.reset}`);
+    const stats = await images.mirror(
+      remote.map((e) => e.vehicle),
+      { log: (m) => log(m) }
+    );
+    for (const entry of byKey.values()) {
+      entry.vehicle = stats.apply(entry.vehicle);
+    }
+    const kb = (n) => `${(n / 1024).toFixed(0)}KB`;
+    ok(`${stats.mirrored} mirrored, ${stats.cached} unchanged, ${stats.failed} failed (${kb(stats.bytes)} new)`);
+    if (stats.failed) {
+      warn(`${stats.failed} vehicle(s) keep the placeholder — a missing photo must never mean a missing vehicle`);
+    }
+  } else if (remote.length) {
+    log(`\n${C.dim}  --no-images: skipping the image mirror${C.reset}`);
+  }
   for (const s of skipped) warn(`skipped — ${s.reason}${s.title ? ` (${s.title})` : ''}`);
 
   // 3. Diff ---------------------------------------------------------------

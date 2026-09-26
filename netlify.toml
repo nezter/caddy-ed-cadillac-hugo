@@ -124,6 +124,26 @@
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
+# Vehicle photography. Mirrored once daily by scripts/inventory/images.js and
+# re-encoded at build time by Hugo's libvips, so every filename embeds a content
+# hash: if the bytes change the name changes. Safe to cache forever.
+[[headers]]
+  for = "/vehicles/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+    Vary = "Accept"
+
+# AVIF/WebP variants are content-hashed too, so they need no revalidation.
+[[headers]]
+  for = "/*.avif"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.webp"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
 # The CMS bundle is fingerprinted only by webpack's content, and rebuilt often.
 [[headers]]
   for = "/cms.js"

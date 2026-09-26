@@ -1,0 +1,356 @@
+{
+  "images": {
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1951/b65003a95eca92f40ff3589d21721d5fx.jpg": {
+      "file": "1gyc3kml8tz707250-fa27354fb9.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 152621,
+      "etag": "\"b65003a95eca92f40ff3589d21721d5f\"",
+      "lastModified": "Fri, 03 Jul 2026 15:51:15 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1951/b65003a95eca92f40ff3589d21721d5fx.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1267/6d58e5b892de53f21a82161f9028418bx.jpg": {
+      "file": "1gyxp3rl8tz601661-a4943463d9.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 130349,
+      "etag": "\"6d58e5b892de53f21a82161f9028418b\"",
+      "lastModified": "Tue, 08 Sep 2026 02:11:36 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1267/6d58e5b892de53f21a82161f9028418bx.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1293/1069b4fc1b885fec9e51db6f8843aa31x.jpg": {
+      "file": "1g6du5rk7t0109862-f37b5873cf.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 137787,
+      "etag": "\"1069b4fc1b885fec9e51db6f8843aa31\"",
+      "lastModified": "Sat, 19 Sep 2026 19:22:18 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1293/1069b4fc1b885fec9e51db6f8843aa31x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0941/212de4169e4f7f3187738b19dce380d2x.jpg": {
+      "file": "1gykndrs9tz103904-b574ba3410.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 161857,
+      "etag": "\"212de4169e4f7f3187738b19dce380d2\"",
+      "lastModified": "Sat, 19 Sep 2026 19:08:03 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0941/212de4169e4f7f3187738b19dce380d2x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1042/4a2cf7598c6d751cabd26f1659dc44f4x.jpg": {
+      "file": "1gykpurl6tz306266-ce3106bf8e.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 129935,
+      "etag": "\"4a2cf7598c6d751cabd26f1659dc44f4\"",
+      "lastModified": "Sat, 04 Jul 2026 16:46:54 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1042/4a2cf7598c6d751cabd26f1659dc44f4x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1041/c2350a44a08b2e24a496e12985a95db7x.jpg": {
+      "file": "1g6dp5rkxt0111273-f37b5873cf.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 119057,
+      "etag": "\"c2350a44a08b2e24a496e12985a95db7\"",
+      "lastModified": "Fri, 04 Sep 2026 01:34:38 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1041/c2350a44a08b2e24a496e12985a95db7x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0013/fd2a764ef91821813fcdbec801c0cd25x.jpg": {
+      "file": "1gyknar41tz106005-458499462d.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 145150,
+      "etag": "\"fd2a764ef91821813fcdbec801c0cd25\"",
+      "lastModified": "Fri, 28 Aug 2026 18:19:37 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0013/fd2a764ef91821813fcdbec801c0cd25x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0501/24569c3ae41a13a9c56ec639c66a04dcx.jpg": {
+      "file": "1gyknbr44tz106179-458499462d.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 148080,
+      "etag": "\"24569c3ae41a13a9c56ec639c66a04dc\"",
+      "lastModified": "Wed, 03 Jun 2026 20:46:10 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0501/24569c3ae41a13a9c56ec639c66a04dcx.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1760/654fabea77737dc109cc62a9f45be85ex.jpg": {
+      "file": "1gyknar42tz108393-458499462d.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 139050,
+      "etag": "\"654fabea77737dc109cc62a9f45be85e\"",
+      "lastModified": "Tue, 25 Aug 2026 17:04:10 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1760/654fabea77737dc109cc62a9f45be85ex.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1361/6f549776a6cdd3705659f44892b8e8e6x.jpg": {
+      "file": "1gys9rkl4tr281966-91009f63b5.jpg",
+      "width": 1024,
+      "height": 768,
+      "bytes": 112245,
+      "etag": "\"6f549776a6cdd3705659f44892b8e8e6\"",
+      "lastModified": "Mon, 21 Sep 2026 18:43:52 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1361/6f549776a6cdd3705659f44892b8e8e6x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0117/1129869d7b09f7a5c08c1ede78d3dd0cx.jpg": {
+      "file": "1g6dp5rk7t0113577-f37b5873cf.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 123776,
+      "etag": "\"1129869d7b09f7a5c08c1ede78d3dd0c\"",
+      "lastModified": "Fri, 31 Jul 2026 18:19:21 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0117/1129869d7b09f7a5c08c1ede78d3dd0cx.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0867/88fd17469c92da9e5600ace94f191c09x.jpg": {
+      "file": "1gykndrs4tz109657-b574ba3410.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 143400,
+      "etag": "\"88fd17469c92da9e5600ace94f191c09\"",
+      "lastModified": "Tue, 25 Aug 2026 19:31:18 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0867/88fd17469c92da9e5600ace94f191c09x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1051/92ffba785fc7d94696ec0a7d1584de04x.jpg": {
+      "file": "1gyxp3rl5tz602217-a4943463d9.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 136567,
+      "etag": "\"92ffba785fc7d94696ec0a7d1584de04\"",
+      "lastModified": "Thu, 07 May 2026 21:32:17 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1051/92ffba785fc7d94696ec0a7d1584de04x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1122/6c47959262f44bbea3449f2e8eb96547x.jpg": {
+      "file": "1gyknar43tz110010-458499462d.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 142038,
+      "etag": "\"6c47959262f44bbea3449f2e8eb96547\"",
+      "lastModified": "Tue, 08 Sep 2026 03:18:49 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1122/6c47959262f44bbea3449f2e8eb96547x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0226/bc8ca128c60ff9c643a60fd509fbe054x.jpg": {
+      "file": "1gyknar47tz109975-458499462d.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 138424,
+      "etag": "\"bc8ca128c60ff9c643a60fd509fbe054\"",
+      "lastModified": "Fri, 11 Sep 2026 20:28:05 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0226/bc8ca128c60ff9c643a60fd509fbe054x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0569/b5e2be179382ae3fc8f8a24198ebe41bx.jpg": {
+      "file": "1gykncr40tz109974-b574ba3410.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 145653,
+      "etag": "\"b5e2be179382ae3fc8f8a24198ebe41b\"",
+      "lastModified": "Sat, 12 Sep 2026 14:21:50 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0569/b5e2be179382ae3fc8f8a24198ebe41bx.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1797/031fe67b9dd8b112710ff9a63295fd99x.jpg": {
+      "file": "1gyknar40tz111132-458499462d.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 152931,
+      "etag": "\"031fe67b9dd8b112710ff9a63295fd99\"",
+      "lastModified": "Sun, 28 Jun 2026 14:19:38 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1797/031fe67b9dd8b112710ff9a63295fd99x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0988/b148483705e4908f3d443674bdab231fx.jpg": {
+      "file": "1gykncrsxtz111990-b574ba3410.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 148360,
+      "etag": "\"b148483705e4908f3d443674bdab231f\"",
+      "lastModified": "Fri, 04 Sep 2026 17:09:33 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0988/b148483705e4908f3d443674bdab231fx.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1700/aaa3d72beedb06fe5d3e7874cbec0fc4x.jpg": {
+      "file": "1gykncr40tz112535-b574ba3410.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 143472,
+      "etag": "\"aaa3d72beedb06fe5d3e7874cbec0fc4\"",
+      "lastModified": "Mon, 14 Sep 2026 19:33:01 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1700/aaa3d72beedb06fe5d3e7874cbec0fc4x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1643/42f7c8892e6712826da3634412f834ecx.jpg": {
+      "file": "1g6dp5rk2t0116581-f37b5873cf.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 131233,
+      "etag": "\"42f7c8892e6712826da3634412f834ec\"",
+      "lastModified": "Sat, 04 Jul 2026 17:22:13 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1643/42f7c8892e6712826da3634412f834ecx.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0517/610940103036f44a62068256e76c717bx.jpg": {
+      "file": "1gykncr43tz113419-b574ba3410.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 132241,
+      "etag": "\"610940103036f44a62068256e76c717b\"",
+      "lastModified": "Sun, 20 Sep 2026 18:08:33 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0517/610940103036f44a62068256e76c717bx.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1100/7c0b16270dcee57c4d7d2399700412c8x.jpg": {
+      "file": "1gyc3nml9vz700246-33798a7aee.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 134860,
+      "etag": "\"7c0b16270dcee57c4d7d2399700412c8\"",
+      "lastModified": "Mon, 31 Aug 2026 14:54:57 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1100/7c0b16270dcee57c4d7d2399700412c8x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1477/bdba2e19dbb9e46a3edf08d5e5cc9f53x.jpg": {
+      "file": "1gys9jkl2tr376799-dda3c87b4b.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 150933,
+      "etag": "\"bdba2e19dbb9e46a3edf08d5e5cc9f53\"",
+      "lastModified": "Fri, 24 Jul 2026 04:40:15 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1477/bdba2e19dbb9e46a3edf08d5e5cc9f53x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0415/2a7aa29504998f979d03b72af392a534x.jpg": {
+      "file": "1gykncr41tz114360-b574ba3410.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 145034,
+      "etag": "\"2a7aa29504998f979d03b72af392a534\"",
+      "lastModified": "Wed, 17 Jun 2026 10:44:04 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0415/2a7aa29504998f979d03b72af392a534x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0780/0105e1d678f36ae56b6eee8e89ef4d6dx.jpg": {
+      "file": "1g6dt5rw0r0110060-7ae22fa8df.jpg",
+      "width": 1024,
+      "height": 768,
+      "bytes": 108003,
+      "etag": "\"0105e1d678f36ae56b6eee8e89ef4d6d\"",
+      "lastModified": "Mon, 21 Sep 2026 19:35:56 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0780/0105e1d678f36ae56b6eee8e89ef4d6dx.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1902/bb9e7405a34ddb98eeb692e882786a10x.jpg": {
+      "file": "1gykptrk3rz103975-c1b7c08740.jpg",
+      "width": 1024,
+      "height": 768,
+      "bytes": 100699,
+      "etag": "\"bb9e7405a34ddb98eeb692e882786a10\"",
+      "lastModified": "Fri, 18 Sep 2026 21:41:59 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1902/bb9e7405a34ddb98eeb692e882786a10x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1034/82d0659f760d490261d4bc799c34f2f5x.jpg": {
+      "file": "1gykpmrl5rz137771-7d477c70a9.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 139263,
+      "etag": "\"82d0659f760d490261d4bc799c34f2f5\"",
+      "lastModified": "Sun, 09 Aug 2026 11:20:16 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1034/82d0659f760d490261d4bc799c34f2f5x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0513/1ea43e61bfaa84a6c250d22b0422cbfbx.jpg": {
+      "file": "1gykpmrlxrz139354-7d477c70a9.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 138760,
+      "etag": "\"1ea43e61bfaa84a6c250d22b0422cbfb\"",
+      "lastModified": "Wed, 23 Sep 2026 14:57:17 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0513/1ea43e61bfaa84a6c250d22b0422cbfbx.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0017/0dbdcfa674d01ba550deec905f4ad87fx.jpg": {
+      "file": "1gyfzdr43sf159179-b5fc4fab81.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 138988,
+      "etag": "\"0dbdcfa674d01ba550deec905f4ad87f\"",
+      "lastModified": "Tue, 08 Sep 2026 02:22:46 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0017/0dbdcfa674d01ba550deec905f4ad87fx.jpg"
+    },
+    "https://images.dealer.com/autodata/us/color/2023/USD30CAS012F0/GBA.jpg": {
+      "file": "1gys4hk90pr258221-2dd473ea4b.jpg",
+      "width": 2100,
+      "height": 1575,
+      "bytes": 236689,
+      "etag": "\"fbf80e511cc7172a8080b68b593acf03\"",
+      "lastModified": "Fri, 07 Aug 2026 10:44:59 GMT",
+      "mime": "image/jpeg",
+      "source": "https://images.dealer.com/autodata/us/color/2023/USD30CAS012F0/GBA.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1696/d717cac5c16c9aeb7853c159fda24c86x.jpg": {
+      "file": "1gyknbr47pz149145-070b57ca5c.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 142686,
+      "etag": "\"d717cac5c16c9aeb7853c159fda24c86\"",
+      "lastModified": "Wed, 26 Aug 2026 18:28:39 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1696/d717cac5c16c9aeb7853c159fda24c86x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1479/aee903229c60c78af11a2dbd7040ea0bx.jpg": {
+      "file": "1gyknar47pz167851-fd9f66ed1b.jpg",
+      "width": 1024,
+      "height": 768,
+      "bytes": 112099,
+      "etag": "\"aee903229c60c78af11a2dbd7040ea0b\"",
+      "lastModified": "Sat, 12 Sep 2026 01:23:37 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1479/aee903229c60c78af11a2dbd7040ea0bx.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1002/0e48e868cdb6859f9ff2ae845b115befx.jpg": {
+      "file": "wbxht3z31g4a51122-a6631e3477.jpg",
+      "width": 1024,
+      "height": 768,
+      "bytes": 100790,
+      "etag": "\"0e48e868cdb6859f9ff2ae845b115bef\"",
+      "lastModified": "Fri, 18 Sep 2026 23:03:58 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1002/0e48e868cdb6859f9ff2ae845b115befx.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1871/eaf2c9eebc0a4b50b423d35d5cfaba83x.jpg": {
+      "file": "jn8ay2ncxlx517141-3025557297.jpg",
+      "width": 1024,
+      "height": 768,
+      "bytes": 114821,
+      "etag": "\"eaf2c9eebc0a4b50b423d35d5cfaba83\"",
+      "lastModified": "Wed, 23 Sep 2026 20:53:28 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1871/eaf2c9eebc0a4b50b423d35d5cfaba83x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0171/819124e58bba46d6e972442c5886af88x.jpg": {
+      "file": "yv4902rm8g2791401-af1171e4e4.jpg",
+      "width": 1024,
+      "height": 768,
+      "bytes": 104405,
+      "etag": "\"819124e58bba46d6e972442c5886af88\"",
+      "lastModified": "Fri, 18 Sep 2026 23:07:32 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0171/819124e58bba46d6e972442c5886af88x.jpg"
+    }
+  },
+  "fetched": 35,
+  "failures": 0
+}

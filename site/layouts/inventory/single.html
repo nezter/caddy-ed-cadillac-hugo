@@ -41,9 +41,10 @@
       {{ partial "vehicle-image.html" (dict
           "src" (and .Params.gallery (index .Params.gallery 0) | default .Params.image)
           "alt" .Title
+          "width" .Params.image_width
+          "height" .Params.image_height
           "class" "gallery-featured-image"
-          "loading" "eager"
-          "width" 1200 "height" 800) }}
+          "loading" "eager") }}
     </div>
 
     {{ with .Params.gallery }}

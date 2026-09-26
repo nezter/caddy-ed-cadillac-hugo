@@ -3,7 +3,9 @@ title: 2026 CADILLAC CT5 Sport
 status: New
 price: 54463
 subtitle: RWD · Automatic · 3,600 mi
-image: https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1041/c2350a44a08b2e24a496e12985a95db7x.jpg
+image: vehicles/1g6dp5rkxt0111273-f37b5873cf.jpg
+image_width: 1600
+image_height: 1200
 vin: 1G6DP5RKXT0111273
 stock: DT0111273
 year: 2026

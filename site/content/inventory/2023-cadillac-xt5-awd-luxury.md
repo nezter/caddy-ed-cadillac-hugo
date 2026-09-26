@@ -3,7 +3,9 @@ title: 2023 CADILLAC XT5 AWD Luxury
 status: Certified Pre-Owned
 price: 28396
 subtitle: AWD · Automatic · 33,431 mi
-image: https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1696/d717cac5c16c9aeb7853c159fda24c86x.jpg
+image: vehicles/1gyknbr47pz149145-070b57ca5c.jpg
+image_width: 1600
+image_height: 1200
 vin: 1GYKNBR47PZ149145
 stock: TPZ149145
 year: 2023

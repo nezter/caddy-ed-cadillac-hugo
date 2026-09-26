@@ -19,86 +19,97 @@
 (function () {
   'use strict';
 
+  const FIELDS = ['q', 'model', 'year', 'body_style', 'status', 'max_price', 'sort'];
+
   function init() {
-    let form = document.querySelector('[data-inventory-filters]');
-    let grid = document.getElementById('vehicle-inventory');
+    const form = document.querySelector('[data-inventory-filters]');
+    const grid = document.getElementById('vehicle-inventory');
     if (!form || !grid) return;
 
-    let cards = Array.prototype.slice.call(grid.querySelectorAll('[data-vehicle]'));
+    const cards = Array.prototype.slice.call(grid.querySelectorAll('[data-vehicle]'));
     if (!cards.length) return;
 
-    let countEl = document.getElementById('inventory-count');
-    let emptyEl = document.getElementById('inventory-empty');
-    let searchEl = form.querySelector('#f-search');
+    const countEl = document.getElementById('inventory-count');
+    const emptyEl = document.getElementById('inventory-empty');
+    const searchEl = form.querySelector('#f-search');
+
+    function fieldEl(name) {
+      return form.querySelector('[name="' + name + '"]');
+    }
 
     function val(name) {
-      const el = form.querySelector('[name="' + name + '"]');
-      return el ? el.value.trim().toLowerCase() : '';
+      let el = fieldEl(name);
+      return el ? String(el.value || '').trim().toLowerCase() : '';
     }
 
     function numVal(name) {
-      const n = parseFloat(val(name));
+      let n = parseFloat(val(name));
       return isNaN(n) ? null : n;
     }
 
     function matches(card, q, model, year, body, status, maxPrice) {
-      if (q) {
-        const hay = card.dataset.title || '';
-        if (hay.indexOf(q) === -1) return false;
-      }
+      if (q && (card.dataset.title || '').indexOf(q) === -1) return false;
       if (model && card.dataset.model !== model) return false;
       if (year && String(card.dataset.year) !== year) return false;
       if (body && card.dataset.body !== body) return false;
       if (status && (card.dataset.status || '') !== status) return false;
       if (maxPrice !== null) {
-        const p = parseFloat(card.dataset.price || '0');
+        let p = parseFloat(card.dataset.price || '0');
         if (!(p > 0 && p <= maxPrice)) return false;
       }
       return true;
     }
 
     function sortCards(list, mode) {
-      const by = {
-        'price-asc': function (a, b) { return (+a.dataset.price || Infinity) - (+b.dataset.price || Infinity); },
-        'price-desc': function (a, b) { return (+b.dataset.price || 0) - (+a.dataset.price || 0); },
-        'year-desc': function (a, b) { return (+b.dataset.year || 0) - (+a.dataset.year || 0); },
-        'mileage-asc': function (a, b) { return (+a.dataset.mileage || Infinity) - (+b.dataset.mileage || Infinity); },
+      const num = function (el, key) { return parseFloat(el.dataset[key] || '0') || 0; };
+      const comparators = {
+        'price-asc': function (a, b) {
+          return (num(a, 'price') || Infinity) - (num(b, 'price') || Infinity);
+        },
+        'price-desc': function (a, b) { return num(b, 'price') - num(a, 'price'); },
+        'year-desc': function (a, b) { return num(b, 'year') - num(a, 'year'); },
+        'mileage-asc': function (a, b) {
+          return (num(a, 'mileage') || Infinity) - (num(b, 'mileage') || Infinity);
+        },
         // Default: featured first, then newest, then cheapest.
         featured: function (a, b) {
           const fa = a.dataset.featured === '1' ? 0 : 1;
           const fb = b.dataset.featured === '1' ? 0 : 1;
           if (fa !== fb) return fa - fb;
-          const y = (+b.dataset.year || 0) - (+a.dataset.year || 0);
+          const y = num(b, 'year') - num(a, 'year');
           if (y !== 0) return y;
-          return (+a.dataset.price || Infinity) - (+b.dataset.price || Infinity);
+          return (num(a, 'price') || Infinity) - (num(b, 'price') || Infinity);
         },
       };
-      return (by[mode] || by.featured)(list);
+      return list.slice().sort(comparators[mode] || comparators.featured);
     }
 
     function apply() {
-      const q = val('q');
-      const model = val('model');
-      const year = val('year');
-      const body = val('body_style');
-      const status = val('status');
-      const maxPrice = numVal('max_price');
-      const sort = val('sort') || 'featured';
+      let q = val('q');
+      let model = val('model');
+      let year = val('year');
+      let body = val('body_style');
+      let status = val('status');
+      let maxPrice = numVal('max_price');
+      let sort = val('sort') || 'featured';
 
-      const visible = cards.filter(function (c) {
-        return matches(c, q, model, year, body, status, maxPrice);
+      let visible = cards.filter(function (card) {
+        return matches(card, q, model, year, body, status, maxPrice);
       });
-
-      // Detach everything, then re-append in sort order. Simpler and more
-      // predictable than juggling CSS ordering, and the list is short.
       visible = sortCards(visible, sort);
-      cards.forEach(function (c) { c.classList.add('hidden'); });
-      visible.forEach(function (c) { c.classList.remove('hidden'); });
 
-      // Keep DOM order matching the visible order for keyboard/screen-reader flow.
+      // Re-append in sort order: simpler and more predictable than CSS
+      // ordering, and it keeps DOM order aligned with reading order for
+      // keyboard and screen-reader users.
       const frag = document.createDocumentFragment();
-      visible.forEach(function (c) { frag.appendChild(c); });
+      for (let i = 0; i < visible.length; i += 1) {
+        frag.appendChild(visible[i]);
+      }
       grid.appendChild(frag);
+
+      for (let j = 0; j < cards.length; j += 1) {
+        cards[j].classList.toggle('hidden', visible.indexOf(cards[j]) === -1);
+      }
 
       if (countEl) {
         countEl.textContent =
@@ -114,8 +125,34 @@
       if (searchEl) searchEl.focus();
     }
 
-    form.addEventListener('submit', function (e) { e.preventDefault(); apply(); });
-    form.addEventListener('change', apply);
+    function writeUrl() {
+      const params = new URLSearchParams();
+      FIELDS.forEach(function (key) {
+        let el = fieldEl(key);
+        if (el && el.value && el.value !== 'featured') params.set(key, el.value);
+      });
+      let qs = params.toString();
+      const url = qs ? '?' + qs : window.location.pathname;
+      window.history.replaceState(null, '', url);
+    }
+
+    function readUrl() {
+      const params = new URLSearchParams(window.location.search);
+      FIELDS.forEach(function (key) {
+        let v = params.get(key);
+        let el = fieldEl(key);
+        if (v && el) el.value = v;
+      });
+    }
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      apply();
+    });
+    form.addEventListener('change', function () {
+      apply();
+      writeUrl();
+    });
     form.addEventListener('reset', function () { setTimeout(apply, 0); });
 
     if (searchEl) {
@@ -130,33 +167,12 @@
       if (e.target.closest('[data-inventory-reset]')) {
         e.preventDefault();
         reset();
+        writeUrl();
       }
     });
 
-    // Restore state from the URL so a filtered view is shareable and survives
-    // a back/forward navigation.
-    function readUrl() {
-      const p = new URLSearchParams(window.location.search);
-      ['q', 'model', 'year', 'body_style', 'status', 'max_price', 'sort'].forEach(function (k) {
-        const v = p.get(k);
-        const el = form.querySelector('[name="' + k + '"]');
-        if (v && el) el.value = v;
-      });
-    }
-
-    function writeUrl() {
-      const p = new URLSearchParams();
-      ['q', 'model', 'year', 'body_style', 'status', 'max_price', 'sort'].forEach(function (k) {
-        const el = form.querySelector('[name="' + k + '"]');
-        if (el && el.value && el.value !== 'featured') p.set(k, el.value);
-      });
-      const qs = p.toString();
-      history.replaceState(null, '', qs ? '?' + qs : window.location.pathname);
-    }
-
     readUrl();
     apply();
-    form.addEventListener('change', writeUrl);
   }
 
   if (document.readyState !== 'loading') init();

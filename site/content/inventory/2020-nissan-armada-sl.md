@@ -3,7 +3,9 @@ title: 2020 Nissan Armada SL
 status: Pre-Owned
 price: 14899
 subtitle: 4WD · Automatic · 126,650 mi
-image: https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1871/eaf2c9eebc0a4b50b423d35d5cfaba83x.jpg
+image: vehicles/jn8ay2ncxlx517141-3025557297.jpg
+image_width: 1024
+image_height: 768
 vin: JN8AY2NCXLX517141
 stock: TLX517141
 year: 2020

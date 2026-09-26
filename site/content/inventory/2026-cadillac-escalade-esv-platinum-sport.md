@@ -3,7 +3,9 @@ title: 2026 CADILLAC Escalade ESV Platinum Sport
 status: New
 price: 136975
 subtitle: 4WD · Automatic · 10 mi
-image: https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1361/6f549776a6cdd3705659f44892b8e8e6x.jpg
+image: vehicles/1gys9rkl4tr281966-91009f63b5.jpg
+image_width: 1024
+image_height: 768
 vin: 1GYS9RKL4TR281966
 stock: TR281966
 year: 2026

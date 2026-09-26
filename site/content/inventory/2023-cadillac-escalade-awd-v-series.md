@@ -3,7 +3,9 @@ title: 2023 CADILLAC Escalade AWD V-Series
 status: Certified Pre-Owned
 price: 112899
 subtitle: 4WD · Automatic · 33,112 mi
-image: https://images.dealer.com/autodata/us/color/2023/USD30CAS012F0/GBA.jpg
+image: vehicles/1gys4hk90pr258221-2dd473ea4b.jpg
+image_width: 2100
+image_height: 1575
 vin: 1GYS4HK90PR258221
 stock: GPR258221
 year: 2023

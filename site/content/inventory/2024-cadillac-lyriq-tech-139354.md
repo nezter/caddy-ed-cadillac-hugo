@@ -3,7 +3,9 @@ title: 2024 CADILLAC LYRIQ Tech
 status: Certified Pre-Owned
 price: 36396
 subtitle: AWD · N/A · 19,983 mi
-image: https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0513/1ea43e61bfaa84a6c250d22b0422cbfbx.jpg
+image: vehicles/1gykpmrlxrz139354-7d477c70a9.jpg
+image_width: 1600
+image_height: 1200
 vin: 1GYKPMRLXRZ139354
 stock: BRZ139354
 year: 2024

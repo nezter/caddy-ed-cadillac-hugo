@@ -3,7 +3,9 @@ title: 2026 CADILLAC Escalade ESV 1SA
 status: New
 price: 95889
 subtitle: 4WD · Automatic · 3,113 mi
-image: https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1477/bdba2e19dbb9e46a3edf08d5e5cc9f53x.jpg
+image: vehicles/1gys9jkl2tr376799-dda3c87b4b.jpg
+image_width: 1600
+image_height: 1200
 vin: 1GYS9JKL2TR376799
 stock: TR376799
 year: 2026

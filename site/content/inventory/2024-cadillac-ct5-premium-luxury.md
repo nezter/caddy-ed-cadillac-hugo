@@ -3,7 +3,9 @@ title: 2024 CADILLAC CT5 Premium Luxury
 status: Certified Pre-Owned
 price: 36899
 subtitle: AWD · Automatic · 45,218 mi
-image: https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0780/0105e1d678f36ae56b6eee8e89ef4d6dx.jpg
+image: vehicles/1g6dt5rw0r0110060-7ae22fa8df.jpg
+image_width: 1024
+image_height: 768
 vin: 1G6DT5RW0R0110060
 stock: GR0110060
 year: 2024

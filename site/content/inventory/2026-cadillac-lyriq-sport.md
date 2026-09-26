@@ -3,7 +3,9 @@ title: 2026 CADILLAC LYRIQ Sport
 status: New
 price: 64693
 subtitle: AWD · N/A · 3,428 mi
-image: https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1042/4a2cf7598c6d751cabd26f1659dc44f4x.jpg
+image: vehicles/1gykpurl6tz306266-ce3106bf8e.jpg
+image_width: 1600
+image_height: 1200
 vin: 1GYKPURL6TZ306266
 stock: DTZ306266
 year: 2026
