@@ -443,6 +443,52 @@ function main() {
     console.log(`  \x1b[1;32mOK\x1b[0m    no page renders markup as a code block`);
   }
 
+  // --- no unrendered template syntax in the output -----------------------
+  //
+  // Hugo fails LOUDLY on a malformed action and SILENTLY on an orphaned
+  // fragment. A leftover `"style" "filter: ...")}}` from a rewritten partial
+  // is not a template action, so Hugo prints it as text, and the footer of
+  // every page in the site rendered:
+  //
+  //     "style" "filter: brightness(0)
+  //     invert(1); margin-bottom: var(--
+  //     space-3)"}}
+  //
+  // Nothing failed. The build passed, all four gates passed, the page returned
+  // 200, and the header logo was visibly correct a few hundred pixels above it.
+  // It is only visible by looking at the page.
+  //
+  // Checked on the OUTPUT, because that is where the consequence is. A `{{` in
+  // a text node is unrendered template syntax, always.
+  const unrendered = [];
+  for (const f of files) {
+    if (!f.endsWith('.html')) continue;
+    const html = fs.readFileSync(f, 'utf8');
+    // Only inside text, not inside a <script>/<style> block or an attribute --
+    // JS bundles legitimately contain {{ }} in template literals and regex.
+    const stripped = html
+      .replace(/<script\b[\s\S]*?<\/script>/gi, ' ')
+      .replace(/<style\b[\s\S]*?<\/style>/gi, ' ')
+      .replace(/<[^>]+>/g, ' ');
+    if (/\{\{|\}\}/.test(stripped)) {
+      unrendered.push(path.relative(PUBLIC_DIR, f));
+    }
+  }
+  if (unrendered.length) {
+    fail(
+      `${unrendered.length} page(s) render unrendered template syntax ` +
+        '(stray {{ or }} in the visible text)'
+    );
+    for (const rel of unrendered) console.error(`    ${rel}`);
+    console.error(
+      '    An orphaned fragment of a partial -- text left behind when a template\n' +
+        '    was rewritten -- is not a template action, so Hugo prints it instead of\n' +
+        '    failing. Everything else about the page looks correct.'
+    );
+  } else {
+    console.log(`  \x1b[1;32mOK\x1b[0m    no page renders unrendered template syntax`);
+  }
+
   // --- sanity: the site must actually have JS -----------------------------
   const anyJs = bundles.some((f) => f.endsWith('.js'));
   if (!anyJs) {

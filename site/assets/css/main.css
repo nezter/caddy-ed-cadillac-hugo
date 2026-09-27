@@ -221,12 +221,28 @@ h1, h2, h3, h4, h5, h6 {
   text-wrap: balance;
 }
 
-h1 { font-size: var(--text-4xl); }
-h2 { font-size: var(--text-3xl); }
-h3 { font-size: var(--text-2xl); letter-spacing: var(--tracking-snug); }
-h4 { font-size: var(--text-xl);  letter-spacing: var(--tracking-snug); }
-h5 { font-size: var(--text-lg); }
-h6 { font-size: var(--text-base); }
+/*
+  Heading scale.
+
+  These were one step too large at every level. h1 was --text-4xl, which is up
+  to 5.5rem / 88px, and h2 was --text-3xl at up to 3.75rem / 60px. That is a
+  HERO scale, and it was applied to every content page, where the only h1 is
+  the page title. /service/ rendered "Cadillac Service & Maintenance" across
+  two lines at 88px with its h2s at 60px directly beneath it -- so the page
+  title and its own subheadings were nearly the same size and the page read as a
+  single undifferentiated block of black text.
+
+  The scale is now sized for body copy with real steps between the levels, and
+  the large sizes are reserved for the hero, which is the only place they
+  belong. Every content page gets a title you can read in one line, and
+  headings that are visibly subordinate to it.
+*/
+h1 { font-size: var(--text-2xl); }
+h2 { font-size: var(--text-xl); letter-spacing: var(--tracking-snug); }
+h3 { font-size: var(--text-lg); letter-spacing: var(--tracking-snug); }
+h4 { font-size: var(--text-base); letter-spacing: var(--tracking-snug); }
+h5 { font-size: var(--text-sm); letter-spacing: var(--tracking-caps); text-transform: uppercase; }
+h6 { font-size: var(--text-sm); }
 
 p { text-wrap: pretty; }
 
@@ -249,7 +265,15 @@ p { text-wrap: pretty; }
 
 .prose { max-width: 68ch; }
 .prose > * + * { margin-top: var(--space-4); }
-.prose h2 { margin-top: var(--space-7); }
+/* Vertical rhythm inside long-form copy.
+   Headings need a clear break above them, and the first one should not be
+   pushed down by its own top margin when it directly follows the page title. */
+.prose > h2:first-of-type,
+.prose > h3:first-of-type { margin-top: var(--space-4); }
+.prose h2 {
+  margin-top: var(--space-8);
+  padding-top: var(--space-2);
+}
 .prose h3 { margin-top: var(--space-6); }
 .prose ul, .prose ol { padding-left: var(--space-5); }
 .prose li + li { margin-top: var(--space-2); }
@@ -541,7 +565,9 @@ p { text-wrap: pretty; }
 .hero__content { max-width: 46rem; }
 .hero__content > * + * { margin-top: var(--space-5); }
 .hero .eyebrow { color: var(--brand-bronze); }
-.hero h1 { color: #fff; max-width: 20ch; }
+/* The hero is the one place the display scale belongs, so it opts back into it
+   explicitly rather than inheriting the content-page size. */
+.hero h1 { color: #fff; max-width: 20ch; font-size: var(--text-4xl); }
 .hero .lede { color: rgb(255 255 255 / 0.82); }
 .hero__actions { display: flex; flex-wrap: wrap; gap: var(--space-3); }
 
