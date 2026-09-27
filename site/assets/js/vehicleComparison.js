@@ -127,7 +127,7 @@ class VehicleComparison {
   }
   
   async fetchVehicleData(vehicleId) {
-    const response = await fetch(`/api/vehicle/${vehicleId}`);
+    const response = await fetch(`/.netlify/functions/vehicle-details/${vehicleId}`);
     const data = await response.json();
     this.vehicleData[vehicleId] = data;
     if (!this.compareList.includes(vehicleId)) {

@@ -118,7 +118,7 @@ class SalesTeam {
         submitButton.disabled = true;
         
         // Use fetch API to submit the form
-        fetch('/api/contact-salesperson', {
+        fetch('/.netlify/functions/contact-salesperson', {
           method: 'POST',
           body: formData
         })
@@ -156,7 +156,7 @@ class SalesTeam {
         const memberId = metricElement.dataset.memberId;
         
         // Fetch sales data for this member
-        fetch(`/api/sales-metrics/${memberId}`)
+        fetch(`/.netlify/functions/sales-metrics/${memberId}`)
           .then(response => response.json())
           .then(data => {
             // Create metrics visualization

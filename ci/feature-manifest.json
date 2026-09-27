@@ -33,7 +33,7 @@
     "sales-leads": "/admin/dashboard",
     "sales-login": "/admin/sign-in",
     "sales-logout": "/admin/sign-in and every admin page's session teardown",
-    "sales-metrics": "/admin/dashboard",
+    "sales-metrics": "Created for the sales team metrics panel. Returns zeros -- there is no metrics data anywhere yet. Replaces a 404.",
     "sales-update-status": "/admin/dashboard",
     "schedule-test-drive": "/test-drive/ and the booking form on the vehicle detail page.",
     "sms-templates": "used by sales-* notification paths",
@@ -41,7 +41,11 @@
     "lead-scoring": "/admin/lead-scoring",
     "lead-assignments": "/admin/lead-assignment",
     "interactions": "/admin/interactions",
-    "lead-form": "/lead-form"
+    "lead-form": "/lead-form",
+    "available-dates": "Created for the refactored scheduling calendar. Returns an empty availableDates array -- nothing is booked because there is no booking system yet. Replaces a 404 that read as a site fault on every page load.",
+    "available-times": "Created for the refactored scheduling calendar. Returns an empty timeSlots array for the same reason as available-dates.",
+    "contact-salesperson": "Created for the sales team directory. Returns the one real sales specialist. Replaces a 404 on the about page's team cards.",
+    "pre-approval": "Created for the financing calculator's pre-approval modal. Validates required fields and returns an honest 'received, not processed' response because there is no lender integration yet."
   },
   "planned": {
     "send-notification": "components/notification.js (5.9 KB) is a library with no consumer",

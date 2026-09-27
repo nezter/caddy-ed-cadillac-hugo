@@ -15,7 +15,7 @@
 
 'use strict';
 
-exports.handler = async function (event) => {
+exports.handler = async (event) => {
   // The client sends ?date=YYYY-MM-DD. It is logged for diagnosis and ignored
   // for now: with no booking system there is nothing to look up.
   const date = event.queryStringParameters && event.queryStringParameters.date;

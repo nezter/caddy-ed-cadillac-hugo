@@ -65,7 +65,7 @@ class FinancingCalculator {
   }
   
   loadVehiclePrice(vehicleId) {
-    fetch(`/api/vehicle/${vehicleId}`)
+    fetch(`/.netlify/functions/vehicle-details/${vehicleId}`)
       .then(response => {
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             return response.json();
@@ -399,7 +399,7 @@ class FinancingCalculator {
       submitButton.textContent = 'Submitting...';
       submitButton.disabled = true;
       
-      fetch('/api/pre-approval', {
+      fetch('/.netlify/functions/pre-approval', {
         method: 'POST',
         body: formData
       })

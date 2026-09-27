@@ -18,8 +18,8 @@ class TimeSlotManager {
     
     // API endpoints
     this.endpoints = {
-      availableDates: '/api/available-dates',
-      timeSlots: '/api/available-times'
+      availableDates: '/.netlify/functions/available-dates',
+      timeSlots: '/.netlify/functions/available-times'
     };
   }
   
