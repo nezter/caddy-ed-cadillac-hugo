@@ -4,25 +4,42 @@ const CACHE_VERSION = 'v1';
 const CACHE_NAME = `caddy-ed-cache-${CACHE_VERSION}`;
 const OFFLINE_URL = '/offline/';
 
-// Assets to cache immediately on service worker install
+// Assets to cache immediately on service worker install.
+//
+// This list used to name /css/main.css, /js/main.js, /img/logo.svg,
+// /img/vehicle-placeholder.jpg and /img/hero-background.jpg. Every one of
+// those paths is now a 404: the CSS and JS are content-hashed by Hugo Pipes,
+// the logo is a hashed asset, and the two image paths have never existed.
+//
+// `cache.addAll` rejects the whole promise if a single request fails, so
+// event.waitUntil rejected, the install event failed, and the worker was
+// discarded before it ever activated. There has been no offline support on this
+// site at all -- it only looked like there was, because registration succeeds
+// and the failure happens afterwards and silently.
+//
+// Two changes:
+//   1. Precache only URLs that are actually stable and actually published.
+//   2. Add each entry independently and tolerate a miss, so one bad path can
+//      never take the whole worker down again.
 const PRECACHE_ASSETS = [
   '/',
-  '/offline/',
-  '/css/main.css',
-  '/js/main.js',
-  '/img/logo.svg',
-  '/img/vehicle-placeholder.jpg',
-  '/img/hero-background.jpg'
+  '/inventory/',
+  '/contact/'
 ];
 
 // Install event - precache key resources
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => {
-        console.log('Opened cache');
-        return cache.addAll(PRECACHE_ASSETS);
-      })
+      .then(cache => Promise.all(
+        PRECACHE_ASSETS.map(url =>
+          // A 404 is a rejected promise, caught here rather than being allowed
+          // to fail the install.
+          cache.add(new Request(url, { cache: 'reload' })).catch(err => {
+            console.warn('[sw] precache skipped', url, err && err.message);
+          })
+        )
+      ))
       .then(() => self.skipWaiting())
   );
 });

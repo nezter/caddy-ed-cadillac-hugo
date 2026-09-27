@@ -1,0 +1,12 @@
+<svg viewBox="0 0 268 40" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Caddy Ed">
+  <title>Caddy Ed</title>
+  <g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+    <path d="M12 4.5 L4.5 20 L12 35.5"/>
+  </g>
+  <g fill="currentColor" font-family="Noto Sans, Segoe UI, system-ui, sans-serif" font-size="25" font-weight="800" letter-spacing="1.5">
+    <text x="26" y="27">CADDY</text>
+  </g>
+  <g fill="currentColor" font-family="Noto Sans, Segoe UI, system-ui, sans-serif" font-size="25" font-weight="300" letter-spacing="7.5">
+    <text x="120" y="27">ED</text>
+  </g>
+</svg>

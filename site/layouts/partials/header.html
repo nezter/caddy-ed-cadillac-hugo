@@ -33,10 +33,20 @@
     <nav class="navbar" aria-label="Main navigation">
       <div class="navbar-brand">
         <a class="navbar-logo" href="/" aria-label="{{ .Site.Title }} home">
-          {{/* 180x40 matches the wordmark's true 109:24 ratio (4.54). It was declared
-               180x34 (5.29), which stretched it. An SVG needs no srcset --
-               it is resolution-independent at any size. */}}
-          <img src="/img/logo.svg" alt="{{ .Site.Title }}" width="180" height="40">
+          {{/* The wordmark is a Hugo asset, not a static path, so it is
+               content-hashed. It used to be src="/img/logo.svg" with a
+               one-day cache, which meant a logo change took up to 24 hours to
+               reach anyone who had already visited -- and the header sat there
+               showing the previous one, which for a long time was a coffee
+               shop's. An SVG needs no srcset: resolution-independent at any
+               size, and 180x40 matches the wordmark's proportions. */}}
+          {{ $logo := resources.Get "img/logo.svg" }}
+          {{ with $logo }}
+            {{ $l := . }}
+            {{ if hugo.IsProduction }}{{ $l = $l | fingerprint "sha256" }}{{ end }}
+            <img src="{{ $l.RelPermalink }}" alt="{{ $.Site.Title }}" width="180" height="40"
+                 {{ with $l.Data.Integrity }}integrity="{{ . }}"{{ end }}>
+          {{ end }}
         </a>
         <button class="navbar-burger"
                 id="navToggle"

@@ -109,7 +109,7 @@
           </h3>
           {{ with .Params.subtitle }}<p class="vehicle-card__meta">{{ . }}</p>{{ end }}
           <p class="vehicle-card__price">
-            {{ with .Params.price }}{{ printf "$%s" (delimit (split (printf "%v" .) ".") ",") }}{{ end }}
+            {{ with .Params.price }}{{ partial "money.html" . }}{{ end }}
             {{ with .Params.price_note }}<small>{{ . }}</small>{{ end }}
           </p>
           <div class="vehicle-card__actions">

@@ -1,0 +1,44 @@
+{{- /*
+  money.html -- one formatter for every price on the site.
+
+  WHY THIS EXISTS
+  ---------------
+  The home page printed "$112899" and "$28396". The vehicle detail page printed
+  "$112,899" correctly, because it had a hand-rolled fix:
+
+      {{ $thousands := div (mod $price 1000000) 1000 }}{{ $remainder := mod $price 1000 }}
+      {{ $out := "" }}{{ if gt $thousands 0 }}{{ $out = printf "%d," $thousands }}{{ end }}
+      {{ printf "$%s%03d" $out $remainder }}
+
+  The home page was using `delimit (split ...)`, which looks like it should add
+  separators and does not: splitting "112899" on "." yields one element, and
+  joining one element with "," yields "112899". A price without its thousands
+  separators is the sort of detail that makes a dealer site look unfinished, and
+  it was on the most-visited page in the site.
+
+  So the working version is here once and both layouts call it.
+
+  USAGE
+  -----
+      {{ partial "money.html" .Params.price }}
+
+  RANGE: prices up to $999,999,999. A dealership will not sell a ten-figure car.
+  Negative values are passed through as 0 rather than printing "$-4500", which
+  would be worse than showing nothing.
+*/ -}}
+
+{{- $n := 0 -}}
+{{- with . -}}
+  {{- $n = int . -}}
+{{- end -}}
+{{- if lt $n 0 -}}{{- $n = 0 -}}{{- end -}}
+
+{{- if eq $n 0 -}}
+  {{- /* A zero price is a missing price. Printing "$0" claims the car is free. */ -}}
+{{- else if lt $n 1000 -}}
+  {{- printf "$%d" $n -}}
+{{- else if lt $n 1000000 -}}
+  {{- printf "$%d,%03d" (div $n 1000) (mod $n 1000) -}}
+{{- else -}}
+  {{- printf "$%d,%03d,%03d" (div $n 1000000) (div (mod $n 1000000) 1000) (mod $n 1000) -}}
+{{- end -}}
