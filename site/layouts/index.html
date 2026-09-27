@@ -163,7 +163,7 @@
          filters are what you do once you know that it is. They were their own
          section three screens further down. */}}
     <div class="fleet-filters">
-      {{ partial "inventory-filters.html" . }}
+      {{ partial "inventory-filters.html" (dict "page" . "closed" true) }}
     </div>
 
     {{/* id and data-total are a CONTRACT with inventory-filter.js, which is

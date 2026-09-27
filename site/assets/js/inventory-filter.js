@@ -180,6 +180,28 @@
       });
       badgeEl.textContent = n ? n + ' active' : '';
       badgeEl.classList.toggle('hidden', n === 0);
+      updateAccordionSummary(n);
+    }
+
+    /**
+     * Keep the accordion honest about the filters inside it.
+     *
+     * The controls live in a <details>, collapsed on the home page. That is the
+     * right default -- it stops ~200px of form sitting between the fleet heading
+     * and the cars -- but it creates a new way to be misleading: a visitor
+     * filters, closes the accordion, and the list below is no longer the whole
+     * list, with nothing on screen to say so.
+     *
+     * So the summary carries the count and reads differently once filters are on.
+     * Closing the accordion then hides the controls, never the fact that
+     * filtering is active.
+     */
+    function updateAccordionSummary(n) {
+      var summary = document.querySelector('[data-filter-summary]');
+      var details = summary && summary.closest('details');
+      if (!summary || !details) return;
+      summary.textContent = n ? n + (n === 1 ? ' filter on' : ' filters on') : '';
+      details.classList.toggle('has-active-filters', n > 0);
     }
 
     function apply() {

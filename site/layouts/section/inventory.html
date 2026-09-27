@@ -116,7 +116,7 @@
         to a page, and every page is a normal link.
       </p>
     </noscript>
-      {{ partial "inventory-filters.html" . }}
+      {{ partial "inventory-filters.html" (dict "page" .) }}
 
 {{- /* Pagination. Server-rendered and crawlable. It is not a JS
        enhancement: with scripting off these are ordinary links. */ -}}

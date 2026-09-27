@@ -17,9 +17,34 @@
   -- and the home page needs the same one. A filter whose options can drift
   out of step with what is actually in stock is worse than no filter, so the
   options are always derived from the pages.
-*/ -}}
 
-{{- $fleet := where (where .RegularPages "Section" "inventory") "Params.available" "!=" false -}}
+  IT IS AN ACCORDION
+  ------------------
+  The form is five fields, five price chips, a count and a reset. Open, that is
+  ~200px of controls between the fleet heading and the cars, so a visitor
+  scrolling to the inventory scrolled past a control panel first. On the home
+  page, with 32 cars below it, that was most of what lay between the heading
+  and the first car.
+
+  It is a <details>/<summary>, not a button and a hidden div, for three
+  reasons: it is keyboard operable and announced by assistive technology with no
+  JavaScript at all, it opens and closes with scripting off, and there is no
+  state to keep in sync with anything.
+
+  The summary carries a live count of active filters, written by
+  inventory-filter.js, so a visitor who has filtered and then closed it can
+  still see that filters are on -- otherwise closing it would hide the fact that
+  the list below is no longer the whole list.
+
+  Context (dict):
+    page    the Page (required)
+    closed  start collapsed. Default false. The home page passes true; the
+            inventory page does not, because someone who navigated to
+            /inventory/ has usually come there to filter.
+*/ -}}
+{{- $page := .page -}}
+{{- $closed := .closed | default false -}}
+{{- $fleet := where (where $page.RegularPages "Section" "inventory") "Params.available" "!=" false -}}
 {{- $totalAll := len $fleet -}}
 {{- $totalMatched := $totalAll -}}
 {{- $models := slice -}}{{- $years := slice -}}{{- $drivetrains := slice -}}{{- $transmissions := slice -}}
@@ -46,6 +71,23 @@
   {{- end -}}
 {{- end -}}
 {{- $years = $yearsDesc -}}
+
+{{- /*
+  A <details> with no `open` attribute is COLLAPSED, so `closed` is inverted
+  here: passing closed=true renders no attribute, and passing nothing renders
+  `open`. Getting that backwards would ship an inventory page whose filters are
+  shut -- the one page where a visitor has come specifically to use them.
+*/ -}}
+<details class="filter-accordion"{{ if not $closed }} open{{ end }}>
+  <summary class="filter-accordion__summary">
+    <span class="filter-accordion__label">Filter</span>
+    <span class="filter-accordion__count" data-filter-summary aria-live="polite"></span>
+    <span class="filter-accordion__chevron" aria-hidden="true">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+    </span>
+  </summary>
+
+  <div class="filter-accordion__body">
     <form class="inventory-filters" id="inventory-filters" role="search"
           method="get" action="{{ "/inventory/" | relURL }}"
           aria-label="Filter inventory" data-inventory-filters>
@@ -146,4 +188,6 @@
                   data-inventory-reset>Clear filters</button>
       </div>
     </form>
+  </div>
+</details>
 

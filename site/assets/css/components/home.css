@@ -272,8 +272,68 @@
   border-top: 1px solid var(--border);
 }
 
-/* The filters, directly under the last-synced line in the fleet heading. */
+/* The filters, directly under the last-synced line in the fleet heading.
+   They are an accordion: a <details> the template renders closed on the home
+   page and open on /inventory/. See partials/inventory-filters.html. */
 .fleet-filters { margin-bottom: var(--space-6); }
+
+.filter-accordion {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  margin-bottom: var(--space-6);
+}
+
+.filter-accordion__summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  cursor: pointer;
+  list-style: none;            /* the chevron replaces the default triangle */
+  border-radius: var(--radius);
+}
+
+.filter-accordion__summary::-webkit-details-marker { display: none; }
+.filter-accordion__summary:hover { background: var(--bg-subtle); }
+
+.filter-accordion__summary:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -2px;
+}
+
+.filter-accordion__label {
+  font-weight: 600;
+  font-size: var(--text-sm);
+}
+
+.filter-accordion__count {
+  font-size: var(--text-sm);
+  color: var(--brand-red);
+  font-weight: 600;
+}
+
+/* When filters are on, the whole row says so -- not just the count. Someone who
+   has collapsed the accordion must still be able to see that the cars below are
+   not all the cars. */
+.filter-accordion.has-active-filters {
+  border-color: var(--brand-red);
+  box-shadow: inset 3px 0 0 var(--brand-red);
+}
+
+.filter-accordion__chevron {
+  margin-left: auto;
+  display: inline-flex;
+  color: var(--text-muted);
+  transition: transform 150ms ease;
+}
+
+.filter-accordion[open] .filter-accordion__chevron { transform: rotate(180deg); }
+
+.filter-accordion__body {
+  padding: 0 var(--space-4) var(--space-4);
+  border-top: 1px solid var(--border);
+}
 
 /* The social panels.
    No reserved height. The Facebook and X widgets inject their own iframes and
