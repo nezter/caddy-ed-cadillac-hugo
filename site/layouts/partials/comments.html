@@ -1,0 +1,66 @@
+{{- /*
+  comments.html -- what clients say.
+
+  WHY THIS IS AN EMPTY STATE AND NOT A LIST
+  -----------------------------------------
+  There is not a single real customer review anywhere in this repository, in its
+  git history, or on the live caddyed.com. The live site is a single contact
+  page with a form and a phone number; it has never had reviews.
+
+  So this renders as a visible, obviously-unfinished block rather than three
+  invented quotes. Two reasons, and the second is the one that matters:
+
+    1. A fabricated testimonial attributed to a named person is a lie told to
+       every visitor, in a building where that person's name is on the door.
+    2. Invented customer reviews are unlawful in the US. The FTC's final rule on
+       fake reviews and testimonials (16 CFR Part 465) bans fabricated
+       testimonials, and the penalty is per-violation. A one-person dealership
+       is not somewhere to take that risk over a page section.
+
+  TO FILL IT IN
+  -------------
+  Put a file at site/data/reviews.yaml:
+
+      - quote: >
+          The actual words a client used, in their own voice.
+        name: A. Client
+        detail: 2024 CT5, Pineville
+
+  and it renders here. The empty state disappears as soon as there is one entry,
+  so a half-filled section cannot ship by accident.
+*/ -}}
+
+{{- $reviews := site.Data.reviews | default slice -}}
+
+<section class="section">
+  <div class="container">
+    <div class="section-head">
+      <p class="eyebrow">In their words</p>
+      <h2>What clients say</h2>
+    </div>
+
+    {{- if $reviews }}
+    <div class="comments">
+      {{ range $reviews }}
+      <figure class="comment">
+        <blockquote>{{ .quote | markdownify }}</blockquote>
+        <footer>
+          {{- with .name }}<strong>{{ . }}</strong>{{ end -}}
+          {{- with .detail }} · {{ . }}{{ end -}}
+        </footer>
+      </figure>
+      {{ end }}
+    </div>
+    {{- else }}
+    <div class="comments">
+      <p class="comments-empty">
+        No reviews are published here yet.
+        <br>
+        <span class="text-muted">Every word on this page is Ed's own — there is nothing
+        written here that a client did not actually say. Add real quotes to
+        <code>site/data/reviews.yaml</code> and they appear in this space.</span>
+      </p>
+    </div>
+    {{- end }}
+  </div>
+</section>

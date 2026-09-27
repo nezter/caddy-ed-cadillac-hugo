@@ -1,0 +1,40 @@
+{{- /*
+  quick-ask.html -- "ask about any vehicle".
+
+  Lives in partials/ because it now appears twice: in the hero's right-hand
+  space, and (optionally) further down. It was inline markup in connect-hub.html
+  before, which is why it could only ever be in one place.
+
+  Context: the Page, for the form-name and the vehicle it is about.
+*/ -}}
+<form class="quick-ask" id="quickAsk" method="POST" action="/.netlify/functions/lead-form" novalidate>
+  <div class="quick-ask__fields">
+    <div class="form-field">
+      <label for="quickAskName">Your name</label>
+      <input class="input" id="quickAskName" name="name" type="text" autocomplete="name" required>
+    </div>
+    <div class="form-field">
+      <label for="quickAskEmail">Email</label>
+      <input class="input" id="quickAskEmail" name="email" type="email" autocomplete="email" required>
+    </div>
+    <div class="form-field">
+      <label for="quickAskPhone">Phone <span class="text-muted">(optional)</span></label>
+      <input class="input" id="quickAskPhone" name="phone" type="tel" autocomplete="tel">
+    </div>
+    <div class="form-field form-field--full">
+      <label for="quickAskMessage">What are you looking for?</label>
+      <textarea class="textarea" id="quickAskMessage" name="message" rows="3"
+        placeholder="Model, budget, or a car you saw. Ed will tell you what it really costs, not what the listing says."></textarea>
+    </div>
+  </div>
+
+  <input type="hidden" id="quickAskVehicle" name="vehicle" value="">
+  <input type="hidden" name="form-name" value="quick-ask">
+
+  <div class="quick-ask__row">
+    <p class="quick-ask__status" id="quickAskNote" aria-live="polite"></p>
+    <button class="btn btn-primary" type="submit">Send to Ed</button>
+  </div>
+
+  <div class="form-message" id="quickAskStatus" role="status" hidden></div>
+</form>

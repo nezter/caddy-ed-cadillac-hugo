@@ -26,10 +26,25 @@ disableKinds = ["RSS"]
   # the file it named did not exist.
   og_image = "img/og-image.jpg"
   title = "Caddy Ed - Cadillac Sales Specialist"
-  dealer_name = "Cadillac of South Charlotte"
-  phone = "704-555-1234"
+  dealer_name = "Caddy Ed Cadillac"
+  # These three were placeholders, and they were load-bearing ones.
+  #
+  #   phone    was "704-555-1234". 555 is the range reserved for fictional
+  #            numbers, so it cannot be dialled. It was the primary call to
+  #            action in the header, on every vehicle card, in the footer and in
+  #            the hero -- every route to contact this business ended in a
+  #            number that does not exist.
+  #   address  was "123 Cadillac Drive", which is not a real street.
+  #   tagline  was missing entirely; the live site has always carried
+  #            "Always looking out for the best car for you!"
+  #
+  # All three are taken from the live caddyed.com, which is the source of
+  # record for the business details. Confirm the phone is still correct before
+  # this goes to production -- it is a real number and it will ring.
+  phone = "803-431-6180"
   email = "ed@caddyed.com"
-  address = "123 Cadillac Drive, Charlotte, NC 28210"
+  address = "10725 Pineville Rd, Pineville, NC 28134"
+  tagline = "Always looking out for the best car for you!"
   hours = "Mon-Fri 9am-7pm &middot; Sat 9am-5pm"
   years_selling = "1999"
 

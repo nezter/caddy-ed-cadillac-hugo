@@ -1,0 +1,250 @@
+/*
+ * home.css -- the home page's own layout.
+ *
+ * Split out of main.css because it is the only page that uses any of it, and
+ * main.css is already 22KB and loaded on all 65 pages. The vehicle grid, the
+ * buttons and the type scale are all shared; this file is only the arrangement
+ * that is unique to the front page.
+ *
+ * THE ORDER ON THIS PAGE IS DELIBERATE
+ * ------------------------------------
+ *   hero + the ask form in its empty right-hand space
+ *   the 25-year proof strip, immediately under the hero
+ *   Ed's photograph and what he is posting, before the inventory
+ *   the fleet
+ *   the stock filters
+ *   customer comments, then the stock-alert signup
+ *
+ * That is the order a buyer moves in -- what is this place, who is this person,
+ * what have you got, narrow it down, then commit -- and it puts the two things a
+ * salesperson needs a client to see (a face, and something to react to) before
+ * the inventory rather than after it.
+ */
+
+/* --------------------------------------------------------------------------
+   Hero: copy on the left, the ask form in the space on the right.
+   The hero photograph is a dark showroom shot, so the right column carries a
+   translucent panel rather than sitting on the image directly.
+   -------------------------------------------------------------------------- */
+.hero__split {
+  display: grid;
+  gap: var(--space-7);
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  align-items: center;
+}
+
+.hero__ask {
+  background: rgb(255 255 255 / 0.06);
+  border: 1px solid rgb(255 255 255 / 0.16);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  backdrop-filter: blur(2px);
+}
+
+.hero__ask h2 {
+  font-size: var(--text-xl);
+  margin-bottom: var(--space-2);
+}
+
+.hero__ask .lede {
+  color: var(--text-inverse-muted);
+  font-size: var(--text-sm);
+  margin-bottom: var(--space-5);
+}
+
+@media (max-width: 64rem) {
+  .hero__split { grid-template-columns: 1fr; }
+}
+
+/* --------------------------------------------------------------------------
+   Proof strip: the 25 years, the reply time, the no-pressure line.
+   Sits directly under the hero because it is the answer to "why should I trust
+   one person with this" and it is worthless three sections down.
+   -------------------------------------------------------------------------- */
+.proof-strip {
+  background: var(--bg-inverse);
+  color: var(--text-inverse);
+  border-top: 3px solid var(--brand-red);
+}
+
+.proof-strip__inner {
+  display: grid;
+  gap: var(--space-5);
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  padding: var(--space-6) 0;
+  text-align: center;
+}
+
+.proof-strip__value {
+  font-size: var(--text-2xl, 2rem);
+  font-weight: 800;
+  letter-spacing: var(--tracking-tight);
+  color: var(--brand-bronze);
+  line-height: 1;
+}
+
+.proof-strip__label {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-sm);
+  color: var(--text-inverse-muted);
+}
+
+/* --------------------------------------------------------------------------
+   Ed + what he is posting. Two columns, Ed on the left, the feed on the right,
+   above the fleet.
+   -------------------------------------------------------------------------- */
+.ed-and-feed {
+  display: grid;
+  gap: var(--space-7);
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  /* start, not stretch. The two columns are different kinds of thing -- a
+     photograph of a person and a live social feed -- and there is no reason for
+     one to dictate the other's height. `stretch` (the default) made the feed
+     panel as tall as the portrait, and because the Facebook/X iframes only
+     render with a session, that height showed up as ~600px of empty grey for
+     most visitors. */ 
+  align-items: start;
+}
+
+@media (max-width: 64rem) {
+  .ed-and-feed { grid-template-columns: 1fr; }
+}
+
+/* The photograph, with the caption overlaid in the bottom-right corner.
+   A positioned box over the image rather than a caption underneath, so the
+   picture is the thing you see and the words are the thing you read last. */
+.ed-portrait {
+  position: relative;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--bg-subtle);
+  /* Height is driven by the image, not the other column. A min-height made the
+     box taller than the picture whenever the feed column was shorter, and the
+     result was a large grey rectangle under a photograph of a person -- which
+     reads as a broken image rather than as a layout. align-items:start above
+     stops the feed stretching to match. */
+  aspect-ratio: 662 / 448;
+  min-height: 0;
+}
+
+@media (max-width: 40rem) {
+  .ed-portrait { aspect-ratio: 4 / 3; }
+}
+
+.ed-portrait img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* The source is a tight crop already; bias upward so the face is not cropped
+     again by the box. */
+  object-position: center 18%;
+  display: block;
+}
+
+.ed-portrait__overlay {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  max-width: 78%;
+  padding: var(--space-4) var(--space-5);
+  background: linear-gradient(
+    to top left,
+    rgb(11 13 16 / 0.92) 0%,
+    rgb(11 13 16 / 0.82) 55%,
+    rgb(11 13 16 / 0) 100%
+  );
+  color: var(--text-inverse);
+}
+
+.ed-portrait__overlay p {
+  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: 600;
+  line-height: var(--leading-snug);
+  letter-spacing: var(--tracking-tight);
+}
+
+.ed-portrait__overlay cite {
+  display: block;
+  margin-top: var(--space-2);
+  font-style: normal;
+  font-size: var(--text-sm);
+  color: var(--brand-bronze);
+}
+
+/* --------------------------------------------------------------------------
+   The last-synced line.
+   Green, small, and on the inventory heading rather than hidden in a panel. It
+   is there to answer "is this list actually current?" and it used to be the
+   only thing in a stock panel header, which is not a place anyone looks.
+   -------------------------------------------------------------------------- */
+.sync-note {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.sync-note__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #1f9d55;          /* a real green, not neon */
+  flex: 0 0 auto;
+}
+
+/* --------------------------------------------------------------------------
+   Customer comments.
+   -------------------------------------------------------------------------- */
+/* The social panels.
+   No reserved height. The Facebook and X widgets inject their own iframes and
+   size themselves, and they only do that with a session -- a visitor who is
+   logged out, has an ad blocker, or is on the static preview gets nothing. A
+   min-height here therefore reserved ~600px of empty grey for most visitors,
+   which is worse than a short panel, so the box collapses to whatever the
+   embed or the fallback actually needs. */
+.ed-and-feed .social-body {
+  min-height: 0;
+}
+
+.comments {
+  display: grid;
+  gap: var(--space-5);
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.comment {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.comment blockquote {
+  margin: 0;
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+}
+
+.comment footer {
+  margin-top: auto;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+/* The empty state. Visible on purpose: a testimonials section with nothing in
+   it should look unfinished, not silently absent. */
+.comments-empty {
+  grid-column: 1 / -1;
+  border: 2px dashed var(--border-strong);
+  border-radius: var(--radius);
+  padding: var(--space-6);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  text-align: center;
+}

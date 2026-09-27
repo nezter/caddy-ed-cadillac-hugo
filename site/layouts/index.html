@@ -1,25 +1,17 @@
-{{ define "headStyles" }}{{ partial "stylesheet.html" "connect.css" }}{{ partial "stylesheet.html" "components/shortlist.css" }}{{ end }}
-{{ define "scripts" }}{{ partial "connect-config.html" . }}{{ partial "entry.html" (dict "entry" "connect.js" "page" .) }}{{ partial "entry.html" (dict "entry" "shortlist.js" "page" .) }}{{ end }}
+{{ define "headStyles" }}{{ partial "stylesheet.html" "connect.css" }}{{ partial "stylesheet.html" "components/shortlist.css" }}{{ partial "stylesheet.html" "components/home.css" }}{{ end }}
+{{ define "scripts" }}{{ partial "connect-config.html" . }}{{ partial "entry.html" (dict "entry" "connect.js" "page" .) }}{{ partial "entry.html" (dict "entry" "shortlist.js" "page" .) }}{{ partial "entry.html" (dict "entry" "inventory-filter.js" "page" .) }}{{ end }}
 
 {{ define "main" }}
-{{- $phone := .Site.Params.phone | default "704-555-1234" -}}
+{{- $phone := .Site.Params.phone | default "803-431-6180" -}}
 {{- $phoneHref := replace $phone "." "" -}}
+{{- $tagline := .Site.Params.tagline | default "Always looking out for the best car for you!" -}}
 
 {{/* ------------------------------------------------------------------
-     Hero. One job: get the visitor to act. The primary action is browsing
-     inventory; the phone is the secondary path. The meta row answers the
-     three questions a buyer has before scrolling: is it local, is it
-     established, can I just call.
+     1. HERO. Copy on the left, the ask form in the empty space on the
+     right. One person, one number, one way to reach him.
      ------------------------------------------------------------------ */}}
 <section class="hero">
-  {{ with .Params.hero_image | default .Site.Params.hero_image }}
-  {{/* The LCP element on the most-viewed page in the site. It is therefore
-       eager + fetchpriority=high and it gets the full codec/width ladder, so a
-       1920w source is served at 23 KB AVIF instead of 138 KB of one-size JPEG.
-       It is NOT lazy-loaded: deferring the LCP image is the single most
-       expensive optimisation mistake available on this page.
-       `.hero__media img { width:100%; height:100%; object-fit:cover }` still
-       applies -- <picture> is transparent to that descendant selector. */}}
+  {{ with .Site.Params.hero_image }}
   <div class="hero__media">
     {{ partial "static-picture.html" (dict
         "src" .
@@ -31,246 +23,160 @@
   {{ end }}
 
   <div class="container hero__inner">
-    <div class="hero__content">
-      <p class="eyebrow">{{ .Params.hero_eyebrow | default "Cadillac Sales Specialist &middot; South Charlotte" | safeHTML }}</p>
-      <h1>{{ .Params.hero_heading | default (printf "Find the Cadillac you actually want." ) }}</h1>
-      {{ with .Params.hero_subheading | default .Params.subtitle }}
-      <p class="lede">{{ . }}</p>
-      {{ end }}
+    <div class="hero__split">
+      <div class="hero__content">
+        <p class="eyebrow">{{ .Site.Params.dealer_name | default "Cadillac Sales Specialist" }}</p>
+        <h1>Find the Cadillac you actually want.</h1>
+        {{ with $tagline }}
+        <p class="lede">{{ . }}</p>
+        {{ end }}
 
-      <div class="hero__actions">
-        <a class="btn btn-primary btn-lg" href="/inventory/">Browse inventory</a>
-        <a class="btn btn-inverse btn-lg" href="tel:+1{{ $phoneHref }}">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/>
-          </svg>
-          {{ $phone }}
-        </a>
+        <div class="hero__actions">
+          <a class="btn btn-primary btn-lg" href="/inventory/">See what's in stock</a>
+          <a class="btn btn-inverse btn-lg" href="tel:+1{{ $phoneHref }}">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a.75.75 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a.75.75 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/>
+            </svg>
+            {{ $phone }}
+          </a>
+        </div>
       </div>
 
-      <dl class="hero__meta">
-        <div>
-          <dt>Based in</dt>
-          <dd>South Charlotte, NC</dd>
-        </div>
-        <div>
-          <dt>Selling Cadillacs since</dt>
-          <dd>{{ .Site.Params.years_selling | default "1999" }}</dd>
-        </div>
-        <div>
-          <dt>Reply</dt>
-          <dd>Same day, always</dd>
-        </div>
-      </dl>
+      {{/* The ask form, in the hero's empty right-hand space. It was in a panel
+           halfway down the page, where a visitor who wanted to ask a question
+           had to scroll past the entire inventory to find it. */}}
+      <div class="hero__ask">
+        <h2>Ask about any vehicle</h2>
+        <p class="lede">Model, budget, or a car you saw three months ago. Ed answers
+          the same day — usually the same hour.</p>
+        {{ partial "quick-ask.html" . }}
+      </div>
     </div>
   </div>
 </section>
 
 {{/* ------------------------------------------------------------------
-     Inventory preview. The core of a dealership site: real vehicles,
-     scannable in a grid, each with price and one clear action.
+     2. THE PROOF STRIP, directly under the hero.
      ------------------------------------------------------------------ */}}
-{{/* The fleet: every Cadillac currently in stock, in one line-up.
+<section class="proof-strip">
+  <div class="container">
+    <div class="proof-strip__inner">
+      <div>
+        <p class="proof-strip__value">25+</p>
+        <p class="proof-strip__label">Years selling Cadillacs</p>
+      </div>
+      <div>
+        <p class="proof-strip__value">{{ .Site.Params.years_selling | default "1999" }}</p>
+        <p class="proof-strip__label">Selling in South Charlotte</p>
+      </div>
+      <div>
+        <p class="proof-strip__value">Same day</p>
+        <p class="proof-strip__label">Typical reply, always</p>
+      </div>
+      <div>
+        <p class="proof-strip__value">No pressure</p>
+        <p class="proof-strip__label">That is the whole point</p>
+      </div>
+    </div>
+  </div>
+</section>
 
-     Previously this showed `first 6` of 35 vehicles and a separate carousel
-     further down showed another 8. Two vehicle showcases on one page, neither
-     of them the fleet -- a visitor scrolled past a "worth a closer look" strip
-     that duplicated what they had just seen, and neither section showed the
-     whole picture.
+{{/* ------------------------------------------------------------------
+     3. ED, AND WHAT HE IS POSTING. Above the fleet, so a client meets the
+     person before the inventory. Ed's photograph on the left, the social
+     feed on the right.
+     ------------------------------------------------------------------ */}}
+<section class="section">
+  <div class="container">
+    <div class="ed-and-feed">
 
-     One section now, showing all of them. Sold and withdrawn vehicles are
-     filtered out; see section/inventory.html for the same filter. */}}
-{{ $cadillac := where (where (where .Site.RegularPages "Section" "inventory") "Params.available" "!=" false) "Params.make" "CADILLAC" }}
-{{ if $cadillac }}
-<section class="section" id="fleet">
+      <div class="ed-portrait">
+        {{/* picture.html, not vehicle-image.html. The vehicle partial rewrites a
+             leading "img/" away to support legacy /img/... paths in vehicle front
+             matter, which turned "img/caddy-ed.jpg" into "caddy-ed.jpg", missed
+             the file, and rendered "No image". This is a photograph of a person,
+             not a vehicle, and it has its own box, so it goes straight to the
+             picture partial. */}}
+        {{ partial "picture.html" (dict
+            "src" "img/caddy-ed.jpg"
+            "alt" "Caddy Ed, Cadillac sales specialist in South Charlotte"
+            "width" 662
+            "height" 448
+            "widths" (slice 320 480 662)
+            "sizes" "(max-width: 64rem) 92vw, 40vw"
+            "loading" "eager") }}
+        <div class="ed-portrait__overlay">
+          <p>{{ $tagline }}</p>
+          <cite>{{ .Site.Params.dealer_name }} · {{ $phone }}</cite>
+        </div>
+      </div>
+
+      {{ partial "social-feed.html" . }}
+
+    </div>
+  </div>
+</section>
+
+{{/* ------------------------------------------------------------------
+     4. THE FLEET. Every Cadillac in stock, with the last-synced date
+     on the heading -- it used to be the only line in a stock panel header,
+     which is not somewhere anyone looks.
+     ------------------------------------------------------------------ */}}
+{{- $cadillac := where (where (where .Site.RegularPages "Section" "inventory") "Params.available" "!=" false) "Params.make" "CADILLAC" -}}
+{{- if $cadillac }}
+<section class="section section-subtle" id="fleet">
   <div class="container">
     <div class="section-head">
       <p class="eyebrow">In stock now</p>
       <h2>The fleet</h2>
       <p class="lede">Everything below is a Cadillac, available today. If you want
-        something that isn't listed, ask — stock turns over fast and I can usually
+        something that isn't listed, ask — stock turns over fast and Ed can usually
         find it.</p>
+      <p class="sync-note">
+        <span class="sync-note__dot" aria-hidden="true"></span>
+        Last synced <time datetime="{{ now.Format "2006-01-02" }}">{{ now.Format "2 January 2006" }}</time>
+        · {{ len $cadillac }} Cadillac{{ if ne (len $cadillac) 1 }}s{{ end }} in stock
+      </p>
     </div>
 
-    <div class="vehicle-grid">
+    {{/* id and data-total are a CONTRACT with inventory-filter.js, which is
+         loaded below. Without them the filter form on this page silently does
+         nothing -- it is a GET form to /inventory/, so with scripting off it
+         still works, but with scripting on it expects to filter in place. */}}
+    <div class="vehicle-grid" id="vehicle-inventory" data-total="{{ len $cadillac }}" data-page-size="{{ len $cadillac }}">
       {{ range $i, $v := $cadillac }}
-        {{ partial "vehicle-card.html" (dict
-            "vehicle" $v
-            "eager" (lt $i 3)) }}
+        {{ partial "vehicle-card.html" (dict "vehicle" $v "eager" (lt $i 3)) }}
       {{ end }}
     </div>
 
+    {{/* Only the empty-state element is added here. #inventory-count already
+         exists in partials/inventory-filters.html, which is rendered just below,
+         and having it twice gave the page a duplicate id -- caught by the
+         structure gate. */}}
+    <div class="inventory-empty hidden" id="inventory-empty">
+      <p data-empty-message>No vehicles match those filters.</p>
+      <button class="btn btn-ghost btn-sm" type="button" data-inventory-reset>Clear them</button>
+    </div>
+
     <div class="cluster" style="margin-top: var(--space-7)">
-      <a class="btn btn-outline" href="/inventory/">Filter the full inventory by model, year and price</a>
+      <a class="btn btn-outline" href="/inventory/">Filter by model, year and price</a>
     </div>
   </div>
 </section>
 {{ end }}
 
-{{/* "Stay connected" now sits BELOW the fleet rather than above it.
+{{/* ------------------------------------------------------------------
+     5. THE FILTERS, under the fleet.
+     ------------------------------------------------------------------ */}}
+{{ partial "inventory-filters.html" . }}
 
-     It used to be called immediately after the hero, so the second thing a
-     visitor saw was a social feed and a quick-ask form, and the cars they came
-     for were third. The order a buyer actually wants is: what have you got,
-     then how do I get hold of you.
-
-     The section keeps the social feeds, the quick-ask form and the stock alert
-     signup -- those are genuinely different things from the inventory grid. Its
-     "Fresh stock" panel is not: it rendered a JS-only filtered list of the same
-     vehicles, so it has been removed rather than left as a third place the cars
-     appear. */}}
+{{/* ------------------------------------------------------------------
+     6. WHAT CLIENTS SAY, then the stock alert.
+     ------------------------------------------------------------------ */}}
+{{ partial "comments.html" . }}
 {{ partial "connect-hub.html" . }}
 
-{{/* ------------------------------------------------------------------
-     Trust row. A single seller's advantage over a franchise is that the
-     relationship does not end at the handover. Say that explicitly.
-
-     This used to be a bare band of three icons with no heading, directly under
-     a grid of cars, so it read as decoration rather than as the argument it is.
-     It now says what it is.
-     ------------------------------------------------------------------ */}}
-<section class="section section-subtle">
-  <div class="container">
-    <div class="section-head">
-      <p class="eyebrow">Why buy here</p>
-      <h2>One person, start to finish</h2>
-    </div>
-    <div class="feature-grid">
-      <div class="feature">
-        <div class="feature__icon" aria-hidden="true">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-        </div>
-        <h3>One person, start to finish</h3>
-        <p>You deal with me from the first question through delivery and
-          long after. No handoffs, no repeating yourself.</p>
-      </div>
-      <div class="feature">
-        <div class="feature__icon" aria-hidden="true">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        </div>
-        <h3>Honest numbers</h3>
-        <p>Realistic trade values and out-the-door pricing up front, not a
-          number that moves once you're committed.</p>
-      </div>
-      <div class="feature">
-        <div class="feature__icon" aria-hidden="true">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-        </div>
-        <h3>Answers on your schedule</h3>
-        <p>Call, text or email. Questions about a car you saw six months ago
-          are welcome.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-{{/* ------------------------------------------------------------------
-     The three buying paths. Every visitor is in one of these states.
-     ------------------------------------------------------------------ */}}
-<section class="section">
-  <div class="container">
-    <div class="section-head">
-      <p class="eyebrow">Where are you starting?</p>
-      <h2>Three ways to get moving</h2>
-    </div>
-
-    <div class="grid grid-3">
-      <div class="card">
-        <h3>Buying a specific car</h3>
-        <p class="text-muted" style="margin-top: var(--space-2)">
-          Tell me the model, trim and budget. I'll check current stock, pull the
-          incentives, and tell you what it really costs including the dealer fees
-          people usually forget.
-        </p>
-        <a class="btn btn-outline btn-sm" style="margin-top: var(--space-4)" href="/contact/">Start a search</a>
-      </div>
-
-      <div class="card">
-        <h3>Selling or trading</h3>
-        <p class="text-muted" style="margin-top: var(--space-2)">
-          Get a straight appraisal before you go shopping anywhere else, so you
-          know exactly what you're working with. No obligation.
-        </p>
-        <a class="btn btn-outline btn-sm" style="margin-top: var(--space-4)" href="/trade-in/">Value your trade</a>
-      </div>
-
-      <div class="card">
-        <h3>Already own one</h3>
-        <p class="text-muted" style="margin-top: var(--space-2)">
-          Factory-trained service, parts, and the diagnostic questions you'd
-          otherwise get a vague answer to.
-        </p>
-        <a class="btn btn-outline btn-sm" style="margin-top: var(--space-4)" href="/service/">Book service</a>
-      </div>
-    </div>
-  </div>
-</section>
-
-{{/* ------------------------------------------------------------------
-     Proof. Years and coverage, stated plainly.
-     ------------------------------------------------------------------ */}}
-<section class="section section-inverse">
-  <div class="container">
-    <div class="stat-row">
-      <div>
-        <p class="stat__value">25+</p>
-        <p class="stat__label">Years in Cadillac</p>
-      </div>
-      <div>
-        <p class="stat__value">{{ .Site.Params.years_selling | default "1999" }}</p>
-        <p class="stat__label">Serving Charlotte</p>
-      </div>
-      <div>
-        <p class="stat__value">Same day</p>
-        <p class="stat__label">Typical reply</p>
-      </div>
-      <div>
-        <p class="stat__value">No pressure</p>
-        <p class="stat__label">That's the point</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-{{/* ------------------------------------------------------------------
-     Close. One decision, three ways to make it.
-     ------------------------------------------------------------------ */}}
-<section class="section">
-  <div class="container">
-    <div class="cta-band">
-      <div>
-        <p class="eyebrow">Ready when you are</p>
-        <h2 style="margin-top: var(--space-2)">Let's get you in a Cadillac.</h2>
-        <p class="lede" style="margin-top: var(--space-3)">
-          Browse what's in stock, send a question, or just call. Whichever is
-          easiest right now.
-        </p>
-      </div>
-      <div class="cta-band__actions">
-        <a class="btn btn-primary btn-lg" href="/contact/">Send a message</a>
-        <a class="btn btn-inverse btn-lg" href="tel:+1{{ $phoneHref }}">{{ $phone }}</a>
-        <a class="btn btn-ghost btn-lg" style="color:#fff" href="/inventory/">Browse inventory</a>
-      </div>
-    </div>
-  </div>
-</section>
-
-{{/* The "Worth a closer look" carousel that used to sit here has been removed.
-
-     It showed the first 8 Cadillacs -- the same cars, from the same data, as
-     "The fleet" further up. Two vehicle showcases on one page, the second one
-     placed after the call to action where nobody reaches it, and a carousel
-     that needs JavaScript to see any of the inventory at all.
-
-     "The fleet" now shows every Cadillac in stock, server-rendered, in one
-     line-up with price and a link to each. That is the thing a visitor came
-     for. The full searchable inventory is one click away at /inventory/.
-
-     carousel.js is still in the codebase and still wired up if a strip is ever
-     wanted somewhere it does not duplicate something else. */}}
-
-{{/* Content from _index.md renders after the designed sections so the
-     marketing copy stays editable without touching this template. */}}
+{{/* Marketing copy from _index.md renders last, so it stays editable without
+     touching this template. */}}
 {{ with .Content }}<section class="section section-subtle"><div class="container prose">{{ . }}</div></section>{{ end }}
 {{ end }}

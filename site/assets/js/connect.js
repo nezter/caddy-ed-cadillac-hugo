@@ -362,28 +362,40 @@
   }
 
   function renderDemo(kind) {
+    // This used to render two invented Facebook/X posts -- "Sample layout",
+    // "Sample reactions", "Sample comments" -- under the real business's name.
+    //
+    // It rendered 627px of fabricated social content above the fold of a real
+    // dealership's home page, for every visitor whose embed did not load: anyone
+    // logged out of Facebook, anyone with an ad blocker, and everyone on the
+    // static preview. Posts attributed to a named person that the person never
+    // wrote are the same problem as a fabricated testimonial, and the reviews
+    // side of this is a legal exposure under the FTC's rule on fake reviews
+    // (16 CFR 465), not just an aesthetic one.
+    //
+    // So the fallback is the honest one: a link out, and a line of text saying
+    // what would be here. partials/social-feed.html already renders that
+    // server-side, so there is nothing to draw -- the panel is left empty and
+    // the fallback below it is what the visitor reads.
     var host = document.getElementById(kind === "facebook" ? "panelFacebook" : "panelX");
-    if (!host) return;
-    var name = kind === "facebook" ? "Caddy Ed - Cadillac Sales Specialist" : "@CaddyEd";
-    var posts = kind === "facebook"
-      ? [
-          { name: name, time: "Sample layout", body: "New arrivals land here first. Fresh stock, delivered cars and showroom photos from the page.", img: "assets/vehicles/2026-cadillac-vistiq-luxury.jpg", stat1: "Sample reactions", stat2: "Sample comments" },
-          { name: name, time: "Sample layout", body: "Events and offers you post to your page show up in this column automatically.", img: "", stat1: "Sample shares", stat2: "Sample comments" }
-        ]
-      : [
-          { name: name, time: "Sample layout", body: "Short updates from your X account, useful for quick stock notes and replies.", img: "", stat1: "Sample reposts", stat2: "Sample likes" },
-          { name: name, time: "Sample layout", body: "Pinned threads and live announcements render here once the handle is connected.", img: "", stat1: "Sample replies", stat2: "Sample likes" }
-        ];
-    host.innerHTML = posts.map(demoPost).join("") +
-      '<p class="src-note" style="margin-top:var(--space-3)">Sample layout. The real feed replaces this once the account is connected.</p>';
+    if (host) host.innerHTML = "";
   }
 
   function mountFacebook() {
     var host = document.getElementById("panelFacebook");
     if (!host) return;
-    if (!CONFIG.facebookPageUrl) { renderDemo("facebook"); return; }
+
+    // The configured value has been arriving with a pair of literal double
+    // quotes wrapped around it, and the page plugin was being asked for
+    //     href=%22https%3A%2F%2Fwww.facebook.com%2Feportello%22
+    // which Facebook cannot resolve -- so the embed silently never worked and
+    // all that was left was a 620px empty box. Strip surrounding quotes and
+    // whitespace before encoding, rather than trusting the source to be clean.
+    var page = String(CONFIG.facebookPageUrl || "").trim().replace(/^["']|["']$/g, "").trim();
+    if (!page) { renderDemo("facebook"); return; }
+
     var src = "https://www.facebook.com/plugins/page.php?href=" +
-      encodeURIComponent(CONFIG.facebookPageUrl) +
+      encodeURIComponent(page) +
       "&tabs=timeline&width=400&height=620&small_header=true&adapt_container_width=true&hide_cover=false&show_facepile=false";
     host.innerHTML = '<iframe class="social-frame" src="' + esc(src) + '" width="100%" height="620" ' +
       'style="height:620px" title="Caddy Ed on Facebook" loading="lazy" ' +

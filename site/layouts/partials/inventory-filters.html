@@ -1,0 +1,149 @@
+{{- /*
+  inventory-filters.html -- the filter form.
+
+  Extracted from layouts/section/inventory.html so the home page can use the
+  same one. It is a real GET form posting to /inventory/ with a method="get",
+  which matters: with scripting off it still narrows the inventory, and the
+  facets are built from the content so the options can never drift out of step
+  with what is actually in stock.
+
+  The ids and the data-* hooks are a CONTRACT with
+  site/assets/js/inventory-filter.js. Renaming one without the other silently
+  breaks filtering, and nothing fails loudly.
+
+  The facet vocabularies are built here, from the inventory content itself,
+  rather than passed in by the caller. They used to be computed in
+  layouts/section/inventory.html, which meant only that page could use this form
+  -- and the home page needs the same one. A filter whose options can drift
+  out of step with what is actually in stock is worse than no filter, so the
+  options are always derived from the pages.
+*/ -}}
+
+{{- $fleet := where (where .RegularPages "Section" "inventory") "Params.available" "!=" false -}}
+{{- $totalAll := len $fleet -}}
+{{- $totalMatched := $totalAll -}}
+{{- $models := slice -}}{{- $years := slice -}}{{- $drivetrains := slice -}}{{- $transmissions := slice -}}
+{{- range $fleet -}}
+  {{- with .Params.model }}{{ if not (in $models .) }}{{ $models = $models | append . }}{{ end }}{{ end -}}
+  {{- with .Params.year }}{{ if not (in $years .) }}{{ $years = $years | append . }}{{ end }}{{ end -}}
+  {{- with .Params.drivetrain }}{{ if not (in $drivetrains .) }}{{ $drivetrains = $drivetrains | append . }}{{ end }}{{ end -}}
+  {{- with .Params.transmission }}{{ if not (in $transmissions .) }}{{ $transmissions = $transmissions | append . }}{{ end }}{{ end -}}
+{{- end -}}
+{{- $totalYears := len $years -}}
+{{- $models = sort $models -}}
+{{- $drivetrains = sort $drivetrains -}}
+{{- $transmissions = sort $transmissions -}}
+{{- /* Years, newest first.
+       Not `sort $years "desc"` -- that form takes a struct field and fails in
+       this Hugo with "desc is neither a struct field, a method nor a map
+       element". Not `revert` either; that function does not exist here.
+       Counting down over the length is the version that works. */ -}}
+{{- $years = sort $years -}}
+{{- $yearsDesc := slice -}}
+{{- range (seq (sub $totalYears 1) 0) -}}
+  {{- if ge (sub . 0) 0 -}}
+    {{- $yearsDesc = $yearsDesc | append (index $years (sub $totalYears (add . 1))) -}}
+  {{- end -}}
+{{- end -}}
+{{- $years = $yearsDesc -}}
+    <form class="inventory-filters" id="inventory-filters" role="search"
+          method="get" action="{{ "/inventory/" | relURL }}"
+          aria-label="Filter inventory" data-inventory-filters>
+      <div class="inventory-filters__grid">
+        <div class="form-field">
+          <label for="f-search">Search</label>
+          <input class="input" type="search" id="f-search" name="q"
+                 placeholder="Model or trim" autocomplete="off">
+        </div>
+
+        {{ with $models }}
+        <div class="form-field">
+          <label for="f-model">Model</label>
+          <select class="select select--multi" id="f-model" name="model" size="1">
+            <option value="">All models</option>
+            {{ range . }}<option value="{{ . }}">{{ . }}</option>{{ end }}
+          </select>
+        </div>
+        {{ end }}
+
+        {{ with $years }}
+        <div class="form-field">
+          <label for="f-year">Year</label>
+          <select class="select select--multi" id="f-year" name="year" size="1">
+            <option value="">Any year</option>
+            {{ range . }}<option value="{{ . }}">{{ . }}</option>{{ end }}
+          </select>
+        </div>
+        {{ end }}
+
+        {{ with $drivetrains }}
+        <div class="form-field">
+          <label for="f-drivetrain">Drivetrain</label>
+          <select class="select select--multi" id="f-drivetrain" name="drivetrain" size="1">
+            <option value="">Any drivetrain</option>
+            {{ range . }}<option value="{{ . }}">{{ . }}</option>{{ end }}
+          </select>
+        </div>
+        {{ end }}
+
+        {{ with $transmissions }}
+        <div class="form-field">
+          <label for="f-transmission">Transmission</label>
+          <select class="select select--multi" id="f-transmission" name="transmission" size="1">
+            <option value="">Any transmission</option>
+            {{ range . }}<option value="{{ . }}">{{ . }}</option>{{ end }}
+          </select>
+        </div>
+        {{ end }}
+
+        <div class="form-field">
+          <label for="f-condition">Condition</label>
+          <select class="select select--multi" id="f-condition" name="status" size="1">
+            <option value="">Any</option>
+            <option value="New">New</option>
+            <option value="Certified Pre-Owned">Certified Pre-Owned</option>
+            <option value="Pre-Owned">Pre-Owned</option>
+          </select>
+        </div>
+
+        <div class="form-field">
+          <label for="f-maxprice">Max price</label>
+          <select class="select" id="f-maxprice" name="max_price">
+            <option value="">No limit</option>
+            <option value="40000">Under $40,000</option>
+            <option value="55000">Under $55,000</option>
+            <option value="70000">Under $70,000</option>
+            <option value="90000">Under $90,000</option>
+            <option value="120000">Under $120,000</option>
+          </select>
+        </div>
+
+        <div class="form-field">
+          <label for="f-sort">Sort</label>
+          <select class="select" id="f-sort" name="sort">
+            <option value="price-asc">Price: low to high</option>
+            <option value="price-desc">Price: high to low</option>
+            <option value="year-desc" selected>Newest first</option>
+            <option value="mileage-asc">Lowest mileage</option>
+          </select>
+        </div>
+      </div>
+
+      {{/* Price bands. FilterManager.js:101-124 had these; the values match the
+           Max price select, which is kept as the precise control. */}}
+      <div class="inventory-price-bands" id="inventory-price-bands" role="group" aria-label="Price bands"></div>
+
+      <div class="inventory-filters__actions">
+        <p class="inventory-filters__active hidden" id="inventory-active-filters" aria-live="polite"></p>
+        <p class="inventory-count" id="inventory-count" role="status" aria-live="polite">
+          {{ if eq $totalMatched $totalAll -}}
+            {{ $totalAll }} {{ if eq $totalAll 1 }}vehicle{{ else }}vehicles{{ end }}
+          {{- else -}}
+            {{ $totalMatched }} of {{ $totalAll }} vehicles
+          {{- end }}
+        </p>
+        <button class="btn btn-ghost btn-sm" type="button" id="f-reset"
+                  data-inventory-reset>Clear filters</button>
+      </div>
+    </form>
+
