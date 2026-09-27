@@ -219,14 +219,38 @@ do_test() {
 
 do_deploy() {
   local channel_flag="${1:-}"
+  preflight_deploy
   do_build
   log "Uploading PREBUILT site/public to Netlify (no remote build, no build minutes)"
   # --dir uploads an already-built directory, so Netlify never spins up a
   # builder. --functions bundles the serverless functions from source.
+  #
+  # --site is explicit because the repository is not linked: there is no
+  # .netlify/state.json, so without it the CLI has to guess which site this is
+  # and the deploy fails -- after the build has already run.
   netlify deploy ${channel_flag} \
+    --site="${NETLIFY_SITE_ID:-532a7445-ce96-40c1-bebb-b9d14a0d0e10}" \
     --dir=site/public \
     --functions=netlify/functions \
     --message="ci-run.sh prebuilt upload $(git rev-parse --short HEAD 2>/dev/null || echo local)"
+}
+
+# Fail BEFORE the build, not after it. A deploy that builds for two minutes and
+# then dies on a missing token has wasted the build and told you nothing new.
+preflight_deploy() {
+  if [ -z "${NETLIFY_AUTH_TOKEN:-}" ] && [ ! -f "$HOME/.netlify/config.json" ]; then
+    log "FATAL: no Netlify credentials"
+    log "  A deploy needs one of:"
+    log "    NETLIFY_AUTH_TOKEN=<token>    preferred, works in a script"
+    log "    an interactive 'netlify login', which a script cannot do"
+    log ""
+    log "  Token: Netlify UI -> User settings -> Applications -> Personal access"
+    log "  tokens -> Generate. It needs deploy rights on the site and nothing else."
+    log ""
+    log "  Nothing was built and nothing was uploaded."
+    exit 1
+  fi
+  log "Netlify credentials present"
 }
 
 case "${1:-build}" in
