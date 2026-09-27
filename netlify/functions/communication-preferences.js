@@ -231,9 +231,9 @@ async function updatePreferences(event, headers) {
         sms_consent = $3,
         phone_consent = $4,
         communication_preferences = $5,
-        consent_date = NOW(),
+        consent_date = CURRENT_TIMESTAMP,
         consent_source = $6,
-        updated_at = NOW()
+        updated_at = CURRENT_TIMESTAMP
       WHERE id = $1
       RETURNING id, email_consent, sms_consent, phone_consent
     `;
@@ -319,7 +319,7 @@ async function handleUnsubscribe(event, headers) {
       case 'email':
         updateSql = `
           UPDATE customers
-          SET email_consent = false, updated_at = NOW()
+          SET email_consent = false, updated_at = CURRENT_TIMESTAMP
           WHERE id = $1 AND email = $2
         `;
         updateParams = [customerId, email];
@@ -328,7 +328,7 @@ async function handleUnsubscribe(event, headers) {
       case 'sms':
         updateSql = `
           UPDATE customers
-          SET sms_consent = false, updated_at = NOW()
+          SET sms_consent = false, updated_at = CURRENT_TIMESTAMP
           WHERE id = $1
         `;
         updateParams = [customerId];
@@ -343,8 +343,8 @@ async function handleUnsubscribe(event, headers) {
             sms_consent = false,
             phone_consent = false,
             gdpr_consent_withdrawn = true,
-            consent_withdrawn_date = NOW(),
-            updated_at = NOW()
+            consent_withdrawn_date = CURRENT_TIMESTAMP,
+            updated_at = CURRENT_TIMESTAMP
           WHERE id = $1
         `;
         updateParams = [customerId];
@@ -428,9 +428,9 @@ async function optOut(event, headers) {
         sms_consent = false,
         phone_consent = false,
         gdpr_consent_withdrawn = true,
-        consent_withdrawn_date = NOW(),
+        consent_withdrawn_date = CURRENT_TIMESTAMP,
         consent_withdrawn_reason = $2,
-        updated_at = NOW()
+        updated_at = CURRENT_TIMESTAMP
       WHERE id = $1
       RETURNING id
     `;
@@ -480,7 +480,7 @@ async function cancelPendingFollowups(customerId) {
       SET
         status = 'cancelled',
         skip_reason = 'Customer opted out',
-        updated_at = NOW()
+        updated_at = CURRENT_TIMESTAMP
       WHERE customer_id = $1
         AND status = 'pending'
     `;
@@ -505,7 +505,7 @@ async function logPreferenceChange(customerId, changes, action, source) {
         ip_address,
         user_agent,
         created_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, NOW())
+      ) VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP)
     `;
 
     // Note: In a real implementation, you'd extract IP and user agent from the request

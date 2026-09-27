@@ -66,8 +66,8 @@ class FollowupRulesEngine {
       SELECT * FROM followup_rules
       WHERE trigger_event = $1
         AND is_active = true
-        AND (start_date IS NULL OR start_date <= NOW())
-        AND (end_date IS NULL OR end_date >= NOW())
+        AND (start_date IS NULL OR start_date <= CURRENT_TIMESTAMP)
+        AND (end_date IS NULL OR end_date >= CURRENT_TIMESTAMP)
       ORDER BY priority DESC, created_at ASC
     `;
 
@@ -563,7 +563,7 @@ class FollowupRulesEngine {
       throw new Error('No valid fields to update');
     }
 
-    updateFields.push('updated_at = NOW()');
+    updateFields.push('updated_at = CURRENT_TIMESTAMP');
 
     const sql = `
       UPDATE followup_rules
@@ -646,7 +646,7 @@ class FollowupRulesEngine {
           AVG(EXTRACT(EPOCH FROM (f.sent_date - f.scheduled_date))/3600) as avg_delay_hours
         FROM followup_rules fr
         LEFT JOIN followups f ON fr.id = f.rule_id
-          AND f.created_at >= NOW() - INTERVAL '${days} days'
+          AND f.created_at >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
         WHERE fr.id = $1
         GROUP BY fr.id, fr.name
       `;
@@ -660,7 +660,7 @@ class FollowupRulesEngine {
           AVG(EXTRACT(EPOCH FROM (f.sent_date - f.scheduled_date))/3600) as avg_delay_hours
         FROM followup_rules fr
         LEFT JOIN followups f ON fr.id = f.rule_id
-          AND f.created_at >= NOW() - INTERVAL '${days} days'
+          AND f.created_at >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
         GROUP BY fr.id, fr.name
         ORDER BY followups_created DESC
       `;

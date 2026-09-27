@@ -83,8 +83,8 @@ class FollowupService {
       JOIN customers c ON fu.customer_id = c.id
       LEFT JOIN leads l ON fu.lead_id = l.id
       WHERE fu.status = 'pending'
-        AND fu.scheduled_date <= NOW()
-        AND fu.scheduled_date > NOW() - INTERVAL '24 hours' -- Don't process very old ones
+        AND fu.scheduled_date <= CURRENT_TIMESTAMP
+        AND fu.scheduled_date > CURRENT_TIMESTAMP - INTERVAL '24 hours' -- Don't process very old ones
       ORDER BY fu.scheduled_date ASC, fu.priority DESC
       LIMIT 100
     `;
@@ -364,7 +364,7 @@ Confidentiality Notice: This email contains confidential information intended on
   static async markFollowupSent(followupId) {
     const sql = `
       UPDATE followups
-      SET status = 'sent', sent_date = NOW(), updated_at = NOW()
+      SET status = 'sent', sent_date = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
       WHERE id = $1
     `;
 
@@ -381,7 +381,7 @@ Confidentiality Notice: This email contains confidential information intended on
   static async markFollowupSkipped(followupId, reason) {
     const sql = `
       UPDATE followups
-      SET status = 'skipped', skip_reason = $2, updated_at = NOW()
+      SET status = 'skipped', skip_reason = $2, updated_at = CURRENT_TIMESTAMP
       WHERE id = $1
     `;
 
@@ -398,7 +398,7 @@ Confidentiality Notice: This email contains confidential information intended on
   static async markFollowupError(followupId, errorMessage) {
     const sql = `
       UPDATE followups
-      SET status = 'error', error_message = $2, updated_at = NOW()
+      SET status = 'error', error_message = $2, updated_at = CURRENT_TIMESTAMP
       WHERE id = $1
     `;
 
@@ -620,7 +620,7 @@ Confidentiality Notice: This email contains confidential information intended on
         COUNT(CASE WHEN sms = true THEN 1 END) as sms_followups,
         AVG(EXTRACT(EPOCH FROM (sent_date - scheduled_date))/3600) as avg_delay_hours
       FROM followups
-      WHERE created_at >= NOW() - INTERVAL '${days} days'
+      WHERE created_at >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
     `;
 
     try {
@@ -636,7 +636,7 @@ Confidentiality Notice: This email contains confidential information intended on
    * Cancel pending followups for a customer/lead
    */
   static async cancelPendingFollowups(customerId, leadId = null) {
-    let sql = 'UPDATE followups SET status = $1, updated_at = NOW() WHERE customer_id = $2 AND status = $3';
+    let sql = 'UPDATE followups SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE customer_id = $2 AND status = $3';
     let params = ['cancelled', customerId, 'pending'];
 
     if (leadId) {

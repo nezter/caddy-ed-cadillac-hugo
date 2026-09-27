@@ -388,7 +388,7 @@ async function getOverallAnalytics(days) {
         NULLIF(COUNT(DISTINCT CASE WHEN fa.event_type = 'opened' THEN fa.followup_id END), 0) * 100, 2
       ) as click_rate
     FROM followup_analytics fa
-    WHERE fa.event_timestamp >= NOW() - INTERVAL '${days} days'
+    WHERE fa.event_timestamp >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
   `;
 
   try {
@@ -417,7 +417,7 @@ async function getCampaignPerformance(days) {
       ) as open_rate
     FROM followup_campaigns fc
     LEFT JOIN followup_analytics fa ON fc.id = fa.campaign_id
-      AND fa.event_timestamp >= NOW() - INTERVAL '${days} days'
+      AND fa.event_timestamp >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
     GROUP BY fc.id, fc.name
     ORDER BY total_followups DESC
     LIMIT 10
@@ -472,7 +472,7 @@ async function getConversionAttribution(days) {
     FROM followup_analytics fa
     JOIN followup_campaigns fc ON fa.campaign_id = fc.id
     WHERE fa.event_type = 'clicked'
-      AND fa.event_timestamp >= NOW() - INTERVAL '${days} days'
+      AND fa.event_timestamp >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
       AND EXISTS (
         SELECT 1 FROM interactions i
         WHERE i.customer_id = fa.customer_id
@@ -516,7 +516,7 @@ async function getCampaignAnalyticsData(campaignId, days) {
     FROM followup_campaigns fc
     LEFT JOIN followups f ON fc.id = f.campaign_id
     LEFT JOIN followup_analytics fa ON f.id = fa.followup_id
-      AND fa.event_timestamp >= NOW() - INTERVAL '${days} days'
+      AND fa.event_timestamp >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
     WHERE fc.id = $1
     GROUP BY fc.id, fc.name
   `;

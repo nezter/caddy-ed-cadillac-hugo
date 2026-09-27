@@ -190,7 +190,7 @@ async function getRulesStats(event) {
           END, 2
         ) as overall_success_rate
       FROM followup_rules
-      WHERE created_at >= NOW() - INTERVAL '${days} days'
+      WHERE created_at >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
     `;
 
     const summaryResult = await DatabaseService.query(summarySql);
@@ -467,7 +467,7 @@ async function getRulePerformance(event, ruleId) {
         ) as avg_processing_time_hours
       FROM followups
       WHERE rule_id = $1
-        AND created_at >= NOW() - INTERVAL '${days} days'
+        AND created_at >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
     `;
 
     const metricsResult = await DatabaseService.query(metricsSql, [ruleId]);

@@ -274,7 +274,7 @@ async function getCampaignStats(event) {
           END, 2
         ) as overall_conversion_rate
       FROM followup_campaigns
-      WHERE created_at >= NOW() - INTERVAL '${days} days'
+      WHERE created_at >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
     `;
 
     const result = await DatabaseService.query(sql);
@@ -298,8 +298,8 @@ async function getActiveCampaigns(event) {
     const sql = `
       SELECT * FROM followup_campaigns
       WHERE is_active = true
-        AND (start_date IS NULL OR start_date <= NOW())
-        AND (end_date IS NULL OR end_date >= NOW())
+        AND (start_date IS NULL OR start_date <= CURRENT_TIMESTAMP)
+        AND (end_date IS NULL OR end_date >= CURRENT_TIMESTAMP)
       ORDER BY priority DESC, created_at DESC
     `;
 
@@ -395,7 +395,7 @@ async function updateCampaign(event, campaignId) {
       return errorHandler.validationError('No valid fields to update');
     }
 
-    updateFields.push('updated_at = NOW()');
+    updateFields.push('updated_at = CURRENT_TIMESTAMP');
 
     const sql = `
       UPDATE followup_campaigns
@@ -465,7 +465,7 @@ async function activateCampaign(event, campaignId) {
   try {
     const sql = `
       UPDATE followup_campaigns
-      SET is_active = true, updated_at = NOW()
+      SET is_active = true, updated_at = CURRENT_TIMESTAMP
       WHERE id = $1
       RETURNING *
     `;
@@ -494,7 +494,7 @@ async function deactivateCampaign(event, campaignId) {
   try {
     const sql = `
       UPDATE followup_campaigns
-      SET is_active = false, updated_at = NOW()
+      SET is_active = false, updated_at = CURRENT_TIMESTAMP
       WHERE id = $1
       RETURNING *
     `;
@@ -565,7 +565,7 @@ async function getCampaignPerformance(event, campaignId) {
         ) as avg_delay_hours
       FROM followups
       WHERE campaign_id = $1
-        AND created_at >= NOW() - INTERVAL '${days} days'
+        AND created_at >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
     `;
 
     const performanceResult = await DatabaseService.query(performanceSql, [campaignId]);

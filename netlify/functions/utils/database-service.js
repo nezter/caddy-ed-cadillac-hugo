@@ -121,6 +121,27 @@ function initializeConnections() {
 
 
 /**
+ * Is there a database this deployment can actually reach?
+ *
+ * The distinction the error paths need. A function that cannot tell "there is
+ * no database configured" from "the query failed" reports a deployment
+ * problem as a server fault, which sends whoever is debugging it looking at
+ * the wrong thing entirely.
+ *
+ * Named rather than inlined because it is asked in more than one place, and an
+ * answer that disagrees with itself is worse than no answer.
+ */
+function isDatabaseConfigured() {
+  return Boolean(
+    process.env.SUPABASE_DB_URL ||
+    process.env.DATABASE_URL ||
+    process.env.SUPABASE_DATABASE_URL ||
+    process.env.SUPABASE_DB_CONNECTION ||
+    process.env.TURSO_DATABASE_URL
+  );
+}
+
+/**
  * Generic database query function with hybrid routing
  * Routes operations between Supabase (writes/complex) and Turso (reads/cache)
  */
@@ -443,7 +464,7 @@ class DatabaseService {
     
     const sql = `
       UPDATE customers 
-      SET ${updateFields.join(', ')}, updated_at = NOW()
+      SET ${updateFields.join(', ')}, updated_at = CURRENT_TIMESTAMP
       WHERE id = $1
       RETURNING *
     `;
@@ -465,7 +486,7 @@ class DatabaseService {
       SELECT type, created_at
       FROM customer_interactions
       WHERE lead_id = $1
-        AND created_at >= NOW() - INTERVAL '${days} days'
+        AND created_at >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
       ORDER BY created_at DESC
     `;
 
@@ -493,7 +514,7 @@ class DatabaseService {
         END as score_range,
         COUNT(*) as count
       FROM leads
-      WHERE created_at >= NOW() - INTERVAL '${days} days'
+      WHERE created_at >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
       GROUP BY score_range
       ORDER BY score_range
     `;
@@ -517,7 +538,7 @@ class DatabaseService {
         ROUND(AVG(score), 1) as avg_score,
         COUNT(*) as lead_count
       FROM leads
-      WHERE created_at >= NOW() - INTERVAL '${days} days'
+      WHERE created_at >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
       GROUP BY source
       ORDER BY avg_score DESC
     `;
@@ -545,7 +566,7 @@ class DatabaseService {
         END as priority,
         COUNT(*) as count
       FROM leads
-      WHERE created_at >= NOW() - INTERVAL '${days} days'
+      WHERE created_at >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
       GROUP BY priority
       ORDER BY
         CASE priority
@@ -575,7 +596,7 @@ class DatabaseService {
         ROUND(AVG(score), 1) as avg_score,
         COUNT(*) as lead_count
       FROM leads
-      WHERE created_at >= NOW() - INTERVAL '${days} days'
+      WHERE created_at >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
       GROUP BY DATE(created_at)
       ORDER BY date
     `;
@@ -609,7 +630,7 @@ class DatabaseService {
           NULLIF(COUNT(*), 0) * 100, 1
         ) as conversion_rate
       FROM leads l
-      WHERE l.created_at >= NOW() - INTERVAL '${days} days'
+      WHERE l.created_at >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
       GROUP BY score_range
       ORDER BY score_range
     `;
@@ -632,7 +653,7 @@ class DatabaseService {
       FROM leads
       WHERE assigned_sales_rep_id = $1
         AND status NOT IN ('converted', 'lost')
-        AND created_at >= NOW() - INTERVAL '30 days'
+        AND created_at >= CURRENT_TIMESTAMP - INTERVAL '30 days'
     `;
 
     try {
@@ -658,7 +679,7 @@ class DatabaseService {
         ) as conversion_rate
       FROM leads
       WHERE assigned_sales_rep_id = $1
-        AND created_at >= NOW() - INTERVAL '${days} days'
+        AND created_at >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
     `;
 
     try {
@@ -687,7 +708,7 @@ class DatabaseService {
         AND (l.assigned_sales_rep_id IS NULL
              OR sr.status != 'active'
              OR sr.capacity IS NULL
-             OR l.created_at < NOW() - INTERVAL '7 days')
+             OR l.created_at < CURRENT_TIMESTAMP - INTERVAL '7 days')
       ORDER BY l.created_at DESC
       LIMIT 100
     `;
@@ -711,7 +732,7 @@ class DatabaseService {
         SELECT COUNT(*) as total
         FROM leads
         WHERE assigned_sales_rep_id IS NOT NULL
-          AND created_at >= NOW() - INTERVAL '${days} days'
+          AND created_at >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
       `;
       const totalResult = await query(totalSql);
       const totalAssignments = parseInt(totalResult.rows[0].total) || 0;
@@ -721,7 +742,7 @@ class DatabaseService {
         SELECT ROUND(AVG(assignment_score), 1) as avg_score
         FROM leads
         WHERE assignment_score IS NOT NULL
-          AND created_at >= NOW() - INTERVAL '${days} days'
+          AND created_at >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
       `;
       const avgScoreResult = await query(avgScoreSql);
       const averageScore = parseFloat(avgScoreResult.rows[0].avg_score) || 0;
@@ -731,7 +752,7 @@ class DatabaseService {
         SELECT assignment_reason, COUNT(*) as count
         FROM leads
         WHERE assignment_reason IS NOT NULL
-          AND created_at >= NOW() - INTERVAL '${days} days'
+          AND created_at >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
         GROUP BY assignment_reason
         ORDER BY count DESC
       `;
@@ -747,7 +768,7 @@ class DatabaseService {
         FROM sales_reps sr
         LEFT JOIN leads l ON sr.id = l.assigned_sales_rep_id
           AND l.status NOT IN ('converted', 'lost')
-          AND l.created_at >= NOW() - INTERVAL '${days} days'
+          AND l.created_at >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
         WHERE sr.status = 'active'
         GROUP BY sr.id, sr.first_name, sr.last_name, sr.capacity
         ORDER BY lead_count DESC
@@ -761,7 +782,7 @@ class DatabaseService {
           COUNT(CASE WHEN assignment_reason = 'reassigned' THEN 1 END) as reassigned,
           COUNT(*) as total
         FROM leads
-        WHERE created_at >= NOW() - INTERVAL '${days} days'
+        WHERE created_at >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
       `;
       const reassignResult = await query(reassignSql);
       const reassignData = reassignResult.rows[0];
@@ -818,7 +839,7 @@ class DatabaseService {
         next_follow_up_date, created_by
       ) VALUES (
         $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17,
-        NOW() + INTERVAL '1 day', 'system'
+        CURRENT_TIMESTAMP + INTERVAL '1 day', 'system'
       )
       RETURNING *
     `;
@@ -997,7 +1018,7 @@ class DatabaseService {
       JOIN customers c ON a.customer_id = c.id
       WHERE a.assigned_sales_rep_id = $1 
         AND a.status IN ('scheduled', 'confirmed')
-        AND a.scheduled_start > NOW()
+        AND a.scheduled_start > CURRENT_TIMESTAMP
       ORDER BY a.scheduled_start ASC
       LIMIT $2
     `;
@@ -1094,23 +1115,18 @@ class DatabaseService {
    * Sales Rep Management Functions
    */
 
-  /**
-   * Get sales rep by email
+  /* DELETED: a second `getSalesRepByEmail`.
+   *
+   * This class defined it TWICE -- once here, once further down near
+   * getSalesRepById. In a class body the second definition silently replaces
+   * the first, so this one was dead code that looked live.
+   *
+   * It was found by listing duplicate static method names rather than by
+   * reading, which is the only way it was going to be found: two methods with
+   * the same name and the same one-line doc comment read as ordinary
+   * copy-paste, and nothing errors. The surviving definition is further down
+   * and is the better one -- see it for the not-found handling.
    */
-  static async getSalesRepByEmail(email) {
-    const sql = `
-      SELECT * FROM sales_reps
-      WHERE email = $1 AND status = 'active'
-    `;
-
-    try {
-      const result = await query(sql, [email]);
-      return result.rows[0];
-    } catch (error) {
-      console.error('Error getting sales rep by email:', error);
-      throw new Error('Failed to get sales rep');
-    }
-  }
 
   /**
    * Get sales rep by ID
@@ -1157,7 +1173,7 @@ class DatabaseService {
 
     const sql = `
       UPDATE sales_reps
-      SET ${updateFields.join(', ')}, updated_at = NOW()
+      SET ${updateFields.join(', ')}, updated_at = CURRENT_TIMESTAMP
       WHERE id = $1
       RETURNING *
     `;
@@ -1223,6 +1239,24 @@ class DatabaseService {
       const result = await query(sql, params);
       return result.rows[0] || null;
     } catch (error) {
+      // The distinction that matters: "no such rep" and "the database is
+      // unreachable" are different answers, and the caller needs to tell them
+      // apart. sales-login maps a null to "user not found" -- a 401, which is
+      // correct. It maps a throw to a 500.
+      //
+      // Which is right depends on which happened, and the original code threw
+      // for both. So: if there is no connection configured at all, that is a
+      // deployment problem and it is reported as such; otherwise a query failure
+      // is logged and surfaced, but a missing row stays a null.
+      if (!isDatabaseConfigured()) {
+        console.error(
+          '[database] getSalesRepByEmail called with no database configured. ' +
+            'Set TURSO_DATABASE_URL and TURSO_AUTH_TOKEN (or DATABASE_URL).'
+        );
+        const err = new Error('Database is not configured');
+        err.code = 'DB_NOT_CONFIGURED';
+        throw err;
+      }
       console.error('Error getting sales rep by email:', error);
       throw new Error('Failed to get sales rep');
     }
@@ -1474,7 +1508,7 @@ class DatabaseService {
 
     const sql = `
       UPDATE vehicles
-      SET ${updateFields.join(', ')}, updated_at = NOW()
+      SET ${updateFields.join(', ')}, updated_at = CURRENT_TIMESTAMP
       WHERE stock_number = $1
       RETURNING *
     `;
@@ -1549,4 +1583,9 @@ module.exports = DatabaseService;
  * is not a licence to repeat that.
  */
 module.exports.query = query;
-module.exports.isDatabaseConfigured = () => Boolean(process.env.SUPABASE_DB_URL || process.env.DATABASE_URL || process.env.SUPABASE_DATABASE_URL || process.env.SUPABASE_DB_CONNECTION);
+// Re-exported from the single definition above rather than written out again.
+// The version that was here listed four env vars and omitted
+// TURSO_DATABASE_URL -- the one a Turso deployment actually sets -- so a
+// function using the export would have reported "no database configured" on a
+// site that has one. Two answers to one question is how they come to disagree.
+module.exports.isDatabaseConfigured = isDatabaseConfigured;

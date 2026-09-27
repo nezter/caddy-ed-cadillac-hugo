@@ -55,7 +55,7 @@ exports.handler = async function(event, context) {
 
     // Update lead status
     await DatabaseService.query(
-      'UPDATE leads SET status = $1, updated_at = NOW() WHERE id = $2',
+      'UPDATE leads SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
       [status, leadId]
     );
 

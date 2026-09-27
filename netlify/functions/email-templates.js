@@ -372,7 +372,7 @@ async function updateTemplate(event, templateId) {
       return errorHandler.validationError('No valid fields to update');
     }
 
-    updateFields.push('updated_at = NOW()');
+    updateFields.push('updated_at = CURRENT_TIMESTAMP');
 
     const sql = `
       UPDATE email_templates
@@ -584,7 +584,7 @@ async function getTemplateUsage(event, templateId) {
         ) as success_rate
       FROM followups
       WHERE email_template = (SELECT name FROM email_templates WHERE id = $1)
-        AND created_at >= NOW() - INTERVAL '${days} days'
+        AND created_at >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
     `;
 
     const usageResult = await DatabaseService.query(usageSql, [templateId]);
@@ -596,7 +596,7 @@ async function getTemplateUsage(event, templateId) {
       JOIN followup_rules fr ON fc.id = fr.campaign_id
       JOIN followups f ON fr.id = f.rule_id
       WHERE fr.email_template = (SELECT name FROM email_templates WHERE id = $1)
-        AND f.created_at >= NOW() - INTERVAL '${days} days'
+        AND f.created_at >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
       GROUP BY fc.id, fc.name, fc.campaign_type
       ORDER BY usage_count DESC
     `;

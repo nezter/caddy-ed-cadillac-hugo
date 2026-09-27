@@ -156,6 +156,15 @@ do_verify() {
   # check that had not been exercised.
   log "Self-testing the markup-as-code detector"
   in_container 'node ci/test-code-block-detection.js'
+  # The database schema, against the application's own queries.
+  #
+  # A schema that parses is not a schema the code can use. This regenerates the
+  # libSQL schema, applies it to a real SQLite database, and runs statements
+  # taken from sales-login, customer-dashboard, sales-customers and
+  # followup-analytics. It is the check that found 26 columns the Postgres
+  # migrations never created and 78 NOW() calls libSQL cannot run.
+  log "Regenerating the Turso schema and running the app's real queries against it"
+  in_container 'python3 scripts/pg2turso.py && python3 scripts/schema-audit.py && node ci/test-turso-schema.js'
 }
 
 do_inventory() {

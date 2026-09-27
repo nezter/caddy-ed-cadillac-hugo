@@ -103,7 +103,7 @@ class SearchIndexService {
         customer_id UUID PRIMARY KEY REFERENCES customers(id) ON DELETE CASCADE,
         search_vector TSVECTOR,
         searchable_text TEXT,
-        last_updated TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        last_updated TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
 
       CREATE INDEX IF NOT EXISTS idx_customer_search_vector ON customer_search_index USING GIN(search_vector);
@@ -135,7 +135,7 @@ class SearchIndexService {
         coalesce(c.city, '') || ' ' ||
         coalesce(c.state, '') || ' ' ||
         coalesce(c.vehicle_interest, ''),
-        NOW()
+        CURRENT_TIMESTAMP
       FROM customers c
       ON CONFLICT (customer_id)
       DO UPDATE SET
@@ -157,7 +157,7 @@ class SearchIndexService {
         lead_id UUID PRIMARY KEY REFERENCES leads(id) ON DELETE CASCADE,
         search_vector TSVECTOR,
         searchable_text TEXT,
-        last_updated TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        last_updated TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
 
       CREATE INDEX IF NOT EXISTS idx_lead_search_vector ON lead_search_index USING GIN(search_vector);
@@ -184,7 +184,7 @@ class SearchIndexService {
         coalesce(l.phone, '') || ' ' ||
         coalesce(l.message, '') || ' ' ||
         coalesce(l.vehicle_interest, ''),
-        NOW()
+        CURRENT_TIMESTAMP
       FROM leads l
       ON CONFLICT (lead_id)
       DO UPDATE SET
@@ -206,7 +206,7 @@ class SearchIndexService {
         interaction_id UUID PRIMARY KEY REFERENCES interactions(id) ON DELETE CASCADE,
         search_vector TSVECTOR,
         searchable_text TEXT,
-        last_updated TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        last_updated TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
 
       CREATE INDEX IF NOT EXISTS idx_interaction_search_vector ON interaction_search_index USING GIN(search_vector);
@@ -227,7 +227,7 @@ class SearchIndexService {
         coalesce(i.subject, '') || ' ' ||
         coalesce(i.content, '') || ' ' ||
         coalesce(i.summary, ''),
-        NOW()
+        CURRENT_TIMESTAMP
       FROM interactions i
       ON CONFLICT (interaction_id)
       DO UPDATE SET
@@ -249,7 +249,7 @@ class SearchIndexService {
         vehicle_id UUID PRIMARY KEY REFERENCES vehicles(id) ON DELETE CASCADE,
         search_vector TSVECTOR,
         searchable_text TEXT,
-        last_updated TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        last_updated TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
 
       CREATE INDEX IF NOT EXISTS idx_vehicle_search_vector ON vehicle_search_index USING GIN(search_vector);
@@ -280,7 +280,7 @@ class SearchIndexService {
         coalesce(v.exterior_color, '') || ' ' ||
         coalesce(v.interior_color, '') || ' ' ||
         coalesce(v.engine, ''),
-        NOW()
+        CURRENT_TIMESTAMP
       FROM vehicles v
       ON CONFLICT (vehicle_id)
       DO UPDATE SET
@@ -563,7 +563,7 @@ class SearchIndexService {
         c.id,
         to_tsvector('english', 'searchable content here'),
         'searchable text here',
-        NOW()
+        CURRENT_TIMESTAMP
       FROM ${entityType} c
       WHERE c.updated_at > $1
       ON CONFLICT (customer_id)

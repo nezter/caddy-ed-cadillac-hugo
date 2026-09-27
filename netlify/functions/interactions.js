@@ -468,7 +468,7 @@ async function updateInteraction(event, interactionId) {
 
     const sql = `
       UPDATE interactions
-      SET ${updateFields.join(', ')}, updated_at = NOW()
+      SET ${updateFields.join(', ')}, updated_at = CURRENT_TIMESTAMP
       WHERE id = $1
       RETURNING *
     `;

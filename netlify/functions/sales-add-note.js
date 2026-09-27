@@ -67,7 +67,7 @@ exports.handler = async function(event, context) {
 
     // Save updated notes
     await DatabaseService.query(
-      'UPDATE leads SET sales_rep_notes = $1, updated_at = NOW() WHERE id = $2',
+      'UPDATE leads SET sales_rep_notes = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
       [JSON.stringify(notes), leadId]
     );
 

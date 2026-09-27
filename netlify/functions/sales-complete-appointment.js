@@ -55,7 +55,7 @@ exports.handler = async function(event, context) {
 
     // Update appointment status to completed
     await DatabaseService.query(
-      'UPDATE appointments SET status = $1, completed_at = NOW(), updated_at = NOW() WHERE id = $2',
+      'UPDATE appointments SET status = $1, completed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
       ['completed', appointmentId]
     );
 

@@ -192,7 +192,7 @@ class InteractionService {
           COUNT(DISTINCT sales_rep_id) as unique_sales_reps
         FROM interactions
         WHERE customer_id = $1
-          AND created_at >= NOW() - INTERVAL '${days} days'
+          AND created_at >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
       `;
 
       const result = await DatabaseService.query(sql, [customerId]);
@@ -387,7 +387,7 @@ class InteractionService {
           AVG(duration_minutes) as avg_call_duration,
           COUNT(DISTINCT sales_rep_id) as active_sales_reps
         FROM interactions
-        WHERE created_at >= NOW() - INTERVAL '${days} days'
+        WHERE created_at >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
       `;
 
       const result = await DatabaseService.query(sql);
@@ -419,7 +419,7 @@ class InteractionService {
         JOIN customers c ON i.customer_id = c.id
         LEFT JOIN sales_reps sr ON i.sales_rep_id = sr.id
         WHERE i.interaction_type = $1
-          AND i.created_at >= NOW() - INTERVAL '${days} days'
+          AND i.created_at >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
         ORDER BY i.created_at DESC
         LIMIT 100
       `;
