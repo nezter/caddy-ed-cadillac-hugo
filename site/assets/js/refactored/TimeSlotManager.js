@@ -42,6 +42,18 @@ class TimeSlotManager {
    * @returns {Promise<Array>} Promise resolving to available dates
    */
   async getAvailableDates(year, month) {
+    // In a static preview (no Netlify functions) the endpoint cannot exist.
+    // Skip the fetch entirely so the calendar does not log a 404 on every
+    // page load. The fallback below generates the same dates client-side.
+    //
+    // Detection: the preview serves on port 8090, production on 443. This is
+    // simpler than injecting a flag via nginx sub_filter, which proved
+    // unreliable. The flag window.__STATIC_PREVIEW__ is also honoured when set.
+    if (window.__STATIC_PREVIEW__ || window.location.port === '8090') {
+      const fallbackDates = this.getFallbackDates(year, month);
+      this.calendar.updateState({ availableDates: fallbackDates });
+      return fallbackDates;
+    }
     try {
       // Attempt to fetch from API
       const url = new URL(this.endpoints.availableDates, window.location.origin);
@@ -115,7 +127,12 @@ class TimeSlotManager {
    */
   async getTimeSlots(date) {
     if (!date) return [];
-    
+
+    // Same static-preview guard as getAvailableDates.
+    if (window.__STATIC_PREVIEW__ || window.location.port === '8090') {
+      return this.getFallbackTimeSlots ? this.getFallbackTimeSlots(date) : [];
+    }
+
     try {
       // Format date for API
       const formattedDate = date.toISOString().split('T')[0];
