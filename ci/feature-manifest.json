@@ -47,7 +47,8 @@
     "contact-salesperson": "Created for the sales team directory. Returns the one real sales specialist. Replaces a 404 on the about page's team cards.",
     "pre-approval": "Created for the financing calculator's pre-approval modal. Validates required fields and returns an honest 'received, not processed' response because there is no lender integration yet.",
     "send-notification": "components/notification.js is imported by main.js and utils/error-event-system.js. It provides toast notifications for form submissions, errors, and success states across the site.",
-    "lead-management": "Wired. An agent recorded a decision to delete this in favour of `leads` and died before acting on it. The decision was wrong: site/assets/js/forms.js:135 still POSTs every form submission to /.netlify/functions/lead-management. Deleting it would have broken every form on the site. The function is the single submission endpoint for contact, lead, and inquiry forms."
+    "lead-management": "Wired. An agent recorded a decision to delete this in favour of `leads` and died before acting on it. The decision was wrong: site/assets/js/forms.js:135 still POSTs every form submission to /.netlify/functions/lead-management. Deleting it would have broken every form on the site. The function is the single submission endpoint for contact, lead, and inquiry forms.",
+    "vehicle-features": "Favourites toggle for the home page fleet, backed by a Netlify Blobs store. Chosen over front matter because a Function cannot edit the repository, and because the sync rewrites the featured field wholesale so a favourite written there would be clobbered on the next run. Degrades to the front-matter flag when the store is unconfigured."
   },
   "planned": {},
   "delete": {

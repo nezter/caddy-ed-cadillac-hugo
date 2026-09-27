@@ -1,5 +1,5 @@
 {{ define "headStyles" }}{{ partial "stylesheet.html" "connect.css" }}{{ partial "stylesheet.html" "components/shortlist.css" }}{{ partial "stylesheet.html" "components/home.css" }}{{ end }}
-{{ define "scripts" }}{{ partial "connect-config.html" . }}{{ partial "entry.html" (dict "entry" "connect.js" "page" .) }}{{ partial "entry.html" (dict "entry" "shortlist.js" "page" .) }}{{ partial "entry.html" (dict "entry" "inventory-filter.js" "page" .) }}{{ end }}
+{{ define "scripts" }}{{ partial "connect-config.html" . }}{{ partial "entry.html" (dict "entry" "connect.js" "page" .) }}{{ partial "entry.html" (dict "entry" "shortlist.js" "page" .) }}{{ partial "entry.html" (dict "entry" "inventory-filter.js" "page" .) }}{{ partial "entry.html" (dict "entry" "fleet-highlight.js" "page" .) }}{{ end }}
 
 {{ define "main" }}
 {{- $phone := .Site.Params.phone | default "803-431-6180" -}}
@@ -141,7 +141,41 @@
      on the heading -- it used to be the only line in a stock panel header,
      which is not somewhere anyone looks.
      ------------------------------------------------------------------ */}}
-{{- $cadillac := where (where (where .Site.RegularPages "Section" "inventory") "Params.available" "!=" false) "Params.make" "CADILLAC" -}}
+{{- /*
+  The fleet.
+
+  Thirty-two Cadillacs rendered as a grid is not a selection, it is a wall. The
+  first three rows are almost entirely mid-size XT5s in grey, which is the least
+  interesting thing on the lot, and everything below them is a scroll nobody
+  finishes before reaching the footer.
+
+  So: the ten newest, and within a year the most expensive first.
+
+  ON "LATEST"
+  -----------
+  Sorted by model year descending, then price descending. Not by the obvious
+  candidate: `inventory_sync_synced` is written on every vehicle the sync
+  touches, and on this lot all 35 carry the same value -- 2026-09-26 -- so
+  sorting by it returns the fleet in page order and "the ten most recently
+  synced" would be an accident. Measured, not assumed.
+
+  The feed carries no listing date, so how recently a car arrived is not knowable
+  from what we have. Model year is the closest honest proxy for "newest stock",
+  and price within a year is a reasonable second: two identically-aged cars, the
+  better-specified one first. If the DMS ever exposes a listing date, add it here
+  and the order becomes literal.
+
+  Favourited vehicles are hoisted above all of it (see
+  partials/vehicle-card.html, which badges them "Ed's pick"), so marking a car
+  in the admin changes what a visitor sees first.
+
+  The full, filterable list is one click away at /inventory/.
+*/ -}}
+{{- $cadillacAll := where (where (where .Site.RegularPages "Section" "inventory") "Params.available" "!=" false) "Params.make" "CADILLAC" -}}
+{{- $featured := first 6 (where $cadillacAll "Params.featured" true) -}}
+{{- $rest := where $cadillacAll "Params.featured" "!=" true -}}
+{{- $rest = first (sub 10 (len $featured)) (sort (sort $rest "Params.year" "desc") "Params.price" "desc") -}}
+{{- $cadillac := $featured | append $rest -}}
 {{- if $cadillac }}
 <section class="section section-subtle" id="fleet">
   <div class="container">
@@ -154,7 +188,7 @@
       <p class="sync-note">
         <span class="sync-note__dot" aria-hidden="true"></span>
         Last synced <time datetime="{{ now.Format "2006-01-02" }}">{{ now.Format "2 January 2006" }}</time>
-        · {{ len $cadillac }} Cadillac{{ if ne (len $cadillac) 1 }}s{{ end }} in stock
+        · showing the {{ len $cadillac }} most recent of {{ len $cadillacAll }} in stock
       </p>
     </div>
 

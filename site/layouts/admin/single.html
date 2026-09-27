@@ -12,6 +12,7 @@
         <a href="/admin/lead-assignment">Lead Assignment</a>
         <a href="/admin/interactions">Interactions</a>
         <a href="/admin/search">Search</a>
+        <a href="/admin/favourites">Favourites</a>
         <a href="/admin/sign-in">Sign in</a>
         <a href="/">← Back to Site</a>
       </nav>
@@ -19,6 +20,12 @@
 
     <div class="admin-content">
       {{ .Content }}
+      {{/* The favourites control needs the vehicle list at build time. It cannot
+           be fetched, and it cannot be written as {{ partial }} in the .md body
+           because Go templates are not evaluated there -- so a page opts in with
+           `favouritesData: true` and the layout emits the list. Only that one
+           page pays for it. */}}
+      {{ if .Params.favouritesData }}{{ partial "favourites-data.html" . }}{{ end }}
     </div>
   </div>
 </div>

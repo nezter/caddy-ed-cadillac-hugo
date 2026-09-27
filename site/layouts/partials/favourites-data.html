@@ -1,0 +1,44 @@
+{{- /*
+  favourites-data.json -- the vehicle list for the admin favourites control.
+
+  Emitted as a <script type="application/json"> block rather than fetched,
+  and that is the whole design decision. The admin control needs to show every
+  vehicle, but the inventory is build-time content and there is deliberately no
+  endpoint that returns "every vehicle" -- the detail pages are rendered from
+  front matter, and a runtime list would be a second source of truth that could
+  drift from the pages it links to.
+
+  So the list is compiled into this one page, and the script only toggles the
+  flag over the network. The consequence worth stating: a vehicle that has sold
+  is absent from this list, so it cannot be favourited from here.
+
+  `pinned` marks a vehicle with `featured: true` in its own content file. The
+  sync rewrites that field, so a pinned vehicle cannot be cleared through the
+  admin UI -- it would come back on the next sync. The control says so rather
+  than offering a button that silently fails.
+*/ -}}
+{{- $vehicles := where (where .RegularPages "Section" "inventory") "Params.available" "!=" false -}}
+{{- $out := slice -}}
+{{- range $vehicles -}}
+  {{- $img := "" -}}
+  {{- with .Params.image }}{{ $img = . }}{{ end -}}
+  {{- $thumb := "" -}}
+  {{- with $img -}}
+    {{- with resources.Get (printf "vehicles/%s" .) -}}
+      {{- $thumb = (.Resize "320x q60").RelPermalink -}}
+    {{- else -}}
+      {{- with resources.Get (printf "img/%s" .) -}}
+        {{- $thumb = (.Resize "320x q60").RelPermalink -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+  {{- $out = $out | append (dict
+      "slug" .File.ContentBaseName
+      "title" .Title
+      "stock" (.Params.stock | default "")
+      "subtitle" (.Params.subtitle | default "")
+      "price" (.Params.price | default 0)
+      "thumb" $thumb
+      "pinned" (eq .Params.featured true)) -}}
+{{- end -}}
+<script type="application/json" id="favourites-data">{{ $out | jsonify }}</script>
