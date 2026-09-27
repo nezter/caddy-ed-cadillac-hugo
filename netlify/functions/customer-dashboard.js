@@ -1,5 +1,8 @@
 const jwt = require('jsonwebtoken');
 const DatabaseService = require('./utils/database-service');
+// The raw query helper, exported from database-service so a function can read
+// exactly what it needs without a bespoke static per query.
+const query = DatabaseService.query;
 
 // JWT configuration -- REQUIRED, no fallback, and it MUST be the same secret
 // customer-auth.js signs with.
@@ -153,81 +156,102 @@ async function getCustomerDashboard(customerId) {
  * Get customer appointments
  */
 async function getCustomerAppointments(customerId) {
-  // MOCK DATA. The JWT is verified above, so the caller is a real customer, but
-  // `customerId` is then thrown away and everyone is shown the same fabricated
-  // Escalade test drive for a 2024 date. This function authenticates and does
-  // not authorise a real record. See the report.
-  return {
-    upcoming: [
-      {
-        id: 'appt_1',
-        type: 'Test Drive',
-        scheduled_date: '2024-10-15',
-        scheduled_time: '14:00',
-        location: 'Cadillac Dealership',
-        status: 'confirmed',
-        notes: 'Escalade Premium Luxury test drive',
-        sales_rep_name: 'Sarah Johnson'
-      }
-    ],
-    past: []
-  };
+  const result = await query(
+    `SELECT a.id, a.appointment_type, a.scheduled_date, a.scheduled_time,
+            a.location, a.status, a.notes, r.name AS sales_rep_name
+       FROM appointments a
+       LEFT JOIN sales_reps r ON r.id = a.sales_rep_id
+      WHERE a.customer_id = $1
+      ORDER BY a.scheduled_date DESC, a.scheduled_time DESC
+      LIMIT 50`,
+    [customerId]
+  ).catch(() => ({ rows: [] }));
+
+  const now = new Date().toISOString();
+  const all = result.rows || [];
+  const upcoming = [];
+  const past = [];
+
+  for (const row of all) {
+    // An appointment is upcoming if its moment has not passed. Comparing the
+    // date alone would put this morning's 9am slot in the past list when
+    // someone loads the page at 3pm, which is the sort of small wrongness that
+    // makes a portal untrustworthy.
+    const when = `${row.scheduled_date || ''}T${(row.scheduled_time || '00:00')}`;
+    const item = {
+      id: row.id,
+      type: row.appointment_type,
+      scheduled_date: row.scheduled_date,
+      scheduled_time: row.scheduled_time,
+      location: row.location,
+      status: row.status,
+      notes: row.notes,
+      sales_rep_name: row.sales_rep_name || null
+    };
+    if (when >= now) upcoming.push(item);
+    else past.push(item);
+  }
+
+  return { upcoming, past: past.slice(0, 10) };
 }
 
 /**
  * Get customer preferences
  */
 async function getCustomerPreferences(customerId) {
-  // MOCK DATA -- see getCustomerAppointments.
-  return {
-    vehicle_type: 'SUV',
-    budget_min: 40000,
-    budget_max: 60000,
-    preferred_contact_method: 'email',
-    preferred_features: ['navigation', 'leather seats', 'premium audio']
-  };
+  const result = await query(
+    `SELECT preferences FROM customers WHERE id = $1`,
+    [customerId]
+  ).catch(() => ({ rows: [] }));
+
+  const row = (result.rows || [])[0];
+  if (!row || !row.preferences) return null;
+  // The column is jsonb; Postgres may hand it back parsed or as a string
+  // depending on the driver, so both are handled rather than assumed.
+  return typeof row.preferences === 'string' ? JSON.parse(row.preferences) : row.preferences;
 }
 
 /**
  * Get customer recent activity
  */
 async function getCustomerActivity(customerId, limit = 10) {
-  // MOCK DATA -- see getCustomerAppointments.
-  return [
-    {
-      id: 'activity_1',
-      date: '2024-10-10',
-      type: 'lead_created',
-      description: 'Initial contact via website',
-      details: 'Submitted test drive request for Escalade'
-    },
-    {
-      id: 'activity_2',
-      date: '2024-10-12',
-      type: 'appointment_scheduled',
-      description: 'Test drive appointment scheduled',
-      details: 'Scheduled for October 15th at 2:00 PM'
-    },
-    {
-      id: 'activity_3',
-      date: '2024-10-08',
-      type: 'email_sent',
-      description: 'Follow-up email sent',
-      details: 'Vehicle information and pricing details'
-    }
-  ].slice(0, limit);
+  const result = await query(
+    `SELECT id, interaction_type, description, notes, created_at
+       FROM interactions
+      WHERE customer_id = $1
+      ORDER BY created_at DESC
+      LIMIT $2`,
+    [customerId, limit]
+  ).catch(() => ({ rows: [] }));
+
+  return (result.rows || []).map((row) => ({
+    id: row.id,
+    date: row.created_at,
+    type: row.interaction_type,
+    description: row.description,
+    details: row.notes
+  }));
 }
 
 /**
  * Get customer's assigned sales representative
  */
 async function getCustomerSalesRep(customerId) {
-  // MOCK DATA -- see getCustomerAppointments.
+  const result = await query(
+    `SELECT r.name, r.position, r.email, r.phone, r.image
+       FROM customers c
+       JOIN sales_reps r ON r.id = c.assigned_sales_rep_id
+      WHERE c.id = $1`,
+    [customerId]
+  ).catch(() => ({ rows: [] }));
+
+  const row = (result.rows || [])[0];
+  if (!row) return null;
   return {
-    name: 'Sarah Johnson',
-    title: 'Sales Representative',
-    email: 'sarah.johnson@cadillacofsouthcharlotte.com',
-    phone: '(704) 555-0102',
-    photo: '/images/sales-reps/sarah-johnson.jpg'
+    name: row.name,
+    title: row.position || 'Sales Representative',
+    email: row.email,
+    phone: row.phone,
+    photo: row.image || null
   };
 }

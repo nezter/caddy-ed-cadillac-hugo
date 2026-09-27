@@ -1533,3 +1533,20 @@ class DatabaseService {
 }
 
 module.exports = DatabaseService;
+
+/**
+ * Expose the raw query helper.
+ *
+ * It was module-private, which meant the only way for a function to read
+ * anything not already wrapped in a DatabaseService static was to write another
+ * static here. customer-dashboard.js needed four customer-scoped reads that did
+ * not warrant a static each, and the honest thing was to give it the query
+ * function rather than have it fabricate the data it could not reach --
+ * which is what it had been doing.
+ *
+ * Parameterised only. There is no string-interpolation path on purpose: the SQL
+ * injection in this file came from interpolating a sort column, and this export
+ * is not a licence to repeat that.
+ */
+module.exports.query = query;
+module.exports.isDatabaseConfigured = () => Boolean(process.env.SUPABASE_DB_URL || process.env.DATABASE_URL || process.env.SUPABASE_DATABASE_URL || process.env.SUPABASE_DB_CONNECTION);
