@@ -60,9 +60,20 @@ module.exports = {
   // Setup files
   setupFilesAfterEnv: ['<rootDir>/../../tests/setup.js'],
   
-  // Module transformation
+  // Module transformation.
+  //
+  // `rootMode: 'upward'` is load-bearing. Babel applies a root config
+  // (babel.config.js) only to files UNDER its root, and by default that root is
+  // process.cwd(), which for this suite is netlify/functions/. The five calendar
+  // suites import from site/assets/js/refactored/, which is above that root, so
+  // babel silently did not transform them and Jest reported:
+  //
+  //     SyntaxError: Cannot use import statement outside a module
+  //
+  // 'upward' makes babel walk up to find the config regardless of where the
+  // file being transformed lives.
   transform: {
-    '^.+\\.js$': 'babel-jest'
+    '^.+\\.js$': ['babel-jest', { rootMode: 'upward' }],
   },
   
   // Module path mapping
@@ -103,25 +114,40 @@ module.exports = {
     }
   },
   
-  // Test reporters
-  reporters: [
-    'default',
-    [
-      'jest-junit',
-      {
-        outputDirectory: 'test-results',
-        outputName: 'junit.xml',
-        classNameTemplate: '{classname}',
-        titleTemplate: '{title}',
-        ancestorSeparator: ' › ',
-        usePathForSuiteName: true
-      }
-    ]
-  ],
-  
-  // Watch plugins
-  watchPlugins: [
-    'jest-watch-typeahead/filename',
-    'jest-watch-typeahead/testname'
-  ]
+  // Test reporters.
+  //
+  // jest-junit writes test-results/junit.xml for a CI system that does not
+  // exist here, and declaring it unconditionally meant every local run
+  // resolved and loaded the reporter to produce a file nobody reads. It is
+  // opt-in behind an env var now, so a plain `npm test` has one job.
+  reporters: process.env.JEST_JUNIT
+    ? [
+        'default',
+        [
+          'jest-junit',
+          {
+            outputDirectory: 'test-results',
+            outputName: 'junit.xml',
+            classNameTemplate: '{classname}',
+            titleTemplate: '{title}',
+            ancestorSeparator: ' › ',
+            usePathForSuiteName: true,
+          },
+        ],
+      ]
+    : ['default'],
+
+  // Watch plugins: REMOVED.
+  //
+  // `watchPlugins` only does anything under `jest --watch`, but jest
+  // VALIDATES it on every invocation. Both entries were failing to resolve
+  // from rootDir, and the result was a hard "Validation Error" that aborted
+  // the entire suite before a single test ran:
+  //
+  //     Watch plugin jest-watch-typeahead/filename cannot be found.
+  //
+  // So the suite was not "63 failing tests" -- it was not running at all, and
+  // the numbers people had been quoting came from a different invocation. If
+  // typeahead in watch mode is wanted later, it belongs in a jest.config.watch.js
+  // that is only loaded when --watch is passed.
 };
