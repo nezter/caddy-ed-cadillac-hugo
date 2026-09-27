@@ -1,44 +1,115 @@
-{{ $vehicle := . }}
+{{- /*
+  vehicle-card.html -- the one card used for every vehicle on the site.
 
-<div class="vehicle-card">
-  <div class="vehicle-image">
-    {{ if $vehicle.image }}
-      <img class="lazyload blur-up" 
-           src="{{ replace $vehicle.image "/upload/" "/upload/w_20,q_10/" }}" 
-           data-src="{{ replace $vehicle.image "/upload/" "/upload/w_600,q_80/" }}" 
-           alt="{{ $vehicle.year }} {{ $vehicle.make }} {{ $vehicle.model }}">
-    {{ else }}
-      <div class="placeholder-image">Image Coming Soon</div>
+  WHY THIS EXISTS
+  ---------------
+  The card markup was written out inline, twice: once in layouts/index.html
+  and once in layouts/section/inventory.html. They had already drifted -- the
+  home page formatted prices as "$112899" and the inventory page as "$112,899"
+  -- which is exactly what happens when markup is copied instead of shared. A
+  third, older copy sat in this file as an unused partial, still using
+  `lazyload` and `data-src` from before the native-loading migration, referencing
+  fields that no longer exist.
+
+  Three copies of a card, two of them live. This is the one.
+
+  WHAT A CARD HAS TO DO FOR A SALESPERSON
+  --------------------------------------
+  Caddy Ed sends clients links to this site. A client who lands on a card has
+  three possible next steps and the card should offer all of them without them
+  having to go and find them:
+
+    1. Look at this car          -> the title, linked
+    2. Ask about this car        -> /contact/ with the car pre-filled
+    3. Put it on a shortlist     -> the compare tray, so they can send a
+       several back to Ed and say "these three"
+
+  (3) is the one that was missing, and it is the one that turns a browsing
+  page into something a salesperson can actually work with. The compare tray
+  persists to localStorage, so a client can build a shortlist over several
+  visits and it is still there when they come back.
+
+  Context (dict):
+    vehicle   the Page (required)
+    compare   bool, render the shortlist checkbox (default true)
+    eager     bool, load the image eagerly -- for above-the-fold cards
+*/ -}}
+
+{{- $v := .vehicle -}}
+{{- $compare := ne .compare false -}}
+{{- $eager := .eager | default false -}}
+{{- $img := $v.Params.image | default "/img/placeholder-vehicle.jpg" -}}
+
+{{- /*
+  The data-* attributes below are a CONTRACT with site/assets/js/inventory-filter.js,
+  which reads them with `card.dataset.*` and compares case-sensitively against a
+  lowercased query string. They must stay lowercased or search silently stops
+  matching anything, which is the single most important thing on this page to a
+  shopper. A gate cannot catch it -- the attributes are all present either way.
+*/ -}}
+<article class="vehicle-card" data-vehicle
+         data-slug="{{ $v.File.ContentBaseName }}"
+         data-title="{{ $v.Title | lower }}"
+         data-model="{{ with $v.Params.model }}{{ . | lower }}{{ end }}"
+         data-year="{{ with $v.Params.year }}{{ int . }}{{ end }}"
+         data-status="{{ with $v.Params.status }}{{ . | lower }}{{ end }}"
+         data-price="{{ with $v.Params.price }}{{ int . }}{{ end }}"
+         data-mileage="{{ with $v.Params.mileage }}{{ int . }}{{ end }}"
+         data-drivetrain="{{ with $v.Params.drivetrain }}{{ . | lower }}{{ end }}"
+         data-transmission="{{ with $v.Params.transmission }}{{ . | lower }}{{ end }}"
+         data-stock="{{ $v.Params.stock }}">
+
+  <a class="vehicle-card__media" href="{{ $v.RelPermalink }}" aria-label="{{ $v.Title }}">
+    {{ partial "vehicle-image.html" (dict
+        "src" $img
+        "alt" $v.Title
+        "width" $v.Params.image_width
+        "height" $v.Params.image_height
+        "sizes" "(max-width: 40rem) 92vw, (max-width: 64rem) 46vw, 380px"
+        "loading" (cond $eager "eager" "lazy")) }}
+    {{ with $v.Params.status }}
+      <span class="vehicle-card__badge{{ if eq . "New" }} vehicle-card__badge--accent{{ end }}">{{ . }}</span>
     {{ end }}
-  </div>
-  
-  <div class="vehicle-details">
-    <h3 class="vehicle-title">{{ $vehicle.year }} {{ $vehicle.make }} {{ $vehicle.model }}</h3>
-    {{ if $vehicle.trim }}
-      <p class="vehicle-trim">{{ $vehicle.trim }}</p>
+    {{ if $v.Params.featured }}
+      <span class="vehicle-card__badge vehicle-card__badge--pick">Ed's pick</span>
     {{ end }}
-    
-    <div class="vehicle-price">
-      {{ $formattedPrice := lang.NumFmt 0 $vehicle.price "- , ." }}
-      ${{ $formattedPrice }}
-    </div>
-    
-    <div class="vehicle-specs">
-      {{ $formattedMileage := lang.NumFmt 0 $vehicle.mileage "- , ." }}
-      <span class="vehicle-mileage">{{ $formattedMileage }} miles</span>
-      
-      {{ if $vehicle.exteriorColor }}
-        <span class="vehicle-color">{{ $vehicle.exteriorColor }}</span>
+  </a>
+
+  <div class="vehicle-card__body">
+    <h3 class="vehicle-card__title">
+      <a href="{{ $v.RelPermalink }}">{{ $v.Title }}</a>
+    </h3>
+    {{ with $v.Params.subtitle }}<p class="vehicle-card__meta">{{ . }}</p>{{ end }}
+
+    <p class="vehicle-card__price">
+      {{ $p := 0 }}{{ with $v.Params.price }}{{ $p = int . }}{{ end }}
+      {{ if gt $p 0 }}
+        {{ partial "money.html" $p }}
+        {{ with $v.Params.price_note }}<small>{{ . }}</small>{{ end }}
+      {{ else }}
+        {{/* No price is not price zero. The inventory page used to say
+             "Call for price" here; the home page printed nothing at all,
+             which left an empty line where the price should be. */}}
+        <span class="vehicle-card__price-ask">Call for price</span>
       {{ end }}
-      
-      {{ if $vehicle.transmission }}
-        <span class="vehicle-transmission">{{ $vehicle.transmission }}</span>
+    </p>
+
+    <div class="vehicle-card__actions">
+      <a class="btn btn-outline btn-sm" href="{{ $v.RelPermalink }}">Details</a>
+      <a class="btn btn-primary btn-sm"
+         href="/contact/?vehicle={{ $v.Title | urlquery }}">Ask about this</a>
+      {{ if $compare }}
+        {{/* The shortlist. Toggled by vehicleComparison.js, which persists the
+             selection so a client can build it up over several visits. The
+             button is a real toggle with aria-pressed so it is announced, and
+             it is a button rather than a checkbox because the label is an
+             action ("Add to shortlist"), not a field value. */}}
+        <button type="button" class="btn btn-ghost btn-sm vehicle-card__compare"
+                data-add-comparison="{{ $v.File.ContentBaseName }}"
+                aria-pressed="false">
+          <span data-compare-label>Shortlist</span>
+        </button>
       {{ end }}
-    </div>
-    
-    <div class="vehicle-actions">
-      <a href="/inventory/{{ $vehicle.id | default $vehicle.vin }}" class="btn btn-primary">View Details</a>
-      <button class="btn btn-secondary schedule-test-drive" data-vehicle-id="{{ $vehicle.id | default $vehicle.vin }}">Schedule Test Drive</button>
     </div>
   </div>
-</div>
+</article>

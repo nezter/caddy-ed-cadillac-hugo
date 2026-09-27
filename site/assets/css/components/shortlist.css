@@ -1,0 +1,147 @@
+/*
+ * shortlist.css -- the shortlist tray.
+ *
+ * A fixed strip at the bottom of the viewport. It is the only element on the
+ * site allowed to sit over the content, and only ever appears when there is
+ * something in it, so an unengaged visitor never sees it at all.
+ *
+ * Kept to one file rather than added to main.css: it is one component, it is
+ * loaded on two pages, and the admin sheets already showed what happens when
+ * one stylesheet carries a component that is only half-used.
+ */
+
+.shortlist {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 90;              /* under the sticky header (100), over content */
+  background: var(--brand-ink);
+  color: var(--text-inverse);
+  border-top: 3px solid var(--brand-red);
+  box-shadow: 0 -8px 30px rgb(0 0 0 / 0.28);
+}
+
+.shortlist[hidden] { display: none; }
+
+.shortlist__inner {
+  max-width: var(--container, 1200px);
+  margin: 0 auto;
+  padding: var(--space-3) var(--space-5);
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.shortlist__count {
+  margin: 0;
+  font-size: var(--text-sm);
+  white-space: nowrap;
+}
+
+.shortlist__count strong { color: var(--brand-bronze); }
+
+/* The list of chosen cars. Horizontally scrollable rather than wrapping: it is
+   a status bar, and wrapping it to three lines on a phone would push the
+   content behind it. */
+.shortlist__items {
+  display: flex;
+  gap: var(--space-2);
+  list-style: none;
+  margin: 0;
+  padding: 0 0 var(--space-2);
+  overflow-x: auto;
+  flex: 1 1 240px;
+  min-width: 0;
+  scrollbar-width: thin;
+}
+
+.shortlist__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 0 0 auto;
+  max-width: 260px;
+  padding: var(--space-1) var(--space-2) var(--space-1) var(--space-3);
+  background: rgb(255 255 255 / 0.08);
+  border: 1px solid rgb(255 255 255 / 0.14);
+  border-radius: var(--radius);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+
+/* A car whose page is no longer on this page. It is still on the client's
+   list, so it is shown rather than silently dropped -- but marked, because
+   sending Ed a list containing something that has sold makes him look
+   careless on the phone. */
+.shortlist__item.is-stale {
+  border-style: dashed;
+  opacity: 0.62;
+}
+
+.shortlist__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.shortlist__name em {
+  font-style: normal;
+  color: var(--brand-bronze);
+  margin-left: var(--space-1);
+}
+
+.shortlist__remove {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  border: 0;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.14);
+  color: inherit;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.shortlist__remove:hover,
+.shortlist__remove:focus-visible {
+  background: var(--brand-red);
+  color: #fff;
+}
+
+.shortlist__actions {
+  display: flex;
+  gap: var(--space-2);
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+
+@media (max-width: 40rem) {
+  .shortlist__inner {
+    padding: var(--space-2) var(--space-4);
+    gap: var(--space-2);
+  }
+
+  .shortlist__items {
+    order: 3;
+    flex-basis: 100%;
+  }
+
+  .shortlist__actions { order: 2; }
+}
+
+/* The shortlist button on a card. */
+.vehicle-card__compare.is-active {
+  border-color: var(--brand-red);
+  color: var(--brand-red);
+}
+
+/* "Ed's pick" badge. */
+.vehicle-card__badge--pick {
+  top: auto;
+  bottom: var(--space-2);
+  left: var(--space-2);
+  background: var(--brand-bronze);
+  color: var(--brand-ink);
+}

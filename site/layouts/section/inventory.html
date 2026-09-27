@@ -2,7 +2,7 @@
      partials/assets.html on EVERY page, which put the weight of one
      section on all 56 -- and, for customer-portal.css, let a
      component sheet win the cascade over main.css site-wide. */ -}}
-{{ define "headStyles" }}{{ partial "stylesheet.html" "inventory.scss" }}{{ end }}
+{{ define "headStyles" }}{{ partial "stylesheet.html" "inventory.scss" }}{{ partial "stylesheet.html" "components/shortlist.css" }}{{ end }}
 
 {{ define "main" }}
 {{- /* Sold and withdrawn vehicles stay on disk deliberately: a car that comes
@@ -260,45 +260,14 @@
          --------------------------------------------------------------- */}}
     <div class="vehicle-grid" id="vehicle-inventory"
          data-total="{{ $totalMatched }}" data-page-size="{{ $perPage }}">
+      {{/* One card, from partials/vehicle-card.html. This markup used to be
+           written out here as well as in layouts/index.html, and the two copies
+           had already drifted -- the home page printed "$112899" and this one
+           printed "$112,899". The data-* attributes the live filter reads are
+           part of the partial now, and they are documented there as a contract
+           with inventory-filter.js. */}}
       {{ range $paginator.Pages }}
-      {{ $img := "" }}{{ with .Params.image }}{{ $img = . }}{{ end }}
-      {{ $price := 0 }}{{ with .Params.price }}{{ $price = int . }}{{ end }}
-      {{ $thousands := 0 }}{{ $remainder := 0 }}
-      {{ if gt $price 0 }}{{ $thousands = div (mod $price 1000000) 1000 }}{{ $remainder = mod $price 1000 }}{{ end }}
-      <article class="vehicle-card"
-               data-vehicle
-               data-title="{{ .Title | lower }}"
-               data-model="{{ with .Params.model }}{{ . | lower }}{{ end }}"
-               data-year="{{ with .Params.year }}{{ int . }}{{ end }}"
-               data-status="{{ with .Params.status }}{{ . | lower }}{{ end }}"
-               data-price="{{ $price }}"
-               data-mileage="{{ with .Params.mileage }}{{ int . }}{{ end }}"
-               data-drivetrain="{{ with .Params.drivetrain }}{{ . | lower }}{{ end }}"
-               data-transmission="{{ with .Params.transmission }}{{ . | lower }}{{ end }}">
-        <a class="vehicle-card__media" href="{{ .RelPermalink }}" tabindex="-1" aria-hidden="true">
-          {{ partial "vehicle-image.html" (dict "src" $img "alt" .Title "width" .Params.image_width "height" .Params.image_height) }}
-          {{ with .Params.status }}
-          <span class="vehicle-card__badge{{ if eq . "New" }} vehicle-card__badge--accent{{ end }}">{{ . }}</span>
-          {{ end }}
-        </a>
-        <div class="vehicle-card__body">
-          <h2 class="vehicle-card__title"><a href="{{ .RelPermalink }}">{{ .Title }}</a></h2>
-          {{ with .Params.subtitle }}<p class="vehicle-card__meta">{{ . }}</p>{{ end }}
-          <p class="vehicle-card__price">
-            {{ if gt $price 0 }}
-              {{- $out := "" }}{{ if gt $thousands 0 }}{{ $out = printf "%d," $thousands }}{{ end -}}
-              ${{ printf "%s%03d" $out $remainder }}
-              {{ with .Params.price_note }}<small>{{ . }}</small>{{ end }}
-            {{ else }}
-              Call for price
-            {{ end }}
-          </p>
-          <div class="vehicle-card__actions">
-            <a class="btn btn-outline btn-sm" href="{{ .RelPermalink }}">Details</a>
-            <a class="btn btn-primary btn-sm" href="/contact/?vehicle={{ .Title | urlquery }}">Ask about this</a>
-          </div>
-        </div>
-      </article>
+        {{ partial "vehicle-card.html" (dict "vehicle" .) }}
       {{ end }}
     </div>
 
@@ -336,4 +305,5 @@
      #inventory-filters / #inventory-pagination -- none of which this layout
      rendered -- and fetched everything from /.netlify/functions/inventory-api. */}}
 {{ partial "entry.html" (dict "entry" "inventory-filter.js" "page" .) }}
+{{ partial "entry.html" (dict "entry" "shortlist.js" "page" .) }}
 {{ end }}

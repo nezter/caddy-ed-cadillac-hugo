@@ -97,13 +97,43 @@ function buildTitle(src) {
   return parts.join(' ');
 }
 
+/**
+ * A dealer feed's way of saying "we do not have this value".
+ *
+ * Feeds routinely carry "N/A", "-", "TBD", "unknown" or "null" for a field they
+ * do not populate, and those were being written straight into content front
+ * matter and printed onto the cards as "AWD · N/A · 4 mi". That reads as though
+ * the car has no transmission, rather than as the feed being incomplete -- which
+ * is the opposite of what a shopper needs to know before they ask about it.
+ *
+ * Returns '' for a placeholder so the field is dropped entirely, and the card
+ * shows only what is genuinely known.
+ */
+const PLACEHOLDER = /^(n\/?a|na|none|null|unknown|tbd|tba|not\s*available|no\s+data|-+|\?+)$/i;
+
+function spec(v) {
+  const s = str(v).trim();
+  if (!s) return '';
+  if (PLACEHOLDER.test(s)) return '';
+  // Some feeds put the field's own label in the value: `engine: "Engine, none"`.
+  // That reads as a specification ("Engine, none") when it is the feed admitting
+  // it has no engine data, so the label is stripped and what remains is tested
+  // again. If only the label is left, there is nothing to show.
+  const stripped = s.replace(/^[A-Za-z][A-Za-z /]{0,20}\s*,\s*/, '');
+  if (stripped !== s) {
+    if (!stripped || PLACEHOLDER.test(stripped)) return '';
+    return stripped;
+  }
+  return s;
+}
+
 /** A short spec line for the card: "AWD · Automatic · 45218 mi". */
 function specSubtitle(raw) {
   const explicit = str(raw.subtitle);
   if (explicit) return explicit;
   const parts = [
-    str(raw.drivetrain),
-    str(raw.transmission),
+    spec(raw.drivetrain),
+    spec(raw.transmission),
     typeof raw.mileage === 'number' || raw.mileage
       ? `${Number(raw.mileage).toLocaleString('en-US')} mi`
       : '',
@@ -170,9 +200,9 @@ function normalise(raw, index = 0) {
     body_style: str(raw.bodyStyle || raw.body_style),
     exterior_color: str(raw.exteriorColor || raw.exterior_color),
     interior_color: str(raw.interiorColor || raw.interior_color),
-    drivetrain: str(raw.drivetrain),
-    transmission: str(raw.transmission),
-    engine: str(raw.engine),
+    drivetrain: spec(raw.drivetrain),
+    transmission: spec(raw.transmission),
+    engine: spec(raw.engine),
     horsepower: num(raw.horsepower || raw.hp),
     mpg: num(raw.mpg),
     tags: list(raw.tags),

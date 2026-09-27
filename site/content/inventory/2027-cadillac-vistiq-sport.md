@@ -2,7 +2,7 @@
 title: 2027 CADILLAC VISTIQ Sport
 status: New
 price: 82850
-subtitle: AWD · N/A · 46 mi
+subtitle: AWD · 46 mi
 image: vehicles/1gyc3nml9vz700246-33798a7aee.jpg
 image_width: 1600
 image_height: 1200
@@ -16,9 +16,8 @@ mileage: 46
 exterior_color: Stellar Black Metallic
 interior_color: Black, Inteluxe Seats with Perforated inserts and
 drivetrain: AWD
-transmission: N/A
-engine: Engine, none
 inventory_sync: https://www.cadillacofsouthcharlotte.com
 inventory_sync_synced: 2026-09-26
+featured: false
 ---
-AWD · N/A · 46 mi. AWD drivetrain · N/A · Engine, none · Stellar Black Metallic exterior · Black, Inteluxe Seats with Perforated inserts and interior. 46 miles. Full specification and availability on request — ask Caddy Ed for the details on this vehicle.
+AWD · 46 mi. AWD drivetrain · Stellar Black Metallic exterior · Black, Inteluxe Seats with Perforated inserts and interior. 46 miles. Full specification and availability on request — ask Caddy Ed for the details on this vehicle.

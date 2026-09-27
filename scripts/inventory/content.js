@@ -215,4 +215,8 @@ module.exports = {
   render,
   renderFrontMatter,
   slugify,
+  // Exported so a body can be regenerated from front matter without a crawl.
+  // scripts/inventory/rebuild-bodies.js does exactly that; regex-patching the
+  // generated prose instead left "AWD drivetrain· Engine ·" behind.
+  defaultBody,
 };

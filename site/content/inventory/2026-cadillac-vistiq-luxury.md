@@ -2,7 +2,7 @@
 title: 2026 CADILLAC VISTIQ Luxury
 status: New
 price: 82012
-subtitle: AWD · N/A · 19 mi
+subtitle: AWD · 19 mi
 image: vehicles/1gyc3kml8tz707250-fa27354fb9.jpg
 image_width: 1600
 image_height: 1200
@@ -16,9 +16,8 @@ mileage: 19
 exterior_color: Radiant Red Tintcoat
 interior_color: Jet Black, Inteluxe Seats with Perforated inserts
 drivetrain: AWD
-transmission: N/A
-engine: Engine, none
 inventory_sync: https://www.cadillacofsouthcharlotte.com
 inventory_sync_synced: 2026-09-26
+featured: false
 ---
-AWD · N/A · 19 mi. AWD drivetrain · N/A · Engine, none · Radiant Red Tintcoat exterior · Jet Black, Inteluxe Seats with Perforated inserts interior. 19 miles. Full specification and availability on request — ask Caddy Ed for the details on this vehicle.
+AWD · 19 mi. AWD drivetrain · Radiant Red Tintcoat exterior · Jet Black, Inteluxe Seats with Perforated inserts interior. 19 miles. Full specification and availability on request — ask Caddy Ed for the details on this vehicle.

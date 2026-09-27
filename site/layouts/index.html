@@ -1,5 +1,5 @@
-{{ define "headStyles" }}{{ partial "stylesheet.html" "connect.css" }}{{ end }}
-{{ define "scripts" }}{{ partial "connect-config.html" . }}{{ partial "entry.html" (dict "entry" "connect.js" "page" .) }}{{ end }}
+{{ define "headStyles" }}{{ partial "stylesheet.html" "connect.css" }}{{ partial "stylesheet.html" "components/shortlist.css" }}{{ end }}
+{{ define "scripts" }}{{ partial "connect-config.html" . }}{{ partial "entry.html" (dict "entry" "connect.js" "page" .) }}{{ partial "entry.html" (dict "entry" "shortlist.js" "page" .) }}{{ end }}
 
 {{ define "main" }}
 {{- $phone := .Site.Params.phone | default "704-555-1234" -}}
@@ -94,30 +94,10 @@
     </div>
 
     <div class="vehicle-grid">
-      {{ range $cadillac }}
-      {{ $img := .Params.image | default "/img/placeholder-vehicle.jpg" }}
-      <article class="vehicle-card">
-        <a class="vehicle-card__media" href="{{ .RelPermalink }}" aria-label="{{ .Title }}">
-          {{ partial "vehicle-image.html" (dict "src" $img "alt" .Title "width" .Params.image_width "height" .Params.image_height) }}
-          {{ with .Params.status }}
-          <span class="vehicle-card__badge{{ if eq . "New" }} vehicle-card__badge--accent{{ end }}">{{ . }}</span>
-          {{ end }}
-        </a>
-        <div class="vehicle-card__body">
-          <h3 class="vehicle-card__title">
-            <a href="{{ .RelPermalink }}">{{ .Title }}</a>
-          </h3>
-          {{ with .Params.subtitle }}<p class="vehicle-card__meta">{{ . }}</p>{{ end }}
-          <p class="vehicle-card__price">
-            {{ with .Params.price }}{{ partial "money.html" . }}{{ end }}
-            {{ with .Params.price_note }}<small>{{ . }}</small>{{ end }}
-          </p>
-          <div class="vehicle-card__actions">
-            <a class="btn btn-outline btn-sm" href="{{ .RelPermalink }}">Details</a>
-            <a class="btn btn-primary btn-sm" href="/contact/?vehicle={{ .Title | urlquery }}">Ask about this</a>
-          </div>
-        </div>
-      </article>
+      {{ range $i, $v := $cadillac }}
+        {{ partial "vehicle-card.html" (dict
+            "vehicle" $v
+            "eager" (lt $i 3)) }}
       {{ end }}
     </div>
 
