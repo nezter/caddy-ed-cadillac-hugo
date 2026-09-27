@@ -1,0 +1,41 @@
+{{- /*
+  stock-alerts.html -- the "tell me when the right one lands" signup.
+
+  Extracted from connect-hub.html so it can sit in the left column beside Ed's
+  photograph, where the "stay connected" copy promises a visitor can "set an
+  alert for the one you are waiting on". The copy and the form have to be
+  together or the copy is making a promise the page does not keep nearby.
+
+  The phone/SMS/email chips live here too, because those are the other half of
+  "stay connected" and they are the only three routes to a person on a page
+  that has just asked you to read something.
+
+  Context: the Page.
+*/ -}}
+{{- $alerts := dict "form_name" "stock-alerts" -}}
+{{- $social := site.Data.social | default dict -}}
+{{- $smsNumber := "+17045557890" -}}
+{{- with $social }}{{ with .text }}{{ $smsNumber = .number | default $smsNumber }}{{ end }}{{ end -}}
+{{- $phone := .Site.Params.phone | default "803-431-6180" -}}
+{{- $phoneHref := replace $phone "." "" | replace "(" "" | replace ")" "" | replace " " "" -}}
+{{- $email := .Site.Params.email | default "ed@caddyed.com" -}}
+
+<form class="notify-form" id="stockAlerts" name="{{ $alerts.form_name }}"
+      method="POST" data-netlify="true" novalidate>
+  <input type="hidden" name="form-name" value="{{ $alerts.form_name }}">
+
+  <label class="notify-form__label" for="alertsEmail">Get an email when stock lands</label>
+  <div class="notify-form__row">
+    <input class="input" id="alertsEmail" name="email" type="email"
+           autocomplete="email" placeholder="you@example.com" required>
+    <button class="btn btn-primary" type="submit">Send me alerts</button>
+  </div>
+  <p class="notify-form__note">Used only for stock alerts from Ed. Nothing else, ever.</p>
+  <div class="form-message" id="stockAlertsStatus" role="status" hidden></div>
+</form>
+
+<div class="contact-chips stay-connected__chips">
+  <a class="btn btn-outline btn-sm" href="tel:+1{{ $phoneHref }}">Call {{ $phone }}</a>
+  <a class="btn btn-outline btn-sm" href="sms:{{ $smsNumber }}">Text Ed</a>
+  <a class="btn btn-outline btn-sm" href="mailto:{{ $email }}">{{ $email }}</a>
+</div>

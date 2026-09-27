@@ -198,6 +198,83 @@
 /* --------------------------------------------------------------------------
    Customer comments.
    -------------------------------------------------------------------------- */
+/* The left column: Ed's photograph, then "stay connected" beneath it. */
+.ed-column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+/* "Stay connected" shares the column with the photograph so the two read as
+   one thing -- the person, and how to reach him between visits.
+
+   It carries the stock-alert signup, which is what makes it fill the column to
+   roughly the height of the social feed beside it. Without a form in here the
+   left side ended after the caption and the right side ran 600px further down,
+   which is what "so it isn't so empty" is about. */
+.stay-connected {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+}
+
+.stay-connected__title {
+  font-size: var(--text-lg);
+  margin-bottom: var(--space-2);
+}
+
+.stay-connected__body {
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  margin-bottom: var(--space-4);
+}
+
+/* connect.css lays .notify-form out as a two-column grid
+   (minmax(0,1fr) auto) because it was written for exactly two children: the
+   email input and the button. This form has five -- a hidden input, a label, the
+   row, a note and a message region -- so the label landed in column one as a
+   1fr track and wrapped to one word per line beside the button.
+
+   One column here, and the two-column work is done by .notify-form__row below,
+   which is where the field and the button actually are. */
+.stay-connected .notify-form {
+  display: block;
+}
+
+.stay-connected .notify-form__label {
+  display: block;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  margin-bottom: var(--space-2);
+}
+
+/* Email field and button on one line where there is room, stacked when there
+   is not. A 2px gap between an input and its button reads as a mistake. */
+.notify-form__row {
+  display: flex;
+  gap: var(--space-2);
+  align-items: stretch;
+  flex-wrap: wrap;
+}
+
+.notify-form__row .input { flex: 1 1 200px; min-width: 0; }
+.notify-form__row .btn { flex: 0 0 auto; }
+
+@media (max-width: 30rem) {
+  .notify-form__row .btn { flex: 1 1 100%; }
+}
+
+.stay-connected__chips {
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border);
+}
+
+/* The filters, directly under the last-synced line in the fleet heading. */
+.fleet-filters { margin-bottom: var(--space-6); }
+
 /* The social panels.
    No reserved height. The Facebook and X widgets inject their own iframes and
    size themselves, and they only do that with a session -- a visitor who is

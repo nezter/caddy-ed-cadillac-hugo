@@ -82,14 +82,16 @@
 </section>
 
 {{/* ------------------------------------------------------------------
-     3. ED, AND WHAT HE IS POSTING. Above the fleet, so a client meets the
-     person before the inventory. Ed's photograph on the left, the social
-     feed on the right.
+     3. ED, STAY CONNECTED, AND WHAT HE IS POSTING. Above the fleet, so a
+     client meets the person before the inventory. The left column is Ed's
+     photograph with "stay connected" under it; the right column is the live
+     social feed.
      ------------------------------------------------------------------ */}}
 <section class="section">
   <div class="container">
     <div class="ed-and-feed">
 
+      <div class="ed-column">
       <div class="ed-portrait">
         {{/* picture.html, not vehicle-image.html. The vehicle partial rewrites a
              leading "img/" away to support legacy /img/... paths in vehicle front
@@ -109,6 +111,23 @@
           <p>{{ $tagline }}</p>
           <cite>{{ .Site.Params.dealer_name }} · {{ $phone }}</cite>
         </div>
+      </div>
+
+      {{/* "Stay connected" shares the left column with Ed's photograph.
+           The copy names two things a visitor can do here -- ask about a
+           vehicle, or set an alert for one they are waiting on -- so the
+           stock-alert form is here rather than in a band at the bottom of the
+           page, and it is the thing that fills this column to roughly the
+           height of the social feed beside it. */}}
+      <div class="stay-connected">
+        <h2 class="stay-connected__title">Stay connected to Ed, between visits</h2>
+        <p class="stay-connected__body">
+          New stock lands here as it arrives, alongside what Ed is posting on
+          Facebook and X. Ask about any vehicle without leaving the page, or set
+          an alert for the one you are waiting on.
+        </p>
+        {{ partial "stock-alerts.html" . }}
+      </div>
       </div>
 
       {{ partial "social-feed.html" . }}
@@ -139,6 +158,14 @@
       </p>
     </div>
 
+    {{/* The filters sit immediately under the last-synced line, inside the fleet
+         heading, because that line answers "is this list current?" and the
+         filters are what you do once you know that it is. They were their own
+         section three screens further down. */}}
+    <div class="fleet-filters">
+      {{ partial "inventory-filters.html" . }}
+    </div>
+
     {{/* id and data-total are a CONTRACT with inventory-filter.js, which is
          loaded below. Without them the filter form on this page silently does
          nothing -- it is a GET form to /inventory/, so with scripting off it
@@ -166,15 +193,12 @@
 {{ end }}
 
 {{/* ------------------------------------------------------------------
-     5. THE FILTERS, under the fleet.
-     ------------------------------------------------------------------ */}}
-{{ partial "inventory-filters.html" . }}
-
-{{/* ------------------------------------------------------------------
-     6. WHAT CLIENTS SAY, then the stock alert.
+     6. WHAT CLIENTS SAY. The stock-alert signup is no longer a band at the
+     bottom of the page -- it is in the left column beside Ed's photograph,
+     because the "stay connected" copy there promises exactly that and a
+     promise three screens away is not a promise the page keeps.
      ------------------------------------------------------------------ */}}
 {{ partial "comments.html" . }}
-{{ partial "connect-hub.html" . }}
 
 {{/* Marketing copy from _index.md renders last, so it stays editable without
      touching this template. */}}
