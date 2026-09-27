@@ -24,6 +24,21 @@
 
 .shortlist[hidden] { display: none; }
 
+/* Reserve room for the tray.
+ *
+ * Without this the tray covers the bottom row of vehicle cards -- specifically
+ * their Shortlist buttons -- so ticking one car made every other one
+ * untickable. shortlist.js puts .has-shortlist on <body> whenever the tray is
+ * visible; the padding here is what actually makes the space.
+ *
+ * Measured rather than guessed: the tray is ~92px tall on desktop and ~120px on
+ * a phone, where the chosen-car list wraps onto its own line. */
+body.has-shortlist { padding-bottom: 108px; }
+
+@media (max-width: 40rem) {
+  body.has-shortlist { padding-bottom: 148px; }
+}
+
 .shortlist__inner {
   max-width: var(--container, 1200px);
   margin: 0 auto;

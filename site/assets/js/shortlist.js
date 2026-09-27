@@ -168,12 +168,31 @@
     return tray;
   }
 
+  /**
+   * Make room for the tray.
+   *
+   * The tray is fixed to the bottom of the viewport, so once it appears it sits
+   * on top of whatever is at the bottom of the page -- which, on a grid of
+   * vehicle cards, is the row of "Shortlist" buttons.
+   *
+   * That made the feature unusable: tick one car and the tray covers the
+   * buttons of every other card, so the second tick lands on the tray instead.
+   * Caught by clicking three cars in a browser and watching the count stay at 1.
+   *
+   * A class on <body> rather than an inline height, so the page reserves the
+   * space and the last row of cards can still be scrolled clear of the tray.
+   */
+  function reserveSpace(visible) {
+    document.body.classList.toggle('has-shortlist', visible);
+  }
+
   function render() {
     const tray = ensureTray();
     const list = read();
     const onPage = visibleVehicles();
 
     tray.hidden = list.length === 0;
+    reserveSpace(!tray.hidden);
 
     tray.querySelector('[data-shortlist-count]').textContent = String(list.length);
     tray.querySelector('[data-shortlist-noun]').textContent =
