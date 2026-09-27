@@ -32,36 +32,12 @@
 
     <div class="connect-grid">
 
-      {{/* ---------------------------------------------------- stock feed -- */}}
-      <div class="panel" aria-labelledby="stockHeading">
+      {{/* ---------------------------------------------------- quick ask -- */}}
+      <div class="panel" aria-labelledby="askHeading">
         <div class="panel__head">
-          <h3 class="panel__title" id="stockHeading">Fresh stock</h3>
+          <h3 class="panel__title" id="askHeading">Ask about any vehicle</h3>
           <p class="cluster" style="gap:var(--space-2)">
-            <span class="live-badge" id="stockLive" hidden><span class="live-badge__dot"></span>Live</span>
-            <span class="src-note" id="stockUpdated"></span>
-          </p>
-        </div>
-
-        <div class="chip-row" role="group" aria-label="Filter stock">
-          <button class="chip" type="button" data-filter="all" data-label="All" aria-pressed="true">All</button>
-          <button class="chip" type="button" data-filter="new" data-label="New" aria-pressed="false">New</button>
-          <button class="chip" type="button" data-filter="cpo" data-label="Certified" aria-pressed="false">Certified</button>
-          <button class="chip" type="button" data-filter="pre-owned" data-label="Pre-Owned" aria-pressed="false">Pre-Owned</button>
-          <button class="chip" type="button" data-filter="electric" data-label="Electric" aria-pressed="false">Electric</button>
-        </div>
-
-        <ul class="stock-list" id="stockList" aria-live="polite">
-          <li class="stock-skeleton"><span class="sk sk--media"></span><span style="display:grid;gap:10px"><span class="sk sk--line short"></span><span class="sk sk--line"></span><span class="sk sk--line short"></span></span></li>
-          <li class="stock-skeleton"><span class="sk sk--media"></span><span style="display:grid;gap:10px"><span class="sk sk--line short"></span><span class="sk sk--line"></span><span class="sk sk--line short"></span></span></li>
-          <li class="stock-skeleton"><span class="sk sk--media"></span><span style="display:grid;gap:10px"><span class="sk sk--line short"></span><span class="sk sk--line"></span><span class="sk sk--line short"></span></span></li>
-        </ul>
-
-        <div class="panel__foot" style="display:flex;flex-wrap:wrap;gap:var(--space-3);align-items:center;justify-content:space-between">
-          <p class="src-note" id="stockSummary">Loading stock...</p>
-          <p class="cluster" style="gap:var(--space-2)">
-            <button class="btn btn-outline btn-sm" type="button" id="stockMore" hidden>Show more</button>
-            <button class="btn btn-ghost btn-sm" type="button" id="stockFewer" hidden>Show fewer</button>
-            <a class="btn btn-ghost btn-sm" href="/inventory/">All inventory</a>
+            <span class="src-note">Answers the same day, usually faster.</span>
           </p>
         </div>
 
