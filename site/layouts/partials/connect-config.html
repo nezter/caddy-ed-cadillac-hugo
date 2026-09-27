@@ -24,7 +24,7 @@
 {{- $xh := "" -}}
 {{- with $social.x }}{{ $xh = .handle | default "" }}{{ end -}}
 
-{{- $vehicles := where site.RegularPages "Section" "inventory" -}}
+{{- $vehicles := where (where site.RegularPages "Section" "inventory") "Params.available" "!=" false -}}
 
 <script>
   window.CADDY_CONNECT = {

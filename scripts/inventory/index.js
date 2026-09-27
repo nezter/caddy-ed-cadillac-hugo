@@ -30,7 +30,9 @@ const fs = require('fs');
 const path = require('path');
 
 const { normalise, ValidationError, slugify, MANAGED_MARKER } = require('./schema');
-const { fromFile, fromHttp } = require('./sources');
+const { fromFile, fromHttp, availabilityOf } = require('./sources');
+const syncState = require('./sync-state');
+const vehicleOps = require('./vehicle-ops');
 const crawler = require('./crawl');
 const images = require('./images');
 const { ensureDir, listManaged, contentPath, render, parseFrontMatter } = require('./content');
@@ -49,6 +51,15 @@ function parseArgs(argv) {
     else if (a === '--validate') args.validate = true;
     else if (a === '--source') args.source = argv[++i];
     else if (a === '--file' || a === '-f') args.file = argv[++i];
+    // --refresh <slug|vin>  check one specific vehicle instead of a full scan
+    else if (a === '--refresh') args.refresh = argv[++i];
+    // --disable <slug|vin>  take a vehicle off the site by hand
+    else if (a === '--disable') args.disable = argv[++i];
+    // --enable <slug|vin>   put a hand-disabled vehicle back on
+    else if (a === '--enable') args.enable = argv[++i];
+    // --check-status         report which vehicles are available, sold or
+    //                         no longer listed, without fetching the feed
+    else if (a === '--check-status') args.checkStatus = true;
     else if (a === '--help' || a === '-h') args.help = true;
     else if (!a.startsWith('-')) args.file = args.file || a;
   }
@@ -77,7 +88,20 @@ ${C.bold}inventory:sync${C.reset} — pull vehicle inventory into Hugo content
   --window               skip the gate check and fetch the window status only
   --prune                delete managed vehicles that left the feed
   --validate             only validate what is already on disk
+  --check-status         report what is available / sold / held off, from disk
+  --refresh <slug|vin>   check ONE vehicle against the feed
+  --disable <slug|vin>   hold a vehicle off the site by hand
+  --enable  <slug|vin>   put a hand-held vehicle back on
   --help, -h
+
+  The --check-status / --refresh / --disable / --enable modes touch one vehicle
+  (or nothing at all) and are NOT subject to the once-a-day or night-window
+  gates, because they are not a full scrape of the dealer's site. --refresh
+  does make one feed request; --check-status and --disable make none.
+
+  A hand-held vehicle stays off the site until re-enabled, even if the feed
+  still lists it. The feed is the record of what is in stock; it is not the
+  record of what this site should show.
 
 Source (in order of preference):
   1. default              the dealer group's own site, pulled politely
@@ -195,6 +219,49 @@ async function main() {
     return;
   }
 
+  // Targeted, per-vehicle modes. These bypass the full sync entirely: they
+  // touch one vehicle, or read what is already on disk, so they are safe to
+  // run at any time -- including during the day, which the crawl gate
+  // deliberately forbids for a full sync.
+  if (args.checkStatus || args.disable || args.enable || args.refresh) {
+    vehicleOps.setArgs(args);
+    log(`\n${C.bold}Targeted inventory operation${C.reset}`);
+
+    if (args.checkStatus) {
+      const r = vehicleOps.reportStatus();
+      ok(`${r.total} published vehicle(s)`);
+      log(`  ${C.green}${r.available.length} available${C.reset}`);
+      if (r.unavailable.length) {
+        log(`  ${C.yellow}${r.unavailable.length} sold / unavailable${C.reset}`);
+        for (const v of r.unavailable) log(`    ${v.slug} — ${v.status || 'unavailable'}`);
+      }
+      if (r.manual.length) {
+        log(`  ${C.dim}${r.manual.length} disabled by hand${C.reset}`);
+        for (const v of r.manual) log(`    ${v.slug}`);
+      }
+      return;
+    }
+
+    if (args.disable || args.enable) {
+      const enable = Boolean(args.enable);
+      const r = vehicleOps.setManual(args.disable || args.enable, enable, { dryRun: args.dryRun });
+      if (r.ok) {
+        if (args.dryRun) log(`  ${C.yellow}dry run:${C.reset} ${r.message}`);
+        else ok(r.message);
+      } else {
+        warn(r.message);
+        process.exitCode = 1;
+      }
+      return;
+    }
+
+    if (args.refresh) {
+      const r = await vehicleOps.refreshOne(args.refresh, { dryRun: args.dryRun });
+      (r.ok ? ok : warn)(r.message);
+      return;
+    }
+  }
+
   // 0. Gate (crawl source only) --------------------------------------------
   // Checked before anything else so a rate-limited or out-of-window run says so
   // immediately instead of appearing to work.
@@ -291,6 +358,13 @@ async function main() {
         return;
       }
       usedSlugs.add(slug);
+      // Availability is a per-vehicle fact read from the feed's own status
+      // field. A dealer feed often carries "sold" rather than removing the
+      // vehicle, so a sync that only looks for absence keeps publishing cars
+      // that have gone. availabilityOf() understands the shapes feeds use.
+      const availability = availabilityOf(v);
+      v.__available = availability.available;
+      v.__status = availability.status;
       byKey.set(key, { slug, vehicle: v });
     } catch (err) {
       if (err instanceof ValidationError) {
@@ -329,6 +403,42 @@ async function main() {
     log(`\n${C.dim}  --no-images: skipping the image mirror${C.reset}`);
   }
   for (const s of skipped) warn(`skipped — ${s.reason}${s.title ? ` (${s.title})` : ''}`);
+
+  // 2c. Availability, and what actually changed since the last sync.
+  //
+  // This is the part that makes a sync a targeted check rather than a full
+  // reconcile. The feed has been read; now we compare it against what the last
+  // sync saw, so we can say precisely:
+  //
+  //   new       vehicles we have never published
+  //   changed   vehicles whose details differ from last time
+  //   sold      vehicles we hold that the feed no longer lists, or lists as sold
+  //   same      everything else -- no work, no write
+  //
+  // The state file is advisory. The feed is the system of record; where they
+  // disagree the feed wins. Losing the state costs one full reconcile, which
+  // is what every sync did before this existed.
+  const stateFile = path.join(__dirname, '..', '..', 'site', 'data', 'inventory-sync-state.json');
+  const { state, warning: stateWarning } = syncState.loadState(stateFile);
+  if (stateWarning) warn(stateWarning);
+
+  const feedVehicles = [...byKey.values()].map((e) => e.vehicle);
+  const incremental = syncState.planSync(state.vehicles || {}, feedVehicles);
+
+  const nowSold = incremental.sold.map((s) => s.key);
+  const markedSold = incremental.changed.filter((c) => c.to.status !== 'available').map((c) => c.key);
+
+  log(`\n${C.bold}Sync plan${C.reset}`);
+  ok(`${incremental.added.length} new, ${incremental.changed.length} changed, ` +
+     `${nowSold.length + markedSold.length} sold, ${incremental.unchanged.length} unchanged`);
+  if (incremental.unchanged.length) {
+    log(`  ${C.dim}${incremental.unchanged.length} vehicle(s) need no action -- not rewritten${C.reset}`);
+  }
+
+  // Sold and unavailable vehicles are marked, not deleted. A sold car should
+  // not be shoppable, but leaving the file on disk means a car that comes back
+  // (a trade returned to stock) is recognised rather than republished as new.
+  const unavailable = new Set([...nowSold, ...markedSold]);
 
   // 3. Diff ---------------------------------------------------------------
   const existing = listManaged();
@@ -402,6 +512,16 @@ async function main() {
     fs.unlinkSync(contentPath(r));
     ok(`removed ${r}.md`);
   }
+
+  // Persist what this sync saw, so the next one is a targeted check rather
+  // than a full reconcile. Only written when --write actually ran: a dry run
+  // must not claim to have seen anything.
+  syncState.saveState(stateFile, {
+    version: syncState.STATE_VERSION,
+    lastSync: new Date().toISOString(),
+    vehicles: syncState.buildNextState(state.vehicles || {}, feedVehicles, new Date().toISOString()),
+  });
+  ok(`sync state written to ${path.relative(process.cwd(), stateFile)}`);
 
   log(`\n  ${C.green}Done.${C.reset} Next: ./ci/run.sh verify && ./ci/preview.sh up\n`);
 }

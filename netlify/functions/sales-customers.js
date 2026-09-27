@@ -322,20 +322,25 @@ async function handleDeleteCustomer(event, user) {
   // TODO: Check permissions (only admins can delete)
   // TODO: Soft delete customer from database
 
-  // THIS FUNCTION LIES. It performs no delete and no permission check of its
-  // own, then returns `{deleted: true}` with HTTP 200. A caller that trusts the
-  // response believes a customer row has been removed when nothing happened.
-  // It is left as-is rather than "fixed" because the honest fix needs a schema
-  // decision (hard delete vs `status = 'archived'`, which the customers table
-  // already permits via its CHECK constraint) and that is not a contract bug --
-  // it is a missing feature. See the report. No front end calls DELETE on this
-  // endpoint, so nothing currently depends on the lie.
-  return errorHandler.createSuccessResponse({
-    id: customerId,
-    deleted: true,
-    deletedAt: new Date().toISOString(),
-    deletedBy: user.id
-  }, 'Customer deleted successfully');
+  // This used to return {deleted: true} with HTTP 200 while deleting nothing,
+  // which is a lie a caller would believe. The honest answer to a delete that
+  // has not been implemented is 501, not a fake success.
+  //
+  // What is missing is a decision the code cannot make for you: hard delete,
+  // or `status = 'archived'` (which the customers table already permits via
+  // its CHECK constraint). No front end calls DELETE here today, so nothing
+  // depends on this returning something else -- but if one ever does, it will
+  // get an honest "not implemented" instead of a false "done".
+  return {
+    statusCode: 501,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      error: 'Not implemented',
+      detail:
+        'Customer deletion is not implemented. The schema supports ' +
+        'status=archived, but no code performs it. See docs/OPEN-QUESTIONS.md Q8.'
+    })
+  };
 }
 
 /**

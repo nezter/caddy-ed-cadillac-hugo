@@ -131,6 +131,22 @@ function listManaged() {
 function render(vehicle, existing) {
   const fields = { title: vehicle.title };
   if (vehicle.status) fields.status = vehicle.status;
+  // Availability, so a sold or withdrawn car is not shoppable. The feed often
+  // marks a vehicle sold rather than removing it, and a sync that only watches
+  // for absence keeps publishing cars that have gone.
+  //
+  // `available: false` is what the templates filter on. `unavailable_reason`
+  // carries the feed's own wording ("sold", "in transit", "pending") so the
+  // page can say why rather than inventing a reason.
+  if (vehicle.__available === false) {
+    fields.available = false;
+    fields.unavailable_reason = vehicle.__status || 'unavailable';
+  } else if (existing && existing.available === false) {
+    // Do not silently re-enable: a car that was sold and is still absent from
+    // the feed stays marked until the feed says otherwise.
+    fields.available = false;
+    fields.unavailable_reason = existing.unavailable_reason || 'no longer listed';
+  }
   if (vehicle.price !== undefined) fields.price = vehicle.price;
   if (vehicle.price_note) fields.price_note = vehicle.price_note;
   if (vehicle.subtitle) fields.subtitle = vehicle.subtitle;

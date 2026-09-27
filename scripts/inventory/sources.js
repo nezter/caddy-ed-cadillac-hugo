@@ -122,4 +122,74 @@ async function fromHttp(url, { headers = {}, timeout = 30000, retries = 3 } = {}
   return { vehicles: list, meta: { source: 'http', location: target, count: list.length } };
 }
 
-module.exports = { extractList, fromFile, fromHttp };
+/**
+ * The stable identity of a vehicle across syncs.
+ *
+ * A VIN is the only identifier that is genuinely stable -- stock numbers get
+ * reassigned, slugs change when a title changes, and a dealer will happily
+ * reuse a "used XT5" listing for a different car next month. So VIN first, then
+ * stock number, then the URL slug, and only then the title.
+ *
+ * The fallback chain matters because a feed that has no VINs still needs to be
+ * able to tell "the same car, updated" from "a new car".
+ */
+function vehicleKey(vehicle) {
+  if (!vehicle || typeof vehicle !== 'object') return null;
+  const vin = vehicle.vin || vehicle.VIN || vehicle.Vin;
+  if (vin && String(vin).trim()) return `vin:${String(vin).trim().toUpperCase()}`;
+
+  const stock =
+    vehicle.stock || vehicle.stock_number || vehicle.stockNumber || vehicle.stock_no;
+  if (stock && String(stock).trim()) return `stock:${String(stock).trim().toUpperCase()}`;
+
+  const url = vehicle.url || vehicle.link || vehicle.href;
+  if (url) {
+    const slug = String(url).split('?')[0].replace(/\/+$/, '').split('/').pop();
+    if (slug) return `url:${slug.toLowerCase()}`;
+  }
+
+  const title = vehicle.title || vehicle.name;
+  if (title) return `title:${String(title).trim().toLowerCase()}`;
+
+  return null;
+}
+
+/**
+ * Is this vehicle listed as sold, in stock-but-unavailable, or otherwise gone?
+ *
+ * Several dealer feeds carry a status rather than simply removing the vehicle,
+ * and a sync that only looks for absence will keep publishing cars that have
+ * sold. This reads the shapes feeds actually use, in order of how explicit they
+ * are.
+ */
+function availabilityOf(vehicle) {
+  if (!vehicle || typeof vehicle !== 'object') return { available: true, status: 'unknown' };
+
+  // An explicit boolean, when a feed provides one, beats any string guessing.
+  if (typeof vehicle.available === 'boolean') {
+    return { available: vehicle.available, status: vehicle.status || (vehicle.available ? 'available' : 'unavailable') };
+  }
+
+  const raw =
+    vehicle.status ||
+    vehicle.stockStatus ||
+    vehicle.availability ||
+    vehicle.condition_status ||
+    vehicle.state ||
+    '';
+  const status = String(raw).trim();
+
+  if (!status) return { available: true, status: 'unknown' };
+
+  // Sold, gone, or otherwise no longer orderable.
+  const gone = /\b(sold|closed|deal(er)?\s*-?\s*complete[d]?|invoiced|out\s*-?\s*of\s*stock|picked\s*up|delivered|withdrawn|removed)\b/i;
+  // Present but not sellable right now.
+  const hold = /\b(pending|hold|reserved|in\s*transit|inbound|coming\s*soon|available\s*soon|backorder(ed)?|lease\s*return\s*pending)\b/i;
+
+  if (gone.test(status)) return { available: false, status };
+  if (hold.test(status)) return { available: false, status };
+
+  return { available: true, status };
+}
+
+module.exports = { extractList, fromFile, fromHttp, vehicleKey, availabilityOf };

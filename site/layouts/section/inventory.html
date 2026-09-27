@@ -5,7 +5,15 @@
 {{ define "headStyles" }}{{ partial "stylesheet.html" "inventory.scss" }}{{ end }}
 
 {{ define "main" }}
-{{- $all := .RegularPages }}
+{{- /* Sold and withdrawn vehicles stay on disk deliberately: a car that comes
+       back (a trade returned to stock) is then recognised rather than
+       republished as new. But it must not be shoppable.
+
+       `available` is only ever set to false by a sync. A vehicle with no
+       `available` field is a normal, sellable car, so the filter is
+       "not false" rather than "is true" -- a hand-written page with no
+       availability field is never accidentally hidden. */ -}}
+{{- $all := where .RegularPages "Params.available" "!=" false }}
 {{- $phone := .Site.Params.phone | default "704-555-1234" -}}
 {{- $phoneHref := replace $phone "." "" -}}
 

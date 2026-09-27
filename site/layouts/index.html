@@ -73,7 +73,7 @@
      Inventory preview. The core of a dealership site: real vehicles,
      scannable in a grid, each with price and one clear action.
      ------------------------------------------------------------------ */}}
-{{ $vehicles := where .Site.RegularPages "Section" "inventory" }}
+{{ $vehicles := where (where .Site.RegularPages "Section" "inventory") "Params.available" "!=" false }}
 {{ if $vehicles }}
 <section class="section">
   <div class="container">
@@ -249,7 +249,7 @@
      Featured vehicles carousel. Pulls real inventory data so the carousel
      always shows current stock rather than placeholder slides.
      ------------------------------------------------------------------ */}}
-{{ $featured := where .Site.RegularPages "Section" "inventory" }}
+{{ $featured := where (where (where .Site.RegularPages "Section" "inventory") "Params.available" "!=" false) "Params.make" "CADILLAC" }}
 {{ if ge (len $featured) 2 }}
 <section class="section section-subtle">
   <div class="container">
