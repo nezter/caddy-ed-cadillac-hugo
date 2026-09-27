@@ -1,5 +1,5 @@
 ---
-title: 2026 CADILLAC LYRIQ V-Series Premium
+title: 2026 CADILLAC LYRIQ V-Series Premium (#TZ602217)
 status: New
 price: 97072
 subtitle: AWD · N/A · 4 mi

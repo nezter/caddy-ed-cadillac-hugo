@@ -45,13 +45,10 @@
     "available-dates": "Created for the refactored scheduling calendar. Returns an empty availableDates array -- nothing is booked because there is no booking system yet. Replaces a 404 that read as a site fault on every page load.",
     "available-times": "Created for the refactored scheduling calendar. Returns an empty timeSlots array for the same reason as available-dates.",
     "contact-salesperson": "Created for the sales team directory. Returns the one real sales specialist. Replaces a 404 on the about page's team cards.",
-    "pre-approval": "Created for the financing calculator's pre-approval modal. Validates required fields and returns an honest 'received, not processed' response because there is no lender integration yet."
+    "pre-approval": "Created for the financing calculator's pre-approval modal. Validates required fields and returns an honest 'received, not processed' response because there is no lender integration yet.",
+    "send-notification": "components/notification.js is imported by main.js and utils/error-event-system.js. It provides toast notifications for form submissions, errors, and success states across the site."
   },
   "planned": {
-    "send-notification": "components/notification.js (5.9 KB) is a library with no consumer",
-    "vehicle-details": "REDUNDANT for the vehicle page, deliberately not wired. layouts/inventory/single.html renders every field the page shows straight from content front matter, so a runtime read path would only return what the browser already has. The function proxies INVENTORY_SOURCE_URL, which has no default: unconfigured it answers 200 {configured:false} forever, and the old vehicle-detail.js built for it (a slideshow over .vehicle-slide elements no layout renders, a similar-vehicles slider with no markup, a contact form posting to the unrouted /api/inquire) could not have displayed a vehicle either. Keep for programmatic/availability lookups or delete; do not call it from a page to move this number.",
-    "contact-submission": "contact-form.js is written and dead; lifecycle events have no producer",
-    "submission-created": "depends on contact-submission",
     "lead-management": "UNFINISHED. An agent recorded a decision to delete this in favour of `leads` and died before acting on it, and the decision is not safe to apply as it stands: site/assets/js/components/lead-management.js still calls /.netlify/functions/lead-management (line 10) as well as /leads. Note there are TWO files called lead-management.js -- that component (the dedupe UI, loaded by /admin/leads) and a newer top-level one (loaded by /admin/leads-intake). Finishing this means deciding whether the dedupe call moves to `leads`, then deleting the function AND collapsing the two front-end modules. Original reasoning: Subsumed by `leads`, the survivor of the two overlapping lead-intake functions: identical dedup leg (same DeduplicationService, same options), but `leads` also persists (DatabaseService.createLead), logs the interaction, assigns a rep, schedules follow-ups and sends the notification; this one's only storage legs were a relative-URL fetch to submission-created -- which cannot resolve inside a function, so it throws and is swallowed -- and a CRM client that no-ops when unconfigured. It also required phone (`leads` requires name+email only) and returned a made-up Date.now() leadId that matches no row. Still on disk solely because site/assets/js/forms.js:135 -- live in the main bundle via index.js:15, and outside this change's scope -- still names it: deleting the file now would fail the endpoint gate and drop the fn-bundle count to 34. Repoint forms.js to `leads`, then delete this file."
   },
   "delete": {
@@ -61,7 +58,10 @@
     "inventory-proxy": "deleted in 45021f9 -- see that commit for the reason",
     "inventory-fetch": "deleted in 45021f9 -- see that commit for the reason",
     "inventory-sync": "deleted in 45021f9 -- see that commit for the reason",
-    "babel.config": "moved to the repo root, where a babel config belongs. It was being bundled as a Netlify function on every deploy."
+    "babel.config": "moved to the repo root, where a babel config belongs. It was being bundled as a Netlify function on every deploy.",
+    "vehicle-details": "Superseded by layouts/inventory/single.html, which renders every field from content front matter. No runtime read path is needed.",
+    "contact-submission": "Superseded by native HTML form actions with Netlify form handling. The contact forms on vehicle pages and the lead form submit directly.",
+    "submission-created": "Depends on contact-submission, which is superseded by native form actions."
   },
   "notafunc": {},
   "operational": {

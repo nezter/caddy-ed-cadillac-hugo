@@ -1,5 +1,5 @@
 ---
-title: 2026 CADILLAC XT5 Luxury
+title: 2026 CADILLAC XT5 Luxury (#NTZ106179)
 status: New
 price: 44133
 subtitle: AWD · Automatic · 3,655 mi
