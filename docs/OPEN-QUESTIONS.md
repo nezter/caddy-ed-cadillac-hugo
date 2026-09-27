@@ -8,10 +8,19 @@ gates' own warnings.
 Nothing here is a bug. Every one of these is a choice I could have made
 silently, and did not.
 
-**Two questions are now answered** and marked as such: Q14 (the `@libsql` native
-binary) and the deploy-preview exposure, both closed by measurement rather than
-by comment. Q3 is answered in structure — the analysis is done and only the
-choice of provider is left. See [`STORAGE.md`](STORAGE.md).
+**Four questions are now resolved** and marked as such, each closed by
+measurement rather than by comment:
+
+- **Q5** — `customer-dashboard.js` returned fabricated data; now queries the
+  database for the customer the token names.
+- **Q6** — SQL injection via interpolated `sort_by`/`sort_order`; now
+  allowlisted at source.
+- **Q8** — a function that returned `{deleted: true}` without deleting; now an
+  honest 501.
+- **Q14** — the `@libsql` native binary, verified by a gate rather than trusted.
+
+Q3 is answered in structure — the analysis is done and only the choice of
+provider is left. See [`STORAGE.md`](STORAGE.md).
 
 ---
 
@@ -82,21 +91,32 @@ An agent flagged this as the highest-priority follow-up. Removing
 
 **Decision needed:** remove `'unsafe-inline'` now with nonces, or accept it?
 
-### Q5. `customer-dashboard.js` returns 100% mock data
+### Q5. ~~`customer-dashboard.js` returns 100% mock data~~ — RESOLVED
 
-The JWT is verified, then `customerId` is discarded and every customer is shown
-the same fabricated 2024 Escalade test drive and a hardcoded "Sarah Johnson". It
-authenticates and does not authorise a real record.
+The JWT was verified, then `customerId` was thrown away and every customer was
+shown the same fabricated 2024 Escalade test drive, a "Sarah Johnson" sales rep
+with a stock photo that exists nowhere in the build, and three invented activity
+entries.
 
-**Decision needed:** fix it, or remove the customer portal until it can be fixed?
+All five mock functions now query the database for the customer the token names.
+Appointments split into upcoming/past on date *and* time. `preferences` is jsonb
+and handled either parsed or as a string. Every read degrades to empty rather
+than throwing, because a portal that 500s because the database is briefly
+unreachable is worse than one showing a customer their (currently empty) details.
 
-### Q6. SQL injection in `database-service.js:383`
+The reason it was mock data is now recorded rather than left as a mystery: the
+raw query helper in `database-service.js` was module-private, so a function
+could not read anything that did not already have a bespoke static — and
+fabricating the data was less work than adding one. It is now exported
+(parameterised only; the SQL injection in that file came from interpolating a
+sort column, and this is not a licence to repeat it).
 
-`sort_by` and `sort_order` are interpolated into SQL. Allowlisted at one call
-site. **The injection remains for every other caller.**
+### Q6. ~~SQL injection in `database-service.js`~~ — RESOLVED
 
-**Decision needed:** fix at the source? I did not, because it is shared code and
-touching it without knowing all callers is how you break something quietly.
+`sort_by` and `sort_order` were interpolated straight into the `ORDER BY`
+clause, so a caller could inject arbitrary SQL through either. Both are now
+allowlisted against known columns and directions; anything unrecognised falls
+back to the default sort rather than reaching the query.
 
 ### Q7. `/admin/*` pages are public
 
@@ -108,13 +128,19 @@ stop a direct request.
 **Decision needed:** gate the pages, or accept a world-readable shell over
 protected data?
 
-### Q8. A function lies about deleting
+### Q8. ~~A function lies about deleting~~ — RESOLVED (partly)
 
-`sales-customers.js` `handleDeleteCustomer` returns `{deleted: true}` and
-deletes nothing, with two TODOs. A caller would believe a row was removed.
+`sales-customers.js` `handleDeleteCustomer` returned `{deleted: true}` with HTTP
+200 while deleting nothing, with two TODOs. A caller would believe a row was
+removed.
 
-**Decision needed:** implement it (the CHECK constraint already permits
-`status='archived'`) or make it return an honest 501?
+It now returns **501 Not Implemented** with an explanation. That is the honest
+answer to a delete that has not been written, and no front end calls `DELETE`
+on this endpoint, so nothing depended on the fake success.
+
+**Still yours to decide:** whether deleting a customer should be a hard delete
+or `status = 'archived'` — the customers table already permits the latter via
+its CHECK constraint. That is a data-retention decision, not a bug.
 
 ---
 
@@ -161,6 +187,33 @@ be deleted.
 
 **Decision needed:** is a feed available? Also: is there a real contact address
 for `INVENTORY_CRAWL_UA`? It currently carries a placeholder.
+
+---
+
+## Inventory operations — BUILT, and what they changed
+
+A sync was a full reconcile: fetch the whole feed, rewrite every managed file.
+It is now a targeted check that reports what changed and leaves the rest alone.
+
+```bash
+node scripts/inventory/index.js --check-status              # available/sold/held-off, from disk
+node scripts/inventory/index.js --refresh  <slug|vin>      # check ONE vehicle against the feed
+node scripts/inventory/index.js --disable  <slug|vin>      # hold a vehicle off the site
+node scripts/inventory/index.js --enable   <slug|vin>      # put it back
+```
+
+These four skip the once-a-day and night-window gates, because they are not a
+full scrape of the dealer's site. `--check-status`, `--disable` and `--enable`
+make no network request at all.
+
+A vehicle can be named by slug, VIN or stock number. A hand-held vehicle
+outranks the feed — the feed records what is in stock, not what this site should
+show — and re-enabling is byte-exact (verified: a disable/enable round trip
+leaves no git diff).
+
+Sold vehicles are **marked, not deleted** (`available: false` plus the feed's own
+wording in `unavailable_reason`). A car that comes back is then recognised
+rather than republished as new.
 
 ---
 
