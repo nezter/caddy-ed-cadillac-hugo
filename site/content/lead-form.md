@@ -19,23 +19,19 @@ scripts:
 
   <form class="form lead-form lead-capture-form" id="lead-form" action="/api/lead" method="post" data-form-type="lead" aria-describedby="lead-form-description">
     <p id="lead-form-description" class="visually-hidden">Name, email and phone are required. A message is optional.</p>
-
     <div class="form-grid form-grid-2">
       <div class="form-field">
         <label for="lead-name">Name <span aria-hidden="true">*</span></label>
         <input class="input" type="text" id="lead-name" name="name" required autocomplete="name">
       </div>
-
       <div class="form-field">
         <label for="lead-email">Email <span aria-hidden="true">*</span></label>
         <input class="input" type="email" id="lead-email" name="email" required autocomplete="email">
       </div>
-
       <div class="form-field">
         <label for="lead-phone">Phone <span aria-hidden="true">*</span></label>
         <input class="input" type="tel" id="lead-phone" name="phone" required autocomplete="tel">
       </div>
-
       <div class="form-field">
         <label for="lead-interest">I'm interested in</label>
         <select class="select" id="lead-interest" name="vehicleInterest">
@@ -52,21 +48,17 @@ scripts:
         </select>
       </div>
     </div>
-
     <div class="form-field">
       <label for="lead-message">Message</label>
       <textarea class="textarea" id="lead-message" name="message" rows="4" placeholder="Tell me what you're looking for — new, pre-owned, budget, timeline..."></textarea>
     </div>
-
     <div class="form-field form-field--honeypot" aria-hidden="true">
       <label for="lead-website">Leave this field blank</label>
       <input type="text" id="lead-website" name="website" tabindex="-1" autocomplete="off">
     </div>
-
     <div class="form-field">
       <button type="submit" class="btn btn-primary btn-lg">Send my details</button>
     </div>
-
     <p class="form-message form-message--success hidden" id="lead-form-success" role="status">
       Thanks — your details are with Ed and he'll be in touch shortly.
     </p>

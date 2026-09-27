@@ -28,17 +28,12 @@
   const clearEl = document.querySelector('[data-fav-clear]');
   if (!listEl) return;
 
-  // Build-time data. See partials/favourites-data.html.
-  const vehicles = (function () {
-    const el = document.getElementById('favourites-data');
-    if (!el) return [];
-    try {
-      return JSON.parse(el.textContent || '[]');
-    } catch (e) {
-      console.error('[favourites] could not parse the embedded vehicle list', e);
-      return [];
-    }
-  })();
+  // Build-time data, from partials/favourites-data.html. Read defensively: it
+  // used to arrive as a quoted STRING rather than an array, and the first
+  // .filter on it threw a TypeError that stopped the control rendering
+  // anything. A panel that cannot start should still draw its frame and say
+  // what is wrong, not throw before it has drawn anything.
+  var vehicles = Array.isArray(window.FAVOURITES_VEHICLES) ? window.FAVOURITES_VEHICLES : [];
 
   // `featured: true` in front matter is honoured by the home page and cannot be
   // turned off here, because the next sync rewrites that field. Those are shown

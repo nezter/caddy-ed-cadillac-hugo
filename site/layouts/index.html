@@ -149,7 +149,9 @@
   interesting thing on the lot, and everything below them is a scroll nobody
   finishes before reaching the footer.
 
-  So: the ten newest, and within a year the most expensive first.
+  So: SIX. Two clean rows of three, the newest first, and within a year the
+  most expensive first. Ten was still a wall -- three full rows and a stray
+  one-card row under it, which reads as an accident.
 
   ON "LATEST"
   -----------
@@ -174,7 +176,7 @@
 {{- $cadillacAll := where (where (where .Site.RegularPages "Section" "inventory") "Params.available" "!=" false) "Params.make" "CADILLAC" -}}
 {{- $featured := first 6 (where $cadillacAll "Params.featured" true) -}}
 {{- $rest := where $cadillacAll "Params.featured" "!=" true -}}
-{{- $rest = first (sub 10 (len $featured)) (sort (sort $rest "Params.year" "desc") "Params.price" "desc") -}}
+{{- $rest = first (sub 6 (len $featured)) (sort (sort $rest "Params.year" "desc") "Params.price" "desc") -}}
 {{- $cadillac := $featured | append $rest -}}
 {{- if $cadillac }}
 <section class="section section-subtle" id="fleet">
@@ -188,7 +190,7 @@
       <p class="sync-note">
         <span class="sync-note__dot" aria-hidden="true"></span>
         Last synced <time datetime="{{ now.Format "2006-01-02" }}">{{ now.Format "2 January 2006" }}</time>
-        · showing the {{ len $cadillac }} most recent of {{ len $cadillacAll }} in stock
+        · showing {{ len $cadillac }} of {{ len $cadillacAll }} in stock
       </p>
     </div>
 

@@ -150,6 +150,12 @@ do_verify() {
   # Needs netlify/functions/node_modules, so it installs them itself.
   log "Verifying every function bundles and loads"
   in_container 'cd netlify/functions && npm install --omit=dev --no-audit --no-fund >/dev/null 2>&1; cd /site && node ci/verify-functions.js'
+  # Self-test for the code-block detector. A gate nobody has ever seen fail is
+  # indistinguishable from a gate that cannot fail, which is how the previous
+  # "restored the original and it was fine" test produced a green result for a
+  # check that had not been exercised.
+  log "Self-testing the markup-as-code detector"
+  in_container 'node ci/test-code-block-detection.js'
 }
 
 do_inventory() {

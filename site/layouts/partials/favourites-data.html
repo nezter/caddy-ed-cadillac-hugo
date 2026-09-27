@@ -17,18 +17,33 @@
   admin UI -- it would come back on the next sync. The control says so rather
   than offering a button that silently fails.
 */ -}}
-{{- $vehicles := where (where .RegularPages "Section" "inventory") "Params.available" "!=" false -}}
+{{- /*
+  Two bugs were in here first, and both were silent.
+
+  1. It used `.RegularPages`. This partial is called from layouts/admin/single.html
+     and the page is /admin/favourites/, so `.RegularPages` is the pages in the
+     ADMIN SECTION -- a dozen dashboards and sign-in pages, none of them
+     vehicles. The list came out empty, the JSON was [], and the admin page
+     rendered zero rows with nothing wrong anywhere. It is `site.RegularPages`,
+     the whole site, filtered to the inventory.
+*/ -}}
+{{- $vehicles := where (where site.RegularPages "Section" "inventory") "Params.available" "!=" false -}}
 {{- $out := slice -}}
 {{- range $vehicles -}}
   {{- $img := "" -}}
   {{- with .Params.image }}{{ $img = . }}{{ end -}}
   {{- $thumb := "" -}}
   {{- with $img -}}
-    {{- with resources.Get (printf "vehicles/%s" .) -}}
-      {{- $thumb = (.Resize "320x q60").RelPermalink -}}
-    {{- else -}}
-      {{- with resources.Get (printf "img/%s" .) -}}
-        {{- $thumb = (.Resize "320x q60").RelPermalink -}}
+    {{- /* The front matter is `vehicles/<file>.jpg`, so prepending "vehicles/"
+           again -- which is what this did first -- looks for
+           assets/vehicles/vehicles/<file>.jpg, misses, and every row rendered
+           with a blank image. Try the value as given first, then the two
+           prefixes vehicle front matter has used over the years. */ -}}
+    {{- range (slice . (printf "vehicles/%s" .) (printf "img/%s" .)) -}}
+      {{- if not $thumb -}}
+        {{- with resources.Get . -}}
+          {{- $thumb = (.Resize "320x q60").RelPermalink -}}
+        {{- end -}}
       {{- end -}}
     {{- end -}}
   {{- end -}}
@@ -41,4 +56,20 @@
       "thumb" $thumb
       "pinned" (eq .Params.featured true)) -}}
 {{- end -}}
-<script type="application/json" id="favourites-data">{{ $out | jsonify }}</script>
+{{- /*
+  Emitted as a plain assignment rather than <script type="application/json">.
+  Two escaping attempts were wrong before this one:
+
+    - as application/json, Hugo's contextual escaping quoted the payload, so
+      JSON.parse got the string "[]" instead of an array;
+    - as a bare assignment, it emitted SINGLE quotes --
+      FAVOURITES_VEHICLES='[...]' -- which is not valid JSON and not a valid JS
+      array literal either, so the value arrived as a string and the first
+      .filter on it threw.
+
+  `safeJS` is what tells Hugo the payload is already JavaScript and must not be
+  escaped again. Verified in the built output: the value has to be an array by
+  the time the admin script touches it, and a string that merely looks like one
+  is the same failure with extra steps.
+*/ -}}
+<script>window.FAVOURITES_VEHICLES = {{ $out | jsonify | safeJS }};</script>

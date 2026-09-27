@@ -71,7 +71,6 @@ and `components/customer-relationship.css` supplied by `styles:`.
         <p class="crm-loading" role="status">Loading your customers…</p>
       </div>
     </section>
-
     <div class="crm-side">
       <section class="crm-section crm-section--appointments" aria-label="Appointments">
         <h2>Appointments</h2>
@@ -79,7 +78,6 @@ and `components/customer-relationship.css` supplied by `styles:`.
           <p class="crm-loading" role="status">Loading appointments…</p>
         </div>
       </section>
-
       <section class="crm-section crm-section--activity" aria-label="Activity">
         <h2>Activity</h2>
         <div id="activity-log" class="activity-log">

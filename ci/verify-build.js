@@ -388,6 +388,61 @@ function main() {
     }
   }
 
+  // --- raw HTML that a blank line turned into a code block ---------------
+  //
+  // A raw HTML block in markdown (Goldmark types 6/7) ends at a BLANK LINE. So
+  // markup indented and split by blank lines silently becomes an indented code
+  // block -- four spaces is markdown for "code" -- and the page renders
+  // <pre><code> full of escaped tags, plus 379px of horizontal overflow because
+  // a <pre> does not wrap.
+  //
+  // /lead-form/ had exactly this: half the lead form was being displayed to
+  // visitors as source code. The .md looked correct, the page returned 200, and
+  // every other gate passed, because nothing was broken -- it was just being
+  // shown as text.
+  //
+  // Detect it in the OUTPUT rather than the source, because that is where the
+  // consequence is: a code block whose body is escaped markup.
+  // Three independent tells, because a broken raw HTML block does not always
+  // escape all of them and a check that requires all three will miss real ones:
+  //   - an escaped tag         &lt;div
+  //   - escaped quotes         &quot;  &#39;
+  //   - a class/id attribute   class=" or id="   (a code block rarely has these
+  //                              written as real quotes, because they are escaped)
+  // A genuine code block of source contains none of them, so this does not
+  // false-positive on a page that legitimately shows code.
+  const ESCAPED_MARKUP = /&lt;\/?[a-z][\w-]*[\s/>]|&quot;|&#39;|&gt;(?!\w)/i;
+  const RAW_ATTRS = /\s(?:class|id|href|src|name|type|value)\s*=\s*"/i;
+  const codeBlocksAsMarkup = [];
+  for (const f of files) {
+    if (!f.endsWith('.html')) continue;
+    const rel = path.relative(PUBLIC_DIR, f);
+    const html = fs.readFileSync(f, 'utf8');
+    const re = /<pre[^>]*>\s*<code[^>]*>([\s\S]*?)<\/code>/g;
+    let m;
+    while ((m = re.exec(html)) !== null) {
+      if (ESCAPED_MARKUP.test(m[1]) || RAW_ATTRS.test(m[1])) {
+        codeBlocksAsMarkup.push(rel);
+        break;
+      }
+    }
+  }
+  if (codeBlocksAsMarkup.length) {
+    fail(
+      `${codeBlocksAsMarkup.length} page(s) render markup as a code block -- a raw HTML ` +
+        'block in a .md file was terminated by a blank line:'
+    );
+    for (const rel of codeBlocksAsMarkup) console.error(`    ${rel}`);
+    console.error(
+      '    Remove the blank lines inside the raw HTML in the .md, or run\n' +
+        '    scripts/fix-raw-html-blocks.py. Whitespace between block elements is\n' +
+        '    insignificant in HTML, so removing them changes nothing that renders --\n' +
+        '    except the visitors no longer see your markup as source code.'
+    );
+  } else {
+    console.log(`  \x1b[1;32mOK\x1b[0m    no page renders markup as a code block`);
+  }
+
   // --- sanity: the site must actually have JS -----------------------------
   const anyJs = bundles.some((f) => f.endsWith('.js'));
   if (!anyJs) {
