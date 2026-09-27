@@ -329,10 +329,27 @@ class DatabaseService {
       assigned_sales_rep_id = '',
       limit = 20,
       offset = 0,
-      sort_by = 'last_activity_date',
-      sort_order = 'desc'
+      sort_by: raw_sort_by = 'last_activity_date',
+      sort_order: raw_sort_order = 'desc'
     } = filters;
-    
+
+    // Whitelist sort columns. The previous code interpolated sort_by and
+    // sort_order directly into SQL, so a caller could inject arbitrary SQL
+    // through those parameters. Only allow known columns and directions.
+    const ALLOWED_SORT_COLUMNS = new Set([
+      'last_activity_date',
+      'created_at',
+      'name',
+      'status'
+    ]);
+    const ALLOWED_SORT_DIRECTIONS = new Set(['asc', 'desc']);
+    const sort_by = ALLOWED_SORT_COLUMNS.has(raw_sort_by)
+      ? raw_sort_by
+      : 'last_activity_date';
+    const sort_order = ALLOWED_SORT_DIRECTIONS.has((raw_sort_order || '').toLowerCase())
+      ? raw_sort_order.toLowerCase()
+      : 'desc';
+
     let whereClauses = [];
     let params = [];
     let paramIndex = 1;
