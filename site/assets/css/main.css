@@ -171,6 +171,21 @@ html {
 
 body {
   min-height: 100dvh;
+  /*
+    Sticky footer.
+
+    min-height alone does nothing without a flex column: the body was exactly as
+    tall as its content, so on a short page the footer sat wherever the content
+    ended and left a band of empty background below it. /specials/ is 1000px of
+    content on a 1000px viewport and the footer floated at 700px with white
+    underneath. Six pages looked broken in the same way: /specials/, /about/,
+    /contact/, /service/, /trade-in/, /customer/, /privacy-policy/.
+
+    main takes the slack, so the footer is always the last thing on screen
+    whether the page is long or short.
+  */
+  display: flex;
+  flex-direction: column;
   font-family: var(--font-sans);
   font-size: var(--text-base);
   line-height: var(--leading-normal);
@@ -910,6 +925,12 @@ tbody tr:hover { background: var(--bg-subtle); }
   border-radius: 0 0 var(--radius) 0;
 }
 .skip-link:focus { left: 0; }
+
+/* The flexible middle of the sticky footer. Everything else in <body> is
+   content-sized; main absorbs the leftover height so the footer is pinned to
+   the bottom of the viewport on a short page and simply follows the content on
+   a long one. */
+body > main { flex: 1 0 auto; }
 
 /* --------------------------------------------------------------------------
    6. Utilities (a small, deliberate set)
