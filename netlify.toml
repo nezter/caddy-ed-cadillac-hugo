@@ -253,7 +253,11 @@
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "geolocation=(self), microphone=(), camera=()"
     # Netlify Identity is required for the CMS and the customer portal login.
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://identity.netlify.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data:; connect-src 'self' https://*.netlify.app https://*.supabase.co wss://*.supabase.co; frame-ancestors 'self'; base-uri 'self'; form-action 'self'"
+    # The social embeds on the home page (connect.js) need Facebook and Twitter
+    # domains. Without them the CSP blocks the Facebook page plugin iframe and
+    # the Twitter timeline widget, so the "What Ed is posting" panel renders
+    # empty. These are the minimum domains required for those two embeds.
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://identity.netlify.com https://unpkg.com https://connect.facebook.net https://platform.twitter.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https://syndication.twitter.com; connect-src 'self' https://*.netlify.app https://*.supabase.co wss://*.supabase.co; frame-src 'self' https://www.facebook.com https://syndication.twitter.com https://platform.twitter.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self'"
 
 # -----------------------------------------------------------------------------
 # Edge/bot handling
