@@ -1,4 +1,5 @@
 const errorHandler = require('./utils/error-handler');
+const { route } = require('./utils/request-path');
 const DatabaseService = require('./utils/database-service');
 const { authenticateRequest } = require('./utils/auth-middleware');
 
@@ -19,7 +20,7 @@ exports.handler = async function(event, context) {
   }
 
   try {
-    const path = event.path.replace('/.netlify/functions/email-templates', '');
+    const path = route(event, 'email-templates');
     const method = event.httpMethod;
 
     // Parse path parameters
@@ -128,10 +129,20 @@ async function getTemplates(event) {
     }
 
     const countResult = await DatabaseService.query(countSql, countParams);
+    // `COUNT(*)` always returns exactly one row, so `rows[0]` exists -- but
+    // "always" is a property of the database, and this code has no way to check
+    // it. An unguarded `countResult.rows[0].total` throws TypeError on an empty
+    // result, and because the throw happens inside the try block it was reported
+    // as a 500 "Internal server error" for what is really a zero.
+    //
+    // A count of zero is a perfectly good answer for an empty table, so it is
+    // what gets returned. The page shows "0 campaigns" instead of an error, which
+    // is both true and what somebody looking at a new install expects to see.
+    const total = DatabaseService.countOf(countResult, 'total');
 
     return errorHandler.createSuccessResponse({
       templates: result.rows,
-      total: parseInt(countResult.rows[0].total),
+      total,
       limit: filters.limit,
       offset: filters.offset,
       filters
@@ -407,9 +418,9 @@ async function deleteTemplate(event, templateId) {
     const rulesSql = 'SELECT COUNT(*) as rules_count FROM followup_rules WHERE email_template = $1';
     const rulesResult = await DatabaseService.query(rulesSql, [templateId]);
 
-    if (parseInt(rulesResult.rows[0].rules_count) > 0) {
+    if (DatabaseService.countOf(rulesResult, 'rules_count') > 0) {
       return errorHandler.validationError('Cannot delete template used by active rules', {
-        rules_count: parseInt(rulesResult.rows[0].rules_count)
+        rules_count: DatabaseService.countOf(rulesResult, 'rules_count')
       });
     }
 
@@ -417,9 +428,9 @@ async function deleteTemplate(event, templateId) {
     const followupsSql = 'SELECT COUNT(*) as followups_count FROM followups WHERE email_template = $1';
     const followupsResult = await DatabaseService.query(followupsSql, [templateId]);
 
-    if (parseInt(followupsResult.rows[0].followups_count) > 0) {
+    if (DatabaseService.countOf(followupsResult, 'followups_count') > 0) {
       return errorHandler.validationError('Cannot delete template that has been used in followups', {
-        followups_count: parseInt(followupsResult.rows[0].followups_count)
+        followups_count: DatabaseService.countOf(followupsResult, 'followups_count')
       });
     }
 

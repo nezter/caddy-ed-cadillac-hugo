@@ -58,10 +58,29 @@ jest.mock('../../netlify/functions/utils/database-service', () => {
   return { __esModule: true, ...actual, getSalesRep: jest.fn() };
 });
 
-const { authenticateRequest } = require('../../netlify/functions/utils/auth-middleware');
+const {
+  authenticateRequest,
+  optionalAuthenticateRequest,
+} = require('../../netlify/functions/utils/auth-middleware');
 const DatabaseService = require('../../netlify/functions/utils/database-service');
-const { verify } = require('jsonwebtoken');
 const testUtils = require('../setup');
+
+// The same physical jsonwebtoken the middleware loads, not whichever copy this
+// file's own directory happens to resolve.
+//
+// jsonwebtoken is installed at the root AND nested under netlify/functions (its
+// own package.json + lockfile, so npm does not hoist). The middleware requires
+// the nested one; a bare require from tests/unit gets the root one. Requiring
+// the root copy here handed back a REAL `verify`, so `verify.mockReturnValue`
+// in the helper below threw "not a function" -- and before that, when the copy
+// did line up, the mock was applied to a module the middleware never loaded, so
+// the real verifier ran against the string 'mock-jwt-token' and every
+// success-path test failed as "Invalid authentication token".
+const { verify } = require(
+  require.resolve('jsonwebtoken', {
+    paths: [require.resolve('../../netlify/functions/package.json')],
+  })
+);
 
 /** A sales_reps row as the database returns it. */
 function dbUser(overrides = {}) {
@@ -204,7 +223,11 @@ describe('Authentication Middleware', () => {
     });
 
     it('rejects a missing Authorization header', async () => {
-      const result = await authenticate({});
+      // `headers: {}` explicitly, because the helper's default is a VALID
+      // bearer. A bare `authenticate({})` supplies one, which is the opposite of
+      // what this test is about -- it satisfied a 401 assertion while actually
+      // exercising the success path.
+      const result = await authenticate({ headers: {} });
 
       expect(result.authenticated).toBe(false);
       expect(result.error.statusCode).toBe(401);
@@ -218,7 +241,19 @@ describe('Authentication Middleware', () => {
     });
 
     it('rejects an unparseable token', async () => {
-      const result = await authenticate({ headers: { Authorization: 'Bearer invalid.jwt.token' } });
+      // The throw is supplied rather than produced by the string on purpose.
+      //
+      // `jwt.verify` is mocked in this suite, and the mock returns valid claims
+      // for whatever it is given. So a token that is genuinely not a JWT cannot
+      // fail here by being malformed -- it fails because the verifier says so.
+      // Real jsonwebtoken throws `JsonWebTokenError: jwt malformed` for
+      // 'invalid.jwt.token'; that is the behaviour under test, reproduced.
+      const malformed = new Error('jwt malformed');
+      malformed.name = 'JsonWebTokenError';
+      const result = await authenticate({
+        headers: { Authorization: 'Bearer invalid.jwt.token' },
+        _throws: malformed,
+      });
 
       expect(result.authenticated).toBe(false);
       expect(result.error.statusCode).toBe(401);
@@ -361,10 +396,18 @@ describe('Authentication Middleware', () => {
   });
 
   describe('optional authentication', () => {
-    it('passes an anonymous request through when auth is not required', async () => {
-      const result = await authenticate({ options: { requireAuth: false } });
+    it('reports a request with no token as anonymous, not as authenticated', async () => {
+      // `authenticated: true` with a null user is the shape this used to
+      // assert, and it is a contradiction. sales-auth-check branches on
+      // `!authResult.authenticated` to decide what to tell the browser, so a
+      // true-with-no-user answer makes it report "Authenticated" with nothing
+      // behind it. The honest answer to "am I signed in?" is no.
+      const result = await authenticate({
+        headers: {},
+        options: { requireAuth: false },
+      });
 
-      expect(result.authenticated).toBe(true);
+      expect(result.authenticated).toBe(false);
       expect(result.user).toBeNull();
     });
 
@@ -379,14 +422,19 @@ describe('Authentication Middleware', () => {
       expect(result.user.id).toBe('test-user-id');
     });
 
-    it('ignores an unparseable token rather than failing the request', async () => {
-      const result = await authenticate({
-        headers: { Authorization: 'Bearer invalid.token' },
-        options: { requireAuth: false },
-      });
+    it('treats a token that does not verify as anonymous rather than as a 401', async () => {
+      // A token that was PRESENT and failed is not the same as no token, but on
+      // an optional endpoint both mean the same thing to the caller: nobody is
+      // signed in. Returning 401 here would make every page that probes on load
+      // log an error for anyone with a stale token in localStorage.
+      const result = await optionalAuthenticateRequest(
+        testUtils.createMockEvent(),
+        {}
+      );
 
-      expect(result.authenticated).toBe(true);
+      expect(result.authenticated).toBe(false);
       expect(result.user).toBeNull();
+      expect(result.error).toBeUndefined();
     });
   });
 
@@ -414,7 +462,7 @@ describe('Authentication Middleware', () => {
 
   describe('error shape', () => {
     it('carries a status code, headers and a body', async () => {
-      const result = await authenticate({});
+      const result = await authenticate({ headers: {} });
 
       expect(result.error.statusCode).toBe(401);
       expect(result.error.headers).toHaveProperty('Content-Type');
@@ -422,7 +470,7 @@ describe('Authentication Middleware', () => {
     });
 
     it('body names the failure and says it was not authorised', async () => {
-      const result = await authenticate({});
+      const result = await authenticate({ headers: {} });
       const body = bodyOf(result.error);
 
       expect(body.success).toBe(false);
@@ -431,7 +479,7 @@ describe('Authentication Middleware', () => {
     });
 
     it('sets nosniff on the error response', async () => {
-      const result = await authenticate({});
+      const result = await authenticate({ headers: {} });
 
       expect(result.error.headers).toHaveProperty('X-Content-Type-Options', 'nosniff');
     });

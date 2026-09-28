@@ -65,9 +65,25 @@ async function authenticateRequest(event, options = {}) {
   };
 
   const authorization = headerValue('authorization');
-  // The scheme is case-insensitive too: `bearer`, `Bearer` and `BeArEr` are all
-  // the same scheme, and RFC 7235 says the client should not have to care.
-  const authToken = (authorization && String(authorization).replace(/^\s*bearer\s+/i, '').trim()) ||
+
+  // Only the Bearer scheme is a token. The scheme is case-insensitive --
+  // `bearer`, `Bearer` and `BeArEr` are all the same scheme, and RFC 7235 says
+  // the client should not have to care.
+  //
+  // This used to strip a leading `bearer` and then accept WHATEVER was left,
+  // which meant an `Authorization: Basic dXNlcjpwYXNz` header was handed to
+  // jwt.verify as if the base64 blob were a token. It would fail to verify, so
+  // nothing leaked -- but the wrong thing was happening for the wrong reason,
+  // and a header that is not a token should not reach the verifier at all. A
+  // request carrying Basic credentials is a request with no bearer token, and
+  // saying so plainly is what the caller needs.
+  const bearerToken = (() => {
+    if (!authorization) return '';
+    const match = String(authorization).match(/^\s*bearer\s+(.*)$/i);
+    return match ? match[1].trim() : '';
+  })();
+
+  const authToken = bearerToken ||
                    headerValue('x-auth-token') ||
                    getCookieValue(headerValue('cookie'), 'auth_token');
 
@@ -156,6 +172,26 @@ async function authenticateRequest(event, options = {}) {
     // Verify JWT token
     const decodedToken = jwt.verify(authToken, JWT_SECRET);
 
+    // The payload has to be an object, and it has to name somebody.
+    //
+    // Neither was checked. `jwt.verify` will hand back whatever decoded, so a
+    // payload that is a bare string -- or an object with no subject -- sailed
+    // through, `userId` came out `undefined`, and the code went on to ask the
+    // database for the account with id `undefined`. In production that returns
+    // no rows and the request is refused, so nothing was granted. But the
+    // refusal was an accident of the query, not a decision, and a token with no
+    // subject is exactly the token a forged one would carry.
+    //
+    // Checked explicitly, before the database is involved, so that "this token
+    // does not identify anyone" is answered as itself rather than as a
+    // coincidental miss in a lookup.
+    if (!decodedToken || typeof decodedToken !== 'object' || Array.isArray(decodedToken)) {
+      return {
+        authenticated: false,
+        error: errorHandler.unauthorizedError('Invalid authentication token')
+      };
+    }
+
     // RFC 7519 puts the subject in `sub`. scripts/generate-test-jwt.js signs
     // `sub`; this line read `decodedToken.userId`. Every generated token
     // therefore authenticated as `undefined`, and every call 401'd with "User
@@ -164,6 +200,13 @@ async function authenticateRequest(event, options = {}) {
     // Read `sub`, fall back to `userId` so a token already issued with that
     // claim keeps working.
     const userId = decodedToken.sub || decodedToken.userId;
+
+    if (typeof userId !== 'string' || userId.trim() === '') {
+      return {
+        authenticated: false,
+        error: errorHandler.unauthorizedError('Invalid authentication token')
+      };
+    }
 
     // The role and permission checks below read the DATABASE row, not the
     // token. A token's `permissions` claim is decorative and never consulted;
@@ -209,17 +252,77 @@ async function authenticateRequest(event, options = {}) {
     };
 
   } catch (tokenError) {
-    if (tokenError.name === 'TokenExpiredError') {
+    // Log what ACTUALLY failed before deciding what to say.
+    //
+    // This catch has spanned the whole body of the function, so it has caught
+    // far more than bad tokens: a database that is not configured, a
+    // `getSalesRep` that rejects, a missing export, a bug in the role check. All
+    // of those were reported to the caller as "Invalid authentication token",
+    // which is a lie in the direction that costs the most time -- it tells the
+    // operator to go and rotate a token when the token was fine and the data
+    // layer was down. It also meant the only way to find the real cause was to
+    // read this source, which is why a live sign-in break could sit here
+    // uninvestigated.
+    //
+    // The response is unchanged -- an unverified caller still gets a 401 and no
+    // detail about the server's internals. The detail goes to the log, where it
+    // belongs. Expiry stays its own message because that one really is about the
+    // token and the user can act on it.
+    console.error('[auth-middleware] authentication failed:', tokenError && tokenError.stack ? tokenError.stack : tokenError);
+
+    if (tokenError && tokenError.name === 'TokenExpiredError') {
       return {
         authenticated: false,
         error: errorHandler.unauthorizedError('Authentication token has expired')
       };
-    } else {
-      return {
-        authenticated: false,
-        error: errorHandler.unauthorizedError('Invalid authentication token')
-      };
     }
+    return {
+      authenticated: false,
+      error: errorHandler.unauthorizedError('Invalid authentication token')
+    };
+  }
+}
+
+/**
+ * Optional authentication: same verification, but a bad token is anonymous
+ * rather than an error.
+ *
+ * The distinction that matters is between "this request carried no token" and
+ * "this request carried a token that does not hold up". The first is a normal
+ * state for an endpoint whose whole job is to answer a yes/no question --
+ * sales-auth-check is asked "am I signed in?" by every page on load, and a 401
+ * there is a console error for every first-time visitor. The second is a real
+ * problem, but on an optional endpoint it still only means "not signed in".
+ *
+ * Note what this does NOT do. It does not skip verification: a token that is
+ * present and valid is still verified and still resolved to the live account
+ * row, and one that is revoked or forged is still refused. It reports the
+ * refusal as anonymous instead of as a 401, because the caller asked a question
+ * and "no" is an answer.
+ *
+ * Every endpoint that returns customer data calls with the default
+ * requireAuth: true and does get a 401.
+ */
+async function optionalAuthenticateRequest(event, options = {}) {
+  const result = await authenticateRequest(event, { ...options, requireAuth: false });
+  if (result.authenticated) return result;
+  // An error here means a token WAS presented and did not survive. Collapse it
+  // to the anonymous answer, but keep the reason available in the log rather
+  // than in the response.
+  if (result.error) {
+    const body = readMessage(result.error);
+    if (body) console.warn(`[auth-middleware] optional auth: presenting token rejected (${body})`);
+  }
+  return { authenticated: false, user: null };
+}
+
+/** Pull the message out of an errorHandler response, which has a JSON string body. */
+function readMessage(errorResponse) {
+  if (!errorResponse || typeof errorResponse.body !== 'string') return null;
+  try {
+    return JSON.parse(errorResponse.body).message || null;
+  } catch {
+    return null;
   }
 }
 
@@ -329,5 +432,6 @@ function checkRateLimit(identifier, maxRequests = 10, windowMs = 60000) {
 
 module.exports = {
   authenticateRequest,
+  optionalAuthenticateRequest,
   checkRateLimit
 };

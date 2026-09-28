@@ -1,4 +1,5 @@
 const errorHandler = require('./utils/error-handler');
+const { route } = require('./utils/request-path');
 const InteractionService = require('./utils/interaction-service');
 const FollowupService = require('./utils/followup-service');
 const DatabaseService = require('./utils/database-service');
@@ -21,7 +22,7 @@ exports.handler = async function(event, context) {
   }
 
   try {
-    const path = event.path.replace('/.netlify/functions/interactions', '');
+    const path = route(event, 'interactions');
     const method = event.httpMethod;
 
     // Parse path parameters

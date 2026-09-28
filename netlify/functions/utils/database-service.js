@@ -1535,3 +1535,24 @@ module.exports.query = query;
 // function using the export would have reported "no database configured" on a
 // site that has one. Two answers to one question is how they come to disagree.
 module.exports.isDatabaseConfigured = isDatabaseConfigured;
+
+/**
+ * Read one COUNT(*) out of a result set, or 0.
+ *
+ * `SELECT COUNT(*) ...` returns exactly one row, so `rows[0]` is normally safe.
+ * But that is a property of the database, not of the caller, and the caller's
+ * only way to discover it is to crash: an unguarded `result.rows[0].total`
+ * throws a TypeError, the function's catch-all reports a 500 "Internal server
+ * error", and a count of zero becomes an outage. That is how
+ * `DELETE /followup-campaigns/{id}` answered 500 against an empty table.
+ *
+ * Here "how many" is never NaN and never an exception, and zero -- the truthful
+ * answer for a table nothing has been inserted into -- comes back as 0.
+ *
+ *   const total = DatabaseService.countOf(result, 'total');
+ */
+module.exports.countOf = function countOf(result, column = 'count') {
+  const row = result && Array.isArray(result.rows) ? result.rows[0] : null;
+  const n = row ? parseInt(row[column], 10) : NaN;
+  return Number.isNaN(n) ? 0 : n;
+};

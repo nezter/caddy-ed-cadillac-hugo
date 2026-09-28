@@ -1,4 +1,5 @@
 const errorHandler = require('./utils/error-handler');
+const { route } = require('./utils/request-path');
 const DatabaseService = require('./utils/database-service');
 const { authenticateRequest } = require('./utils/auth-middleware');
 
@@ -19,7 +20,7 @@ exports.handler = async function(event, context) {
   }
 
   try {
-    const path = event.path.replace('/.netlify/functions/sms-templates', '');
+    const path = route(event, 'sms-templates');
     const method = event.httpMethod;
 
     // Parse path parameters
@@ -128,10 +129,20 @@ async function getTemplates(event) {
     }
 
     const countResult = await DatabaseService.query(countSql, countParams);
+    // `COUNT(*)` always returns exactly one row, so `rows[0]` exists -- but
+    // "always" is a property of the database, and this code has no way to check
+    // it. An unguarded `countResult.rows[0].total` throws TypeError on an empty
+    // result, and because the throw happens inside the try block it was reported
+    // as a 500 "Internal server error" for what is really a zero.
+    //
+    // A count of zero is a perfectly good answer for an empty table, so it is
+    // what gets returned. The page shows "0 campaigns" instead of an error, which
+    // is both true and what somebody looking at a new install expects to see.
+    const total = DatabaseService.countOf(countResult, 'total');
 
     return errorHandler.createSuccessResponse({
       templates: result.rows,
-      total: parseInt(countResult.rows[0].total),
+      total,
       limit: filters.limit,
       offset: filters.offset,
       filters

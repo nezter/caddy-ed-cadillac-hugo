@@ -6,6 +6,7 @@
 const Joi = require('joi');
 const { sanitizeString, sanitizeEmail, sanitizePhone, sanitizeText } = require('./input-sanitizer');
 const errorHandler = require('./error-handler');
+const { route } = require('./request-path');
 
 /**
  * Reusable field maps.
@@ -35,7 +36,22 @@ const sortingFields = {
  * Common validation schemas
  */
 const commonSchemas = {
-  id: Joi.number().integer().positive().required(),
+  // Every primary key in this schema is TEXT, not a serial integer:
+  //   CREATE TABLE followup_campaigns (id TEXT PRIMARY KEY, ...)
+  // and the ids in circulation are UUIDs. Validating them as
+  // `Joi.number().integer().positive()` rejected every real id, so
+  // GET /{id}, PUT /{id}, DELETE /{id} and the activate/deactivate routes all
+  // answered 400 for a perfectly valid UUID.
+  //
+  // What is actually worth asserting is that the segment is a single non-empty
+  // path segment with nothing dangerous in it -- which is the property these
+  // routes depend on, since it lands in a parameterised query. Length-capped so
+  // a pathological segment cannot be pushed through.
+  //
+  // A purely numeric id is still accepted, so a table that ever does use a
+  // serial key keeps working.
+  id: Joi.string().trim().min(1).max(128).pattern(/^[A-Za-z0-9_-]+$/)
+    .required(),
   pagination: Joi.object(paginationFields),
   dateRange: Joi.object({
     start_date: Joi.date().iso(),
@@ -277,6 +293,14 @@ const searchSchemas = {
  * @param {string} source - Source of data ('body', 'query', 'params')
  * @returns {Function} - Express middleware function
  */
+/** The function's own name, from the path Netlify delivered. */
+function functionNameFrom(event) {
+  const raw = String((event && (event.path || event.rawUrl)) || '');
+  const parts = raw.split('/').filter(Boolean);
+  const i = parts.indexOf('functions');
+  return i !== -1 && parts[i + 1] ? parts[i + 1] : '';
+}
+
 function validate(schema, source = 'body') {
   return async (event) => {
     try {
@@ -290,12 +314,18 @@ function validate(schema, source = 'body') {
           data = event.queryStringParameters || {};
           break;
         case 'params':
-          // Extract path parameters from event.path
-          const pathParts = event.path.split('/').filter(p => p);
-          const functionName = event.path.split('/')[2]; // Extract function name
-          const paramPath = event.path.replace(`/.netlify/functions/${functionName}`, '');
-          const paramParts = paramPath.split('/').filter(p => p);
-          data = { id: parseInt(paramParts[0]) };
+          // The first segment after the function's own mount point is the id.
+          //
+          // This used to `parseInt(paramParts[0])` and hand the result to a
+          // numeric Joi schema. The ids in this schema are TEXT (UUIDs), so
+          // `parseInt('3f2a...')` is NaN, NaN fails `number().integer()`, and
+          // every `{id}` route answered 400 for a valid id. The NaN then flowed
+          // on as `id: NaN` in some paths.
+          //
+          // The segment is taken as the string it is. The schema is what decides
+          // whether it is an acceptable id, and commonSchemas.id now describes
+          // the TEXT keys this database actually has.
+          data = { id: route(event, functionNameFrom(event)).split('/').filter(Boolean)[0] };
           break;
         default:
           data = {};
@@ -306,7 +336,26 @@ function validate(schema, source = 'body') {
         data = sanitizeData(data);
       }
 
-      const { error, value } = schema.validate(data, {
+      // `validateParams` is called both ways in this codebase:
+      //
+      //     validateParams(commonSchemas.id)(event)          a bare FIELD schema
+      //     validateParams(Joi.object({ ... }))(event)        an OBJECT schema
+      //
+      // but `data` for 'params' is always `{ id }`. So the field-schema form
+      // asked Joi to validate an OBJECT against `Joi.string()`, which fails with
+      // `"value" must be a string` and an empty field path -- a 400 that named no
+      // field and gave no reason, for every `{id}` route. With a numeric field
+      // schema it failed the same way; the id type was never the actual problem.
+      //
+      // Wrapping the field schema in the key it is validated under makes both
+      // call styles mean the same thing, and keeps `convert: true` working, so a
+      // numeric id schema still accepts a numeric string.
+      let effectiveSchema = schema;
+      if (source === 'params' && schema && schema.describe && schema.describe().type !== 'object') {
+        effectiveSchema = Joi.object({ id: schema });
+      }
+
+      const { error, value } = effectiveSchema.validate(data, {
         abortEarly: false,
         stripUnknown: true,
         convert: true

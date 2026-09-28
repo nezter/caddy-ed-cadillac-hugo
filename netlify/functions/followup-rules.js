@@ -1,4 +1,5 @@
 const errorHandler = require('./utils/error-handler');
+const { route } = require('./utils/request-path');
 const DatabaseService = require('./utils/database-service');
 const FollowupRulesEngine = require('./utils/followup-rules-engine');
 const { authenticateRequest } = require('./utils/auth-middleware');
@@ -20,7 +21,7 @@ exports.handler = async function(event, context) {
   }
 
   try {
-    const path = event.path.replace('/.netlify/functions/followup-rules', '');
+    const path = route(event, 'followup-rules');
     const method = event.httpMethod;
 
     // Parse path parameters
@@ -270,7 +271,7 @@ async function getRule(event, ruleId) {
     // Get followups count
     const followupsSql = 'SELECT COUNT(*) as followups_count FROM followups WHERE rule_id = $1';
     const followupsResult = await DatabaseService.query(followupsSql, [ruleId]);
-    rule.followups_count = parseInt(followupsResult.rows[0].followups_count);
+    rule.followups_count = DatabaseService.countOf(followupsResult, 'followups_count');
 
     return errorHandler.createSuccessResponse({
       rule
@@ -338,9 +339,9 @@ async function deleteRule(event, ruleId) {
     const followupsSql = 'SELECT COUNT(*) as followups_count FROM followups WHERE rule_id = $1';
     const followupsResult = await DatabaseService.query(followupsSql, [ruleId]);
 
-    if (parseInt(followupsResult.rows[0].followups_count) > 0) {
+    if (DatabaseService.countOf(followupsResult, 'followups_count') > 0) {
       return errorHandler.validationError('Cannot delete rule with associated followups', {
-        followups_count: parseInt(followupsResult.rows[0].followups_count)
+        followups_count: DatabaseService.countOf(followupsResult, 'followups_count')
       });
     }
 

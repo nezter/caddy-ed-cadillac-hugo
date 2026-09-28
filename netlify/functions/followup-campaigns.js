@@ -1,4 +1,5 @@
 const errorHandler = require('./utils/error-handler');
+const { route } = require('./utils/request-path');
 const DatabaseService = require('./utils/database-service');
 const { authenticateRequest } = require('./utils/auth-middleware');
 const {
@@ -57,7 +58,7 @@ exports.handler = async function(event, context) {
   }
 
   try {
-    const path = event.path.replace('/.netlify/functions/followup-campaigns', '');
+    const path = route(event, 'followup-campaigns');
     const method = event.httpMethod;
 
     // Parse path parameters
@@ -105,7 +106,7 @@ exports.handler = async function(event, context) {
  */
 async function getCampaigns(event) {
   // Validate query parameters
-  const queryValidation = validateQuery(Joi.object({
+  const queryValidation = await validateQuery(Joi.object({
     active: Joi.boolean(),
     type: Joi.string().valid('nurture', 're_engagement', 'welcome', 'birthday', 'anniversary', 'holiday', 'custom'),
     audience: Joi.string().valid('all', 'prospects', 'leads', 'active_customers', 'inactive_customers', 'vip_customers'),
@@ -169,11 +170,21 @@ async function getCampaigns(event) {
     let countSql = 'SELECT COUNT(*) as total FROM followup_campaigns WHERE 1=1';
     const countParams = params.slice(0, -2); // Remove limit and offset
     const countResult = await DatabaseService.query(countSql, countParams);
+    // `COUNT(*)` always returns exactly one row, so `rows[0]` exists -- but
+    // "always" is a property of the database, and this code has no way to check
+    // it. An unguarded `countResult.rows[0].total` throws TypeError on an empty
+    // result, and because the throw happens inside the try block it was reported
+    // as a 500 "Internal server error" for what is really a zero.
+    //
+    // A count of zero is a perfectly good answer for an empty table, so it is
+    // what gets returned. The page shows "0 campaigns" instead of an error, which
+    // is both true and what somebody looking at a new install expects to see.
+    const total = DatabaseService.countOf(countResult, 'total');
 
     return createSecureResponse(200, {
       success: true,
       campaigns: result.rows,
-      total: parseInt(countResult.rows[0].total),
+      total,
       limit: filters.limit,
       offset: filters.offset,
       filters
@@ -194,7 +205,7 @@ async function getCampaigns(event) {
  */
 async function createCampaign(event) {
   // Validate request body
-  const bodyValidation = validateBody(campaignSchemas.create)(event);
+  const bodyValidation = await validateBody(campaignSchemas.create)(event);
   if (!bodyValidation.isValid) {
     return createSecureResponse(400, bodyValidation.error.body, event.rateLimitHeaders);
   }
@@ -244,7 +255,7 @@ async function createCampaign(event) {
  */
 async function getCampaignStats(event) {
   // Validate query parameters
-  const queryValidation = validateQuery(Joi.object({
+  const queryValidation = await validateQuery(Joi.object({
     days: Joi.number().integer().min(1).max(365).default(30)
   }))(event);
 
@@ -321,7 +332,7 @@ async function getActiveCampaigns(event) {
  */
 async function getCampaign(event, campaignId) {
   // Validate campaign ID
-  const paramsValidation = validateParams(commonSchemas.id)(event);
+  const paramsValidation = await validateParams(commonSchemas.id)(event);
   if (!paramsValidation.isValid) {
     return paramsValidation.error;
   }
@@ -342,8 +353,8 @@ async function getCampaign(event, campaignId) {
     const followupsResult = await DatabaseService.query(followupsSql, [campaignId]);
 
     const campaign = result.rows[0];
-    campaign.rules_count = parseInt(rulesResult.rows[0].rules_count);
-    campaign.followups_count = parseInt(followupsResult.rows[0].followups_count);
+    campaign.rules_count = DatabaseService.countOf(rulesResult, 'rules_count');
+    campaign.followups_count = DatabaseService.countOf(followupsResult, 'followups_count');
 
     return errorHandler.createSuccessResponse({
       campaign
@@ -360,13 +371,13 @@ async function getCampaign(event, campaignId) {
  */
 async function updateCampaign(event, campaignId) {
   // Validate campaign ID
-  const paramsValidation = validateParams(commonSchemas.id)(event);
+  const paramsValidation = await validateParams(commonSchemas.id)(event);
   if (!paramsValidation.isValid) {
     return paramsValidation.error;
   }
 
   // Validate request body
-  const bodyValidation = validateBody(campaignSchemas.update)(event);
+  const bodyValidation = await validateBody(campaignSchemas.update)(event);
   if (!bodyValidation.isValid) {
     return bodyValidation.error;
   }
@@ -433,10 +444,13 @@ async function deleteCampaign(event, campaignId) {
     const followupsSql = 'SELECT COUNT(*) as followups_count FROM followups WHERE campaign_id = $1';
     const followupsResult = await DatabaseService.query(followupsSql, [campaignId]);
 
-    if (parseInt(rulesResult.rows[0].rules_count) > 0 || parseInt(followupsResult.rows[0].followups_count) > 0) {
+    const rulesCount = DatabaseService.countOf(rulesResult, 'rules_count');
+    const followupsCount = DatabaseService.countOf(followupsResult, 'followups_count');
+
+    if (rulesCount > 0 || followupsCount > 0) {
       return errorHandler.validationError('Cannot delete campaign with associated rules or followups', {
-        rules_count: parseInt(rulesResult.rows[0].rules_count),
-        followups_count: parseInt(followupsResult.rows[0].followups_count)
+        rules_count: rulesCount,
+        followups_count: followupsCount
       });
     }
 
@@ -521,13 +535,13 @@ async function deactivateCampaign(event, campaignId) {
  */
 async function getCampaignPerformance(event, campaignId) {
   // Validate campaign ID
-  const paramsValidation = validateParams(commonSchemas.id)(event);
+  const paramsValidation = await validateParams(commonSchemas.id)(event);
   if (!paramsValidation.isValid) {
     return paramsValidation.error;
   }
 
   // Validate query parameters
-  const queryValidation = validateQuery(Joi.object({
+  const queryValidation = await validateQuery(Joi.object({
     days: Joi.number().integer().min(1).max(365).default(30)
   }))(event);
 

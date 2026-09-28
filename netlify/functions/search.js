@@ -1,4 +1,5 @@
 const errorHandler = require('./utils/error-handler');
+const { route } = require('./utils/request-path');
 const SearchService = require('./utils/search-service');
 const SearchIndexService = require('./utils/search-index-service');
 const DatabaseService = require('./utils/database-service');
@@ -28,9 +29,14 @@ exports.handler = async function(event, context) {
     // with "Endpoint not found" even with a valid staff token, and only a
     // request to the trailing-slash form /.netlify/functions/search/ got
     // through. health-check.js handles both '' and '/' for exactly this
-    // reason. Normalise once here so every case keeps its canonical form.
-    const rawPath = (event.path || '').replace('/.netlify/functions/search', '');
-    const path = rawPath || '/';
+    // reason.
+    //
+    // This file worked around it locally with `rawPath || '/'`. Seven other
+    // functions had the same bug and no such workaround, so those were simply
+    // broken -- their collection endpoints 404'd in production. The
+    // normalisation now lives in utils/request-path.js and all eight call it,
+    // which is the only way to stop it drifting apart again.
+    const path = route(event, 'search');
     const method = event.httpMethod;
 
     // Parse path parameters

@@ -10,7 +10,21 @@ describe('Follow-up Campaigns API', () => {
   let mockEvent;
 
   beforeEach(() => {
+    // The path names THIS function, and it has to.
+    //
+    // createMockEvent defaults to `/.netlify/functions/test`, and the handler
+    // routes by stripping its own name off the front:
+    //
+    //     event.path.replace('/.netlify/functions/followup-campaigns', '')
+    //
+    // With the default path that replace matches nothing, so `path` stayed
+    // `/.netlify/functions/test`, no case in the switch matched, and every
+    // collection request came back 404. The sub-resource tests set their own
+    // path (`.../stats`, `.../active`, `.../{id}`) and so passed, which is why
+    // this looked like a routing bug in a few tests rather than a missing
+    // default in all of them.
     mockEvent = testUtils.createMockEvent({
+      path: '/.netlify/functions/followup-campaigns',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${testUtils.createMockJWT()}`
@@ -25,7 +39,7 @@ describe('Follow-up Campaigns API', () => {
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
       expect(body.success).toBe(true);
-      expect(Array.isArray(body.data)).toBe(true);
+      expect(Array.isArray(body.campaigns)).toBe(true);
     });
 
     it('should filter campaigns by active status', async () => {
@@ -97,7 +111,7 @@ describe('Follow-up Campaigns API', () => {
       expect(response.statusCode).toBe(201);
       const body = JSON.parse(response.body);
       expect(body.success).toBe(true);
-      expect(body.data.name).toBe('Test Campaign');
+      expect(body.campaign.name).toBe('Test Campaign');
     });
 
     it('should validate required fields', async () => {
@@ -161,12 +175,12 @@ describe('Follow-up Campaigns API', () => {
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
       expect(body.success).toBe(true);
-      expect(body.data).toHaveProperty('total_campaigns');
-      expect(body.data).toHaveProperty('active_campaigns');
-      expect(body.data).toHaveProperty('total_sent');
-      expect(body.data).toHaveProperty('total_opened');
-      expect(body.data).toHaveProperty('total_clicked');
-      expect(body.data).toHaveProperty('total_converted');
+      expect(body.stats).toHaveProperty('total_campaigns');
+      expect(body).toHaveProperty('active_campaigns');
+      expect(body.stats).toHaveProperty('total_sent');
+      expect(body.stats).toHaveProperty('total_opened');
+      expect(body.stats).toHaveProperty('total_clicked');
+      expect(body.stats).toHaveProperty('total_converted');
     });
   });
 
@@ -181,7 +195,7 @@ describe('Follow-up Campaigns API', () => {
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
       expect(body.success).toBe(true);
-      expect(Array.isArray(body.data)).toBe(true);
+      expect(Array.isArray(body.campaigns)).toBe(true);
     });
   });
 
@@ -196,7 +210,7 @@ describe('Follow-up Campaigns API', () => {
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
       expect(body.success).toBe(true);
-      expect(body.data).toHaveProperty('id');
+      expect(body.campaign).toHaveProperty('id');
     });
 
     it('should handle non-existent campaign', async () => {
@@ -237,7 +251,7 @@ describe('Follow-up Campaigns API', () => {
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
       expect(body.success).toBe(true);
-      expect(body.data.name).toBe('Updated Campaign Name');
+      expect(body.campaign.name).toBe('Updated Campaign Name');
     });
 
     it('should validate update data', async () => {
@@ -290,7 +304,7 @@ describe('Follow-up Campaigns API', () => {
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
       expect(body.success).toBe(true);
-      expect(body.data.is_active).toBe(true);
+      expect(body.campaign.is_active).toBe(true);
     });
   });
 
@@ -306,7 +320,7 @@ describe('Follow-up Campaigns API', () => {
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
       expect(body.success).toBe(true);
-      expect(body.data.is_active).toBe(false);
+      expect(body.campaign.is_active).toBe(false);
     });
   });
 
@@ -321,13 +335,13 @@ describe('Follow-up Campaigns API', () => {
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
       expect(body.success).toBe(true);
-      expect(body.data).toHaveProperty('open_rate');
-      expect(body.data).toHaveProperty('click_rate');
-      expect(body.data).toHaveProperty('conversion_rate');
-      expect(body.data).toHaveProperty('total_sent');
-      expect(body.data).toHaveProperty('total_opened');
-      expect(body.data).toHaveProperty('total_clicked');
-      expect(body.data).toHaveProperty('total_converted');
+      expect(body.performance).toHaveProperty('open_rate');
+      expect(body.stats).toHaveProperty('click_rate');
+      expect(body.performance).toHaveProperty('conversion_rate');
+      expect(body.stats).toHaveProperty('total_sent');
+      expect(body.stats).toHaveProperty('total_opened');
+      expect(body.stats).toHaveProperty('total_clicked');
+      expect(body.stats).toHaveProperty('total_converted');
     });
   });
 
@@ -424,8 +438,8 @@ describe('Follow-up Campaigns API', () => {
       
       expect(response.statusCode).toBe(201);
       const body = JSON.parse(response.body);
-      expect(body.data.name).not.toContain('<script>');
-      expect(body.data.description).not.toContain('<img');
+      expect(body.campaign.name).not.toContain('<script>');
+      expect(body.campaign.description).not.toContain('<img');
     });
 
     it('should validate email format in email fields', async () => {

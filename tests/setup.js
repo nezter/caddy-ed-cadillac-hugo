@@ -196,6 +196,25 @@ global.testUtils.asRep = (overrides = {}) => {
   return DatabaseService.getSalesRep;
 };
 
+/**
+ * What `DatabaseService.query` returns. Defaults to the empty set.
+ *
+ *   testUtils.asRows([{ id: 'c1', name: 'Test' }])          one row set
+ *   testUtils.asRows([{ id: 'c1' }], { total: '1' })        COUNT shape too
+ *   testUtils.asRows()                                      the default
+ *
+ * The empty set is the default rather than a convenience row so that a test
+ * which forgets to say what the table contains gets a truthful "no rows" and
+ * fails on its own expectation, instead of a fabricated row that makes a broken
+ * assertion look like it passed.
+ */
+global.testUtils.asRows = (rows = [], extra = {}) => {
+  const DatabaseService = require('../netlify/functions/utils/database-service');
+  if (typeof DatabaseService.query !== 'function') return null;
+  DatabaseService.query.mockResolvedValue({ rows, rowCount: rows.length, ...extra });
+  return DatabaseService.query;
+};
+
 jest.mock('../netlify/functions/utils/database-service', () => {
   const actual = jest.requireActual('../netlify/functions/utils/database-service');
   return {
@@ -214,6 +233,20 @@ jest.mock('../netlify/functions/utils/database-service', () => {
         status: 'active',
       })
     ),
+    // The single query path, defaulting to an empty result set.
+    //
+    // The real `query` needs a configured database, so unmocked it rejects with
+    // "No database is configured" -- and every function that reads a table
+    // returned 500 for that reason. Which is honest, and useless: a suite
+    // testing pagination or validation should not need a live Postgres to find
+    // out whether its arithmetic is right.
+    //
+    // The default is `{ rows: [] }` -- deliberately the EMPTY SET, not a
+    // fabricated row. Empty is the truthful answer to a query against a table
+    // nothing has been inserted into, and it keeps the shape honest: a test
+    // that needs rows has to say what they are, in one obvious place, via
+    // testUtils.asRows(). Nothing here can make an empty result look populated.
+    query: jest.fn(() => Promise.resolve({ rows: [], rowCount: 0 })),
   };
 });
 
@@ -298,30 +331,21 @@ jest.mock('@supabase/supabase-js', () => ({
   }))
 }));
 
-// Mock Redis
-jest.mock('ioredis', () => {
-  return jest.fn().mockImplementation(() => ({
-    get: jest.fn(() => Promise.resolve(null)),
-    set: jest.fn(() => Promise.resolve('OK')),
-    setex: jest.fn(() => Promise.resolve('OK')),
-    del: jest.fn(() => Promise.resolve(1)),
-    exists: jest.fn(() => Promise.resolve(0)),
-    expire: jest.fn(() => Promise.resolve(1)),
-    ttl: jest.fn(() => Promise.resolve(-1)),
-    incr: jest.fn(() => Promise.resolve(1)),
-    incrby: jest.fn(() => Promise.resolve(1)),
-    lpush: jest.fn(() => Promise.resolve(1)),
-    ltrim: jest.fn(() => Promise.resolve('OK')),
-    lrange: jest.fn(() => Promise.resolve([])),
-    sadd: jest.fn(() => Promise.resolve(1)),
-    smembers: jest.fn(() => Promise.resolve([])),
-    keys: jest.fn(() => Promise.resolve([])),
-    ping: jest.fn(() => Promise.resolve('PONG')),
-    quit: jest.fn(() => Promise.resolve('OK')),
-    on: jest.fn(),
-    once: jest.fn()
-  }));
-});
+// ioredis is deliberately NOT mocked here.
+//
+// It used to be, with a full fake client. Then ioredis was removed from the
+// project as a dead dependency, and this mock became the thing standing between
+// the suite and any result at all.
+//
+// `jest.mock()` on a module that cannot be resolved throws at setup time, not
+// at use time, and this file is `setupFilesAfterEach` for every suite. So the
+// one stale mock took down all 8 suites: "8 failed, 8 total" with `Tests: 0
+// total`. Read as a red suite it looks like broken code. It was a red harness.
+// A mock for a dependency that no longer exists is not a safety net; it is a
+// load-bearing lie about what the code imports.
+//
+// If a future change reintroduces a cache, mock it then, with the module
+// present.
 
 // Mock PostgreSQL Pool
 jest.mock('pg', () => ({
@@ -344,15 +368,42 @@ jest.mock('nodemailer', () => ({
 }));
 
 // Mock JWT
-jest.mock('jsonwebtoken', () => ({
-  sign: jest.fn(() => 'mock-jwt-token'),
-  verify: jest.fn(() => ({
-    sub: 'test-user-id',
-    email: 'test@example.com',
-    role: 'admin',
-    permissions: ['campaigns_read', 'campaigns_write']
-  }))
-}));
+//
+// The path is load-bearing, and getting it wrong is invisible.
+//
+// `jsonwebtoken` is installed TWICE: once at the repository root, and once
+// nested under netlify/functions (which has its own package.json and its own
+// lockfile, so npm installs a private copy rather than hoisting). Two physical
+// copies means two module instances.
+//
+// A bare `jest.mock('jsonwebtoken')` from THIS file is keyed to the copy that
+// resolves from tests/ -- the root one. The code under test does not use that
+// copy. auth-middleware.js sits in netlify/functions/utils/, so its
+// `require('jsonwebtoken')` resolves to the NESTED one, and the mock is silently
+// never applied to it.
+//
+// The observable effect was the worst kind: the real `verify` ran against the
+// literal string 'mock-jwt-token', threw `JsonWebTokenError: jwt malformed`, and
+// auth-middleware's catch-all reported "Invalid authentication token". Every
+// success-path test in the auth suite failed, and every rejection test passed --
+// 24 failures that read as broken authentication and were actually a mock aimed
+// at the wrong copy of a module.
+//
+// So: resolve the specifier the way the CODE resolves it, and mock that. If the
+// two ever agree again this still works.
+jest.mock(
+  require.resolve('jsonwebtoken', { paths: [require.resolve('../netlify/functions/package.json')] }),
+  () => ({
+    sign: jest.fn(() => 'mock-jwt-token'),
+    verify: jest.fn(() => ({
+      sub: 'test-user-id',
+      email: 'test@example.com',
+      role: 'admin',
+      permissions: ['campaigns_read', 'campaigns_write']
+    }))
+  }),
+  { virtual: false }
+);
 
 // Mock bcrypt
 jest.mock('bcryptjs', () => ({

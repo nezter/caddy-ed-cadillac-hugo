@@ -1,4 +1,5 @@
 const errorHandler = require('./utils/error-handler');
+const { route } = require('./utils/request-path');
 const LeadAssignmentService = require('./utils/lead-assignment-service');
 const DatabaseService = require('./utils/database-service');
 const { authenticateRequest } = require('./utils/auth-middleware');
@@ -20,7 +21,7 @@ exports.handler = async function(event, context) {
   }
 
   try {
-    const path = event.path.replace('/.netlify/functions/lead-assignments', '');
+    const path = route(event, 'lead-assignments');
     const method = event.httpMethod;
 
     switch (`${method} ${path}`) {
