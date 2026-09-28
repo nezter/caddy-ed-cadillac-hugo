@@ -40,10 +40,35 @@ async function authenticateRequest(event, options = {}) {
     allowedRoles = []
   } = options;
 
-  // Extract auth token from various sources
-  const authToken = event.headers.authorization?.replace('Bearer ', '') ||
-                   event.headers['x-auth-token'] ||
-                   getCookieValue(event.headers.cookie, 'auth_token');
+  // Extract the auth token from wherever it was presented.
+  //
+  // Header lookup is case-INSENSITIVE. HTTP header names are case-insensitive by
+  // specification, and Netlify's runtime happens to deliver them lowercased --
+  // but this line read `event.headers.authorization` alone, so any caller that
+  // arrived with `Authorization` (every hand-rolled test, any other runtime,
+  // anything invoking the handler directly) was silently treated as
+  // unauthenticated.
+  //
+  // That is not a cosmetic bug. "Unauthenticated" and "rejected" are the same
+  // 401, so a test asserting rejection passed whether the token was missing or
+  // merely spelled differently -- which is exactly how a whole suite here came
+  // to pass 8 of 31 for the wrong reason while never exercising the
+  // authorisation path at all.
+  const headers = event.headers || {};
+  const headerValue = (name) => {
+    const wanted = name.toLowerCase();
+    for (const key of Object.keys(headers)) {
+      if (key.toLowerCase() === wanted) return headers[key];
+    }
+    return undefined;
+  };
+
+  const authorization = headerValue('authorization');
+  // The scheme is case-insensitive too: `bearer`, `Bearer` and `BeArEr` are all
+  // the same scheme, and RFC 7235 says the client should not have to care.
+  const authToken = (authorization && String(authorization).replace(/^\s*bearer\s+/i, '').trim()) ||
+                   headerValue('x-auth-token') ||
+                   getCookieValue(headerValue('cookie'), 'auth_token');
 
   if (!authToken) {
     if (requireAuth) {

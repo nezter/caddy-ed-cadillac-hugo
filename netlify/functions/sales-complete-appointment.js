@@ -2,6 +2,26 @@ const DatabaseService = require('./utils/database-service');
 const errorHandler = require('./utils/error-handler');
 
 /**
+ * Read a request header by name, case-insensitively.
+ *
+ * HTTP header names are case-insensitive (RFC 7230) and Netlify's runtime
+ * delivers them lowercased, but `headerValue(event.headers, 'authorization')` matches only
+ * that one spelling. Anything arriving as `Authorization` -- another runtime,
+ * a direct invocation, a hand-built test event -- is then treated as
+ * unauthenticated, which is indistinguishable from a rejected token because
+ * both are a 401.
+ */
+function headerValue(headers, name) {
+  const wanted = String(name).toLowerCase();
+  const source = headers || {};
+  for (const key of Object.keys(source)) {
+    if (key.toLowerCase() === wanted) return source[key];
+  }
+  return undefined;
+}
+
+
+/**
  * Sales Complete Appointment API
  * Marks an appointment as completed for sales representatives
  */
@@ -107,9 +127,9 @@ async function updateLeadStatusAfterAppointment(leadId, salesRepId) {
  * Helper function to check authentication
  */
 async function checkAuthentication(event) {
-  const authToken = event.headers.authorization?.replace('Bearer ', '') ||
-                    event.headers['x-auth-token'] ||
-                    getCookieValue(event.headers.cookie, 'auth_token');
+  const authToken = headerValue(event.headers, 'authorization')?.replace('Bearer ', '') ||
+                    headerValue(event.headers, 'x-auth-token') ||
+                    getCookieValue(headerValue(event.headers, 'cookie'), 'auth_token');
 
   if (!authToken) {
     return { authenticated: false };

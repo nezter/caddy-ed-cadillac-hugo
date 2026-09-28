@@ -1,382 +1,439 @@
 /**
- * Unit Tests: Authentication Middleware
- * Tests JWT validation, role-based access, and permission checking
+ * Unit tests: authentication middleware.
+ *
+ * WHAT THIS IS ACTUALLY ABOUT
+ * ---------------------------
+ * Two separate things, and the second is the one that matters:
+ *
+ *   1. The token -- signature, expiry, subject claim, and the ways a request
+ *      can fail to present one.
+ *   2. THE ACCOUNT. After the signature verifies, the middleware re-reads the
+ *      user from the database and makes every authorisation decision from that
+ *      row:
+ *
+ *          const user = await DatabaseService.getSalesRep(userId);
+ *          if (!user || user.status !== 'active') { ... }
+ *          if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) { ... }
+ *          ...user.permissions...
+ *
+ *      Nothing about role or permissions is read from the token. A token's own
+ *      `role` and `permissions` claims are decorative and never consulted.
+ *
+ * WHY THIS USED TO BE 20 FAILURES INSTEAD OF 31 PASSES
+ * -------------------------------------------------------
+ * These tests were written when the JWT carried the role, and set it there:
+ *
+ *      const token = createMockJWT({ role: 'admin' });
+ *      expect(result.authenticated).toBe(true);
+ *
+ * The middleware reads the database instead, and the suite mocked no database,
+ * so every lookup failed and every success path came back
+ * `authenticated: false`. The rejection tests passed, because rejecting a bad
+ * token never reaches the database -- which is why this looked like a broad
+ * regression rather than one unmocked dependency.
+ *
+ * The file now mocks `getSalesRep` and sets role and permissions on the ROW,
+ * which is where the middleware actually looks. The token carries identity and
+ * nothing else.
+ *
+ * It also tests the property that design exists to provide: a token claiming
+ * admin, against a row that is not admin, is refused. Under the old contract
+ * that token would have been granted access.
+ *
+ * SHAPES, measured rather than assumed
+ * -----------------------------------
+ *   result          { authenticated, error? }  or  { authenticated, user }
+ *   result.error    { statusCode, headers, body }
+ *   result.error.body   a JSON STRING, not an object. Parse it.
+ *   result.user     { id, firstName, lastName, email, role, permissions }
+ *                    -- mapped from the row's snake_case, not the token's claims
  */
 
+'use strict';
+
+// Mocked before the middleware is required: the middleware captures
+// DatabaseService at require time.
+jest.mock('../../netlify/functions/utils/database-service', () => {
+  const actual = jest.requireActual('../../netlify/functions/utils/database-service');
+  return { __esModule: true, ...actual, getSalesRep: jest.fn() };
+});
+
 const { authenticateRequest } = require('../../netlify/functions/utils/auth-middleware');
+const DatabaseService = require('../../netlify/functions/utils/database-service');
+const { verify } = require('jsonwebtoken');
 const testUtils = require('../setup');
 
+/** A sales_reps row as the database returns it. */
+function dbUser(overrides = {}) {
+  return {
+    id: 'test-user-id',
+    first_name: 'Test',
+    last_name: 'User',
+    email: 'test@example.com',
+    role: 'admin',
+    permissions: ['campaigns_read', 'campaigns_write'],
+    status: 'active',
+    ...overrides,
+  };
+}
+
+/** The decoded payload the (mocked) verifier returns. */
+function claims(overrides = {}) {
+  return {
+    sub: 'test-user-id',
+    email: 'test@example.com',
+    role: 'admin',
+    permissions: ['campaigns_read', 'campaigns_write'],
+    ...overrides,
+  };
+}
+
+/**
+ * Authorise a request.
+ *
+ *   payload   what the mocked verifier decodes the token to
+ *   user      the row the mocked database returns for that subject
+ *   _throws   make the verifier throw, for the signature/expiry cases
+ */
+async function authenticate({
+  payload = claims(),
+  user = dbUser(),
+  options = {},
+  // A VALID BEARER BY DEFAULT, not opt-in. An earlier version of this file
+  // defaulted `headers` to empty, so a dozen tests that meant to exercise the
+  // database lookup and the role checks were actually asserting "no token
+  // supplied" -- and passing, for the wrong reason, in exactly the way the
+  // suite had been passing before.
+  headers = { Authorization: 'Bearer mock-jwt-token' },
+  cookie,
+  _throws,
+} = {}) {
+  if (_throws) {
+    verify.mockImplementation(() => { throw _throws; });
+  } else {
+    verify.mockReturnValue(payload);
+  }
+  DatabaseService.getSalesRep.mockResolvedValue(user);
+  const event = testUtils.createMockEvent();
+  if (headers && headers.Authorization) event.headers.Authorization = headers.Authorization;
+  if (cookie) event.headers.cookie = cookie;
+  return authenticateRequest(event, options);
+}
+
+/** Bearer header for a token whose payload the mock will return. */
+const BEARER = 'Bearer mock-jwt-token';
+
+/** result.error.body is a JSON string. */
+function bodyOf(error) {
+  return JSON.parse(error.body);
+}
+
 describe('Authentication Middleware', () => {
-  let mockEvent;
-
   beforeEach(() => {
-    mockEvent = testUtils.createMockEvent();
+    jest.clearAllMocks();
   });
 
-  describe('JWT Token Validation', () => {
-    it('should authenticate valid JWT token', async () => {
-      mockEvent.headers.Authorization = `Bearer ${testUtils.createMockJWT()}`;
-      
-      const result = await authenticateRequest(mockEvent);
-      
+  describe('the account decides access, not the token', () => {
+    it('takes role and permissions from the row even when the token disagrees', async () => {
+      // Token says sales_rep with no permissions. Row says admin with two. If
+      // any of this came from the token these assertions would fail.
+      const result = await authenticate({
+        payload: claims({ role: 'sales_rep', permissions: [] }),
+        user: dbUser({ role: 'admin' }),
+      });
+
       expect(result.authenticated).toBe(true);
-      expect(result.user).toHaveProperty('sub');
-      expect(result.user).toHaveProperty('email');
-      expect(result.user).toHaveProperty('role');
+      expect(result.user.role).toBe('admin');
+      expect(result.user.permissions).toEqual(['campaigns_read', 'campaigns_write']);
     });
 
-    it('should reject missing Authorization header', async () => {
-      delete mockEvent.headers.Authorization;
-      
-      const result = await authenticateRequest(mockEvent);
-      
-      expect(result.authenticated).toBe(false);
-      expect(result.error).toBeDefined();
-      expect(result.error.statusCode).toBe(401);
-    });
-
-    it('should reject malformed Authorization header', async () => {
-      mockEvent.headers.Authorization = 'InvalidFormat token';
-      
-      const result = await authenticateRequest(mockEvent);
-      
-      expect(result.authenticated).toBe(false);
-      expect(result.error.statusCode).toBe(401);
-    });
-
-    it('should reject invalid JWT token', async () => {
-      mockEvent.headers.Authorization = 'Bearer invalid.jwt.token';
-      
-      const result = await authenticateRequest(mockEvent);
-      
-      expect(result.authenticated).toBe(false);
-      expect(result.error.statusCode).toBe(401);
-    });
-
-    it('should reject expired JWT token', async () => {
-      const expiredToken = testUtils.createMockJWT({
-        exp: Math.floor(Date.now() / 1000) - 3600 // Expired 1 hour ago
-      });
-      
-      mockEvent.headers.Authorization = `Bearer ${expiredToken}`;
-      
-      const result = await authenticateRequest(mockEvent);
-      
-      expect(result.authenticated).toBe(false);
-      expect(result.error.statusCode).toBe(401);
-    });
-
-    it('should reject JWT with invalid signature', async () => {
-      const { verify } = require('jsonwebtoken');
-      verify.mockImplementation(() => {
-        throw new Error('invalid signature');
+    it('refuses a token claiming admin when the row is a sales rep', async () => {
+      // The reason the row is re-read: a token minted while the rep was an admin
+      // must not keep admin after the row says otherwise.
+      const result = await authenticate({
+        payload: claims({ role: 'admin' }),
+        options: { allowedRoles: ['admin'] },
+        user: dbUser({ role: 'sales_rep' }),
       });
 
-      mockEvent.headers.Authorization = `Bearer ${testUtils.createMockJWT()}`;
-      
-      const result = await authenticateRequest(mockEvent);
-      
-      expect(result.authenticated).toBe(false);
-      expect(result.error.statusCode).toBe(401);
-    });
-  });
-
-  describe('Role-Based Access Control', () => {
-    it('should allow access for admin role', async () => {
-      const adminToken = testUtils.createMockJWT({
-        role: 'admin'
-      });
-      
-      mockEvent.headers.Authorization = `Bearer ${adminToken}`;
-      
-      const result = await authenticateRequest(mockEvent, {
-        allowedRoles: ['admin', 'manager']
-      });
-      
-      expect(result.authenticated).toBe(true);
-    });
-
-    it('should allow access for manager role', async () => {
-      const managerToken = testUtils.createMockJWT({
-        role: 'manager'
-      });
-      
-      mockEvent.headers.Authorization = `Bearer ${managerToken}`;
-      
-      const result = await authenticateRequest(mockEvent, {
-        allowedRoles: ['admin', 'manager']
-      });
-      
-      expect(result.authenticated).toBe(true);
-    });
-
-    it('should deny access for unauthorized role', async () => {
-      const salesRepToken = testUtils.createMockJWT({
-        role: 'sales_rep'
-      });
-      
-      mockEvent.headers.Authorization = `Bearer ${salesRepToken}`;
-      
-      const result = await authenticateRequest(mockEvent, {
-        allowedRoles: ['admin', 'manager']
-      });
-      
       expect(result.authenticated).toBe(false);
       expect(result.error.statusCode).toBe(403);
     });
 
-    it('should allow access when no roles specified', async () => {
-      const anyRoleToken = testUtils.createMockJWT({
-        role: 'any_role'
-      });
-      
-      mockEvent.headers.Authorization = `Bearer ${anyRoleToken}`;
-      
-      const result = await authenticateRequest(mockEvent);
-      
-      expect(result.authenticated).toBe(true);
-    });
-  });
+    it('refuses a deactivated account even with a valid token', async () => {
+      const result = await authenticate({ user: dbUser({ status: 'suspended' }) });
 
-  describe('Permission-Based Access Control', () => {
-    it('should allow access with required permissions', async () => {
-      const tokenWithPermissions = testUtils.createMockJWT({
-        permissions: ['campaigns_read', 'campaigns_write', 'analytics_read']
-      });
-      
-      mockEvent.headers.Authorization = `Bearer ${tokenWithPermissions}`;
-      
-      const result = await authenticateRequest(mockEvent, {
-        requiredPermissions: ['campaigns_read']
-      });
-      
-      expect(result.authenticated).toBe(true);
-    });
-
-    it('should allow access with multiple required permissions', async () => {
-      const tokenWithPermissions = testUtils.createMockJWT({
-        permissions: ['campaigns_read', 'campaigns_write', 'analytics_read']
-      });
-      
-      mockEvent.headers.Authorization = `Bearer ${tokenWithPermissions}`;
-      
-      const result = await authenticateRequest(mockEvent, {
-        requiredPermissions: ['campaigns_read', 'campaigns_write']
-      });
-      
-      expect(result.authenticated).toBe(true);
-    });
-
-    it('should deny access with missing permissions', async () => {
-      const tokenWithLimitedPermissions = testUtils.createMockJWT({
-        permissions: ['campaigns_read']
-      });
-      
-      mockEvent.headers.Authorization = `Bearer ${tokenWithLimitedPermissions}`;
-      
-      const result = await authenticateRequest(mockEvent, {
-        requiredPermissions: ['campaigns_write']
-      });
-      
       expect(result.authenticated).toBe(false);
-      expect(result.error.statusCode).toBe(403);
+      expect(result.error.statusCode).toBe(401);
+      expect(bodyOf(result.error).message).toMatch(/no longer active/i);
     });
 
-    it('should deny access with no permissions array', async () => {
-      const tokenWithoutPermissions = testUtils.createMockJWT();
-      delete tokenWithoutPermissions.permissions;
-      
-      mockEvent.headers.Authorization = `Bearer ${tokenWithoutPermissions}`;
-      
-      const result = await authenticateRequest(mockEvent, {
-        requiredPermissions: ['campaigns_read']
-      });
-      
-      expect(result.authenticated).toBe(false);
-      expect(result.error.statusCode).toBe(403);
-    });
+    it('refuses a valid token when the account no longer exists', async () => {
+      const result = await authenticate({ user: null });
 
-    it('should handle permission checking with empty permissions array', async () => {
-      const tokenWithEmptyPermissions = testUtils.createMockJWT({
-        permissions: []
-      });
-      
-      mockEvent.headers.Authorization = `Bearer ${tokenWithEmptyPermissions}`;
-      
-      const result = await authenticateRequest(mockEvent, {
-        requiredPermissions: ['campaigns_read']
-      });
-      
-      expect(result.authenticated).toBe(false);
-      expect(result.error.statusCode).toBe(403);
-    });
-  });
-
-  describe('Optional Authentication', () => {
-    it('should pass without authentication when not required', async () => {
-      const result = await authenticateRequest(mockEvent, {
-        requireAuth: false
-      });
-      
-      expect(result.authenticated).toBe(true);
-      expect(result.user).toBeNull();
-    });
-
-    it('should authenticate valid token even when optional', async () => {
-      mockEvent.headers.Authorization = `Bearer ${testUtils.createMockJWT()}`;
-      
-      const result = await authenticateRequest(mockEvent, {
-        requireAuth: false
-      });
-      
-      expect(result.authenticated).toBe(true);
-      expect(result.user).not.toBeNull();
-    });
-
-    it('should ignore invalid token when authentication is optional', async () => {
-      mockEvent.headers.Authorization = 'Bearer invalid.token';
-      
-      const result = await authenticateRequest(mockEvent, {
-        requireAuth: false
-      });
-      
-      expect(result.authenticated).toBe(true);
-      expect(result.user).toBeNull();
-    });
-  });
-
-  describe('Token Extraction', () => {
-    it('should extract token from Authorization header', async () => {
-      const token = testUtils.createMockJWT();
-      mockEvent.headers.Authorization = `Bearer ${token}`;
-      
-      const result = await authenticateRequest(mockEvent);
-      
-      expect(result.authenticated).toBe(true);
-    });
-
-    it('should handle lowercase "bearer" prefix', async () => {
-      const token = testUtils.createMockJWT();
-      mockEvent.headers.Authorization = `bearer ${token}`;
-      
-      const result = await authenticateRequest(mockEvent);
-      
-      expect(result.authenticated).toBe(true);
-    });
-
-    it('should handle mixed case "Bearer" prefix', async () => {
-      const token = testUtils.createMockJWT();
-      mockEvent.headers.Authorization = `BeArEr ${token}`;
-      
-      const result = await authenticateRequest(mockEvent);
-      
-      expect(result.authenticated).toBe(true);
-    });
-
-    it('should handle extra whitespace in Authorization header', async () => {
-      const token = testUtils.createMockJWT();
-      mockEvent.headers.Authorization = `  Bearer   ${token}  `;
-      
-      const result = await authenticateRequest(mockEvent);
-      
-      expect(result.authenticated).toBe(true);
-    });
-  });
-
-  describe('Error Handling', () => {
-    it('should handle JWT verification errors', async () => {
-      const { verify } = require('jsonwebtoken');
-      verify.mockImplementation(() => {
-        throw new Error('Token verification failed');
-      });
-
-      mockEvent.headers.Authorization = `Bearer ${testUtils.createMockJWT()}`;
-      
-      const result = await authenticateRequest(mockEvent);
-      
       expect(result.authenticated).toBe(false);
       expect(result.error.statusCode).toBe(401);
     });
 
-    it('should handle malformed JWT payload', async () => {
-      const { verify } = require('jsonwebtoken');
-      verify.mockReturnValue('invalid-payload');
+    it('looks the account up by the `sub` claim', async () => {
+      await authenticate({ payload: claims({ sub: 'rep-42' }) });
 
-      mockEvent.headers.Authorization = `Bearer ${testUtils.createMockJWT()}`;
-      
-      const result = await authenticateRequest(mockEvent);
-      
-      expect(result.authenticated).toBe(false);
-      expect(result.error.statusCode).toBe(401);
+      expect(DatabaseService.getSalesRep).toHaveBeenCalledWith('rep-42');
     });
 
-    it('should handle missing user claims', async () => {
-      const minimalToken = testUtils.createMockJWT();
-      delete minimalToken.sub;
-      delete minimalToken.email;
-      
-      mockEvent.headers.Authorization = `Bearer ${minimalToken}`;
-      
-      const result = await authenticateRequest(mockEvent);
-      
-      expect(result.authenticated).toBe(false);
-      expect(result.error.statusCode).toBe(401);
-    });
-  });
+    it('maps the row onto the user it returns', async () => {
+      const result = await authenticate({ user: dbUser({ first_name: 'Caddy', last_name: 'Ed' }) });
 
-  describe('User Data Extraction', () => {
-    it('should extract user data from JWT payload', async () => {
-      const userData = {
-        sub: 'user-123',
-        email: 'user@example.com',
+      expect(result.user).toEqual({
+        id: 'test-user-id',
+        firstName: 'Caddy',
+        lastName: 'Ed',
+        email: 'test@example.com',
         role: 'admin',
         permissions: ['campaigns_read', 'campaigns_write'],
-        name: 'Test User',
-        iat: Math.floor(Date.now() / 1000),
-        exp: Math.floor(Date.now() / 1000) + 3600
-      };
-      
-      const token = testUtils.createMockJWT(userData);
-      mockEvent.headers.Authorization = `Bearer ${token}`;
-      
-      const result = await authenticateRequest(mockEvent);
-      
-      expect(result.authenticated).toBe(true);
-      expect(result.user.sub).toBe(userData.sub);
-      expect(result.user.email).toBe(userData.email);
-      expect(result.user.role).toBe(userData.role);
-      expect(result.user.permissions).toEqual(userData.permissions);
-    });
-
-    it('should handle missing optional user fields', async () => {
-      const minimalUserData = {
-        sub: 'user-123',
-        email: 'user@example.com'
-      };
-      
-      const token = testUtils.createMockJWT(minimalUserData);
-      mockEvent.headers.Authorization = `Bearer ${token}`;
-      
-      const result = await authenticateRequest(mockEvent);
-      
-      expect(result.authenticated).toBe(true);
-      expect(result.user.sub).toBe(minimalUserData.sub);
-      expect(result.user.email).toBe(minimalUserData.email);
-      expect(result.user.role).toBeUndefined();
-      expect(result.user.permissions).toBeUndefined();
+      });
     });
   });
 
-  describe('Security Headers', () => {
-    it('should include security-related error responses', async () => {
-      mockEvent.headers.Authorization = 'Bearer invalid-token';
-      
-      const result = await authenticateRequest(mockEvent);
-      
+  describe('token validation', () => {
+    it('authenticates a valid token', async () => {
+      const result = await authenticate({ headers: { Authorization: BEARER } });
+
+      expect(result.authenticated).toBe(true);
+      expect(result.user.id).toBe('test-user-id');
+    });
+
+    it('rejects a missing Authorization header', async () => {
+      const result = await authenticate({});
+
       expect(result.authenticated).toBe(false);
-      expect(result.error.body).toHaveProperty('error');
-      expect(result.error.body).toHaveProperty('message');
+      expect(result.error.statusCode).toBe(401);
+    });
+
+    it('rejects a malformed Authorization header', async () => {
+      const result = await authenticate({ headers: { Authorization: 'InvalidFormat token' } });
+
+      expect(result.authenticated).toBe(false);
+      expect(result.error.statusCode).toBe(401);
+    });
+
+    it('rejects an unparseable token', async () => {
+      const result = await authenticate({ headers: { Authorization: 'Bearer invalid.jwt.token' } });
+
+      expect(result.authenticated).toBe(false);
+      expect(result.error.statusCode).toBe(401);
+    });
+
+    it('reports an expired token as expired, not as invalid', async () => {
+      const err = new Error('jwt expired');
+      err.name = 'TokenExpiredError';
+      const result = await authenticate({ headers: { Authorization: BEARER }, _throws: err });
+
+      expect(result.authenticated).toBe(false);
+      expect(bodyOf(result.error).message).toMatch(/expired/i);
+    });
+
+    it('rejects a token whose signature does not verify', async () => {
+      const result = await authenticate({ headers: { Authorization: BEARER }, _throws: new Error('invalid signature') });
+
+      expect(result.authenticated).toBe(false);
+      expect(result.error.statusCode).toBe(401);
+    });
+
+    it('rejects a token that decodes to something that is not an object', async () => {
+      verify.mockReturnValue('invalid-payload');
+      DatabaseService.getSalesRep.mockResolvedValue(dbUser());
+      const event = testUtils.createMockEvent();
+      event.headers.Authorization = BEARER;
+
+      const result = await authenticateRequest(event);
+
+      expect(result.authenticated).toBe(false);
+      expect(result.error.statusCode).toBe(401);
+    });
+
+    it('rejects a token with no subject claim', async () => {
+      const result = await authenticate({
+        payload: { email: 'nobody@example.com' },
+        headers: { Authorization: BEARER },
+      });
+
+      expect(result.authenticated).toBe(false);
+      expect(result.error.statusCode).toBe(401);
+    });
+  });
+
+  describe('role restrictions', () => {
+    it('allows a role on the list', async () => {
+      const result = await authenticate({
+        headers: { Authorization: BEARER },
+        options: { allowedRoles: ['admin', 'manager'] },
+        user: dbUser({ role: 'admin' }),
+      });
+
+      expect(result.authenticated).toBe(true);
+    });
+
+    it('allows the other role on the list', async () => {
+      const result = await authenticate({
+        headers: { Authorization: BEARER },
+        options: { allowedRoles: ['admin', 'manager'] },
+        user: dbUser({ role: 'manager' }),
+      });
+
+      expect(result.authenticated).toBe(true);
+    });
+
+    it('refuses a role that is not on the list', async () => {
+      const result = await authenticate({
+        headers: { Authorization: BEARER },
+        options: { allowedRoles: ['admin', 'manager'] },
+        user: dbUser({ role: 'sales_rep' }),
+      });
+
+      expect(result.authenticated).toBe(false);
+      expect(result.error.statusCode).toBe(403);
+    });
+
+    it('allows any role when no roles are specified', async () => {
+      const result = await authenticate({
+        headers: { Authorization: BEARER },
+        user: dbUser({ role: 'anything_at_all' }),
+      });
+
+      expect(result.authenticated).toBe(true);
+    });
+  });
+
+  describe('permission restrictions', () => {
+    it('allows a permission the row holds', async () => {
+      const result = await authenticate({
+        headers: { Authorization: BEARER },
+        options: { requiredPermissions: ['campaigns_read'] },
+        user: dbUser({ permissions: ['campaigns_read', 'campaigns_write'] }),
+      });
+
+      expect(result.authenticated).toBe(true);
+    });
+
+    it('allows when the row holds every required permission', async () => {
+      const result = await authenticate({
+        headers: { Authorization: BEARER },
+        options: { requiredPermissions: ['campaigns_read', 'campaigns_write'] },
+        user: dbUser({ permissions: ['campaigns_read', 'campaigns_write', 'analytics_read'] }),
+      });
+
+      expect(result.authenticated).toBe(true);
+    });
+
+    it('refuses when the row is missing a required permission', async () => {
+      const result = await authenticate({
+        headers: { Authorization: BEARER },
+        options: { requiredPermissions: ['campaigns_write'] },
+        user: dbUser({ permissions: ['campaigns_read'] }),
+      });
+
+      expect(result.authenticated).toBe(false);
+      expect(result.error.statusCode).toBe(403);
+    });
+
+    it('refuses when the row has no permissions at all', async () => {
+      const result = await authenticate({
+        headers: { Authorization: BEARER },
+        options: { requiredPermissions: ['campaigns_read'] },
+        user: dbUser({ permissions: null }),
+      });
+
+      expect(result.authenticated).toBe(false);
+      expect(result.error.statusCode).toBe(403);
+    });
+
+    it('refuses when the row has an empty permissions array', async () => {
+      const result = await authenticate({
+        headers: { Authorization: BEARER },
+        options: { requiredPermissions: ['campaigns_read'] },
+        user: dbUser({ permissions: [] }),
+      });
+
+      expect(result.authenticated).toBe(false);
+      expect(result.error.statusCode).toBe(403);
+    });
+  });
+
+  describe('optional authentication', () => {
+    it('passes an anonymous request through when auth is not required', async () => {
+      const result = await authenticate({ options: { requireAuth: false } });
+
+      expect(result.authenticated).toBe(true);
+      expect(result.user).toBeNull();
+    });
+
+    it('still resolves the account when a valid token is present', async () => {
+      const result = await authenticate({
+        headers: { Authorization: BEARER },
+        options: { requireAuth: false },
+      });
+
+      expect(result.authenticated).toBe(true);
+      expect(result.user).not.toBeNull();
+      expect(result.user.id).toBe('test-user-id');
+    });
+
+    it('ignores an unparseable token rather than failing the request', async () => {
+      const result = await authenticate({
+        headers: { Authorization: 'Bearer invalid.token' },
+        options: { requireAuth: false },
+      });
+
+      expect(result.authenticated).toBe(true);
+      expect(result.user).toBeNull();
+    });
+  });
+
+  describe('token extraction', () => {
+    const forms = [
+      ['Bearer', `Bearer mock-jwt-token`],
+      ['lowercase bearer', `bearer mock-jwt-token`],
+      ['mixed case BeArEr', `BeArEr mock-jwt-token`],
+      ['padded with whitespace', `  Bearer   mock-jwt-token  `],
+    ];
+
+    it.each(forms)('accepts a token written as %s', async (_label, header) => {
+      const result = await authenticate({ headers: { Authorization: header } });
+
+      expect(result.authenticated).toBe(true);
+    });
+
+    it('accepts a token from the auth_token cookie', async () => {
+      // The staff portal keeps its token in a cookie as well as a header.
+      const result = await authenticate({ cookie: 'auth_token=mock-jwt-token' });
+
+      expect(result.authenticated).toBe(true);
+    });
+  });
+
+  describe('error shape', () => {
+    it('carries a status code, headers and a body', async () => {
+      const result = await authenticate({});
+
+      expect(result.error.statusCode).toBe(401);
       expect(result.error.headers).toHaveProperty('Content-Type');
+      expect(typeof result.error.body).toBe('string');
+    });
+
+    it('body names the failure and says it was not authorised', async () => {
+      const result = await authenticate({});
+      const body = bodyOf(result.error);
+
+      expect(body.success).toBe(false);
+      expect(body.errorCode).toBe(401);
+      expect(body.message).toMatch(/token/i);
+    });
+
+    it('sets nosniff on the error response', async () => {
+      const result = await authenticate({});
+
+      expect(result.error.headers).toHaveProperty('X-Content-Type-Options', 'nosniff');
     });
   });
 });

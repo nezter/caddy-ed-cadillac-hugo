@@ -1,5 +1,25 @@
 const jwt = require('jsonwebtoken');
 const DatabaseService = require('./utils/database-service');
+
+/**
+ * Read a request header by name, case-insensitively.
+ *
+ * HTTP header names are case-insensitive (RFC 7230) and Netlify's runtime
+ * delivers them lowercased, but `headerValue(event.headers, 'authorization')` matches only
+ * that one spelling. Anything arriving as `Authorization` -- another runtime,
+ * a direct invocation, a hand-built test event -- is then treated as
+ * unauthenticated, which is indistinguishable from a rejected token because
+ * both are a 401.
+ */
+function headerValue(headers, name) {
+  const wanted = String(name).toLowerCase();
+  const source = headers || {};
+  for (const key of Object.keys(source)) {
+    if (key.toLowerCase() === wanted) return source[key];
+  }
+  return undefined;
+}
+
 // The raw query helper, exported from database-service so a function can read
 // exactly what it needs without a bespoke static per query.
 const query = DatabaseService.query;
@@ -39,7 +59,7 @@ exports.handler = async (event) => {
       };
     }
   // Verify authentication
-  const authHeader = event.headers.authorization;
+  const authHeader = headerValue(event.headers, 'authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return json(401, { success: false, error: 'Authentication required' });
   }
