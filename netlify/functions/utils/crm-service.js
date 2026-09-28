@@ -1,4 +1,3 @@
-const axios = require('axios');
 
 /**
  * CRM Service for handling lead submissions to external CRM systems
@@ -80,17 +79,16 @@ class CRMService {
       utm_campaign__c: leadData.utm?.campaign
     };
 
-    const response = await axios.post(
-      `${this.apiUrl}/services/data/v58.0/sobjects/Lead`,
-      sfData,
-      {
-        headers: {
+    const response = await this.postJson(
+        `${this.apiUrl}/services/data/v58.0/sobjects/Lead`,
+        sfData,
+        { headers: {
+
           'Authorization': `Bearer ${this.apiKey}`,
           'Content-Type': 'application/json'
-        },
-        timeout: this.timeout
-      }
-    );
+        
+        } }
+      );
 
     return {
       leadId: response.data.id,
@@ -119,17 +117,16 @@ class CRMService {
       ]
     };
 
-    const response = await axios.post(
-      `${this.apiUrl}/contacts/v1/contact`,
-      hsData,
-      {
-        headers: {
+    const response = await this.postJson(
+        `${this.apiUrl}/contacts/v1/contact`,
+        hsData,
+        { headers: {
+
           'Authorization': `Bearer ${this.apiKey}`,
           'Content-Type': 'application/json'
-        },
-        timeout: this.timeout
-      }
-    );
+        
+        } }
+      );
 
     return {
       leadId: response.data.vid,
@@ -155,17 +152,16 @@ class CRMService {
       }]
     };
 
-    const response = await axios.post(
-      `${this.apiUrl}/crm/v2/Leads`,
-      zohoData,
-      {
-        headers: {
+    const response = await this.postJson(
+        `${this.apiUrl}/crm/v2/Leads`,
+        zohoData,
+        { headers: {
+
           'Authorization': `Zoho-oauthtoken ${this.apiKey}`,
           'Content-Type': 'application/json'
-        },
-        timeout: this.timeout
-      }
-    );
+        
+        } }
+      );
 
     return {
       leadId: response.data.data[0].details.id,
@@ -193,17 +189,16 @@ class CRMService {
       }
     };
 
-    const response = await axios.post(
-      `${this.apiUrl}/v1/persons`,
-      pdData,
-      {
-        headers: {
+    const response = await this.postJson(
+        `${this.apiUrl}/v1/persons`,
+        pdData,
+        { headers: {
+
           'Authorization': `Bearer ${this.apiKey}`,
           'Content-Type': 'application/json'
-        },
-        timeout: this.timeout
-      }
-    );
+        
+        } }
+      );
 
     return {
       leadId: response.data.data.id,
@@ -216,16 +211,10 @@ class CRMService {
    * @private
    */
   async _submitGeneric(leadData) {
-    const response = await axios.post(
+    const response = await this.postJson(
       this.apiUrl,
       leadData,
-      {
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json'
-        },
-        timeout: this.timeout
-      }
+      { headers: { 'Authorization': `Bearer ${this.apiKey}` } }
     );
 
     return {
@@ -246,12 +235,20 @@ class CRMService {
     try {
       // Simple test request - adjust based on CRM API
       const testUrl = this._getTestEndpoint();
-      await axios.get(testUrl, {
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`
-        },
-        timeout: 5000
-      });
+      // Was: axios.get(testUrl, { headers, timeout: 5000 })
+      // Same AbortSignal treatment as postJson -- a connection test that can
+      // hang is not a connection test.
+      const probe = new AbortController();
+      const probeTimer = setTimeout(() => probe.abort(), 5000);
+      try {
+        const res = await fetch(testUrl, {
+          headers: { 'Authorization': `Bearer ${this.apiKey}` },
+          signal: probe.signal,
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      } finally {
+        clearTimeout(probeTimer);
+      }
       return true;
     } catch (error) {
       console.error('CRM connection test failed:', error.message);

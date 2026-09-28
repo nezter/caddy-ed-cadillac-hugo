@@ -7,7 +7,6 @@
 const { Pool } = require('pg');
 
 // Database connections
-let supabase = null;
 let turso = null;
 let pgPool = null;
 let pgPoolInitPromise = null;
@@ -79,17 +78,12 @@ process.on('exit', () => {
 
 // Initialize connections
 function initializeConnections() {
-  if (!supabase) {
-    try {
-      const { createClient } = require('@supabase/supabase-js');
-      supabase = createClient(
-        process.env.SUPABASE_URL,
-        process.env.SUPABASE_SERVICE_ROLE_KEY
-      );
-    } catch (error) {
-      console.warn('Supabase connection failed:', error.message);
-    }
-  }
+    // Turso/libSQL and Postgres only.
+    //
+    // Supabase was removed: it cannot be configured on this deployment, and
+    // its read path discarded the WHERE clause entirely, so a query scoped
+    // to one customer would have returned every row in the table.
+    // See the note in query() below.
 
   if (!turso && process.env.TURSO_DATABASE_URL) {
     try {
@@ -169,95 +163,47 @@ async function query(sql, params = [], options = {}) {
     console.error('Postgres query failed, falling back to alternate handlers:', pgError.message);
   }
 
-  // Determine which database to use
-  let useTurso = false;
-  if (turso && !forceSupabase) {
-    // Use Turso for read operations and simple queries
-    const sqlLower = sql.toLowerCase().trim();
-    if (readOnly || sqlLower.startsWith('select') || forceTurso) {
-      useTurso = true;
-    }
+  // One data path, in priority order: Postgres, then Turso, then an honest
+  // failure.
+  //
+  // This used to be three. Supabase sat in the middle as a write fallback, and
+  // a "mock database" sat at the end.
+  //
+  // Supabase could not have worked here -- its write path called an RPC named
+  // exec_sql that no configured project defines -- and its read path was
+  // actively wrong: it pulled the table name out of the SQL with a regex and
+  // then DISCARDED THE WHERE CLAUSE, so a query for one customer's rows would
+  // have returned every row in the table.
+  //
+  // The mock fallback returned { rows: [], rowCount: 0 } for anything. With no
+  // database configured, "list all customers" therefore SUCCEEDED with an empty
+  // list and a 200 -- indistinguishable from a business with no customers. A
+  // sales tool that reports an empty pipeline when it cannot reach its data is
+  // worse than one that is visibly down, because nobody investigates a 200.
+  //
+  // libSQL does writes, so dropping Supabase loses nothing. What is left either
+  // works or says why it did not.
+  const target = turso;
+  if (!target) {
+    const err = new Error(
+      'No database is configured. Set TURSO_DATABASE_URL and TURSO_AUTH_TOKEN, ' +
+        'or DATABASE_URL for Postgres.'
+    );
+    err.code = 'DB_NOT_CONFIGURED';
+    throw err;
   }
 
   try {
-    if (useTurso && turso) {
-      console.log('🔄 Using Turso for query');
-      const result = await turso.execute({ sql, args: safeParams });
-      return {
-        rows: result.rows,
-        rowCount: result.rowsAffected || result.rows.length
-      };
-    } else if (supabase) {
-      console.log('🔄 Using Supabase for query');
-
-      // For complex operations, use Supabase RPC
-      if (sql.includes('INSERT') || sql.includes('UPDATE') || sql.includes('DELETE') || sql.includes('CREATE') || sql.includes('ALTER')) {
-        // Use RPC for write operations
-        const { data, error } = await supabase.rpc('exec_sql', {
-          sql_query: sql,
-          params: safeParams
-        });
-
-        if (error) throw error;
-
-        return {
-          rows: data || [],
-          rowCount: data ? data.length : 0
-        };
-      } else {
-        // For SELECT queries, try direct query first
-        const tableMatch = sql.match(/FROM\s+(\w+)/i);
-        if (tableMatch) {
-          const tableName = tableMatch[1];
-          const { data, error } = await supabase.from(tableName).select('*').limit(1000);
-
-          if (!error) {
-            // Filter results based on WHERE clause (simplified)
-            let filteredData = data;
-            if (sql.includes('WHERE')) {
-              // Basic filtering - in production, use proper SQL parsing
-              console.log('⚠️ Complex WHERE clauses not fully supported in direct Supabase queries');
-            }
-
-            return {
-              rows: filteredData,
-              rowCount: filteredData.length
-            };
-          }
-        }
-
-        // Fallback to RPC
-        const { data, error } = await supabase.rpc('exec_sql', {
-          sql_query: sql,
-          params: safeParams
-        });
-
-        if (error) throw error;
-
-        return {
-          rows: data || [],
-          rowCount: data ? data.length : 0
-        };
-      }
-    } else {
-      // Fallback to mock database
-      console.log('🔄 Using mock database (no real DB connection)');
-      await new Promise(resolve => setTimeout(resolve, 50));
-      return {
-        rows: [],
-        rowCount: 0
-      };
-    }
-  } catch (error) {
-    console.error('Database query failed:', error);
-
-    // Fallback to mock database
-    console.log('🔄 Falling back to mock database');
-    await new Promise(resolve => setTimeout(resolve, 50));
+    const result = await target.execute({ sql, args: safeParams });
     return {
-      rows: [],
-      rowCount: 0
+      rows: result.rows,
+      rowCount: result.rowsAffected != null ? result.rowsAffected : result.rows.length
     };
+  } catch (dbError) {
+    // A real query failure, reported as one. The old mock fallback swallowed
+    // this and answered with zero rows.
+    console.error('Database query failed:', dbError.message);
+    throw dbError;
   }
 }
 

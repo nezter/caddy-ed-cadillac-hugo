@@ -1,4 +1,4 @@
-const { createClient } = require('@supabase/supabase-js');
+const { query } = require('./database-service');
 const DataNormalizer = require('./data-normalizer');
 const FuzzyMatcher = require('./fuzzy-matcher');
 
@@ -7,11 +7,29 @@ const FuzzyMatcher = require('./fuzzy-matcher');
  */
 class DeduplicationService {
   constructor() {
-    this.supabase = createClient(
-      process.env.SUPABASE_URL,
-      process.env.SUPABASE_ANON_KEY
-    );
+    // Nothing to connect. The data path is the shared query().
   }
+  /**
+   * Run a statement against the configured database.
+   *
+   * Every method below used to go through the Supabase query builder. That is
+   * gone: SUPABASE_URL is empty in every context, so the constructor threw
+   * `supabaseUrl is required.` at require time, and leads.js had to catch that
+   * and skip duplicate detection altogether. It was therefore not running.
+   *
+   * It was also quietly wrong where it did run. The read path in database-service
+   * extracted the table name with a regex and then discarded the WHERE clause,
+   * so a query scoped to one set of leads could return every lead in the table --
+   * and then MERGE them.
+   *
+   * Through query() these are ordinary parameterised statements: they hit the real
+   * database, they carry their filters, and they fail loudly if the database is
+   * not configured instead of pretending to succeed.
+   */
+  async sql(statement, params = []) {
+    return query(statement, params);
+  }
+
 
   /**
    * Check for duplicate leads
@@ -75,11 +93,11 @@ class DeduplicationService {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - days);
 
-    const { data, error } = await this.supabase
-      .from('leads')
-      .select('*')
-      .gte('created_at', cutoffDate.toISOString())
-      .order('created_at', { ascending: false });
+        // Was: from('leads').select('*').gte('created_at', c).order('created_at')
+        const { rows: data, error } = await this.sql(
+          'SELECT * FROM leads WHERE created_at >= $1 ORDER BY created_at DESC',
+          [cutoffDate.toISOString()]
+        );
 
     if (error) {
       console.error('Error fetching existing leads:', error);
@@ -99,10 +117,11 @@ class DeduplicationService {
   async mergeDuplicates(primaryLeadId, duplicateIds) {
     try {
       // Get all leads involved
-      const { data: leads, error: fetchError } = await this.supabase
-        .from('leads')
-        .select('*')
-        .in('id', [primaryLeadId, ...duplicateIds]);
+          // Was: from('leads').select('*').in('id', [primary, ...duplicates])
+          const { rows: leads, error: fetchError } = await this.sql(
+            'SELECT * FROM leads WHERE id = ANY($1)',
+            [[primaryLeadId, ...duplicateIds]]
+          );
 
       if (fetchError) {
         throw new Error(`Failed to fetch leads: ${fetchError.message}`);
@@ -122,28 +141,51 @@ class DeduplicationService {
       const mergedData = this.mergeLeadData(primaryLead, leads.filter(l => l.id !== primaryLeadId));
 
       // Update primary lead with merged data
-      const { error: updateError } = await this.supabase
-        .from('leads')
-        .update({
-          ...mergedData,
-          merged_from: duplicateIds,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', primaryLeadId);
+          // Was: from('leads').update({...}).eq('id', primary)
+          //
+          // The columns are built from an allowlist rather than from the keys of
+          // mergedData. A merge touches real customer records, and a caller
+          // passing { id: ... } or { created_at: ... } would otherwise be able to
+          // rewrite a lead's identity or its audit trail.
+          const MERGEABLE = new Set([
+            'first_name', 'last_name', 'email', 'phone', 'address_line1',
+            'address_line2', 'city', 'state', 'zip_code', 'customer_type',
+            'source', 'vehicle_interest', 'budget_min', 'budget_max',
+            'preferred_contact_method', 'notes', 'status',
+          ]);
+          const mergeColumns = Object.keys(mergedData || {}).filter(
+            (k) => MERGEABLE.has(k)
+          );
+          if (!mergeColumns.length) {
+            throw new Error('Nothing mergeable in the supplied lead data.');
+          }
+          const setClause = mergeColumns
+            .map((c, i) => '"' + c + '" = $' + (i + 3))
+            .concat('merged_from = $1', 'updated_at = $2')
+            .join(', ');
+          const { error: updateError } = await this.sql(
+            'UPDATE leads SET ' + setClause + ' WHERE id = ANY($4)',
+            [
+              duplicateIds,
+              new Date().toISOString(),
+              ...mergeColumns.map((c) => mergedData[c]),
+              [primaryLeadId],
+            ]
+          );
 
       if (updateError) {
         throw new Error(`Failed to update primary lead: ${updateError.message}`);
       }
 
       // Mark duplicates as merged
-      const { error: deleteError } = await this.supabase
-        .from('leads')
-        .update({
-          status: 'merged',
-          merged_into: primaryLeadId,
-          updated_at: new Date().toISOString()
-        })
-        .in('id', duplicateIds);
+          // Was: from('leads').update({status,merged_into}).in('id',[...])
+          const { error: deleteError } = await this.sql(
+            [
+              "UPDATE leads SET status = 'merged', merged_into = $1, updated_at = $2",
+              'WHERE id = ANY($3)',
+            ].join(' '),
+            [primaryLeadId, new Date().toISOString(), duplicateIds]
+          );
 
       if (deleteError) {
         console.error('Failed to mark duplicates as merged:', deleteError);
@@ -212,10 +254,14 @@ class DeduplicationService {
    */
   async getDuplicateStats() {
     try {
-      const { data, error } = await this.supabase
-        .from('leads')
-        .select('status, merged_from, duplicate_count')
-        .not('status', 'eq', 'merged');
+          // Was: from('leads').select('status, merged_from, duplicate_count')
+          //          .not('status', 'eq', 'merged')
+          const { rows: data, error } = await this.sql(
+            [
+              'SELECT status, merged_from, duplicate_count FROM leads',
+              "WHERE status IS DISTINCT FROM 'merged'",
+            ].join(' ')
+          );
 
       if (error) {
         throw error;

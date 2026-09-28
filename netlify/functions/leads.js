@@ -4,9 +4,11 @@ const LeadAssignmentService = require('./utils/lead-assignment-service');
 const InteractionService = require('./utils/interaction-service');
 const FollowupService = require('./utils/followup-service');
 const DatabaseService = require('./utils/database-service');
+// The shared parameterised query, for the one statement here that is not worth
+// a DatabaseService static. database-service exports `query` alongside the class.
+const { query } = require('./utils/database-service');
 const nodemailer = require('nodemailer');
 const DeduplicationService = require('./utils/deduplication-service');
-const { createClient } = require('@supabase/supabase-js');
 
 /**
  * Leads API
@@ -73,12 +75,17 @@ exports.handler = async function(event, context) {
     if (duplicateCheck.isDuplicate) {
       console.log(`Duplicate lead detected. Confidence: ${duplicateCheck.confidence}`);
 
-      // Update the existing lead's last contact time
-      const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
-      await supabase
-        .from('leads')
-        .update({ last_contact: new Date().toISOString() })
-        .eq('id', duplicateCheck.duplicates[0].lead.id);
+      // Update the existing lead's last contact time.
+      //
+      // Was: supabase.from('leads').update({ last_contact }).eq('id', id)
+      // Supabase is not configurable on this deployment, and its fallback path
+      // discarded the WHERE clause entirely -- so this would have updated
+      // EVERY lead row rather than the one duplicate. Parameterised SQL
+      // through the shared query() is both correct and portable.
+      await query(
+        'UPDATE leads SET last_contact = $1 WHERE id = $2',
+        [new Date().toISOString(), duplicateCheck.duplicates[0].lead.id]
+      );
 
       return errorHandler.createSuccessResponse({
         leadId: duplicateCheck.duplicates[0].lead.id,

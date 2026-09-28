@@ -1,4 +1,6 @@
-const fetch = require('node-fetch');
+// Was: const fetch = require('node-fetch')
+// Node 18+ has global fetch, and this deployment runs Node 24. The package was a
+// second HTTP client alongside the global one, for no benefit.
 const errorHandler = require('./utils/error-handler');
 
 exports.handler = async function(event, context) {

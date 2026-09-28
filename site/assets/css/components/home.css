@@ -385,3 +385,28 @@
   font-size: var(--text-sm);
   text-align: center;
 }
+
+/* The social-feed prompt.
+   Shown until a tab is chosen. It replaces what used to be a blank panel that
+   quietly pulled the platform's own script on every page load to render nothing
+   for anyone who was not already signed in. */
+.social-fallback__prompt {
+  margin: 0;
+  padding: var(--space-5);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  text-align: center;
+}
+
+.social-fallback__prompt[hidden] { display: none; }
+
+.social-fallback__note {
+  margin: 0;
+  padding: var(--space-4);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  text-align: center;
+}

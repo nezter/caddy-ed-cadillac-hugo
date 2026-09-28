@@ -3,7 +3,37 @@
  * Provides high-performance caching layer for frequently accessed data
  */
 
-const Redis = require('ioredis');
+/*
+ * ioredis is required INSIDE the connect method, not here.
+ *
+ * This is a cache. Nothing works without it, and everything works with it
+ * missing. Requiring it at module load made an optional dependency a hard one: any
+ * deployment without the package -- or without it installed for an optional path
+ * -- threw at require time, and because health-check.js requires this module in
+ * order to REPORT on the cache, the health endpoint took down the health
+ * endpoint.
+ *
+ * It is now a lazy require behind `isConfigured()`, so an unconfigured cache is
+ * a configuration state that can be reported rather than a crash.
+ */
+let _Redis = null;
+function redisConstructor() {
+  if (_Redis) return _Redis;
+  // The module name is held in a variable on purpose.
+  //
+  // A literal require('ioredis') is resolved at BUILD time by esbuild, whether
+  // or not the code path ever runs. That makes an optional dependency a required
+  // one: the moment ioredis is not in package.json, health-check.js fails to
+  // bundle -- and health-check is the function that would have told you why.
+  //
+  // With a computed name esbuild cannot follow the edge, so it emits the require
+  // as-is and the connection is attempted only when a REDIS_URL exists and
+  // something actually reads the cache.
+  const MODULE = 'ioredis';
+  // eslint-disable-next-line global-require, import/no-dynamic-require
+  _Redis = require(MODULE);
+  return _Redis;
+}
 
 class RedisCacheService {
   constructor() {
@@ -64,7 +94,7 @@ class RedisCacheService {
         // Handle different Redis providers
         if (redisUrl.includes('upstash') || process.env.UPSTASH_REDIS_REST_TOKEN) {
           // Upstash Redis REST API configuration
-          this.redis = new Redis(redisUrl, {
+          this.redis = new (redisConstructor())(redisUrl, {
             ...redisConfig,
             // Upstash-specific settings
             password: process.env.UPSTASH_REDIS_REST_TOKEN,
@@ -72,7 +102,7 @@ class RedisCacheService {
           });
         } else {
           // Standard Redis configuration
-          this.redis = new Redis(redisUrl, redisConfig);
+          this.redis = new (redisConstructor())(redisUrl, redisConfig);
         }
 
         // Event handlers
@@ -473,10 +503,33 @@ class RedisCacheService {
 // Singleton instance
 const redisCacheService = new RedisCacheService();
 
-// Initialize on module load
-redisCacheService.initialize().catch(error => {
-  console.error('Failed to initialize Redis cache service:', error);
-});
+/*
+ * NOT initialised at module load.
+ *
+ * It used to be:
+ *
+ *     redisCacheService.initialize().catch(...)
+ *
+ * and that is a side effect at `require` time, which is the wrong place for a
+ * network operation. health-check.js requires this module in order to report
+ * whether the cache is healthy -- so the health check could not run without
+ * first attempting the connection it was meant to be checking, and a Redis
+ * host that accepted the TCP connection and then stalled held the whole module
+ * load, and therefore the health endpoint, with it.
+ *
+ * It also made a missing REDIS_URL a code path rather than a configuration
+ * state: nothing could tell "no cache configured" from "cache is broken".
+ *
+ * `initialize()` is now called by whoever actually uses the cache, and
+ * `isConfigured()` answers the configuration question without connecting.
+ */
+redisCacheService.isConfigured = function isConfigured() {
+  return Boolean(
+    process.env.REDIS_URL ||
+    process.env.REDIS_CONNECTION_STRING ||
+    process.env.UPSTASH_REDIS_REST_URL
+  );
+};
 
 // Graceful shutdown
 process.on('SIGTERM', async () => {

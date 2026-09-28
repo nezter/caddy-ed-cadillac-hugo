@@ -448,14 +448,28 @@
     // social-feed returns { facebook:{posts}, x:{posts} } when tokens are set.
     // Anything missing falls back to the official client embeds, then to the
     // labelled sample layout.
-    if (!CONFIG.socialEndpoint || !window.fetch) { mountFacebook(); mountX(); return; }
-    fetch(CONFIG.socialEndpoint, { headers: { Accept: "application/json" } })
-      .then(function (r) { return r.ok ? r.json() : {}; })
-      .catch(function () { return {}; })
-      .then(function (data) {
-        if (!renderServer("facebook", data && data.facebook)) mountFacebook();
-        if (!renderServer("x", data && data.x)) mountX();
-      });
+    // The platform embeds are NOT loaded here.
+    //
+    // This used to fall back to mountFacebook()/mountX() -- which injects a
+    // Facebook page-plugin iframe and a platform.twitter.com script -- for every
+    // visitor, on every load, to render a feed most of them never see. It was
+    // the only thing on this site that reached a third party, and in Firefox
+    // with no session the widget logged "DataStore.get: namespace is required"
+    // 43 times on one home page load.
+    //
+    // social-feed.js now loads a platform's embed only when its tab is chosen.
+    // If this project's own social endpoint has real posts, those are rendered
+    // here as before -- that is first-party and costs nothing. Only the
+    // third-party fallback waits for a click.
+    if (CONFIG.socialEndpoint && window.fetch) {
+      fetch(CONFIG.socialEndpoint, { headers: { Accept: "application/json" } })
+        .then(function (r) { return r.ok ? r.json() : {}; })
+        .catch(function () { return {}; })
+        .then(function (data) {
+          renderServer("facebook", data && data.facebook);
+          renderServer("x", data && data.x);
+        });
+    }
   }
 
   /* --------------------------------------------------------- alerts ------ */

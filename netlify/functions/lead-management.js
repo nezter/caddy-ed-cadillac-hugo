@@ -1,5 +1,4 @@
 const nodemailer = require('nodemailer');
-const axios = require('axios');
 const errorHandler = require('./utils/error-handler');
 const crmService = require('./utils/crm-service');
 const DeduplicationService = require('./utils/deduplication-service');

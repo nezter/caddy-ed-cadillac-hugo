@@ -4,13 +4,12 @@
  */
 
 const { Pool } = require('pg');
-const { createClient } = require('@supabase/supabase-js');
 const { createClient: createTursoClient } = require('@libsql/client');
 
 // Enhanced connection management
 class EnhancedDatabaseService {
   constructor() {
-    this.supabase = null;
+    // Supabase removed; this service talks SQL through query().
     this.turso = null;
     this.pgPool = null;
     this.pgPoolInitPromise = null;
@@ -29,42 +28,8 @@ class EnhancedDatabaseService {
    * Initialize database connections with enhanced configuration
    */
   async initializeConnections() {
-    await this.initializeSupabase();
     await this.initializeTurso();
     await this.initializePgPool();
-  }
-
-  /**
-   * Initialize Supabase client
-   */
-  async initializeSupabase() {
-    if (this.supabase) return this.supabase;
-
-    try {
-      this.supabase = createClient(
-        process.env.SUPABASE_URL,
-        process.env.SUPABASE_SERVICE_ROLE_KEY,
-        {
-          auth: {
-            autoRefreshToken: false,
-            persistSession: false
-          },
-          db: {
-            schema: 'public'
-          },
-          global: {
-            headers: {
-              'x-connection-pool': 'enhanced'
-            }
-          }
-        }
-      );
-      console.log('✅ Enhanced Supabase client initialized');
-      return this.supabase;
-    } catch (error) {
-      console.error('Failed to initialize Supabase:', error.message);
-      throw error;
-    }
   }
 
   /**
@@ -427,8 +392,18 @@ class EnhancedDatabaseService {
 
     try {
       // Test Supabase
-      if (this.supabase) {
-        const { data, error } = await this.supabase.from('followup_campaigns').select('count').limit(1);
+      // Was: supabase.from('followup_campaigns').select('count').limit(1)
+      // Now a plain statement through the same query() everything else uses,
+      // so the health check reports on the database that is actually in use.
+      {
+        let data = null;
+        let error = null;
+        try {
+          const r = await this.query('SELECT count(*) AS c FROM followup_campaigns');
+          data = r.rows;
+        } catch (e) {
+          error = { message: e.message };
+        }
         health.supabase = !error;
       }
     } catch (error) {
