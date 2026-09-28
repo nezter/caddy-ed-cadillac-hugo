@@ -214,7 +214,21 @@ do_test() {
   # assertion rot plus ESM/CJS transform errors in the calendar suite, catalogued
   # in docs/test-status.md. They are not caused by the storage work, and they are
   # not being hidden by it.
-  in_container 'cd netlify/functions && npm install --include=dev --no-audit --no-fund && npx jest --ci --watchAll=false --config /site/jest.config.js --rootDir /site/netlify/functions'
+  # The ROOT install is not optional.
+  #
+  # jest.config.js and babel.config.js both live at the repository root, and the
+  # babel transform is configured with rootMode 'upward' so it can reach the
+  # ES modules in site/assets/js/. That means babel resolves its presets and
+  # plugins from the ROOT node_modules. Installing only netlify/functions leaves
+  # babel unable to load its own config and every suite dies with
+  # "Cannot find module '@babel/plugin-transform-runtime'" -- zero tests, and a
+  # report that says "9 failed" as though the code were broken.
+  #
+  # The local binary is used rather than `npx jest`, which silently downloads a
+  # DIFFERENT jest into its cache whenever the local one is missing. That is how
+  # a whole session's test numbers came from a jest this project does not depend
+  # on, with its own @babel/core that cannot see these plugins.
+  in_container 'npm install --include=dev --no-audit --no-fund >/dev/null 2>&1 && cd netlify/functions && npm install --include=dev --no-audit --no-fund >/dev/null 2>&1 && ./node_modules/.bin/jest --ci --coverage=false --config /site/jest.config.js --rootDir /site/netlify/functions'
 }
 
 do_deploy() {
