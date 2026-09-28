@@ -152,6 +152,71 @@ global.testUtils = {
 // access styles.
 module.exports = global.testUtils;
 
+/**
+ * The account every authenticated request resolves to, unless a test says
+ * otherwise.
+ *
+ * WHY THIS IS HERE AND NOT IN EACH SUITE
+ * ---------------------------------------
+ * The auth middleware does not take the caller's role or permissions from the
+ * token. It verifies the signature, then re-reads the account from the database
+ * and makes every authorisation decision from that row. That is the correct
+ * design -- it means revoking access takes effect on the next request rather than
+ * when the token happens to expire -- and it means any test that exercises an
+ * authenticated path needs a database.
+ *
+ * No suite had one. The result was a very confusing failure shape: with no
+ * account to find, every authenticated request came back 401, which is
+ * indistinguishable from a rejected token, so suites testing the DATABASE reported
+ * what looked like authorisation failures. `followup-campaigns` read 0-for-31
+ * and `auth-middleware` read 20-of-31 failing, neither with a hint that the
+ * missing thing was a row.
+ *
+ * A default here fixes all of them at once, and gives a test one obvious place
+ * to say "this account is a sales_rep" or "this account is suspended".
+ */
+global.testUtils.DEFAULT_REP = Object.freeze({
+  id: 'test-user-id',
+  first_name: 'Test',
+  last_name: 'User',
+  email: 'test@example.com',
+  role: 'admin',
+  permissions: Object.freeze(['campaigns_read', 'campaigns_write']),
+  status: 'active',
+});
+
+/** Override the account a request resolves to. Call from beforeEach. */
+global.testUtils.asRep = (overrides = {}) => {
+  const DatabaseService = require('../netlify/functions/utils/database-service');
+  if (typeof DatabaseService.getSalesRep !== 'function') return null;
+  DatabaseService.getSalesRep.mockResolvedValue({
+    ...global.testUtils.DEFAULT_REP,
+    ...overrides,
+  });
+  return DatabaseService.getSalesRep;
+};
+
+jest.mock('../netlify/functions/utils/database-service', () => {
+  const actual = jest.requireActual('../netlify/functions/utils/database-service');
+  return {
+    __esModule: true,
+    ...actual,
+    // Active admin by default, so a test only has to describe the account when
+    // the ACCOUNT is the thing under test.
+    getSalesRep: jest.fn(() =>
+      Promise.resolve({
+        id: 'test-user-id',
+        first_name: 'Test',
+        last_name: 'User',
+        email: 'test@example.com',
+        role: 'admin',
+        permissions: ['campaigns_read', 'campaigns_write'],
+        status: 'active',
+      })
+    ),
+  };
+});
+
 // Mock external dependencies
 jest.mock('@supabase/supabase-js', () => ({
   createClient: jest.fn(() => ({
