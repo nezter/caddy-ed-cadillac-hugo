@@ -208,8 +208,37 @@ global.testUtils.asRep = (overrides = {}) => {
  * fails on its own expectation, instead of a fabricated row that makes a broken
  * assertion look like it passed.
  */
-global.testUtils.asRows = (rows = [], extra = {}) => {
-  const DatabaseService = require('../netlify/functions/utils/database-service');
+/**
+ * The jsonwebtoken that the FUNCTIONS load, with the mock applied.
+ *
+ * A test needing to change token verification must use this, not
+ * `require('jsonwebtoken')`.
+ *
+ * jsonwebtoken is installed twice -- at the root, and nested under
+ * netlify/functions, which has its own lockfile and so its own copy. A require
+ * from tests/ gets the root one; auth-middleware.js loads the nested one. The
+ * mock is keyed to the nested one, so the root copy is the REAL jsonwebtoken
+ * and `verify.mockImplementation` is not a function on it.
+ *
+ * That is a confusing way to fail: "verify.mockImplementation is not a function"
+ * says nothing about the two-install problem that caused it.
+ */
+global.testUtils.jsonwebtoken = () => require(
+  require.resolve('jsonwebtoken', {
+    paths: [require.resolve('../netlify/functions/package.json')],
+  })
+);
+
+/** Make the token verifier reject, as it does for a token that is not valid. */
+global.testUtils.rejectTokens = (message = 'invalid signature') => {
+  const { verify } = global.testUtils.jsonwebtoken();
+  const err = new Error(message);
+  err.name = 'JsonWebTokenError';
+  verify.mockImplementation(() => { throw err; });
+  return verify;
+};
+
+global.testUtils.asRows = (rows = [], extra = {}) => {  const DatabaseService = require('../netlify/functions/utils/database-service');
   if (typeof DatabaseService.query !== 'function') return null;
   DatabaseService.query.mockResolvedValue({ rows, rowCount: rows.length, ...extra });
   return DatabaseService.query;
@@ -282,6 +311,72 @@ global.testUtils.database = () => {
   DatabaseService.query.mockImplementation((sql, params) => {
     const text = String(sql);
 
+    // Writes are applied, not just answered.
+    //
+    // `UPDATE ... RETURNING *` is how every write in this codebase reads the row
+    // back. A read-only fake answers it with the row as it was BEFORE the
+    // update, so `PUT /{id}` returned the old name and the test read as "the
+    // update did not happen" when in fact the fake had quietly discarded the
+    // write. An UPDATE that changes nothing is exactly the bug this is meant to
+    // be able to catch, so the fake has to change things.
+    if (/^\s*update\s+/i.test(text)) {
+      const rows = applyIdFilter(tables.get(tableIn(text, params)) || [], text, params);
+      const assignments = parseAssignments(text);
+      const updated = rows.map((row) => {
+        const next = { ...row };
+        assignments.forEach(({ column, index, literal }) => {
+          if (literal !== undefined) {
+            next[column] = literal;
+          } else if (index >= 1 && index <= (params || []).length) {
+            next[column] = params[index - 1];
+          }
+        });
+        return next;
+      });
+      // RETURNING is the contract; without it the function checks rows.length.
+      const table = tableIn(text, params);
+      if (updated.length && tables.has(table)) tables.set(table, updated);
+      return Promise.resolve({ rows: updated, rowCount: updated.length });
+    }
+
+    if (/^\s*insert\s+/i.test(text)) {
+      const table = tableIn(text, params);
+      const existing = tables.get(table) || [];
+      const values = parseInsertValues(text, params);
+      tables.set(table, existing.concat([values]));
+      return Promise.resolve({ rows: [values], rowCount: 1 });
+    }
+
+    if (/^\s*delete\s+/i.test(text)) {
+      const table = tableIn(text, params);
+      const existing = tables.get(table) || [];
+      const doomed = applyIdFilter(existing, text, params);
+      tables.set(table, existing.filter((r) => !doomed.includes(r)));
+      return Promise.resolve({ rows: doomed, rowCount: doomed.length });
+    }
+
+    // Aggregates, before the single-COUNT shortcut below.
+    //
+    // Order matters: the stats query is `COUNT(*) as a, COUNT(CASE...) as b,
+    // SUM(x) as c, ...` and it CONTAINS `COUNT(*)`, so the shortcut matched it
+    // first and answered with one column. Every other aggregate then read
+    // `undefined`, which reads as "the statistics are missing" rather than "the
+    // fake only knows how to count one thing".
+    //
+    // What the value IS depends on the aggregate, and only COUNT is computed for
+    // real. The rest are `null` -- which is what SQL itself returns for SUM over
+    // no rows, so "no data" is reported as no data rather than as a plausible
+    // number. A test needing a real SUM must put that column in the row it
+    // inserts.
+    if (isAggregate(text)) {
+      const source = applyIdFilter(tables.get(tableIn(text, params)) || [], text, params);
+      const row = {};
+      for (const { alias, fn } of aggregateColumns(text)) {
+        row[alias] = /^count/i.test(fn) ? String(source.length) : null;
+      }
+      return Promise.resolve({ rows: [row], rowCount: 1 });
+    }
+
     // A COUNT is a COUNT whatever table it counts, and the column name varies
     // (`count`, `total`, `rules_count`), so read it back out of the SQL.
     if (/\bcount\s*\(\s*\*\s*\)/i.test(text)) {
@@ -304,6 +399,85 @@ global.testUtils.database = () => {
 function tableIn(sql) {
   const m = String(sql).match(/\b(?:from|update|into)\s+([a-z_][a-z0-9_]*)/i);
   return m ? m[1].toLowerCase() : '';
+}
+
+/**
+ * `SET col = $1, flag = false, other = $2` -> [{ column, value }].
+ *
+ * Both parameterised and literal assignments are read, because both are used:
+ * `UPDATE followup_campaigns SET name = $1, updated_at = CURRENT_TIMESTAMP` and
+ * `SET is_active = false`. A fake that handled only the first left
+ * deactivateCampaign returning the row unchanged, so the test read "deactivate
+ * does not deactivate" -- which is exactly the bug the fake exists to catch.
+ *
+ * `CURRENT_TIMESTAMP` is skipped rather than guessed at, since nothing asserts
+ * on a timestamp and inventing one would be a fabricated value.
+ */
+function parseAssignments(sql) {
+  const set = String(sql).match(/\bset\b([\s\S]*?)\bwhere\b/i);
+  if (!set) return [];
+  const out = [];
+  // Split on commas that are not inside parentheses.
+  const parts = set[1].split(/,(?![^(]*\))/);
+  for (const part of parts) {
+    const param = part.match(/(\w+)\s*=\s*\$(\d+)/);
+    if (param) {
+      out.push({ column: param[1], index: Number(param[2]) });
+      continue;
+    }
+    const literal = part.match(/(\w+)\s*=\s*(true|false|null|-?\d+(?:\.\d+)?|'[^']*')/i);
+    if (literal) out.push({ column: literal[1], literal: parseLiteral(literal[2]) });
+  }
+  return out;
+}
+
+function parseLiteral(text) {
+  const v = String(text).trim();
+  if (/^true$/i.test(v)) return true;
+  if (/^false$/i.test(v)) return false;
+  if (/^null$/i.test(v)) return null;
+  if (/^'.*'$/.test(v)) return v.slice(1, -1);
+  return Number(v);
+}
+
+/** Does this SELECT compute aggregates rather than list rows? */
+function isAggregate(sql) {
+  const select = String(sql).match(/\bselect\b([\s\S]*?)\bfrom\b/i);
+  if (!select) return false;
+  return /\b(count|sum|avg|min|max|total|round)\s*\(/i.test(select[1]);
+}
+
+/** `COUNT(*) as total_campaigns, SUM(x) as total_sent` -> [{alias, fn}] */
+function aggregateColumns(sql) {
+  const select = String(sql).match(/\bselect\b([\s\S]*?)\bfrom\b/i);
+  if (!select) return [];
+  const out = [];
+  const parts = select[1].split(/,(?![^(]*\))/);
+  for (const part of parts) {
+    const text = part.trim();
+    // `as alias` or a bare alias, but the word `as` must never become the
+    // alias -- an earlier version of this regex did exactly that, and every
+    // aggregate came back named "as".
+    const aliased = text.match(/\bas\s+(\w+)\s*$/i);
+    if (aliased) {
+      const fn = (text.match(/^\s*(\w+)\s*\(/) || [])[1];
+      if (fn) out.push({ fn, alias: aliased[1] });
+      continue;
+    }
+    const bare = text.match(/^\s*(\w+)\s*\([^)]*\)\s*(\w+)\s*$/i);
+    if (bare) out.push({ fn: bare[1], alias: bare[2] });
+  }
+  return out;
+}
+
+/** `INSERT INTO t (a, b) VALUES ($1, $2)` -> { a: params[0], b: params[1] } */function parseInsertValues(sql, params) {
+  const cols = String(sql).match(/\(([^)]*)\)\s*values/i);
+  const names = cols ? cols[1].split(',').map((c) => c.trim()) : [];
+  const row = {};
+  names.forEach((name, i) => {
+    row[name] = (params || [])[i];
+  });
+  return row;
 }
 
 /**
@@ -521,15 +695,67 @@ jest.mock('bcryptjs', () => ({
 
 // Global test cleanup
 //
-// `jest.clearAllMocks()` clears mock IMPLEMENTATIONS as well as calls, so the
-// SQL-aware fake installed by testUtils.database() has to be re-armed after
-// every test. Without this it survives exactly one test and then silently
-// reverts to returning undefined -- which reads as "the database broke", not as
-// "the mock was cleared".
+// `jest.clearAllMocks()` clears mock IMPLEMENTATIONS as well as call history,
+// which is almost never what a suite wants from a teardown: any mock that was
+// given behaviour rather than only a call log loses that behaviour after the
+// first test and quietly reverts to returning undefined.
+//
+// Two of those are re-armed below, and the re-arms are the point. Without them:
+//
+//   - testUtils.database()'s SQL fake survives exactly one test, so every test
+//     after the first one saw a database returning undefined -- which reads as
+//     "the data layer broke", not "the mock was cleared".
+//   - the jsonwebtoken mock's `verify` reverts to undefined, so `jwt.verify(...)`
+//     yields undefined and the middleware refuses every token with a 401. A suite
+//     that makes one test's token invalid would then have EVERY subsequent test
+//     authenticated as invalid, and the failures would land on whichever tests
+//     happened to run next.
+//
+// `resetMocks: true` in jest.config.js would clear implementations between tests
+// too, which is a reasonable default and would have the same effect by another
+// route. The re-arms are here instead of there so the behaviour is visible in
+// one place with a reason attached.
 afterEach(() => {
   jest.clearAllMocks();
   if (global.testUtils && global.testUtils.database) global.testUtils.database();
+  rearmDefaultAccount();
+  rearmDefaultTokenVerifier();
 });
+
+/**
+ * Restore the default account lookup.
+ *
+ * `testUtils.asRep()` installs a row with `mockResolvedValue`, and
+ * `clearAllMocks` takes the resolved value with it -- leaving `getSalesRep`
+ * returning undefined, so `authenticateRequest` saw "no such account" and
+ * answered 401. Every test after the one that called asRep() was then
+ * authenticated as a stranger, and the failures landed on tests that had
+ * nothing to do with accounts.
+ */
+function rearmDefaultAccount() {
+  const DatabaseService = require('../netlify/functions/utils/database-service');
+  if (DatabaseService && typeof DatabaseService.getSalesRep === 'function' &&
+      DatabaseService.getSalesRep.mockImplementation) {
+    DatabaseService.getSalesRep.mockImplementation(() => Promise.resolve({ ...global.testUtils.DEFAULT_REP }));
+  }
+}
+
+/** Restore the default "this token is fine" verifier after a test changed it. */
+function rearmDefaultTokenVerifier() {
+  const jwt = global.testUtils && global.testUtils.jsonwebtoken ? global.testUtils.jsonwebtoken() : null;
+  if (jwt && typeof jwt.verify === 'function' && jwt.verify.mockImplementation) {
+    jwt.verify.mockImplementation(defaultVerify);
+  }
+}
+
+function defaultVerify() {
+  return {
+    sub: 'test-user-id',
+    email: 'test@example.com',
+    role: 'admin',
+    permissions: ['campaigns_read', 'campaigns_write'],
+  };
+}
 
 // Increase timeout for database operations
 jest.setTimeout(30000);

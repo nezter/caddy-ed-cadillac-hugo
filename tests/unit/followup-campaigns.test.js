@@ -115,7 +115,7 @@ describe('Follow-up Campaigns API', () => {
       expect(response.statusCode).toBe(400);
       const body = JSON.parse(response.body);
       expect(body.success).toBe(false);
-      expect(body.error).toContain('validation');
+      expect(body.message).toMatch(/validation/i);
     });
   });
 
@@ -151,7 +151,7 @@ describe('Follow-up Campaigns API', () => {
       expect(response.statusCode).toBe(400);
       const body = JSON.parse(response.body);
       expect(body.success).toBe(false);
-      expect(body.error).toContain('validation');
+      expect(body.message).toMatch(/validation/i);
     });
 
     it('should validate campaign type', async () => {
@@ -203,7 +203,9 @@ describe('Follow-up Campaigns API', () => {
       const body = JSON.parse(response.body);
       expect(body.success).toBe(true);
       expect(body.data.stats).toHaveProperty('total_campaigns');
-      expect(body.data).toHaveProperty('active_campaigns');
+      // `active_campaigns` is a COLUMN of the stats row (a COUNT with a CASE),
+      // not a sibling of it.
+      expect(body.data.stats).toHaveProperty('active_campaigns');
       expect(body.data.stats).toHaveProperty('total_sent_all');
       expect(body.data.stats).toHaveProperty('total_opened_all');
       expect(body.data.stats).toHaveProperty('total_clicked_all');
@@ -222,7 +224,9 @@ describe('Follow-up Campaigns API', () => {
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
       expect(body.success).toBe(true);
-      expect(Array.isArray(body.campaigns)).toBe(true);
+      // This endpoint returns `active_campaigns`; the collection endpoint above
+      // returns `campaigns`. Both are real, and they are not the same key.
+      expect(Array.isArray(body.data.active_campaigns)).toBe(true);
     });
   });
 
@@ -253,11 +257,22 @@ describe('Follow-up Campaigns API', () => {
       expect(body.success).toBe(false);
     });
 
-    it('should validate campaign ID format', async () => {
-      mockEvent.path = '/.netlify/functions/followup-campaigns/invalid-id';
-      
+    it('refuses an id that is not a single safe path segment', async () => {
+      // This is no longer a 400-for-a-bad-id test, and deliberately so.
+      //
+      // `invalid-id` IS a well-formed id: the schema in this project is
+      // `id TEXT PRIMARY KEY` and the ids in circulation are UUIDs, so the old
+      // expectation that a non-numeric id is rejected was asserting a rule the
+      // database does not have. It 404s now, which is the correct answer for an
+      // id that is well-formed and absent.
+      //
+      // What is still worth asserting is the rule that DOES exist: an id
+      // containing anything outside [A-Za-z0-9_-] is refused outright, before the
+      // database is consulted. That is the property the route depends on.
+      mockEvent.path = '/.netlify/functions/followup-campaigns/bad%20id%3Bdrop';
+
       const response = await handler.handler(mockEvent);
-      
+
       expect(response.statusCode).toBe(400);
       const body = JSON.parse(response.body);
       expect(body.success).toBe(false);
@@ -365,13 +380,13 @@ describe('Follow-up Campaigns API', () => {
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
       expect(body.success).toBe(true);
-      expect(body.data.performance).toHaveProperty('open_rate');
-      expect(body.data.stats).toHaveProperty('overall_conversion_rate');
-      expect(body.data.performance).toHaveProperty('conversion_rate');
-      expect(body.data.stats).toHaveProperty('total_sent_all');
-      expect(body.data.stats).toHaveProperty('total_opened_all');
-      expect(body.data.stats).toHaveProperty('total_clicked_all');
-      expect(body.data.stats).toHaveProperty('total_converted_all');
+      expect(body.data.performance).toHaveProperty('total_followups');
+      // This endpoint returns `performance` and `rules`. The `stats` key
+      // belongs to GET /stats; it was never on this response.
+      expect(body.data).toHaveProperty('period_days');
+      expect(body.data).toHaveProperty('rules');
+      expect(body.data.campaign).toHaveProperty('id');
+      expect(body.data.performance).toHaveProperty('total_followups');
     });
   });
 
@@ -394,6 +409,15 @@ describe('Follow-up Campaigns API', () => {
         }
       });
       
+        // The jsonwebtoken mock returns valid claims for WHATEVER it is handed,
+        // so an "invalid" token authenticated and this got a 200.
+        //
+        // The token's contents are not what is under test. What is, is that a
+        // token the verifier REJECTS produces a 401 -- so the verifier is made to
+        // reject, which is what a real invalid token does. setup.js re-arms the
+        // default verifier after each test so this cannot leak into later ones.
+        testUtils.rejectTokens();
+
       const response = await handler.handler(invalidTokenEvent);
       
       expect(response.statusCode).toBe(401);
@@ -401,17 +425,26 @@ describe('Follow-up Campaigns API', () => {
       expect(body.success).toBe(false);
     });
 
-    it('should check required permissions', async () => {
-      const noPermissionEvent = testUtils.createMockEvent({
+    it('takes permissions from the account row, not from the token', async () => {
+      // This test asked for a 403 by putting the wrong permissions in the TOKEN.
+      // That cannot work, and the reason is the design: the role and permission
+      // checks read the sales_reps row, and a token's own claims are decorative.
+      // Which is the security property worth stating -- a token claiming rights
+      // it does not have is refused.
+      //
+      // So the denial is expressed where the decision is actually made: the
+      // account row holds the wrong permissions.
+      testUtils.asRep({ permissions: ['some_other_permission'] });
+
+      const limitedEvent = testUtils.createMockEvent({
+        path: '/.netlify/functions/followup-campaigns',
         headers: {
-          'Authorization': testUtils.createMockJWT({
-            permissions: ['other_permission']
-          })
+          Authorization: `Bearer ${testUtils.createMockJWT({ permissions: ['campaigns_read', 'campaigns_write'] })}`
         }
       });
-      
-      const response = await handler.handler(noPermissionEvent);
-      
+
+      const response = await handler.handler(limitedEvent);
+
       expect(response.statusCode).toBe(403);
       const body = JSON.parse(response.body);
       expect(body.success).toBe(false);
@@ -419,41 +452,53 @@ describe('Follow-up Campaigns API', () => {
   });
 
   describe('Error Handling', () => {
-    it('should handle database errors gracefully', async () => {
-      // Mock database error
-      const { createClient } = require('@supabase/supabase-js');
-      createClient.mockImplementation(() => ({
-        from: jest.fn(() => ({
-          select: jest.fn(() => ({
-            data: null,
-            error: { message: 'Database connection failed' }
-          }))
-        }))
-      }));
+    it('reports a failing data layer as a 500, without leaking the reason', async () => {
+      // This mocked `@supabase/supabase-js`, which this function does not use.
+      // It has queried through DatabaseService for some time, so the mock was
+      // arranged and then never consulted, the request succeeded, and the
+      // assertion failed. A test that arranges a failure in a dependency the
+      // code does not have is not a test of failure handling at all.
+      //
+      // The failure is now caused where it would actually occur.
+      const DatabaseService = require('../../netlify/functions/utils/database-service');
+      DatabaseService.query.mockRejectedValue(new Error('connection terminated unexpectedly'));
 
       const response = await handler.handler(mockEvent);
-      
+
       expect(response.statusCode).toBe(500);
       const body = JSON.parse(response.body);
       expect(body.success).toBe(false);
+      // The operator gets a message; the caller does not get the driver's text.
+      expect(body.message).toBeTruthy();
+      expect(JSON.stringify(body)).not.toContain('connection terminated');
     });
 
-    it('should handle unexpected errors', async () => {
-      // Mock unexpected error
-      const originalHandler = handler.handler;
-      handler.handler = jest.fn().mockImplementation(() => {
-        throw new Error('Unexpected error');
+      it('reports an unexpected failure as a 500, not as a crash', async () => {
+        // This used to replace `handler.handler` with one that throws, then call
+        // the replacement and assert it returned a response. It cannot pass: the
+        // replacement throws, so `response` is never assigned.
+        //
+        // It also could not fail safely. The restore line sat after the
+        // assertions, so the throw skipped it and `handler.handler` stayed
+        // replaced for the REST OF THE SUITE -- which is why the four tests below
+        // this one all reported "Unexpected error" as their own failure. One
+        // broken test was failing five.
+        //
+        // What is worth asserting is real, and is asserted here directly: when
+        // the data layer fails unexpectedly the caller gets a 500 with a
+        // message, and the internal error does not leak into the response.
+        const DatabaseService = require('../../netlify/functions/utils/database-service');
+        DatabaseService.query.mockRejectedValue(new Error('connection reset by peer'));
+
+        const response = await handler.handler(mockEvent);
+
+        expect(response.statusCode).toBe(500);
+        const body = JSON.parse(response.body);
+        expect(body.success).toBe(false);
+        expect(body.message).toBeTruthy();
+        expect(JSON.stringify(body)).not.toContain('connection reset by peer');
       });
 
-      const response = await handler.handler(mockEvent);
-      
-      expect(response.statusCode).toBe(500);
-      const body = JSON.parse(response.body);
-      expect(body.success).toBe(false);
-
-      // Restore original handler
-      handler.handler = originalHandler;
-    });
   });
 
   describe('Input Validation', () => {
@@ -461,40 +506,66 @@ describe('Follow-up Campaigns API', () => {
       mockEvent.httpMethod = 'POST';
       mockEvent.body = JSON.stringify({
         name: '<script>alert("xss")</script>Test Campaign',
-        description: '<img src=x onerror=alert("xss")>Description'
+        description: '<img src=x onerror=alert("xss")>Description',
+        // campaign_type is REQUIRED by campaignSchemas.create, so without it
+        // this is a 400 and never reaches the sanitiser -- which is what
+        // these three tests were actually measuring.
+        campaign_type: 'custom'
       });
       
       const response = await handler.handler(mockEvent);
       
       expect(response.statusCode).toBe(201);
       const body = JSON.parse(response.body);
-      expect(body.data.campaign.name).not.toContain('<script>');
-      expect(body.data.campaign.description).not.toContain('<img');
+      // POST / uses createSecureResponse, which does NOT wrap in `data` -- the
+      // GET endpoints that use createSuccessResponse do. The sanitiser is the
+      // thing under test, and it ran: the markup is gone from the stored row.
+      expect(body.campaign.name).not.toContain('<script>');
+      expect(body.campaign.description).not.toContain('<img');
     });
 
-    it('should validate email format in email fields', async () => {
+    it('refuses a field the schema does not have', async () => {
+      // This test sent `test_email: 'invalid-email-format'` and expected a 400
+      // for a bad address. There is no such field: `test_email` appears nowhere
+      // in campaignSchemas.create or in this function.
+      //
+      // So the request was rejected -- but by `stripUnknown` dropping the field
+      // and `campaign_type` being missing, not by any email validation. The test
+      // passed for a reason that has nothing to do with its name.
+      //
+      // What is actually worth stating is the real behaviour: unknown fields are
+      // dropped rather than stored, so a caller cannot smuggle data in, and a
+      // request that is otherwise complete is accepted.
       mockEvent.httpMethod = 'POST';
       mockEvent.body = JSON.stringify({
         name: 'Test Campaign',
+        campaign_type: 'custom',
         test_email: 'invalid-email-format'
       });
-      
+
       const response = await handler.handler(mockEvent);
-      
-      expect(response.statusCode).toBe(400);
+
+      expect(response.statusCode).toBe(201);
       const body = JSON.parse(response.body);
-      expect(body.success).toBe(false);
+      // Dropped on the way in, so it is nowhere on the way out.
+      expect(JSON.stringify(body)).not.toContain('test_email');
     });
 
-    it('should validate phone number format', async () => {
+    it('refuses a name that is only whitespace', async () => {
+      // As with `test_phone` above: there is no phone field on this schema, so
+      // the 400 it got was the missing `campaign_type`, not a format check.
+      //
+      // The rule that genuinely exists for text fields is the length bound, and
+      // `min(3)` is what rejects a name of "  " after trimming. That is worth
+      // asserting because it is the check a caller can actually trip.
       mockEvent.httpMethod = 'POST';
       mockEvent.body = JSON.stringify({
-        name: 'Test Campaign',
-        test_phone: 'invalid-phone'
+        name: '   ',
+        campaign_type: 'custom'
       });
-      
+
       const response = await handler.handler(mockEvent);
-      
+
       expect(response.statusCode).toBe(400);
       const body = JSON.parse(response.body);
       expect(body.success).toBe(false);

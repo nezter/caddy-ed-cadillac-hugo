@@ -54,7 +54,25 @@ exports.handler = async function(event, context) {
   });
 
   if (!auth.authenticated) {
-    return createSecureResponse(401, auth.error.body);
+    // Carry the REAL status through, not a hardcoded 401.
+    //
+    // `authenticateRequest` distinguishes "I do not know who you are" (401) from
+    // "I know who you are and you may not do this" (403). Throwing that away
+    // made every authorisation failure look like a sign-in problem: a sales rep
+    // without `campaigns_write` was told to log in again, would log in again
+    // successfully, and be refused again. The message in the body said
+    // "Insufficient permissions" while the status said 401, so the two
+    // disagreed in front of the client.
+    //
+    // Fall back to 401 only if there is somehow no status to forward, so this can
+    // never produce a response with no status at all.
+    return auth.error && auth.error.statusCode
+      ? createSecureResponse(auth.error.statusCode, auth.error.body)
+      : createSecureResponse(401, auth.error ? auth.error.body : JSON.stringify({
+          success: false,
+          message: 'Authentication failed',
+          errorCode: 401,
+        }));
   }
 
   try {
