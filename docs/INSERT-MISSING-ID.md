@@ -33,10 +33,10 @@ fails on the NOT NULL constraint of the primary key.
 | 4 | `netlify/functions/email-templates.js:508` | `email_templates` | duplicate an email template | **FIXED** |
 | 5 | `netlify/functions/sms-templates.js:219` | `sms_templates` | create an SMS template | **FIXED** |
 | 6 | `netlify/functions/sms-templates.js:519` | `sms_templates` | duplicate an SMS template | **FIXED** |
-| 7 | `netlify/functions/utils/followup-rules-engine.js:362` | `followups` | schedule a follow-up | **OPEN** |
-| 8 | `netlify/functions/utils/followup-service.js:546` | `followups` | schedule a follow-up | **OPEN** |
-| 9 | `netlify/functions/followup-analytics.js:343` | `followup_analytics` | record an analytics event | **OPEN** |
-| 10 | `netlify/functions/communication-preferences.js:500` | `communication_preference_log` | log a preference change | **OPEN** |
+| 7 | `netlify/functions/utils/followup-rules-engine.js:362` | `followups` | schedule a follow-up | **FIXED** |
+| 8 | `netlify/functions/utils/followup-service.js:546` | `followups` | schedule a follow-up | **FIXED** |
+| 9 | `netlify/functions/followup-analytics.js:343` | `followup_analytics` | record an analytics event | **FIXED** |
+| 10 | `netlify/functions/communication-preferences.js:500` | `communication_preference_log` | log a preference change | **FIXED** |
 | 11 | `netlify/functions/utils/database-service.js:237` | `customers` | create a customer | **OPEN** |
 | 12 | `netlify/functions/utils/database-service.js:781` | `leads` | create a lead | **OPEN** |
 | 13 | `netlify/functions/utils/database-service.js:863` | `interactions` | log an interaction | **OPEN** |

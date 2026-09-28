@@ -498,6 +498,7 @@ async function logPreferenceChange(customerId, changes, action, source) {
   try {
     const sql = `
       INSERT INTO communication_preference_log (
+          id,
         customer_id,
         action,
         changes,
@@ -505,11 +506,12 @@ async function logPreferenceChange(customerId, changes, action, source) {
         ip_address,
         user_agent,
         created_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP)
     `;
 
     // Note: In a real implementation, you'd extract IP and user agent from the request
     await DatabaseService.query(sql, [
+        DatabaseService.newId(),
       customerId,
       action,
       JSON.stringify(changes),

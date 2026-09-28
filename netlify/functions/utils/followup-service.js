@@ -544,14 +544,15 @@ Confidentiality Notice: This email contains confidential information intended on
 
     const sql = `
       INSERT INTO followups (
-        customer_id, lead_id, campaign_id, campaign_name,
+        id, customer_id, lead_id, campaign_id, campaign_name,
         email, sms, email_template, sms_template,
         scheduled_date, priority, status, created_by
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
       RETURNING *
     `;
 
     const params = [
+      DatabaseService.newId(),
       followupData.customer_id,
       followupData.lead_id,
       followupData.campaign_id,

@@ -236,15 +236,17 @@ class DatabaseService {
     
     const sql = `
       INSERT INTO customers (
-        first_name, last_name, email, phone, address_line1, city, state, zip_code,
+        id, first_name, last_name, email, phone, address_line1, city, state, zip_code,
         customer_type, source, assigned_sales_rep_id, vehicle_interest,
         preferred_contact_method, created_by
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
       RETURNING *
     `;
     
+      // `id TEXT PRIMARY KEY` with no DEFAULT, so it has to be supplied.
+      // See newId() for why it is not a schema default.
     const params = [
-      first_name, last_name, email, phone, address_line1, city, state, zip_code,
+      newId(), first_name, last_name, email, phone, address_line1, city, state, zip_code,
       customer_type, source, assigned_sales_rep_id, vehicle_interest,
       preferred_contact_method, 'system'
     ];
@@ -780,19 +782,21 @@ class DatabaseService {
     
     const sql = `
       INSERT INTO leads (
-        customer_id, first_name, last_name, email, phone, message, form_type,
+        id, customer_id, first_name, last_name, email, phone, message, form_type,
         lead_source, vehicle_interest, vehicle_year, vehicle_make, vehicle_model,
         utm_source, utm_medium, utm_campaign, assigned_sales_rep_id, priority,
         next_follow_up_date, created_by
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17,
-        CURRENT_TIMESTAMP + INTERVAL '1 day', 'system'
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18,
+        datetime('now', '+1 day'), 'system'
       )
       RETURNING *
     `;
     
+      // `id TEXT PRIMARY KEY` with no DEFAULT, so it has to be supplied.
+      // See newId() for why it is not a schema default.
     const params = [
-      customer_id, first_name, last_name, email, phone, message, form_type,
+      newId(), customer_id, first_name, last_name, email, phone, message, form_type,
       lead_source, vehicle_interest, vehicle_year, vehicle_make, vehicle_model,
       utm_source, utm_medium, utm_campaign, assigned_sales_rep_id, priority
     ];
@@ -862,15 +866,17 @@ class DatabaseService {
     
     const sql = `
       INSERT INTO interactions (
-        customer_id, lead_id, interaction_type, direction, subject, content,
+        id, customer_id, lead_id, interaction_type, direction, subject, content,
         sales_rep_id, sales_rep_name, contact_method, outcome, next_action,
         next_action_date, initiated_by, created_by
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'sales_rep', 'system')
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 'sales_rep', 'system')
       RETURNING *
     `;
     
+      // `id TEXT PRIMARY KEY` with no DEFAULT, so it has to be supplied.
+      // See newId() for why it is not a schema default.
     const params = [
-      customer_id, lead_id, interaction_type, direction, subject, content,
+      newId(), customer_id, lead_id, interaction_type, direction, subject, content,
       sales_rep_id, sales_rep_name, contact_method, outcome, next_action,
       next_action_date
     ];
@@ -928,15 +934,17 @@ class DatabaseService {
     
     const sql = `
       INSERT INTO appointments (
-        customer_id, lead_id, appointment_type, title, description,
+        id, customer_id, lead_id, appointment_type, title, description,
         scheduled_start, scheduled_end, assigned_sales_rep_id,
         assigned_sales_rep_name, vehicle_of_interest, location, created_by
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'system')
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'system')
       RETURNING *
     `;
     
+      // `id TEXT PRIMARY KEY` with no DEFAULT, so it has to be supplied.
+      // See newId() for why it is not a schema default.
     const params = [
-      customer_id, lead_id, appointment_type, title, description,
+      newId(), customer_id, lead_id, appointment_type, title, description,
       scheduled_start, scheduled_end, assigned_sales_rep_id,
       assigned_sales_rep_name, vehicle_of_interest, location
     ];
@@ -1001,14 +1009,16 @@ class DatabaseService {
     
     const sql = `
       INSERT INTO tasks (
-        title, description, task_type, assigned_to, assigned_to_name,
+        id, title, description, task_type, assigned_to, assigned_to_name,
         customer_id, lead_id, priority, due_date, created_by
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'system')
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'system')
       RETURNING *
     `;
     
+      // `id TEXT PRIMARY KEY` with no DEFAULT, so it has to be supplied.
+      // See newId() for why it is not a schema default.
     const params = [
-      title, description, task_type, assigned_to, assigned_to_name,
+      newId(), title, description, task_type, assigned_to, assigned_to_name,
       customer_id, lead_id, priority, due_date
     ];
     
@@ -1353,19 +1363,21 @@ class DatabaseService {
 
     const sql = `
       INSERT INTO vehicles (
-        stock_number, vin, year, make, model, trim, body_style,
+        id, stock_number, vin, year, make, model, trim, body_style,
         exterior_color, interior_color, engine, transmission, drivetrain, fuel_type,
         mileage, list_price, sale_price, msrp, status, features, packages,
         image_urls, video_url, date_in_stock, created_by
       ) VALUES (
         $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18,
-        $19, $20, $21, $22, CURRENT_DATE, 'system'
+        $19, $20, $21, $22, $23, CURRENT_DATE, 'system'
       )
       RETURNING *
     `;
 
+      // `id TEXT PRIMARY KEY` with no DEFAULT, so it has to be supplied.
+      // See newId() for why it is not a schema default.
     const params = [
-      stock_number, vin, year, make, model, trim, body_style,
+      newId(), stock_number, vin, year, make, model, trim, body_style,
       exterior_color, interior_color, engine, transmission, drivetrain, fuel_type,
       mileage, list_price, sale_price, msrp, status, features, packages,
       image_urls, video_url
