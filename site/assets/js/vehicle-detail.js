@@ -162,6 +162,14 @@
     const label = input.getAttribute('data-label') || LABELS[input.name] || 'This field';
 
     if (!value) {
+      // Only fields that are actually required may complain about being empty.
+      //
+      // This used to reject every blank field, so the optional `comments`
+      // textarea was marked aria-invalid and the form refused to submit with
+      // "Please fix the highlighted field above" unless the client typed a
+      // message they did not need to type. A test drive is not gated behind
+      // writing a note.
+      if (!input.required && input.tagName !== 'SELECT') return '';
       return input.tagName === 'SELECT'
         ? `Choose a ${label.toLowerCase()}.`
         : `${label} is required.`;
@@ -214,6 +222,54 @@
       status.className = `vehicle-booking__status is-${state}`;
       if (message) status.removeAttribute('hidden');
       else status.setAttribute('hidden', '');
+    }
+
+    /**
+     * Offer the client their own calendar entry.
+     *
+     * An .ics needs no account, no OAuth and no third party -- Google Calendar,
+     * Apple, Outlook and Fastmail all read it -- so this works on the deploy
+     * that exists today rather than after a Google Cloud project and a verified
+     * consent screen. It is the difference between an appointment that lives in
+     * an email and one the client is reminded about.
+     *
+     * Deliberately NOT an ATTENDEE line: this is a note on their calendar, not
+     * a formal meeting invitation that adds Ed to every booking as an attendee.
+     */
+    function offerCalendar(payload, vehicleTitle) {
+      if (!status || !status.parentNode) return;
+      if (status.querySelector('[data-calendar-invite]')) return;
+
+      const date = payload.preferredDate;
+      const time = String(payload.preferredTime || '10:00').replace(/^0/, '');
+      // preferredDate is a plain YYYY-MM-DD; the time is a plain HH:MM. The
+      // dealer's timezone is not something this page knows, so the instant is
+      // built as local wall-clock time -- which is what the client typed and
+      // therefore what they expect to see in their calendar.
+      const start = new Date(`${date}T${time}:00`);
+      if (!date || Number.isNaN(start.getTime())) return;
+
+      const params = new URLSearchParams({
+        start: start.toISOString(),
+        duration: '45',
+        title: `Test drive: ${vehicleTitle || 'Cadillac'}`,
+        description:
+          `Booked with Caddy Ed Cadillac. Call 803-431-6180 to move it. ` +
+          (payload.vehicleId ? `Reference ${payload.vehicleId}.` : ''),
+      });
+
+      const a = document.createElement('a');
+      a.className = 'vehicle-booking__calendar';
+      a.href = `/.netlify/functions/calendar-invite?${params.toString()}`;
+      a.setAttribute('data-calendar-invite', '');
+      a.setAttribute('download', 'caddy-ed-test-drive.ics');
+      a.innerHTML =
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+        'stroke-width="2" stroke-linecap="round" aria-hidden="true">' +
+        '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>' +
+        '<span>Add to your calendar</span>';
+
+      status.insertAdjacentElement('afterend', a);
     }
 
     function validate() {
@@ -291,6 +347,7 @@
               'success',
               `Request sent${when}. I'll confirm the exact time shortly — usually the same day.`
             );
+            offerCalendar(payload, document.querySelector('.vehicle-header h1')?.textContent);
             setBusy(false, 'Send another request');
             return;
           }
