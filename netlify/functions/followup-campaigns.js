@@ -231,15 +231,31 @@ async function createCampaign(event) {
   const campaignData = bodyValidation.data;
 
   try {
-    const sql = `
-      INSERT INTO followup_campaigns (
-        name, description, campaign_type, is_active, priority, target_audience,
-        start_date, end_date, timezone, tags, metadata, created_by
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-      RETURNING *
-    `;
+      // The id is generated HERE, not by the database.
+      //
+      // `followup_campaigns.id` is `TEXT PRIMARY KEY` with no DEFAULT, and
+      // nothing in this file supplied one -- the INSERT listed twelve columns
+      // and `id` was not among them. Against a real database that INSERT fails
+      // on the NOT NULL constraint of the primary key, so creating a campaign
+      // has never worked.
+      //
+      // Generated here rather than by adding a DEFAULT to the schema because
+      // every id in this project is a TEXT uuid the application has to carry
+      // anyway: the response returns it, and the caller then uses it in the
+      // activate, deactivate and rules paths. One place generating it is easier
+      // to reason about than two.
+      const newId = require('crypto').randomUUID();
+
+      const sql = `
+        INSERT INTO followup_campaigns (
+          id, name, description, campaign_type, is_active, priority, target_audience,
+          start_date, end_date, timezone, tags, metadata, created_by
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        RETURNING *
+      `;
 
     const params = [
+        newId,
       campaignData.name,
       campaignData.description || '',
       campaignData.campaign_type,

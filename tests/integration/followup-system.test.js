@@ -14,7 +14,20 @@ describe('Follow-up System Integration', () => {
   let createdRuleId;
 
   beforeEach(() => {
+      // The path names THIS function, and the tables are declared empty.
+      //
+      // Two things were missing. The path defaulted to
+      // `/.netlify/functions/test`, and every handler here routes by stripping
+      // its own name off the front -- so nothing matched and the request 404'd,
+      // which surfaced downstream as `Cannot read properties of undefined`.
+      // And with no rows declared, a created campaign has no id to read back.
+      testUtils.database()
+        .insert('followup_campaigns', [])
+        .insert('followup_rules', [])
+        .insert('followups', []);
+
     mockEvent = testUtils.createMockEvent({
+        path: '/.netlify/functions/followup-campaigns',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${testUtils.createMockJWT({
@@ -41,7 +54,8 @@ describe('Follow-up System Integration', () => {
       const campaignResponse = await handler.handler(mockEvent);
       expect(campaignResponse.statusCode).toBe(201);
       
-      const campaignData = JSON.parse(campaignResponse.body).data;
+      // POST uses createSecureResponse, which returns { campaign } at the top level.
+      const campaignData = JSON.parse(campaignResponse.body).campaign;
       createdCampaignId = campaignData.id;
       expect(createdCampaignId).toBeDefined();
 
@@ -68,7 +82,8 @@ describe('Follow-up System Integration', () => {
       const ruleResponse = await followupRulesHandler.handler(mockEvent);
       expect(ruleResponse.statusCode).toBe(201);
       
-      const ruleData = JSON.parse(ruleResponse.body).data;
+        // createSuccessResponse wraps its payload in `data`.
+        const ruleData = JSON.parse(ruleResponse.body).data.rule;
       createdRuleId = ruleData.id;
       expect(createdRuleId).toBeDefined();
 
@@ -79,7 +94,7 @@ describe('Follow-up System Integration', () => {
       const getCampaignResponse = await handler.handler(mockEvent);
       expect(getCampaignResponse.statusCode).toBe(200);
       
-      const retrievedCampaign = JSON.parse(getCampaignResponse.body).data;
+      const retrievedCampaign = JSON.parse(getCampaignResponse.body).data.campaign;
       expect(retrievedCampaign.id).toBe(createdCampaignId);
     });
 
@@ -93,7 +108,7 @@ describe('Follow-up System Integration', () => {
       });
 
       const campaignResponse = await handler.handler(mockEvent);
-      const campaignId = JSON.parse(campaignResponse.body).data.id;
+      const campaignId = JSON.parse(campaignResponse.body).campaign.id;
 
       // Activate the campaign
       mockEvent.httpMethod = 'POST';
@@ -118,7 +133,7 @@ describe('Follow-up System Integration', () => {
       });
 
       const campaignResponse = await handler.handler(mockEvent);
-      const campaignId = JSON.parse(campaignResponse.body).data.id;
+      const campaignId = JSON.parse(campaignResponse.body).campaign.id;
 
       // Track analytics events
       mockEvent.path = '/.netlify/functions/followup-analytics/track';
@@ -232,7 +247,7 @@ describe('Follow-up System Integration', () => {
       });
 
       const campaignResponse = await handler.handler(mockEvent);
-      const campaignId = JSON.parse(campaignResponse.body).data.id;
+      const campaignId = JSON.parse(campaignResponse.body).campaign.id;
 
       // Create rule referencing the campaign
       mockEvent.path = '/.netlify/functions/followup-rules';
@@ -253,7 +268,7 @@ describe('Follow-up System Integration', () => {
       const getRuleResponse = await followupRulesHandler.handler(mockEvent);
       expect(getRuleResponse.statusCode).toBe(200);
       
-      const rule = JSON.parse(getRuleResponse.body).data;
+      const rule = JSON.parse(getRuleResponse.body).data.rule;
       expect(rule.campaign_id).toBe(campaignId);
 
       // Delete campaign and verify rule handling

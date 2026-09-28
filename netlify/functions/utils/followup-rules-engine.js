@@ -504,13 +504,18 @@ class FollowupRulesEngine {
   static async createRule(ruleData) {
     const sql = `
       INSERT INTO followup_rules (
-        name, description, trigger_event, conditions, actions,
+        id, name, description, trigger_event, conditions, actions,
         priority, delay_hours, is_active, start_date, end_date, created_by
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       RETURNING *
     `;
 
     const params = [
+        // `followup_rules.id` is `TEXT PRIMARY KEY` with no DEFAULT -- the schema
+        // translation strips `DEFAULT gen_random_uuid()` for portability -- so the
+        // id must be supplied here. Without it this INSERT fails on the NOT NULL
+        // constraint of the primary key, and creating a rule has never worked.
+        DatabaseService.newId(),
       ruleData.name,
       ruleData.description,
       ruleData.trigger_event,

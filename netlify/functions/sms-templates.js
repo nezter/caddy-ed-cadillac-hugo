@@ -204,15 +204,28 @@ async function createTemplate(event) {
   }
 
   try {
+    // The id is generated HERE, not by the database.
+    //
+    // `sms_templates.id` is `TEXT PRIMARY KEY` with no DEFAULT, and this INSERT did not
+    // supply one. Against a real database it fails on the NOT NULL constraint of
+    // the primary key, so creating an SMS template has never worked.
+    //
+    // Generated here rather than by adding a DEFAULT to the schema because every
+    // id in this project is a TEXT uuid the application has to carry anyway: the
+    // response returns it and the caller uses it from then on.
+    const newId = require('crypto').randomUUID();
+
     const sql = `
       INSERT INTO sms_templates (
-        name, description, content, template_type, is_active,
+        id, name, description, content, template_type, is_active,
         variables, test_phone, tags, metadata, created_by
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
       RETURNING *
     `;
 
     const params = [
+
+    newId,
       templateData.name,
       templateData.description || '',
       templateData.content,
@@ -497,15 +510,22 @@ async function duplicateTemplate(event, templateId) {
     }
 
     // Create duplicate
+    // A duplicate is a NEW row, so it needs a NEW id. Reusing the original's
+    // would violate the primary key -- and `id` is `TEXT PRIMARY KEY` with no
+    // DEFAULT, so nothing in the database would supply one either.
+    const newId = require('crypto').randomUUID();
+
     const sql = `
       INSERT INTO sms_templates (
-        name, description, content, template_type, is_active,
+        id, name, description, content, template_type, is_active,
         variables, test_phone, tags, metadata, created_by
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
       RETURNING *
     `;
 
     const params = [
+
+    newId,
       newName,
       duplicateData.description || `${original.description} (Copy)`,
       original.content,

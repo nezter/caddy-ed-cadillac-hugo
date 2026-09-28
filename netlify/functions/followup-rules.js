@@ -158,7 +158,12 @@ async function createRule(event) {
     return errorHandler.createSuccessResponse({
       message: 'Rule created successfully',
       rule
-    }, 'Rule created');
+      // 201: a rule now exists that did not before. followup-campaigns has
+      // always answered 201 for the identical operation; this file answered 200
+      // only because it reached for a different response helper. Same operation,
+      // same meaning, two statuses -- and the difference was invisible until
+      // something compared the two side by side.
+    }, 'Rule created', 201);
 
   } catch (error) {
     console.error('Error creating rule:', error);

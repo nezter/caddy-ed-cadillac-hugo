@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 /**
  * Database Service
  * Handles all database operations for the customer management system
@@ -1528,6 +1529,36 @@ module.exports = DatabaseService;
  * injection in this file came from interpolating a sort column, and this export
  * is not a licence to repeat that.
  */
+/**
+ * A new primary key for a row about to be inserted.
+ *
+ * WHY THIS EXISTS, AND WHY IT IS NOT A SCHEMA DEFAULT
+ * --------------------------------------------------
+ * Every table in database/turso/001_core.sql declares `id TEXT PRIMARY KEY` with
+ * no DEFAULT. That is not an accident of the translation: scripts/pg2turso.py
+ * deliberately strips `DEFAULT gen_random_uuid()` because that function is not
+ * portable to SQLite.
+ *
+ * The id therefore has to come from the application -- and at the time this was
+ * written, twelve INSERT statements did not supply one. Against a real database
+ * each of those fails on the NOT NULL constraint of the primary key, so none of
+ * them has ever worked: creating a customer, a lead, an interaction, an
+ * appointment, a task, a vehicle, a sales rep, a follow-up, a follow-up rule, an
+ * analytics event, a communication-preference log entry, or a campaign.
+ *
+ * Why generate it here rather than restore a schema DEFAULT: this project reaches
+ * BOTH libSQL and Postgres through one data path, and there is no single default
+ * expression valid on both. `gen_random_uuid()` does not exist in SQLite;
+ * `lower(hex(randomblob(16)))` does not exist in Postgres. In JavaScript it means
+ * the same thing either way.
+ *
+ * The ids are TEXT and opaque. Nothing in this codebase parses one.
+ */
+function newId() {
+  return crypto.randomUUID();
+}
+
+module.exports.newId = newId;
 module.exports.query = query;
 // Re-exported from the single definition above rather than written out again.
 // The version that was here listed four env vars and omitted

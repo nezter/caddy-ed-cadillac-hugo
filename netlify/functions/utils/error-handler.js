@@ -117,11 +117,23 @@ function validationError(message = 'Validation failed', fieldErrors = {}) {
  * Success response
  * @param {any} data - Response data
  * @param {string} message - Success message
+ * @param {number} statusCode - 200 by default; 201 when something was created
  * @returns {Object} - Netlify function response
+ *
+ * The status is a parameter because a function that CREATES something should not
+ * answer 200. followup-campaigns answered 201 on create and followup-rules
+ * answered 200 for the identical operation, purely because one used
+ * createSecureResponse and the other used this helper -- the difference was an
+ * accident of which helper each file reached for, not a decision.
+ *
+ * It matters beyond tidiness: 201 is what tells a client a resource now exists,
+ * and it is the status a strict client library will look for. Both call sites
+ * checked `response.ok`, which accepts either, so nothing broke -- but the
+ * inconsistency is real and it was invisible until something compared the two.
  */
-function createSuccessResponse(data = null, message = 'Success') {
+function createSuccessResponse(data = null, message = 'Success', statusCode = 200) {
   return {
-    statusCode: 200,
+    statusCode,
     headers: {
       'Content-Type': 'application/json'
     },

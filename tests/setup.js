@@ -181,7 +181,19 @@ global.testUtils.DEFAULT_REP = Object.freeze({
   last_name: 'User',
   email: 'test@example.com',
   role: 'admin',
-  permissions: Object.freeze(['campaigns_read', 'campaigns_write']),
+  // Every permission any function in this project requires.
+  //
+  // This held only the two campaign permissions, so any suite that also touched
+  // followup-rules or followup-analytics got a 403. The tempting fix -- adding
+  // the missing permissions to the test's TOKEN -- does nothing at all, because
+  // role and permissions are read from THIS ROW and a token's own claims are
+  // decorative. That is the design working as intended; it just left the default
+  // account unable to reach most of the project.
+  permissions: Object.freeze([
+    'campaigns_read', 'campaigns_write',
+    'rules_read', 'rules_write',
+    'analytics_read',
+  ]),
   status: 'active',
 });
 
@@ -503,16 +515,19 @@ jest.mock('../netlify/functions/utils/database-service', () => {
     ...actual,
     // Active admin by default, so a test only has to describe the account when
     // the ACCOUNT is the thing under test.
+    // The ONE default account, read lazily.
+    //
+    // This used to be a second, hand-written copy of testUtils.DEFAULT_REP with
+    // the same two permissions. When DEFAULT_REP was widened so a suite could
+    // reach followup-rules and followup-analytics, this copy did not follow --
+    // so `getSalesRep` handed back the narrow account while the re-arm in
+    // afterEach handed back the wide one, and which one a test got depended on
+    // whether it had run an `asRep()` yet. That is two answers to one question.
+    //
+    // Deferred rather than captured, because jest.mock factories are hoisted
+    // above the global assignment below and cannot close over it yet.
     getSalesRep: jest.fn(() =>
-      Promise.resolve({
-        id: 'test-user-id',
-        first_name: 'Test',
-        last_name: 'User',
-        email: 'test@example.com',
-        role: 'admin',
-        permissions: ['campaigns_read', 'campaigns_write'],
-        status: 'active',
-      })
+      Promise.resolve({ ...global.testUtils.DEFAULT_REP })
     ),
     // The single query path, defaulting to an empty result set.
     //
