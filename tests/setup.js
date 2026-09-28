@@ -215,6 +215,113 @@ global.testUtils.asRows = (rows = [], extra = {}) => {
   return DatabaseService.query;
 };
 
+/**
+ * A table a test can put rows into, and the fake answers queries against.
+ *
+ *   const DB = testUtils.database();
+ *   DB.insert('followup_campaigns', { id: 'c1', name: 'Spring' });
+ *   // SELECT * FROM followup_campaigns ... -> [{ id: 'c1', name: 'Spring' }]
+ *   // SELECT COUNT(*) ...                 -> [{ count: 1 }]
+ *
+ * WHY NOT JUST asRows()
+ * ---------------------
+ * Because one request is several queries. `GET /followup-campaigns/{id}` runs
+ * three: the campaign, a COUNT over followup_rules, a COUNT over followups. A
+ * single `mockResolvedValue` gives all three the same answer, so the second
+ * query returns a campaign row and the code reads `.followups_count` off it --
+ * undefined -- and the test either fails for that reason or passes by accident.
+ *
+ * A flat mock forces every test to know the query order of the function under
+ * test. This answers by table name, so a test says what the TABLE contains and
+ * the function's query order stops mattering.
+ *
+ * WHAT IT IS NOT
+ * --------------
+ * It is not a database. It matches on the table named in the SQL, which is
+ * enough for the read paths and useless for anything requiring real SQL. It
+ * cannot be mistaken for one: a table that was never inserted into returns
+ * EMPTY, not a plausible row. A test that wants data has to put it there, and
+ * what it did not put there is genuinely absent.
+ */
+global.testUtils.database = () => {
+  const DatabaseService = require('../netlify/functions/utils/database-service');
+  const tables = new Map();
+
+  const api = {
+    /** Put rows in a table. Replaces whatever was there. */
+    insert(table, rows) {
+      tables.set(table, Array.isArray(rows) ? rows : [rows]);
+      return api;
+    },
+
+    /** The rows currently in a table, for a test to assert against. */
+    rowsOf(table) {
+      return tables.get(table) || [];
+    },
+
+    /** Forget everything. Called automatically between tests. */
+    reset() {
+      tables.clear();
+      return api;
+    },
+  };
+
+  // A suite may replace the whole database-service module (auth-middleware.test.js
+  // mocks getSalesRep and spreads the real module over it). Then `query` is the
+  // REAL function, with no mockImplementation to call, and the re-arm in
+  // afterEach would throw inside teardown -- which jest reports as a failure in
+  // whichever test happened to run next, nowhere near the cause.
+  //
+  // So: only install the fake where there is a mock to install it on, and say so
+  // rather than pretending. A suite that has replaced the module is managing its
+  // own data layer and does not need this.
+  if (typeof DatabaseService.query !== 'function' || !DatabaseService.query.mockImplementation) {
+    return api;
+  }
+
+  DatabaseService.query.mockImplementation((sql, params) => {
+    const text = String(sql);
+
+    // A COUNT is a COUNT whatever table it counts, and the column name varies
+    // (`count`, `total`, `rules_count`), so read it back out of the SQL.
+    if (/\bcount\s*\(\s*\*\s*\)/i.test(text)) {
+      const alias = (text.match(/\bas\s+(\w+)/i) || [])[1] || 'count';
+      const count = tables.get(tableIn(text, params)) || [];
+      // A WHERE with a parameter that matches nothing means zero, which is what
+      // a real COUNT over a filtered query returns.
+      const filtered = applyIdFilter(count, text, params);
+      return Promise.resolve({ rows: [{ [alias]: String(filtered.length) }], rowCount: 1 });
+    }
+
+    const rows = applyIdFilter(tables.get(tableIn(text, params)) || [], text, params);
+    return Promise.resolve({ rows, rowCount: rows.length });
+  });
+
+  return api;
+};
+
+/** The table named in a FROM or UPDATE or INTO clause. */
+function tableIn(sql) {
+  const m = String(sql).match(/\b(?:from|update|into)\s+([a-z_][a-z0-9_]*)/i);
+  return m ? m[1].toLowerCase() : '';
+}
+
+/**
+ * Apply a `WHERE id = $n` filter, so a request for an id that was never
+ * inserted comes back empty rather than returning everything.
+ */
+function applyIdFilter(rows, sql, params) {
+  if (!Array.isArray(rows) || rows.length === 0) return [];
+  if (!params || !params.length) return rows;
+  const m = String(sql).match(/\bwhere\s+(\w+)\s*=\s*\$(\d+)/i);
+  if (!m) return rows;
+  const [, column, index] = m;
+  const wanted = params[Number(index) - 1];
+  if (wanted === undefined) return rows;
+  const filtered = rows.filter((r) => String(r[column]) === String(wanted));
+  return filtered.length ? filtered : [];
+}
+
 jest.mock('../netlify/functions/utils/database-service', () => {
   const actual = jest.requireActual('../netlify/functions/utils/database-service');
   return {
@@ -413,8 +520,15 @@ jest.mock('bcryptjs', () => ({
 }));
 
 // Global test cleanup
+//
+// `jest.clearAllMocks()` clears mock IMPLEMENTATIONS as well as calls, so the
+// SQL-aware fake installed by testUtils.database() has to be re-armed after
+// every test. Without this it survives exactly one test and then silently
+// reverts to returning undefined -- which reads as "the database broke", not as
+// "the mock was cleared".
 afterEach(() => {
   jest.clearAllMocks();
+  if (global.testUtils && global.testUtils.database) global.testUtils.database();
 });
 
 // Increase timeout for database operations

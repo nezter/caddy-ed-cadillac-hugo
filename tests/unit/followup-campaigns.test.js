@@ -8,8 +8,35 @@ const testUtils = require('../setup');
 
 describe('Follow-up Campaigns API', () => {
   let mockEvent;
+  let DB;
+
+  /**
+   * The campaign these tests are about.
+   *
+   * The suite is written as though the table has a row in it -- it fetches
+   * 'test-campaign-id' and expects a campaign back. Nothing ever put one there,
+   * so every {id} test got the honest 404 for an empty table and read as a
+   * routing failure.
+   *
+   * Stated here, once, rather than mocked per test: the fake database answers
+   * by table, so this row serves the SELECT and the COUNTs alike.
+   */
+  const CAMPAIGN = {
+    id: 'test-campaign-id',
+    name: 'Test Campaign',
+    description: 'Test campaign description',
+    campaign_type: 'nurture',
+    target_audience: 'leads',
+    is_active: true,
+    priority: 1,
+  };
 
   beforeEach(() => {
+    DB = testUtils.database();
+    DB.insert('followup_campaigns', CAMPAIGN);
+    DB.insert('followup_rules', []);
+    DB.insert('followups', []);
+
     // The path names THIS function, and it has to.
     //
     // createMockEvent defaults to `/.netlify/functions/test`, and the handler
@@ -175,12 +202,12 @@ describe('Follow-up Campaigns API', () => {
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
       expect(body.success).toBe(true);
-      expect(body.stats).toHaveProperty('total_campaigns');
-      expect(body).toHaveProperty('active_campaigns');
-      expect(body.stats).toHaveProperty('total_sent');
-      expect(body.stats).toHaveProperty('total_opened');
-      expect(body.stats).toHaveProperty('total_clicked');
-      expect(body.stats).toHaveProperty('total_converted');
+      expect(body.data.stats).toHaveProperty('total_campaigns');
+      expect(body.data).toHaveProperty('active_campaigns');
+      expect(body.data.stats).toHaveProperty('total_sent_all');
+      expect(body.data.stats).toHaveProperty('total_opened_all');
+      expect(body.data.stats).toHaveProperty('total_clicked_all');
+      expect(body.data.stats).toHaveProperty('total_converted_all');
     });
   });
 
@@ -210,7 +237,10 @@ describe('Follow-up Campaigns API', () => {
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
       expect(body.success).toBe(true);
-      expect(body.campaign).toHaveProperty('id');
+        // createSuccessResponse wraps its payload in `data`; the list endpoint
+        // uses createSecureResponse and does not. Both shapes are real, so the
+        // assertion names the one THIS endpoint returns.
+        expect(body.data.campaign).toHaveProperty('id');
     });
 
     it('should handle non-existent campaign', async () => {
@@ -251,7 +281,7 @@ describe('Follow-up Campaigns API', () => {
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
       expect(body.success).toBe(true);
-      expect(body.campaign.name).toBe('Updated Campaign Name');
+      expect(body.data.campaign.name).toBe('Updated Campaign Name');
     });
 
     it('should validate update data', async () => {
@@ -304,7 +334,7 @@ describe('Follow-up Campaigns API', () => {
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
       expect(body.success).toBe(true);
-      expect(body.campaign.is_active).toBe(true);
+      expect(body.data.campaign.is_active).toBe(true);
     });
   });
 
@@ -320,7 +350,7 @@ describe('Follow-up Campaigns API', () => {
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
       expect(body.success).toBe(true);
-      expect(body.campaign.is_active).toBe(false);
+      expect(body.data.campaign.is_active).toBe(false);
     });
   });
 
@@ -335,13 +365,13 @@ describe('Follow-up Campaigns API', () => {
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
       expect(body.success).toBe(true);
-      expect(body.performance).toHaveProperty('open_rate');
-      expect(body.stats).toHaveProperty('click_rate');
-      expect(body.performance).toHaveProperty('conversion_rate');
-      expect(body.stats).toHaveProperty('total_sent');
-      expect(body.stats).toHaveProperty('total_opened');
-      expect(body.stats).toHaveProperty('total_clicked');
-      expect(body.stats).toHaveProperty('total_converted');
+      expect(body.data.performance).toHaveProperty('open_rate');
+      expect(body.data.stats).toHaveProperty('overall_conversion_rate');
+      expect(body.data.performance).toHaveProperty('conversion_rate');
+      expect(body.data.stats).toHaveProperty('total_sent_all');
+      expect(body.data.stats).toHaveProperty('total_opened_all');
+      expect(body.data.stats).toHaveProperty('total_clicked_all');
+      expect(body.data.stats).toHaveProperty('total_converted_all');
     });
   });
 
@@ -438,8 +468,8 @@ describe('Follow-up Campaigns API', () => {
       
       expect(response.statusCode).toBe(201);
       const body = JSON.parse(response.body);
-      expect(body.campaign.name).not.toContain('<script>');
-      expect(body.campaign.description).not.toContain('<img');
+      expect(body.data.campaign.name).not.toContain('<script>');
+      expect(body.data.campaign.description).not.toContain('<img');
     });
 
     it('should validate email format in email fields', async () => {

@@ -29,7 +29,20 @@ const paginationFields = {
 
 const sortingFields = {
   sort_by: Joi.string(),
-  sort_order: Joi.string().valid('asc', 'desc').default('desc')
+  // Case-insensitive, and normalised to lower case.
+  //
+  // `valid('asc', 'desc')` rejected `DESC` with a 400, while the handler that
+  // consumes this does `sort_order.toUpperCase() === 'ASC'` -- it was written to
+  // accept either case. So the schema refused something the code was built to
+  // handle, and any client sending the conventional SQL spelling got a 400 for
+  // it. Pagination with `sort_order=DESC` was simply broken.
+  //
+  // `.insensitive()` makes the comparison case-blind. There is deliberately no
+  // `.lower()` to normalise the stored value: this joi build has no such method,
+  // and the one consumer already upper-cases before comparing, so normalising
+  // here would be redundant. The SQL is not built from this value either -- the
+  // order is chosen from a two-value allowlist, never interpolated raw.
+  sort_order: Joi.string().valid('asc', 'desc').insensitive().default('desc')
 };
 
 /**

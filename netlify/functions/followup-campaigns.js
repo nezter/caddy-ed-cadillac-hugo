@@ -266,6 +266,13 @@ async function getCampaignStats(event) {
   const days = queryValidation.data.days;
 
   try {
+    // SQLite/libSQL date arithmetic, deliberately.
+    //
+    // This schema stores created_at as TEXT holding datetime('now'), so a string
+    // comparison is both portable and correct. `CURRENT_TIMESTAMP - INTERVAL
+    // '30 days'` is Postgres-only and would have failed against the database this
+    // project actually has -- so these statistics were never obtainable from
+    // Turso at all.
     const sql = `
       SELECT
         COUNT(*) as total_campaigns,
@@ -280,12 +287,12 @@ async function getCampaignStats(event) {
         ROUND(
           CASE
             WHEN SUM(total_sent) > 0
-            THEN (SUM(total_converted)::decimal / SUM(total_sent)) * 100
+            THEN (SUM(total_converted) * 100.0 / SUM(total_sent))
             ELSE 0
           END, 2
         ) as overall_conversion_rate
       FROM followup_campaigns
-      WHERE created_at >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
+      WHERE created_at >= datetime('now', '-${days} days')
     `;
 
     const result = await DatabaseService.query(sql);
@@ -579,7 +586,7 @@ async function getCampaignPerformance(event, campaignId) {
         ) as avg_delay_hours
       FROM followups
       WHERE campaign_id = $1
-        AND created_at >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
+        AND created_at >= datetime('now', '-${days} days')
     `;
 
     const performanceResult = await DatabaseService.query(performanceSql, [campaignId]);
