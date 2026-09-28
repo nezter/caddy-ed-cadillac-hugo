@@ -1230,6 +1230,7 @@ class DatabaseService {
    */
   static async createSalesRep(salesRepData) {
     const {
+      id,
       first_name,
       last_name,
       email,
@@ -1238,30 +1239,58 @@ class DatabaseService {
       status = 'active',
       permissions = ['view_customers', 'manage_leads']
     } = salesRepData;
-
+  
     // Hash password if provided
     let hashedPassword = salesRepData.password_hash || null;
     if (salesRepData.password) {
       const bcrypt = require('bcryptjs');
       hashedPassword = await bcrypt.hash(salesRepData.password, 12);
     }
-
+  
+    // `sales_reps.id` is `TEXT PRIMARY KEY` with no DEFAULT, so the id has to be
+    // supplied or the INSERT fails on the NOT NULL constraint. See newId() for
+    // why it is not a schema default.
+    //
+    // A caller may pass its own id, and provisioning from Netlify Identity does
+    // exactly that: the Identity `sub` is already a stable uuid, and keying the
+    // row on it means the same person keeps the same id forever, which is what
+    // makes lead assignment and calendar ownership survive a re-invite.
+    const repId = id || newId();
+  
+    // `permissions` is a TEXT column holding a comma-separated list, so it is
+    // stored as a string. Normalised here, once, rather than at every read site.
+    const permissionList = Array.isArray(permissions) ? permissions : String(permissions).split(',');
+    const permissionsText = permissionList
+      .map((p) => String(p).trim())
+      .filter(Boolean)
+      .join(',');
+  
     const sql = `
       INSERT INTO sales_reps (
-        first_name, last_name, email, phone, password_hash, role, status, permissions
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        id, first_name, last_name, email, phone, password_hash, role, status, permissions
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       RETURNING *
     `;
-
+  
     const params = [
+      repId,
       first_name,
       last_name,
       email,
-      phone,
-      hashedPassword,
+      // `undefined` is not a bindable value. A caller that omits `phone` --
+      // which provisioning from Identity always does -- left `undefined` in the
+      // parameter array, and the libSQL client rejected the whole statement with
+      // an error that said nothing about which parameter was at fault. The
+      // catch-all then reported "Failed to create sales rep", so the real cause
+      // was invisible.
+      //
+      // NULL is what "no phone number" means. Every optional column is normalised
+      // here so a caller cannot get this wrong by leaving a field out.
+      phone ?? null,
+      hashedPassword ?? null,
       role,
       status,
-      permissions
+      permissionsText
     ];
 
     try {

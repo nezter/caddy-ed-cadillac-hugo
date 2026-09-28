@@ -3,6 +3,7 @@ const errorHandler = require('./error-handler');
 const DatabaseService = require('./database-service');
 const { isTokenBlacklisted } = require('../sales-logout');
 const { verifyIdentityToken, rolesFrom } = require('./netlify-identity');
+const { ensureStaffProfile, permissionsFor } = require('./staff-profile');
 const { isUsableSecret, isUnconfiguredContext } = require('./jwt-secret');
 
 // JWT configuration.
@@ -228,7 +229,19 @@ async function authenticateRequest(event, options = {}) {
     }
 
     // Check permission restrictions
-    const userPermissions = user.permissions || [];
+    //
+    // `sales_reps.permissions` is a TEXT column holding a comma-separated list,
+    // so `SELECT *` hands back a STRING, not an array. It used to be used as if
+    // it were an array, and `String.prototype.includes` is substring matching --
+    // so a rep holding `manage_leads_supervisor` was also granted
+    // `manage_leads`, and one holding `campaigns_read_all` was granted
+    // `campaigns_read`. Permissions leaked into each other by name.
+    //
+    // `user.permissions` is normalised to a real array here, once, so every check
+    // below is membership. The TEXT column stays as it is, because changing a
+    // column type in a live database is a much larger decision than parsing it
+    // correctly in one place.
+    const userPermissions = normalisePermissions(user.permissions);
     if (requiredPermissions.length > 0) {
       const hasRequiredPermissions = requiredPermissions.every(perm => userPermissions.includes(perm));
       if (!hasRequiredPermissions) {
@@ -375,6 +388,34 @@ function checkRateLimit(identifier, maxRequests = 10, windowMs = 60000) {
 
 
   /**
+ * `sales_reps.permissions` as a real array.
+ *
+ * The column is TEXT holding `'a,b,c'`, so `SELECT *` returns a string. Passing
+ * that string where an array was expected turned every permission check into a
+ * substring test -- see the note at the call site for what that let through.
+ *
+ * Accepts all three shapes it may be handed: the comma-separated string from the
+ * database, a JSON array if some row was written that way, and a real array. An
+ * empty result is an empty array, never the string `'undefined'`.
+ */
+function normalisePermissions(value) {
+  if (Array.isArray(value)) return value.map((p) => String(p).trim()).filter(Boolean);
+  if (typeof value !== 'string') return [];
+  const trimmed = value.trim();
+  if (!trimmed) return [];
+  if (trimmed.startsWith('[')) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) return parsed.map((p) => String(p).trim()).filter(Boolean);
+    } catch {
+      // Not JSON after all -- fall through and treat it as the comma list it
+      // looks like, rather than failing the request over a malformed cell.
+    }
+  }
+  return trimmed.split(',').map((p) => p.trim()).filter(Boolean);
+}
+
+/**
    * Turn a verified Identity claim set into the same shape the rest of this
    * module returns, and apply the role/permission rules to it.
    *
@@ -400,7 +441,14 @@ function checkRateLimit(identifier, maxRequests = 10, windowMs = 60000) {
       lastName: '',
       email: claims.email || '',
       role: roles[0] || 'viewer',
-      permissions: roles.includes('admin') ? ['*'] : roles,
+      // The application's permission vocabulary, not the Identity role names.
+      //
+      // This used to be the roles themselves, so `roles.includes('admin')` and a
+      // check for `campaigns_read` were answering two different questions with
+      // one array, and only the `admin` case happened to work. The two sets do
+      // not overlap: functions require `campaigns_read`, `analytics_read`,
+      // `search_read` and fourteen more, none of which is a role name.
+      permissions: permissionsFor(claims),
       status: 'active',
       provider: 'netlify-identity',
     };
@@ -426,6 +474,22 @@ function checkRateLimit(identifier, maxRequests = 10, windowMs = 60000) {
         };
       }
     }
+
+    // Write the person down, if they are not written down already.
+    //
+    // Identity answers "who is this?" and nothing more. The rest of the
+    // application needs a row: lead-assignments joins on `getSalesRep(id)`,
+    // calendar sync needs an owner, email sync needs an address and a name. A
+    // claim set is not something any of that can join against.
+    //
+    // Done AFTER the authorisation checks, so a request the caller was not
+    // entitled to make does not create a record. And best-effort: the caller is
+    // already authenticated, so a database problem must not become a 401 and
+    // lock a signed-in staff member out of their own site. If the profile cannot
+    // be written the request still succeeds, and `user.profileProvisioned` says
+    // so for anything that needs to report it honestly.
+    const profile = await ensureStaffProfile(claims);
+    user.profileProvisioned = Boolean(profile);
 
     return { authenticated: true, user };
   }
