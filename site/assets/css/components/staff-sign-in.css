@@ -81,3 +81,29 @@
 .staff-sign-in__form .loading-spinner {
   font-size: 0.95rem;
 }
+
+/* Netlify Identity sign-in, shown above the database-password form.
+   The form is kept, not removed: it is the path that works when Identity is not
+   enabled, and the two should never be conflated. */
+.identity-sign-in {
+  border: 1px solid var(--border, #ddd);
+  border-radius: var(--radius, 8px);
+  background: var(--surface, #fff);
+  padding: var(--space-5, 1.5rem);
+  margin-bottom: var(--space-6, 2rem);
+}
+
+.identity-sign-in__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2, 0.5rem);
+  margin-top: var(--space-3, 1rem);
+}
+
+.identity-sign-in__status {
+  margin: 0 0 var(--space-2, 0.5rem);
+  font-size: var(--text-sm, 0.875rem);
+  color: var(--text-muted, #666);
+}
+
+.identity-sign-in__status.is-ok { color: #1f7a45; }

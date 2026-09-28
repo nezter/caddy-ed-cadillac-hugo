@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 const errorHandler = require('./error-handler');
 const DatabaseService = require('./database-service');
 const { isTokenBlacklisted } = require('../sales-logout');
+const { verifyIdentityToken, rolesFrom } = require('./netlify-identity');
 const { isUsableSecret, isUnconfiguredContext } = require('./jwt-secret');
 
 // JWT configuration.
@@ -123,6 +124,26 @@ async function authenticateRequest(event, options = {}) {
     // minted with the production secret. Honouring the marker is what makes
     // that guard real; ignoring it would leave the marker decorative and a
     // preview would quietly accept production tokens.
+  /*
+   * Netlify Identity is tried FIRST, and deliberately.
+   *
+   * Identity is Netlify's own user store, so it works before any database
+   * exists. The bespoke JWT below cannot: verifying it needs JWT_SECRET, and the
+   * account lookup behind it needs a database. With no database configured the
+   * bespoke scheme made the whole admin unreachable -- ten pages behind a door
+   * with no key.
+   *
+   * Identity also brings password reset, invitations, MFA and session
+   * revocation, none of which a hand-rolled JWT had.
+   *
+   * The bespoke scheme is still accepted, so an existing token keeps working
+   * during the move. Nothing has to happen in one step.
+   */
+  const identityClaims = await verifyIdentityToken(authToken);
+  if (identityClaims) {
+    return applyIdentity(identityClaims);
+  }
+
     if (!isUsableSecret(JWT_SECRET)) {
       return {
         authenticated: false,
@@ -248,6 +269,63 @@ function checkRateLimit(identifier, maxRequests = 10, windowMs = 60000) {
   limitData.count++;
   return { allowed: true, remaining: maxRequests - limitData.count };
 }
+
+
+  /**
+   * Turn a verified Identity claim set into the same shape the rest of this
+   * module returns, and apply the role/permission rules to it.
+   *
+   * The shape is deliberately identical to the database path's, so every
+   * function downstream keeps working whether the caller signed in through
+   * Identity or through the bespoke JWT. Nothing above this point needs to know
+   * which happened.
+   *
+   * ONE DIFFERENCE, DELIBERATE: the database path re-reads the account on every
+   * request, so a rep whose permissions are withdrawn loses access immediately.
+   * Identity has no such re-read -- the role lives in the token's app_metadata
+   * until it is refreshed. So a permission change takes effect when the token
+   * is next refreshed rather than instantly. That is the trade for having a door
+   * that opens without a database, and it is a normal one for a token-based
+   * system; Identity's own admin can revoke a user outright, which does take
+   * effect at once.
+   */
+  async function applyIdentity(claims) {
+    const roles = rolesFrom(claims);
+    const user = {
+      id: claims.sub,
+      firstName: (claims.user_metadata && claims.user_metadata.full_name) || '',
+      lastName: '',
+      email: claims.email || '',
+      role: roles[0] || 'viewer',
+      permissions: roles.includes('admin') ? ['*'] : roles,
+      status: 'active',
+      provider: 'netlify-identity',
+    };
+
+    if (allowedRoles.length > 0 && !allowedRoles.some((r) => roles.includes(String(r).toLowerCase()))) {
+      return {
+        authenticated: false,
+        error: errorHandler.forbiddenError('Insufficient permissions')
+      };
+    }
+
+    if (requiredPermissions.length > 0) {
+      const held = new Set(user.permissions);
+      // An admin holds everything. Spelling that out here means an admin does not
+      // have to be granted each individual permission by hand.
+      const hasAll = requiredPermissions.every(
+        (perm) => held.has(perm) || held.has('*') || roles.includes('admin')
+      );
+      if (!hasAll) {
+        return {
+          authenticated: false,
+          error: errorHandler.forbiddenError('Insufficient permissions')
+        };
+      }
+    }
+
+    return { authenticated: true, user };
+  }
 
 module.exports = {
   authenticateRequest,
