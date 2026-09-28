@@ -51,7 +51,9 @@
     "vehicle-features": "Favourites toggle for the home page fleet, backed by a Netlify Blobs store. Chosen over front matter because a Function cannot edit the repository, and because the sync rewrites the featured field wholesale so a favourite written there would be clobbered on the next run. Degrades to the front-matter flag when the store is unconfigured.",
     "calendar-invite": "Builds a downloadable .ics for a booked test drive. An .ics rather than the Google Calendar API on purpose: it needs no OAuth client, no verified consent screen and no database to hold a refresh token, so it works on the deploy that exists today, and Google Calendar, Apple, Outlook and Fastmail all read it. The two-way OAuth sync is a later step.",
     "booking-queue": "Durable record of test-drive requests, on Netlify Blobs. Added because a booking was emailed and then written to Postgres: with no database configured the email arrived and the request was gone. One key per request so a write cannot clobber a concurrent one. Also what the admin calendar reads from.",
-    "google-calendar": "Connects Ed Google Calendar (OAuth, calendar.events scope only) and pushes booking requests onto it. Tokens live in Blobs, not an env var, so consent withdrawal can delete them. Fully wired and reports its own absence: it needs GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET, which only the owner can create."
+    "google-calendar": "Connects Ed Google Calendar (OAuth, calendar.events scope only) and pushes booking requests onto it. Tokens live in Blobs, not an env var, so consent withdrawal can delete them. Fully wired and reports its own absence: it needs GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET, which only the owner can create.",
+    "admin-guard": "Server-side gate for /admin/*. Hugo builds those pages to the public directory, so without it anyone could load the dashboard, lead list, customer list and search page -- markup, titles, empty states. The data was always behind the functions; the shell was not. netlify.toml routes /admin/* here and releases a valid session to /.__admin/*, which is what keeps it loop-free. Does not replace Netlify own /admin/* password protection, which is the better primary gate because it runs first.",
+    "vehicle-details": "Vehicle detail by id. Called by vehicleComparison.js (compare tray) and financingCalculator.js (pre-approval). The manifest said delete -- that entry was STALE, written before those two callers were wired. Deleting the function would have broken both, and the endpoint gate caught it. A manifest entry older than the code depending on it is worse than no entry at all."
   },
   "planned": {},
   "delete": {
@@ -62,9 +64,8 @@
     "inventory-fetch": "deleted in 45021f9 -- see that commit for the reason",
     "inventory-sync": "deleted in 45021f9 -- see that commit for the reason",
     "babel.config": "moved to the repo root, where a babel config belongs. It was being bundled as a Netlify function on every deploy.",
-    "vehicle-details": "Superseded by layouts/inventory/single.html, which renders every field from content front matter. No runtime read path is needed.",
-    "contact-submission": "Superseded by native HTML form actions with Netlify form handling. The contact forms on vehicle pages and the lead form submit directly.",
-    "submission-created": "Depends on contact-submission, which is superseded by native form actions."
+    "contact-submission": "Superseded by native Netlify Forms. No caller.",
+    "submission-created": "Depends on contact-submission, also superseded by Netlify Forms."
   },
   "notafunc": {},
   "operational": {

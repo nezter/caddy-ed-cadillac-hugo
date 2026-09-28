@@ -496,7 +496,29 @@ if (manifest) {
   }
 
   // The load-bearing check.
-  const lyingWired = Object.keys(manifest.wired).filter((n) => !liveFnNames.has(n));
+  /*
+   * A function can be wired in two ways, and only one of them is a bundle.
+   *
+   * Most are called by front-end JavaScript. Some are reached by a netlify.toml
+   * redirect instead -- admin-guard is the live example: /admin/* rewrites to it,
+   * and no script ever names it, because the redirect IS the caller.
+   *
+   * Counting only bundle-reachable names made the gate report a redirect-wired
+   * function as "declared wired but no live bundle can call it", which is
+   * technically true and operationally nonsense. Both routes are now accepted,
+   * and a function reachable by NEITHER is still a failure.
+   */
+  // aliases maps FROM-path -> TO-string, so the function NAME has to be pulled
+  // out of the target. `/admin/*` -> `/.netlify/functions/admin-guard/:splat`
+  // yields `admin-guard`.
+  const aliasReached = new Set();
+  for (const target of aliases.values()) {
+    const m2 = /\.netlify\/functions\/([a-z][a-z0-9-]*)/.exec(String(target));
+    if (m2) aliasReached.add(m2[1]);
+  }
+  const lyingWired = Object.keys(manifest.wired).filter(
+    (n) => !liveFnNames.has(n) && !aliasReached.has(n)
+  );
   if (lyingWired.length) {
     console.error(
       `\n  ${red('FAIL')}  declared wired but no live bundle can call it: ` +

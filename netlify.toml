@@ -140,6 +140,33 @@
 # their own names (e.g. /contact-form -> contact-form function), either
 # directly at /.netlify/functions/<name> or through these aliases below.
 # -----------------------------------------------------------------------------
+# The admin gate. Reasoning in docs/ADMIN-GATE.md.
+#
+#   /admin/*    -> guard, which checks the session
+#   /.__admin/* -> the real static file, and NOT itself guarded
+#
+# The second rule is what makes it loop-free: the guard cannot send an
+# authorised visitor back to /admin/<path> (that is what got them here), and it
+# cannot return 200 with an empty body (a 200 rewrite makes the FUNCTION's
+# response the response -- a blank page that looks like an empty dashboard).
+# Keep /admin/cms ABOVE these: the CMS has its own Identity login and does not
+# need the extra hop.
+[[redirects]]
+  from = "/admin/cms"
+  to = "/cms.html"
+  status = 200
+
+[[redirects]]
+  from = "/admin/*"
+  to = "/.netlify/functions/admin-guard/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/.__admin/*"
+  to = "/admin/:splat"
+  status = 200
+  force = true
 [[redirects]]
   from = "/health"
   to = "/.netlify/functions/health-check"
@@ -162,10 +189,6 @@
 
 # Netlify CMS. `cms.html` is served from site/static and loads /cms.js, which is
 # produced by the one remaining webpack build (webpack.cms.js).
-[[redirects]]
-  from = "/admin/cms"
-  to = "/cms.html"
-  status = 200
 
 # -----------------------------------------------------------------------------
 # Headers
