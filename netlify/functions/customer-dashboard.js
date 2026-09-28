@@ -172,6 +172,11 @@ async function getCustomerDashboard(customerId) {
   };
 }
 
+// The rep on an appointment is `assigned_sales_rep_id`. This join read
+// `a.sales_rep_id`, which is not a column on appointments at all -- so this
+// query, the customer dashboard's appointment list, has never run. Found by
+// ci/discover-missing-columns.js, which executes every statement.
+
 /**
  * Get customer appointments
  */
@@ -180,7 +185,7 @@ async function getCustomerAppointments(customerId) {
     `SELECT a.id, a.appointment_type, a.scheduled_date, a.scheduled_time,
             a.location, a.status, a.notes, r.name AS sales_rep_name
        FROM appointments a
-       LEFT JOIN sales_reps r ON r.id = a.sales_rep_id
+       LEFT JOIN sales_reps r ON r.id = a.assigned_sales_rep_id
       WHERE a.customer_id = $1
       ORDER BY a.scheduled_date DESC, a.scheduled_time DESC
       LIMIT 50`,

@@ -80,9 +80,14 @@ function findInserts() {
         const cols = splitList(text.slice(open + 1, close));
         const after = text.slice(close + 1);
         const vm = /VALUES\s*\(/i.exec(after);
-        if (!vm) continue;                       // INSERT ... SELECT: not checked
+        if (!vm) continue;                       // INSERT ... SELECT: no value list
         const vclose = matchParen(after, vm.index + vm[0].length - 1);
         if (vclose === -1) continue;
+        // `INSERT ... SELECT` has no VALUES clause, but an `ON CONFLICT` later in
+        // the statement can contain the word, and a subquery in the SELECT can
+        // too. Skipped rather than miscounted: a check that reports four bogus
+        // "column/value mismatch" failures trains people to ignore the gate.
+        if (isInsertSelect(after)) continue;
         const vals = splitList(after.slice(vm.index + vm[0].length, vclose));
         out.push({
           file: path.relative(ROOT, full),
@@ -97,6 +102,21 @@ function findInserts() {
   };
   walk(FUNCTIONS);
   return out;
+}
+
+/**
+ * Is this `INSERT ... SELECT` rather than `INSERT ... VALUES`?
+ *
+ * The value list comes from the SELECT, so a column/value count is a property
+ * of that SELECT, not of the INSERT. Counting the commas in the whole statement
+ * reported four mismatches on statements that were entirely correct.
+ */
+function isInsertSelect(after) {
+  const head = after.slice(0, 400);
+  const vm = /VALUES\s*\(/i.exec(head);
+  const sm = /\bSELECT\b/i.exec(head);
+  if (!sm) return false;
+  return !vm || sm.index < vm.index;
 }
 
 /** Index of the paren closing the one at `open`, or -1. */
@@ -180,7 +200,28 @@ async function checkAgainstDatabase(inserts) {
   let failed = false;
 
   // --- id must be supplied: the schema has no default for it.
-  const missingId = inserts.filter((i) => !i.cols.includes('id'));
+  //
+  // EXCEPT for the tables keyed by something that already exists. The four
+  // search-index tables are keyed on the source row's own id -- `customer_id`,
+  // `lead_id` and so on -- and `search_index_metadata` is keyed on `index_type`,
+  // one row per index rather than per document. They have no generated id to
+  // supply, and asking them for one would be asking for a second identity that
+  // then has to be kept in step with the first.
+  //
+  // Listed by name with the reason, rather than worked out from the schema,
+  // because a rule that infers "this table is keyed by reference" from a column
+  // name is a rule that will be wrong one day in a way nobody notices. An
+  // exception with a reason written next to it is reviewable; an inferred one is
+  // not.
+  const KEYED_BY_REFERENCE = new Set([
+    'customer_search_index',      // PK customer_id -> customers.id
+    'lead_search_index',          // PK lead_id -> leads.id
+    'interaction_search_index',   // PK interaction_id -> interactions.id
+    'vehicle_search_index',       // PK vehicle_id -> vehicles.id
+    'search_index_metadata',      // PK index_type, one row per index
+  ]);
+
+  const missingId = inserts.filter((i) => !i.cols.includes('id') && !KEYED_BY_REFERENCE.has(i.table));
   if (missingId.length) {
     failed = true;
     console.error(`\n  INSERT without an id (${missingId.length}) -- the schema has no default, so these fail:`);

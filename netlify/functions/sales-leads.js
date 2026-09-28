@@ -110,10 +110,10 @@ async function getSalesRepLeads(salesRepId, timeframe, status, sort, search) {
     // Add search filter
     if (search) {
       sql += ` AND (
-        l.first_name ILIKE $${params.length + 1} OR
-        l.last_name ILIKE $${params.length + 1} OR
-        l.email ILIKE $${params.length + 1} OR
-        l.message ILIKE $${params.length + 1}
+        l.first_name LIKE $${params.length + 1} OR
+        l.last_name LIKE $${params.length + 1} OR
+        l.email LIKE $${params.length + 1} OR
+        l.message LIKE $${params.length + 1}
       )`;
       params.push(`%${search}%`);
     }

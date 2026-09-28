@@ -191,12 +191,12 @@ async function getRulesStats(event) {
         ROUND(
           CASE
             WHEN SUM(trigger_count) > 0
-            THEN (SUM(success_count)::decimal / SUM(trigger_count)) * 100
+            THEN (SUM(success_count) * 1.0 / SUM(trigger_count)) * 100
             ELSE 0
           END, 2
         ) as overall_success_rate
       FROM followup_rules
-      WHERE created_at >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
+      WHERE created_at >= datetime('now', '-${days} days')
     `;
 
     const summaryResult = await DatabaseService.query(summarySql);
@@ -473,7 +473,7 @@ async function getRulePerformance(event, ruleId) {
         ) as avg_processing_time_hours
       FROM followups
       WHERE rule_id = $1
-        AND created_at >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
+        AND created_at >= datetime('now', '-${days} days')
     `;
 
     const metricsResult = await DatabaseService.query(metricsSql, [ruleId]);

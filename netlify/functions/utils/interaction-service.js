@@ -192,7 +192,7 @@ class InteractionService {
           COUNT(DISTINCT sales_rep_id) as unique_sales_reps
         FROM interactions
         WHERE customer_id = $1
-          AND created_at >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
+          AND created_at >= datetime('now', '-${days} days')
       `;
 
       const result = await DatabaseService.query(sql, [customerId]);
@@ -387,7 +387,7 @@ class InteractionService {
           AVG(duration_minutes) as avg_call_duration,
           COUNT(DISTINCT sales_rep_id) as active_sales_reps
         FROM interactions
-        WHERE created_at >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
+        WHERE created_at >= datetime('now', '-${days} days')
       `;
 
       const result = await DatabaseService.query(sql);
@@ -419,7 +419,7 @@ class InteractionService {
         JOIN customers c ON i.customer_id = c.id
         LEFT JOIN sales_reps sr ON i.sales_rep_id = sr.id
         WHERE i.interaction_type = $1
-          AND i.created_at >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
+          AND i.created_at >= datetime('now', '-${days} days')
         ORDER BY i.created_at DESC
         LIMIT 100
       `;
@@ -471,11 +471,11 @@ class InteractionService {
       // Add search query
       if (query) {
         sql += ` AND (
-          i.subject ILIKE $${paramIndex} OR
-          i.content ILIKE $${paramIndex} OR
-          i.summary ILIKE $${paramIndex} OR
-          c.first_name ILIKE $${paramIndex} OR
-          c.last_name ILIKE $${paramIndex}
+          i.subject LIKE $${paramIndex} OR
+          i.content LIKE $${paramIndex} OR
+          i.summary LIKE $${paramIndex} OR
+          c.first_name LIKE $${paramIndex} OR
+          c.last_name LIKE $${paramIndex}
         )`;
         params.push(`%${query}%`);
         paramIndex++;

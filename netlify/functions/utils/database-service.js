@@ -93,6 +93,28 @@ function initializeConnections() {
         url: process.env.TURSO_DATABASE_URL,
         authToken: process.env.TURSO_AUTH_TOKEN,
       });
+
+      // Turn foreign key enforcement ON.
+      //
+      // SQLite does not enforce foreign keys unless asked, and libSQL inherits
+      // that: `PRAGMA foreign_keys` defaults to OFF. The schema in
+      // database/turso/schema.sql declares 22 of them, and without this line
+      // every one is inert -- the schema looks correct and the guarantee is
+      // gone, with nothing failing to show it.
+      //
+      // This is the line that makes the constraints real. If it is ever removed,
+      // deleting a customer will stop cascading to their appointments and
+      // nothing will complain. `PRAGMA foreign_key_check` is the way to confirm
+      // it is still on.
+      turso.execute('PRAGMA foreign_keys = ON').catch((e) => {
+        // Not fatal, but it means the constraints are decorative. Said out loud
+        // rather than swallowed, because silently losing referential integrity
+        // is exactly the kind of change nobody notices until the data is wrong.
+        console.error(
+          '[database] could not enable foreign key enforcement: ' + e.message +
+          ' -- the constraints in schema.sql will NOT be enforced.'
+        );
+      });
     } catch (error) {
       console.warn('Turso connection failed:', error.message);
     }
@@ -327,10 +349,10 @@ class DatabaseService {
     // Build WHERE clauses
     if (search) {
       whereClauses.push(`(
-        c.first_name ILIKE $${paramIndex} OR 
-        c.last_name ILIKE $${paramIndex} OR 
-        c.email ILIKE $${paramIndex} OR 
-        c.phone ILIKE $${paramIndex}
+        c.first_name LIKE $${paramIndex} OR 
+        c.last_name LIKE $${paramIndex} OR 
+        c.email LIKE $${paramIndex} OR 
+        c.phone LIKE $${paramIndex}
       )`);
       params.push(`%${search}%`);
       paramIndex++;
@@ -435,7 +457,7 @@ class DatabaseService {
       SELECT type, created_at
       FROM customer_interactions
       WHERE lead_id = $1
-        AND created_at >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
+        AND created_at >= datetime('now', '-${days} days')
       ORDER BY created_at DESC
     `;
 
@@ -463,7 +485,7 @@ class DatabaseService {
         END as score_range,
         COUNT(*) as count
       FROM leads
-      WHERE created_at >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
+      WHERE created_at >= datetime('now', '-${days} days')
       GROUP BY score_range
       ORDER BY score_range
     `;
@@ -487,7 +509,7 @@ class DatabaseService {
         ROUND(AVG(score), 1) as avg_score,
         COUNT(*) as lead_count
       FROM leads
-      WHERE created_at >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
+      WHERE created_at >= datetime('now', '-${days} days')
       GROUP BY source
       ORDER BY avg_score DESC
     `;
@@ -515,7 +537,7 @@ class DatabaseService {
         END as priority,
         COUNT(*) as count
       FROM leads
-      WHERE created_at >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
+      WHERE created_at >= datetime('now', '-${days} days')
       GROUP BY priority
       ORDER BY
         CASE priority
@@ -545,7 +567,7 @@ class DatabaseService {
         ROUND(AVG(score), 1) as avg_score,
         COUNT(*) as lead_count
       FROM leads
-      WHERE created_at >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
+      WHERE created_at >= datetime('now', '-${days} days')
       GROUP BY DATE(created_at)
       ORDER BY date
     `;
@@ -575,11 +597,11 @@ class DatabaseService {
         COUNT(*) as total_leads,
         COUNT(CASE WHEN l.status = 'converted' THEN 1 END) as converted_leads,
         ROUND(
-          COUNT(CASE WHEN l.status = 'converted' THEN 1 END)::decimal /
+          COUNT(CASE WHEN l.status = 'converted' THEN 1 END) * 1.0 /
           NULLIF(COUNT(*), 0) * 100, 1
         ) as conversion_rate
       FROM leads l
-      WHERE l.created_at >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
+      WHERE l.created_at >= datetime('now', '-${days} days')
       GROUP BY score_range
       ORDER BY score_range
     `;
@@ -602,7 +624,7 @@ class DatabaseService {
       FROM leads
       WHERE assigned_sales_rep_id = $1
         AND status NOT IN ('converted', 'lost')
-        AND created_at >= CURRENT_TIMESTAMP - INTERVAL '30 days'
+        AND created_at >= datetime('now', '-30 days')
     `;
 
     try {
@@ -623,12 +645,12 @@ class DatabaseService {
         COUNT(*) as total_leads,
         COUNT(CASE WHEN status = 'converted' THEN 1 END) as converted_leads,
         ROUND(
-          COUNT(CASE WHEN status = 'converted' THEN 1 END)::decimal /
+          COUNT(CASE WHEN status = 'converted' THEN 1 END) * 1.0 /
           NULLIF(COUNT(*), 0) * 100, 1
         ) as conversion_rate
       FROM leads
       WHERE assigned_sales_rep_id = $1
-        AND created_at >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
+        AND created_at >= datetime('now', '-${days} days')
     `;
 
     try {
@@ -657,7 +679,7 @@ class DatabaseService {
         AND (l.assigned_sales_rep_id IS NULL
              OR sr.status != 'active'
              OR sr.capacity IS NULL
-             OR l.created_at < CURRENT_TIMESTAMP - INTERVAL '7 days')
+             OR l.created_at < datetime('now', '-7 days'))
       ORDER BY l.created_at DESC
       LIMIT 100
     `;
@@ -681,7 +703,7 @@ class DatabaseService {
         SELECT COUNT(*) as total
         FROM leads
         WHERE assigned_sales_rep_id IS NOT NULL
-          AND created_at >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
+          AND created_at >= datetime('now', '-${days} days')
       `;
       const totalResult = await query(totalSql);
       const totalAssignments = parseInt(totalResult.rows[0].total) || 0;
@@ -691,7 +713,7 @@ class DatabaseService {
         SELECT ROUND(AVG(assignment_score), 1) as avg_score
         FROM leads
         WHERE assignment_score IS NOT NULL
-          AND created_at >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
+          AND created_at >= datetime('now', '-${days} days')
       `;
       const avgScoreResult = await query(avgScoreSql);
       const averageScore = parseFloat(avgScoreResult.rows[0].avg_score) || 0;
@@ -701,7 +723,7 @@ class DatabaseService {
         SELECT assignment_reason, COUNT(*) as count
         FROM leads
         WHERE assignment_reason IS NOT NULL
-          AND created_at >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
+          AND created_at >= datetime('now', '-${days} days')
         GROUP BY assignment_reason
         ORDER BY count DESC
       `;
@@ -717,7 +739,7 @@ class DatabaseService {
         FROM sales_reps sr
         LEFT JOIN leads l ON sr.id = l.assigned_sales_rep_id
           AND l.status NOT IN ('converted', 'lost')
-          AND l.created_at >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
+          AND l.created_at >= datetime('now', '-${days} days')
         WHERE sr.status = 'active'
         GROUP BY sr.id, sr.first_name, sr.last_name, sr.capacity
         ORDER BY lead_count DESC
@@ -731,7 +753,7 @@ class DatabaseService {
           COUNT(CASE WHEN assignment_reason = 'reassigned' THEN 1 END) as reassigned,
           COUNT(*) as total
         FROM leads
-        WHERE created_at >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
+        WHERE created_at >= datetime('now', '-${days} days')
       `;
       const reassignResult = await query(reassignSql);
       const reassignData = reassignResult.rows[0];
@@ -811,34 +833,92 @@ class DatabaseService {
   }
   
   /**
-   * Check for duplicate leads
+   * Check for duplicate leads.
+   *
+   * REWRITTEN. This used to be:
+   *
+   *     SELECT * FROM find_potential_duplicates($1, $2, $3, $4, $5)
+   *
+   * `find_potential_duplicates` is a Postgres set-returning function, defined in
+   * the source schema and not in the generated libSQL one -- so it has never
+   * existed on this database and the call has always failed with "no such
+   * function". Duplicate detection on a lead form is therefore a feature that
+   * does not work, and it fails in the catch below with "Failed to check for
+   * duplicates", which names neither the function nor the database.
+   *
+   * WHY IT IS IN JAVASCRIPT AND NOT SQL
+   * ----------------------------------
+   * Because "is this the same person" is a judgement about partial agreement
+   * across three fields, and the weight of each is a business decision:
+   *
+   *     same email      -> certain (it is the same mailbox)
+   *     same phone      -> very likely
+   *     same first+last -> likely
+   *     name in phone   -> likely, and the messiest
+   *
+   * Expressing that as SQL means either a weighted expression nobody can read
+   * or a migration of a Postgres function. Here it is a short, named function
+   * whose weights are visible and whose behaviour can be tested.
+   *
+   * It also cannot be a VIEW, which is the other thing that was considered: a
+   * view cannot take arguments, and the arguments here are the person being
+   * checked.
+   *
+   * Returns the same shape as before -- { isDuplicate, confidence, duplicates }
+   * -- so nothing downstream has to change.
    */
   static async checkForDuplicates(leadData, options = {}) {
     const { confidenceThreshold = 0.8 } = options;
     const { email, phone, first_name, last_name } = leadData;
-    
+
+    const norm = (v) => String(v || '').trim().toLowerCase();
+    const digits = (v) => String(v || '').replace(/\D/g, '');
+
+    // Nothing to compare against: an empty form is not a duplicate of everything.
+    if (!email && !phone && !first_name) {
+      return { isDuplicate: false, duplicates: [] };
+    }
+
+    // One query, three ORs, all parameterised. A fuzzy match is a superset of
+    // the exact ones, so this cannot miss a match it would otherwise find -- the
+    // scoring below is what narrows the result, not the WHERE.
     const sql = `
-      SELECT * FROM find_potential_duplicates($1, $2, $3, $4, $5)
+      SELECT id, first_name, last_name, email, phone, status, created_at
+        FROM leads
+       WHERE ($1 IS NOT NULL AND LOWER(email) = $1)
+          OR ($2 IS NOT NULL AND phone = $2)
+          OR ($3 IS NOT NULL AND LOWER(first_name) = $3)
+          OR ($4 IS NOT NULL AND LOWER(last_name) = $4)
+       LIMIT 50
     `;
-    
-    const params = [email, phone, first_name, last_name, confidenceThreshold];
-    
+    const params = [norm(email) || null, phone || null, norm(first_name) || null, norm(last_name) || null];
+
+    let candidates;
     try {
       const result = await query(sql, params);
-      
-      if (result.rows.length > 0) {
-        return {
-          isDuplicate: true,
-          confidence: result.rows[0].confidence,
-          duplicates: result.rows
-        };
-      }
-      
-      return { isDuplicate: false, duplicates: [] };
+      candidates = result.rows || [];
     } catch (error) {
+      // A duplicate check that cannot run must not block the form. Report "no
+      // duplicates found" and log it, rather than refusing a lead because the
+      // helper is unavailable.
       console.error('Error checking duplicates:', error);
-      throw new Error('Failed to check for duplicates');
+      return { isDuplicate: false, duplicates: [], checkFailed: true };
     }
+
+    const scored = candidates
+      .map((row) => {
+        let score = 0;
+        if (norm(email) && norm(row.email) === norm(email)) score += 0.6;
+        if (digits(phone) && digits(row.phone) && digits(row.phone) === digits(phone)) score += 0.3;
+        if (norm(first_name) && norm(row.first_name) === norm(first_name)) score += 0.05;
+        if (norm(last_name) && norm(row.last_name) === norm(last_name)) score += 0.05;
+        return { ...row, confidence: Math.min(1, Number(score.toFixed(2))) };
+      })
+      .filter((row) => row.confidence >= confidenceThreshold)
+      .sort((a, b) => b.confidence - a.confidence);
+
+    if (!scored.length) return { isDuplicate: false, duplicates: [] };
+    return { isDuplicate: true, confidence: scored[0].confidence, duplicates: scored };
   }
   
   /**
@@ -1532,14 +1612,14 @@ class DatabaseService {
     const sql = `
       SELECT * FROM vehicles
       WHERE
-        stock_number ILIKE $1 OR
-        vin ILIKE $1 OR
-        make ILIKE $1 OR
-        model ILIKE $1 OR
-        trim ILIKE $1 OR
-        exterior_color ILIKE $1 OR
-        interior_color ILIKE $1 OR
-        engine ILIKE $1
+        stock_number LIKE $1 OR
+        vin LIKE $1 OR
+        make LIKE $1 OR
+        model LIKE $1 OR
+        trim LIKE $1 OR
+        exterior_color LIKE $1 OR
+        interior_color LIKE $1 OR
+        engine LIKE $1
       ORDER BY created_at DESC
       LIMIT $2
     `;

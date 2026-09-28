@@ -652,7 +652,7 @@ class FollowupRulesEngine {
           AVG(EXTRACT(EPOCH FROM (f.sent_date - f.scheduled_date))/3600) as avg_delay_hours
         FROM followup_rules fr
         LEFT JOIN followups f ON fr.id = f.rule_id
-          AND f.created_at >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
+          AND f.created_at >= datetime('now', '-${days} days')
         WHERE fr.id = $1
         GROUP BY fr.id, fr.name
       `;
@@ -666,7 +666,7 @@ class FollowupRulesEngine {
           AVG(EXTRACT(EPOCH FROM (f.sent_date - f.scheduled_date))/3600) as avg_delay_hours
         FROM followup_rules fr
         LEFT JOIN followups f ON fr.id = f.rule_id
-          AND f.created_at >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
+          AND f.created_at >= datetime('now', '-${days} days')
         GROUP BY fr.id, fr.name
         ORDER BY followups_created DESC
       `;

@@ -168,14 +168,14 @@ class SearchService {
     // Add search query
     if (query) {
       sql += ` AND (
-        c.first_name ILIKE $${paramIndex} OR
-        c.last_name ILIKE $${paramIndex} OR
-        c.email ILIKE $${paramIndex} OR
-        c.phone ILIKE $${paramIndex} OR
-        c.address_line1 ILIKE $${paramIndex} OR
-        c.city ILIKE $${paramIndex} OR
-        c.state ILIKE $${paramIndex} OR
-        c.vehicle_interest ILIKE $${paramIndex}
+        c.first_name LIKE $${paramIndex} OR
+        c.last_name LIKE $${paramIndex} OR
+        c.email LIKE $${paramIndex} OR
+        c.phone LIKE $${paramIndex} OR
+        c.address_line1 LIKE $${paramIndex} OR
+        c.city LIKE $${paramIndex} OR
+        c.state LIKE $${paramIndex} OR
+        c.vehicle_interest LIKE $${paramIndex}
       )`;
       params.push(`%${query}%`);
       paramIndex++;
@@ -230,14 +230,14 @@ class SearchService {
     // Add search query
     if (query) {
       sql += ` AND (
-        l.first_name ILIKE $${paramIndex} OR
-        l.last_name ILIKE $${paramIndex} OR
-        l.email ILIKE $${paramIndex} OR
-        l.phone ILIKE $${paramIndex} OR
-        l.message ILIKE $${paramIndex} OR
-        l.vehicle_interest ILIKE $${paramIndex} OR
-        c.first_name ILIKE $${paramIndex} OR
-        c.last_name ILIKE $${paramIndex}
+        l.first_name LIKE $${paramIndex} OR
+        l.last_name LIKE $${paramIndex} OR
+        l.email LIKE $${paramIndex} OR
+        l.phone LIKE $${paramIndex} OR
+        l.message LIKE $${paramIndex} OR
+        l.vehicle_interest LIKE $${paramIndex} OR
+        c.first_name LIKE $${paramIndex} OR
+        c.last_name LIKE $${paramIndex}
       )`;
       params.push(`%${query}%`);
       paramIndex++;
@@ -285,13 +285,13 @@ class SearchService {
     // Add search query
     if (query) {
       sql += ` AND (
-        i.subject ILIKE $${paramIndex} OR
-        i.content ILIKE $${paramIndex} OR
-        i.summary ILIKE $${paramIndex} OR
-        c.first_name ILIKE $${paramIndex} OR
-        c.last_name ILIKE $${paramIndex} OR
-        sr.first_name ILIKE $${paramIndex} OR
-        sr.last_name ILIKE $${paramIndex}
+        i.subject LIKE $${paramIndex} OR
+        i.content LIKE $${paramIndex} OR
+        i.summary LIKE $${paramIndex} OR
+        c.first_name LIKE $${paramIndex} OR
+        c.last_name LIKE $${paramIndex} OR
+        sr.first_name LIKE $${paramIndex} OR
+        sr.last_name LIKE $${paramIndex}
       )`;
       params.push(`%${query}%`);
       paramIndex++;
@@ -329,14 +329,14 @@ class SearchService {
     // Add search query
     if (query) {
       sql += ` AND (
-        v.stock_number ILIKE $${paramIndex} OR
-        v.vin ILIKE $${paramIndex} OR
-        v.make ILIKE $${paramIndex} OR
-        v.model ILIKE $${paramIndex} OR
-        v.trim ILIKE $${paramIndex} OR
-        v.exterior_color ILIKE $${paramIndex} OR
-        v.interior_color ILIKE $${paramIndex} OR
-        v.engine ILIKE $${paramIndex}
+        v.stock_number LIKE $${paramIndex} OR
+        v.vin LIKE $${paramIndex} OR
+        v.make LIKE $${paramIndex} OR
+        v.model LIKE $${paramIndex} OR
+        v.trim LIKE $${paramIndex} OR
+        v.exterior_color LIKE $${paramIndex} OR
+        v.interior_color LIKE $${paramIndex} OR
+        v.engine LIKE $${paramIndex}
       )`;
       params.push(`%${query}%`);
       paramIndex++;
@@ -384,12 +384,12 @@ class SearchService {
     // Add search query
     if (query) {
       sql += ` AND (
-        a.title ILIKE $${paramIndex} OR
-        a.description ILIKE $${paramIndex} OR
-        c.first_name ILIKE $${paramIndex} OR
-        c.last_name ILIKE $${paramIndex} OR
-        sr.first_name ILIKE $${paramIndex} OR
-        sr.last_name ILIKE $${paramIndex}
+        a.title LIKE $${paramIndex} OR
+        a.description LIKE $${paramIndex} OR
+        c.first_name LIKE $${paramIndex} OR
+        c.last_name LIKE $${paramIndex} OR
+        sr.first_name LIKE $${paramIndex} OR
+        sr.last_name LIKE $${paramIndex}
       )`;
       params.push(`%${query}%`);
       paramIndex++;
@@ -462,13 +462,13 @@ class SearchService {
 
     // Vehicle filters
     if (filters.make) {
-      sql += ` AND make ILIKE $${paramIndex}`;
+      sql += ` AND make LIKE $${paramIndex}`;
       params.push(`%${filters.make}%`);
       paramIndex++;
     }
 
     if (filters.model) {
-      sql += ` AND model ILIKE $${paramIndex}`;
+      sql += ` AND model LIKE $${paramIndex}`;
       params.push(`%${filters.model}%`);
       paramIndex++;
     }
@@ -682,12 +682,15 @@ class SearchService {
    */
   static async saveSearch(userId, searchData) {
     const sql = `
-      INSERT INTO saved_searches (user_id, name, query, filters, entity_types, created_by)
-      VALUES ($1, $2, $3, $4, $5, $6)
+      INSERT INTO saved_searches (id, user_id, name, query, filters, entity_types, created_by)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING *
     `;
 
     const params = [
+      // `saved_searches.id` is `TEXT PRIMARY KEY` with no DEFAULT, so it has to
+      // be supplied or the INSERT fails. See DatabaseService.newId().
+      DatabaseService.newId(),
       userId,
       searchData.name,
       searchData.query,
@@ -739,7 +742,25 @@ class SearchService {
   }
 
   /**
-   * Get search suggestions based on partial query
+   * Get search suggestions for a partial query.
+   *
+   * REWRITTEN. This used to split every value in the database into individual
+   * words with `unnest(string_to_array(...))` and count the frequency of each --
+   * Postgres array functions, which SQLite does not have. The call has always
+   * failed and the catch returned `[]`, so the suggestion dropdown has silently
+   * never suggested anything.
+   *
+   * WHY THE REPLACEMENT IS DIFFERENT, NOT JUST PORTABLE
+   * ---------------------------------------------------
+   * The old version exploded "Ed Caddy" into "ed" and "caddy" and offered those.
+   * A search box wants the thing somebody would click: the customer's name, the
+   * vehicle, the interaction subject. Splitting them means the best suggestion
+   * for a customer is a bare first name that matches a hundred people.
+   *
+   * So this matches whole values and labels them by entity type, which is both
+   * portable and what the UI wants. `LIKE` is case-insensitive for ASCII in
+   * SQLite -- case_sensitive_like is off and nothing turns it on -- so the `%x%`
+   * match is the one ILIKE gave.
    */
   static async getSearchSuggestions(partialQuery, limit = 10) {
     if (!partialQuery || partialQuery.length < 2) {
@@ -747,17 +768,28 @@ class SearchService {
     }
 
     const sql = `
-      SELECT DISTINCT term, entity_type, COUNT(*) as frequency
-      FROM (
-        SELECT unnest(string_to_array(lower(first_name || ' ' || last_name), ' ')) as term, 'customer' as entity_type FROM customers WHERE first_name ILIKE $1 OR last_name ILIKE $1
+      SELECT term, entity_type, frequency FROM (
+        SELECT lower(trim(first_name || ' ' || last_name)) AS term,
+               'customer' AS entity_type, 1 AS frequency
+          FROM customers
+         WHERE first_name || ' ' || last_name LIKE $1
+           AND length(trim(first_name || ' ' || last_name)) >= 3
         UNION ALL
-        SELECT unnest(string_to_array(lower(email), ' ')) as term, 'customer' as entity_type FROM customers WHERE email ILIKE $1
+        SELECT lower(email) AS term, 'customer' AS entity_type, 2 AS frequency
+          FROM customers
+         WHERE email LIKE $1
         UNION ALL
-        SELECT unnest(string_to_array(lower(make || ' ' || model), ' ')) as term, 'vehicle' as entity_type FROM vehicles WHERE make ILIKE $1 OR model ILIKE $1
+        SELECT lower(trim(make || ' ' || model)) AS term, 'vehicle' AS entity_type, 1 AS frequency
+          FROM vehicles
+         WHERE make || ' ' || model LIKE $1
+           AND length(trim(make || ' ' || model)) >= 3
         UNION ALL
-        SELECT unnest(string_to_array(lower(subject), ' ')) as term, 'interaction' as entity_type FROM interactions WHERE subject ILIKE $1
+        SELECT lower(subject) AS term, 'interaction' AS entity_type, 1 AS frequency
+          FROM interactions
+         WHERE subject LIKE $1
+           AND length(subject) >= 3
       ) suggestions
-      WHERE length(term) >= 3
+      WHERE term IS NOT NULL AND term <> ''
       GROUP BY term, entity_type
       ORDER BY frequency DESC, term
       LIMIT $2
@@ -767,6 +799,7 @@ class SearchService {
       const result = await DatabaseService.query(sql, [`%${partialQuery}%`, limit]);
       return result.rows;
     } catch (error) {
+      // A suggestion box that cannot load is an empty box, not a failed page.
       console.error('Error getting search suggestions:', error);
       return [];
     }

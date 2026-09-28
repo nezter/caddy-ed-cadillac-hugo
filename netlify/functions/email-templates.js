@@ -91,7 +91,7 @@ async function getTemplates(event) {
     }
 
     if (filters.search) {
-      sql += ` AND (name ILIKE $${paramIndex} OR description ILIKE $${paramIndex} OR subject ILIKE $${paramIndex})`;
+      sql += ` AND (name LIKE $${paramIndex} OR description LIKE $${paramIndex} OR subject LIKE $${paramIndex})`;
       params.push(`%${filters.search}%`);
       paramIndex++;
     }
@@ -124,7 +124,7 @@ async function getTemplates(event) {
     }
 
     if (filters.search) {
-      countSql += ` AND (name ILIKE $${countParamIndex} OR description ILIKE $${countParamIndex} OR subject ILIKE $${countParamIndex})`;
+      countSql += ` AND (name LIKE $${countParamIndex} OR description LIKE $${countParamIndex} OR subject LIKE $${countParamIndex})`;
       countParamIndex++;
     }
 
@@ -609,13 +609,13 @@ async function getTemplateUsage(event, templateId) {
         ROUND(
           CASE
             WHEN COUNT(*) > 0
-            THEN (COUNT(CASE WHEN status = 'sent' THEN 1 END)::decimal / COUNT(*)) * 100
+            THEN (COUNT(CASE WHEN status = 'sent' THEN 1 END) * 1.0 / COUNT(*)) * 100
             ELSE 0
           END, 2
         ) as success_rate
       FROM followups
       WHERE email_template = (SELECT name FROM email_templates WHERE id = $1)
-        AND created_at >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
+        AND created_at >= datetime('now', '-${days} days')
     `;
 
     const usageResult = await DatabaseService.query(usageSql, [templateId]);
@@ -627,7 +627,7 @@ async function getTemplateUsage(event, templateId) {
       JOIN followup_rules fr ON fc.id = fr.campaign_id
       JOIN followups f ON fr.id = f.rule_id
       WHERE fr.email_template = (SELECT name FROM email_templates WHERE id = $1)
-        AND f.created_at >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
+        AND f.created_at >= datetime('now', '-${days} days')
       GROUP BY fc.id, fc.name, fc.campaign_type
       ORDER BY usage_count DESC
     `;

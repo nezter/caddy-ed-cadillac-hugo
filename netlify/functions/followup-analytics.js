@@ -380,15 +380,15 @@ async function getOverallAnalytics(days) {
       COUNT(DISTINCT CASE WHEN fa.event_type = 'bounced' THEN fa.followup_id END) as bounced_followups,
       COUNT(DISTINCT CASE WHEN fa.event_type = 'unsubscribed' THEN fa.followup_id END) as unsubscribed_followups,
       ROUND(
-        COUNT(DISTINCT CASE WHEN fa.event_type = 'opened' THEN fa.followup_id END)::decimal /
+        COUNT(DISTINCT CASE WHEN fa.event_type = 'opened' THEN fa.followup_id END) * 1.0 /
         NULLIF(COUNT(DISTINCT CASE WHEN fa.event_type = 'sent' THEN fa.followup_id END), 0) * 100, 2
       ) as open_rate,
       ROUND(
-        COUNT(DISTINCT CASE WHEN fa.event_type = 'clicked' THEN fa.followup_id END)::decimal /
+        COUNT(DISTINCT CASE WHEN fa.event_type = 'clicked' THEN fa.followup_id END) * 1.0 /
         NULLIF(COUNT(DISTINCT CASE WHEN fa.event_type = 'opened' THEN fa.followup_id END), 0) * 100, 2
       ) as click_rate
     FROM followup_analytics fa
-    WHERE fa.event_timestamp >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
+    WHERE fa.event_timestamp >= datetime('now', '-${days} days')
   `;
 
   try {
@@ -412,12 +412,12 @@ async function getCampaignPerformance(days) {
       COUNT(DISTINCT CASE WHEN fa.event_type = 'opened' THEN fa.followup_id END) as opened_followups,
       COUNT(DISTINCT CASE WHEN fa.event_type = 'clicked' THEN fa.followup_id END) as clicked_followups,
       ROUND(
-        COUNT(DISTINCT CASE WHEN fa.event_type = 'opened' THEN fa.followup_id END)::decimal /
+        COUNT(DISTINCT CASE WHEN fa.event_type = 'opened' THEN fa.followup_id END) * 1.0 /
         NULLIF(COUNT(DISTINCT fa.followup_id), 0) * 100, 2
       ) as open_rate
     FROM followup_campaigns fc
     LEFT JOIN followup_analytics fa ON fc.id = fa.campaign_id
-      AND fa.event_timestamp >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
+      AND fa.event_timestamp >= datetime('now', '-${days} days')
     GROUP BY fc.id, fc.name
     ORDER BY total_followups DESC
     LIMIT 10
@@ -472,13 +472,13 @@ async function getConversionAttribution(days) {
     FROM followup_analytics fa
     JOIN followup_campaigns fc ON fa.campaign_id = fc.id
     WHERE fa.event_type = 'clicked'
-      AND fa.event_timestamp >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
+      AND fa.event_timestamp >= datetime('now', '-${days} days')
       AND EXISTS (
         SELECT 1 FROM interactions i
         WHERE i.customer_id = fa.customer_id
           AND i.type = 'conversion'
           AND i.created_at >= fa.event_timestamp
-          AND i.created_at <= fa.event_timestamp + INTERVAL '30 days'
+          AND i.created_at <= datetime(fa.event_timestamp, '+30 days')
       )
     GROUP BY fc.id, fc.name
     ORDER BY attributed_conversions DESC
@@ -506,17 +506,17 @@ async function getCampaignAnalyticsData(campaignId, days) {
       COUNT(DISTINCT CASE WHEN fa.event_type = 'opened' THEN f.id END) as opened_followups,
       COUNT(DISTINCT CASE WHEN fa.event_type = 'clicked' THEN f.id END) as clicked_followups,
       ROUND(
-        COUNT(DISTINCT CASE WHEN fa.event_type = 'opened' THEN f.id END)::decimal /
+        COUNT(DISTINCT CASE WHEN fa.event_type = 'opened' THEN f.id END) * 1.0 /
         NULLIF(COUNT(DISTINCT CASE WHEN fa.event_type = 'sent' THEN f.id END), 0) * 100, 2
       ) as open_rate,
       ROUND(
-        COUNT(DISTINCT CASE WHEN fa.event_type = 'clicked' THEN f.id END)::decimal /
+        COUNT(DISTINCT CASE WHEN fa.event_type = 'clicked' THEN f.id END) * 1.0 /
         NULLIF(COUNT(DISTINCT CASE WHEN fa.event_type = 'opened' THEN f.id END), 0) * 100, 2
       ) as click_rate
     FROM followup_campaigns fc
     LEFT JOIN followups f ON fc.id = f.campaign_id
     LEFT JOIN followup_analytics fa ON f.id = fa.followup_id
-      AND fa.event_timestamp >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
+      AND fa.event_timestamp >= datetime('now', '-${days} days')
     WHERE fc.id = $1
     GROUP BY fc.id, fc.name
   `;

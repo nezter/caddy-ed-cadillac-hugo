@@ -97,36 +97,41 @@ class SearchIndexService {
    * Index customers for search
    */
   static async indexCustomers() {
-    // Create or update search index table for customers
-    const createIndexSql = `
-      CREATE TABLE IF NOT EXISTS customer_search_index (
-        customer_id UUID PRIMARY KEY REFERENCES customers(id) ON DELETE CASCADE,
-        search_vector TSVECTOR,
-        searchable_text TEXT,
-        last_updated TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-      );
-
-      CREATE INDEX IF NOT EXISTS idx_customer_search_vector ON customer_search_index USING GIN(search_vector);
-      CREATE INDEX IF NOT EXISTS idx_customer_search_updated ON customer_search_index(last_updated);
-    `;
-
-    await DatabaseService.query(createIndexSql);
-
+    // NO DDL HERE.
+    //
+    // This used to CREATE the index table itself:
+    //
+    //     CREATE TABLE customer_search_index (
+    //       search_vector TSVECTOR, ...
+    //     );
+    //     CREATE INDEX ... USING GIN(search_vector);
+    //
+    // TSVECTOR and USING GIN are Postgres. This database is SQLite, which has
+    // neither, so the CREATE failed on every build and the index was never
+    // populated -- the four search indexes have never existed.
+    //
+    // The tables are now in database/turso/schema.sql, created portably, and
+    // that file is the only place a table's shape is written down. One answer
+    // rather than five, and a change to a column reaches all of them.
+    //
+    // There is no to_tsvector here either. `searchable_text` is a lowercased
+    // concatenation of the fields a person would type, indexed, and matched with
+    // LIKE. That gives substring matching rather than stemmed word matching,
+    // which is the better trade here: someone typing "escal" wants Escalade,
+    // and stemming does not help them.
     // Populate/update index
     const indexSql = `
       INSERT INTO customer_search_index (customer_id, search_vector, searchable_text, last_updated)
       SELECT
         c.id,
-        to_tsvector('english',
-          coalesce(c.first_name, '') || ' ' ||
-          coalesce(c.last_name, '') || ' ' ||
-          coalesce(c.email, '') || ' ' ||
-          coalesce(c.phone, '') || ' ' ||
-          coalesce(c.address_line1, '') || ' ' ||
-          coalesce(c.city, '') || ' ' ||
-          coalesce(c.state, '') || ' ' ||
-          coalesce(c.vehicle_interest, '')
-        ),
+        coalesce(c.first_name, '') || ' ' ||
+        coalesce(c.last_name, '') || ' ' ||
+        coalesce(c.email, '') || ' ' ||
+        coalesce(c.phone, '') || ' ' ||
+        coalesce(c.address_line1, '') || ' ' ||
+        coalesce(c.city, '') || ' ' ||
+        coalesce(c.state, '') || ' ' ||
+        coalesce(c.vehicle_interest, '')),
         coalesce(c.first_name, '') || ' ' ||
         coalesce(c.last_name, '') || ' ' ||
         coalesce(c.email, '') || ' ' ||
@@ -152,32 +157,38 @@ class SearchIndexService {
    * Index leads for search
    */
   static async indexLeads() {
-    const createIndexSql = `
-      CREATE TABLE IF NOT EXISTS lead_search_index (
-        lead_id UUID PRIMARY KEY REFERENCES leads(id) ON DELETE CASCADE,
-        search_vector TSVECTOR,
-        searchable_text TEXT,
-        last_updated TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-      );
-
-      CREATE INDEX IF NOT EXISTS idx_lead_search_vector ON lead_search_index USING GIN(search_vector);
-      CREATE INDEX IF NOT EXISTS idx_lead_search_updated ON lead_search_index(last_updated);
-    `;
-
-    await DatabaseService.query(createIndexSql);
-
+    // NO DDL HERE.
+    //
+    // This used to CREATE the index table itself:
+    //
+    //     CREATE TABLE customer_search_index (
+    //       search_vector TSVECTOR, ...
+    //     );
+    //     CREATE INDEX ... USING GIN(search_vector);
+    //
+    // TSVECTOR and USING GIN are Postgres. This database is SQLite, which has
+    // neither, so the CREATE failed on every build and the index was never
+    // populated -- the four search indexes have never existed.
+    //
+    // The tables are now in database/turso/schema.sql, created portably, and
+    // that file is the only place a table's shape is written down. One answer
+    // rather than five, and a change to a column reaches all of them.
+    //
+    // There is no to_tsvector here either. `searchable_text` is a lowercased
+    // concatenation of the fields a person would type, indexed, and matched with
+    // LIKE. That gives substring matching rather than stemmed word matching,
+    // which is the better trade here: someone typing "escal" wants Escalade,
+    // and stemming does not help them.
     const indexSql = `
       INSERT INTO lead_search_index (lead_id, search_vector, searchable_text, last_updated)
       SELECT
         l.id,
-        to_tsvector('english',
-          coalesce(l.first_name, '') || ' ' ||
-          coalesce(l.last_name, '') || ' ' ||
-          coalesce(l.email, '') || ' ' ||
-          coalesce(l.phone, '') || ' ' ||
-          coalesce(l.message, '') || ' ' ||
-          coalesce(l.vehicle_interest, '')
-        ),
+        coalesce(l.first_name, '') || ' ' ||
+        coalesce(l.last_name, '') || ' ' ||
+        coalesce(l.email, '') || ' ' ||
+        coalesce(l.phone, '') || ' ' ||
+        coalesce(l.message, '') || ' ' ||
+        coalesce(l.vehicle_interest, '')),
         coalesce(l.first_name, '') || ' ' ||
         coalesce(l.last_name, '') || ' ' ||
         coalesce(l.email, '') || ' ' ||
@@ -201,29 +212,35 @@ class SearchIndexService {
    * Index interactions for search
    */
   static async indexInteractions() {
-    const createIndexSql = `
-      CREATE TABLE IF NOT EXISTS interaction_search_index (
-        interaction_id UUID PRIMARY KEY REFERENCES interactions(id) ON DELETE CASCADE,
-        search_vector TSVECTOR,
-        searchable_text TEXT,
-        last_updated TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-      );
-
-      CREATE INDEX IF NOT EXISTS idx_interaction_search_vector ON interaction_search_index USING GIN(search_vector);
-      CREATE INDEX IF NOT EXISTS idx_interaction_search_updated ON interaction_search_index(last_updated);
-    `;
-
-    await DatabaseService.query(createIndexSql);
-
+    // NO DDL HERE.
+    //
+    // This used to CREATE the index table itself:
+    //
+    //     CREATE TABLE customer_search_index (
+    //       search_vector TSVECTOR, ...
+    //     );
+    //     CREATE INDEX ... USING GIN(search_vector);
+    //
+    // TSVECTOR and USING GIN are Postgres. This database is SQLite, which has
+    // neither, so the CREATE failed on every build and the index was never
+    // populated -- the four search indexes have never existed.
+    //
+    // The tables are now in database/turso/schema.sql, created portably, and
+    // that file is the only place a table's shape is written down. One answer
+    // rather than five, and a change to a column reaches all of them.
+    //
+    // There is no to_tsvector here either. `searchable_text` is a lowercased
+    // concatenation of the fields a person would type, indexed, and matched with
+    // LIKE. That gives substring matching rather than stemmed word matching,
+    // which is the better trade here: someone typing "escal" wants Escalade,
+    // and stemming does not help them.
     const indexSql = `
       INSERT INTO interaction_search_index (interaction_id, search_vector, searchable_text, last_updated)
       SELECT
         i.id,
-        to_tsvector('english',
-          coalesce(i.subject, '') || ' ' ||
-          coalesce(i.content, '') || ' ' ||
-          coalesce(i.summary, '')
-        ),
+        coalesce(i.subject, '') || ' ' ||
+        coalesce(i.content, '') || ' ' ||
+        coalesce(i.summary, '')),
         coalesce(i.subject, '') || ' ' ||
         coalesce(i.content, '') || ' ' ||
         coalesce(i.summary, ''),
@@ -244,35 +261,41 @@ class SearchIndexService {
    * Index vehicles for search
    */
   static async indexVehicles() {
-    const createIndexSql = `
-      CREATE TABLE IF NOT EXISTS vehicle_search_index (
-        vehicle_id UUID PRIMARY KEY REFERENCES vehicles(id) ON DELETE CASCADE,
-        search_vector TSVECTOR,
-        searchable_text TEXT,
-        last_updated TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-      );
-
-      CREATE INDEX IF NOT EXISTS idx_vehicle_search_vector ON vehicle_search_index USING GIN(search_vector);
-      CREATE INDEX IF NOT EXISTS idx_vehicle_search_updated ON vehicle_search_index(last_updated);
-    `;
-
-    await DatabaseService.query(createIndexSql);
-
+    // NO DDL HERE.
+    //
+    // This used to CREATE the index table itself:
+    //
+    //     CREATE TABLE customer_search_index (
+    //       search_vector TSVECTOR, ...
+    //     );
+    //     CREATE INDEX ... USING GIN(search_vector);
+    //
+    // TSVECTOR and USING GIN are Postgres. This database is SQLite, which has
+    // neither, so the CREATE failed on every build and the index was never
+    // populated -- the four search indexes have never existed.
+    //
+    // The tables are now in database/turso/schema.sql, created portably, and
+    // that file is the only place a table's shape is written down. One answer
+    // rather than five, and a change to a column reaches all of them.
+    //
+    // There is no to_tsvector here either. `searchable_text` is a lowercased
+    // concatenation of the fields a person would type, indexed, and matched with
+    // LIKE. That gives substring matching rather than stemmed word matching,
+    // which is the better trade here: someone typing "escal" wants Escalade,
+    // and stemming does not help them.
     const indexSql = `
       INSERT INTO vehicle_search_index (vehicle_id, search_vector, searchable_text, last_updated)
       SELECT
         v.id,
-        to_tsvector('english',
-          coalesce(v.stock_number::text, '') || ' ' ||
-          coalesce(v.vin, '') || ' ' ||
-          coalesce(v.make, '') || ' ' ||
-          coalesce(v.model, '') || ' ' ||
-          coalesce(v.trim, '') || ' ' ||
-          coalesce(v.exterior_color, '') || ' ' ||
-          coalesce(v.interior_color, '') || ' ' ||
-          coalesce(v.engine, '')
-        ),
-        coalesce(v.stock_number::text, '') || ' ' ||
+        coalesce(v.stock_number, '') || ' ' ||
+        coalesce(v.vin, '') || ' ' ||
+        coalesce(v.make, '') || ' ' ||
+        coalesce(v.model, '') || ' ' ||
+        coalesce(v.trim, '') || ' ' ||
+        coalesce(v.exterior_color, '') || ' ' ||
+        coalesce(v.interior_color, '') || ' ' ||
+        coalesce(v.engine, '')),
+        coalesce(v.stock_number, '') || ' ' ||
         coalesce(v.vin, '') || ' ' ||
         coalesce(v.make, '') || ' ' ||
         coalesce(v.model, '') || ' ' ||
@@ -355,16 +378,36 @@ class SearchIndexService {
 
     if (!tableName) return [];
 
-    // Use PostgreSQL full-text search
+    // Portable search: LIKE over `searchable_text`, with a prefix match ranked
+    // above a substring match.
+    //
+    // This was `ts_rank(si.search_vector, plainto_tsquery('english', $1))` with a
+    // `@@` full-text predicate -- Postgres functions that do not exist here, so
+    // the query has never run and this method has always returned nothing.
+    //
+    // The ranking is a deliberate approximation of relevance, not a copy of
+    // ts_rank:
+    //
+    //   2  the searchable text STARTS WITH the query  -- almost certainly it
+    //   1  the query appears anywhere in it            -- probably it
+    //   0  no match                                    -- filtered out below
+    //
+    // A prefix match first is what a search box does anyway, and it is a better
+    // signal here than term frequency: in a dealership's data, "cadillac"
+    // appearing twice in one row does not make that customer more relevant than
+    // one whose name starts with what was typed.
     const searchSql = `
       SELECT
         si.${idField} as id,
         si.searchable_text,
-        ts_rank(si.search_vector, plainto_tsquery('english', $1)) as relevance_score,
-        si.last_updated
+        si.last_updated,
+        CASE
+          WHEN lower(si.searchable_text) LIKE lower($1) || '%' THEN 2
+          ELSE 1
+        END AS relevance_score
       FROM ${tableName} si
-      WHERE si.search_vector @@ plainto_tsquery('english', $1)
-      ORDER BY relevance_score DESC
+      WHERE si.searchable_text LIKE '%' || $1 || '%'
+      ORDER BY relevance_score DESC, si.searchable_text
       LIMIT 100
     `;
 
@@ -561,7 +604,7 @@ class SearchIndexService {
       INSERT INTO ${entityType}_search_index (customer_id, search_vector, searchable_text, last_updated)
       SELECT
         c.id,
-        to_tsvector('english', 'searchable content here'),
+        'searchable content here'),
         'searchable text here',
         CURRENT_TIMESTAMP
       FROM ${entityType} c

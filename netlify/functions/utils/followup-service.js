@@ -84,7 +84,7 @@ class FollowupService {
       LEFT JOIN leads l ON fu.lead_id = l.id
       WHERE fu.status = 'pending'
         AND fu.scheduled_date <= CURRENT_TIMESTAMP
-        AND fu.scheduled_date > CURRENT_TIMESTAMP - INTERVAL '24 hours' -- Don't process very old ones
+        AND fu.scheduled_date > datetime('now', '-24 hours') -- Don't process very old ones
       ORDER BY fu.scheduled_date ASC, fu.priority DESC
       LIMIT 100
     `;
@@ -621,7 +621,7 @@ Confidentiality Notice: This email contains confidential information intended on
         COUNT(CASE WHEN sms = true THEN 1 END) as sms_followups,
         AVG(EXTRACT(EPOCH FROM (sent_date - scheduled_date))/3600) as avg_delay_hours
       FROM followups
-      WHERE created_at >= CURRENT_TIMESTAMP - INTERVAL '${days} days'
+      WHERE created_at >= datetime('now', '-${days} days')
     `;
 
     try {
