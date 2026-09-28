@@ -14,16 +14,25 @@
 
 [build]
   publish = "site/public"
-  # Remote builds are DISABLED on this site (`skip_automatic_builds`), and
-  # deploys upload a prebuilt directory instead, so this command is not normally
-  # run by Netlify. It is kept because the documented [build] keys are base,
-  # publish, command, environment and processing -- a site with no command
-  # inherits whatever the UI has, which is how this repo ended up running
-  # `yarn build` against a `dist/` that never existed.
+  # NO BUILD. Empty, not "npm run build".
+  #
+  # This site deploys PREBUILT: ci/run.sh builds in the podman image on the CI
+  # host, then uploads site/public with `--dir`, which is how it avoids spending
+  # Netlify build minutes.
+  #
+  # Declaring a command defeats that completely. `netlify deploy --dir` still runs
+  # it, and here it ran for 24 minutes: `npm run build` -> build-for-netlify.js
+  # -> the 4.7MB CMS webpack bundle, at effectively zero CPU, while the prebuilt
+  # artifact it had been handed sat ready to upload.
+  #
+  # It was kept on the argument that a site with no command "inherits whatever the
+  # UI has" -- which is how this repo came to run `yarn build` against a `dist/`
+  # that never existed. An explicit empty command is stronger than that: it says
+  # there is no build, on the site and in the UI alike.
   #
   # `functions` is NOT a [build] key. It sat here and was silently ignored; the
   # functions directory is declared by [functions] directory below.
-  command = "npm run build"
+  command = ""
 
 # Pretty URLs: Hugo writes inventory/index.html; this lets Netlify serve
 # /inventory/ from it without the filename. Netlify still prefers the explicit
