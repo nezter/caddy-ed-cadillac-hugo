@@ -7,6 +7,24 @@ const { addCorsHeaders, corsHeaders } = require('./cors-middleware');
 const { checkRateLimit } = require('./auth-middleware');
 
 /**
+ * Format the X-RateLimit-Reset header, tolerating a missing timestamp.
+ *
+ * This read `new Date(rateLimitResult.resetTime).toISOString()`. If resetTime
+ * is ever absent, `new Date(undefined)` is an Invalid Date and `.toISOString()`
+ * throws `RangeError: Invalid time value` -- inside the request path, from a
+ * middleware that runs on every request the functions apply. One missing field
+ * turns into an unhandled exception rather than a missing header.
+ *
+ * A rate-limit header is diagnostic. It is never worth failing a response
+ * over, so an unusable value is omitted rather than formatted badly.
+ */
+function rateLimitResetHeader(resetTime) {
+  const when = new Date(Number(resetTime) || 0);
+  if (Number.isNaN(when.getTime())) return null;
+  return when.toISOString();
+}
+
+/**
  * Comprehensive security headers for production
  */
 const securityHeaders = {
@@ -162,7 +180,7 @@ async function applySecurity(event, options = {}) {
           'Retry-After': Math.ceil((rateLimitResult.resetTime - Date.now()) / 1000),
           'X-RateLimit-Limit': maxRequests,
           'X-RateLimit-Remaining': rateLimitResult.remaining,
-          'X-RateLimit-Reset': new Date(rateLimitResult.resetTime).toISOString()
+          'X-RateLimit-Reset': rateLimitResetHeader(rateLimitResult.resetTime)
         }
       };
       
@@ -173,7 +191,7 @@ async function applySecurity(event, options = {}) {
     event.rateLimitHeaders = {
       'X-RateLimit-Limit': maxRequests,
       'X-RateLimit-Remaining': rateLimitResult.remaining,
-      'X-RateLimit-Reset': new Date(rateLimitResult.resetTime).toISOString()
+      'X-RateLimit-Reset': rateLimitResetHeader(rateLimitResult.resetTime)
     };
   }
 
