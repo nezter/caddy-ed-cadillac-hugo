@@ -278,6 +278,36 @@ exports.handler = async function(event, context) {
       // Continue with success response even if interaction logging fails
     }
 
+      // Record the request durably.
+      //
+      // Until this existed a booking was emailed and then written to Postgres.
+      // With no database configured the email arrived and the request was gone:
+      // nothing listed it, nothing reminded Ed, and the customer believed they
+      // had booked. A Blobs-backed queue makes the record survive independently
+      // of the database, and it is what the admin calendar syncs from.
+      //
+      // Placed AFTER the database work on purpose: failing to record must never
+      // turn a request the customer successfully made into an error they see.
+      try {
+        const bookingQueue = require('./booking-queue');
+        const id = bookingQueue.makeId(leadData);
+        await bookingQueue.record({
+          id,
+          status: 'new',
+          vehicleId: leadData.vehicleId,
+          vehicleTitle: leadData.vehicleTitle,
+          fullName: leadData.fullName,
+          email: leadData.email,
+          phone: leadData.phone,
+          preferredDate: leadData.preferredDate,
+          preferredTime: leadData.preferredTime,
+          comments: leadData.comments,
+          createdAt: new Date().toISOString(),
+        });
+      } catch (queueError) {
+        console.error('Could not record the request in the booking queue:', queueError);
+      }
+
     // Return success
     return {
       statusCode: 200,
