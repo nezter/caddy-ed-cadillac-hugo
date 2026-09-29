@@ -1374,3 +1374,24 @@ body.home .bento--4 .tile__idx,
 .stage .bento--4 .tile__idx{
   font-size:.74rem;margin-bottom:.35rem;
 }
+
+
+/* --- a picture that overflows its plate ---------------------------------
+   Measured on the rendered page: in the Ed's pick band the .plate is 869px
+   tall and the PICTURE inside it is 1170px -- 300px of photograph hanging out
+   of the frame, pushing the section taller than it should be.
+
+   The plate constrains its IMG, but the Hugo picture partial wraps that img in
+   a <picture> (with <source> children for the responsive sets), and that
+   wrapper had no height rule. So the plate was sizing the wrong element.
+   ---------------------------------------------------------------------- */
+.plate > picture,
+.plate > picture > img{
+  display:block;width:100%;height:100%;
+}
+.plate > picture > img{object-fit:cover}
+.plate > picture > source{display:none}
+/* any other figure wrapper the picture partial introduces */
+.plate > figure{display:block;width:100%;height:100%;margin:0}
+.plate > figure > picture,
+.plate > figure > img{display:block;width:100%;height:100%;object-fit:cover}
