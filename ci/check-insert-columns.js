@@ -213,12 +213,22 @@ async function checkAgainstDatabase(inserts) {
   // name is a rule that will be wrong one day in a way nobody notices. An
   // exception with a reason written next to it is reviewable; an inferred one is
   // not.
+  //
+  // A table that gets a generated `id` is a table whose identity is its own; a
+  // table on this list is one whose identity is something that already exists
+  // elsewhere. Booking requests, customers and campaigns are the first kind --
+  // nothing else knows what they are until the row says so. A search index, a
+  // calendar connection and a favourite are the second: inventing an id for them
+  // would mean a second identity that then has to be kept in step with the
+  // first.
   const KEYED_BY_REFERENCE = new Set([
     'customer_search_index',      // PK customer_id -> customers.id
     'lead_search_index',          // PK lead_id -> leads.id
     'interaction_search_index',   // PK interaction_id -> interactions.id
     'vehicle_search_index',       // PK vehicle_id -> vehicles.id
     'search_index_metadata',      // PK index_type, one row per index
+    'google_calendar_tokens',     // PK user_id -> sales_reps.id (the Identity `sub`)
+    'vehicle_favourites',         // PK slug, which is the vehicle's own identity
   ]);
 
   const missingId = inserts.filter((i) => !i.cols.includes('id') && !KEYED_BY_REFERENCE.has(i.table));

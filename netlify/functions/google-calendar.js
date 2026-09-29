@@ -1,63 +1,95 @@
 /**
- * google-calendar.js -- connect Ed's Google Calendar and push booking requests
- * onto it.
+ * google-calendar.js -- per-person Google Calendar, and pushing test-drive
+ * requests onto it.
  *
  * WHAT THIS DOES
  * --------------
- *   GET  ?action=start    redirect to Google's consent screen
- *   GET  ?action=callback handle Google's redirect, store the tokens
- *   GET  ?action=status   is it connected, and what has synced
- *   POST                  push a queued booking to the calendar
- *   PATCH { id, status }  mark a request handled / cancelled
+ *   GET  ?action=status      is THIS person connected, and to which account
+ *   GET  ?action=connect     redirect to Google's consent screen
+ *   GET  ?action=callback    handle Google's redirect, store the tokens
+ *   POST ?action=disconnect  forget this person's tokens
+ *   POST { id? }             push queued bookings to THIS person's calendar
  *
- * WHY IT IS BUILT BUT NOT WORKING YET
- * -----------------------------------
- * It needs a Google Cloud project, an OAuth client ID and secret, and a consent
- * screen Ed has to publish. Those are credentials only the owner can create --
- * there is no way to synthesise them and no safe way to guess at them.
+ * WHAT CHANGED, AND WHY
+ * ---------------------
+ * ONE TOKEN FOR EVERYBODY
+ *   The tokens lived in a Blobs store under a single key, `token`. That is one
+ *   calendar for the whole dealership: the first person to connect owned it, and
+ *   everybody else's bookings went into their calendar without them knowing.
+ *   One person disconnecting removed it for all of them.
  *
- * So the function is complete and wired, and it reports its own absence
- * honestly rather than pretending. Until the credentials exist:
+ *   Now one row per person, keyed on the Netlify Identity `sub` -- the same
+ *   value `sales_reps.id` is keyed on, so the row belongs to a person rather
+ *   than to a session.
  *
- *   status  -> { connected: false, reason: 'not-configured' }
- *   start   -> a page saying what to create, with a link
- *   POST    -> 503, with the same explanation
+ * BLOBS AT ALL
+ *   This account's plan does not let a function reach a Blobs store, so the
+ *   token store was never reachable and `?action=connect` could not have worked.
+ *   The database is the one piece of infrastructure confirmed working on this
+ *   site. The tokens are there now, and `ON DELETE CASCADE` from `sales_reps`
+ *   means they go when the person does: revocation is a delete.
  *
- * The booking requests are already durable in booking-queue.js, so nothing is
- * waiting on this. When the credentials arrive the calendar fills in from
- * requests that already exist, and nothing needs re-sending.
+ * THE STATE PARAMETER
+ * -------------------
+ * Signed with HMAC over JWT_SECRET, not stored.
+ *
+ * It was stored in Blobs, so the check could not run, and it was written as:
+ *
+ *     if (s) { ...verify... }
+ *
+ * which means when the store was unavailable -- always, on this plan -- the
+ * verification was SKIPPED. The callback would have accepted any authorization
+ * code anyone posted at it. That is a CSRF hole that opens precisely when
+ * something else is already broken, which is the worst time for it.
+ *
+ * A stateless HMAC-signed state needs no storage, so it cannot be skipped, and it
+ * cannot be skipped by an outage. The signed payload carries the user's `sub`,
+ * which is what makes the callback per-person: the code Google returns is stored
+ * against whoever started the flow, not against whoever completed it.
  *
  * SCOPE
  * -----
- * calendar.events only. Not the whole calendar, not free/busy discovery of
- * other people's availability. The narrowest scope that does the job, because a
- * token with calendar scope is a token that can read every event in Ed's
- * calendar forever.
+ * calendar.events only. Not the whole calendar, not free/busy discovery of other
+ * people's availability. A token with calendar scope is a token that can read
+ * every event in that person's calendar, indefinitely.
  *
- * THE TOKEN
- * ---------
- * Stored in a Blobs store, never in a function's environment. A refresh token in
- * an env var is readable by anything that can run a function, and it does not
- * expire when the OAuth consent is later withdrawn -- which an env var would
- * silently outlive. The store makes revocation a delete.
+ * CREDENTIALS
+ * -----------
+ * It needs a Google Cloud project, an OAuth client ID and secret, and a consent
+ * screen the owner has to publish. Until those exist it reports its own absence
+ * rather than pretending: status says `not-configured`, connect explains what
+ * to create, and a push returns 503 with the same explanation.
  */
 
 'use strict';
 
 const crypto = require('crypto');
-const querystring = require('querystring');
 
 const bookingQueue = require('./booking-queue');
+const { authenticateRequest, optionalAuthenticateRequest } = require('./utils/auth-middleware');
+const DatabaseService = require('./utils/database-service');
 
-const TOKEN_STORE = 'google-calendar';
-const SCOPES = ['https://www.googleapis.com/auth/calendar.events'];
+const SCOPES = [
+  'https://www.googleapis.com/auth/calendar.events',
+  // Needed to show WHICH Google account is connected. Without it the status page
+  // can only say "connected", which is not enough to tell a member of staff
+  // that they are looking at somebody else's calendar.
+  'https://www.googleapis.com/auth/userinfo.email',
+  'openid',
+  'email',
+];
 const CALENDAR_API = 'https://www.googleapis.com/calendar/v3';
+const TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token';
+const USERINFO_ENDPOINT = 'https://www.googleapis.com/oauth2/v2/userinfo';
+
+/** How long a connect flow may take before its state is refused. Ten minutes. */
+const STATE_TTL_MS = 10 * 60 * 1000;
 
 const CORS = {
   'Content-Type': 'application/json',
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   'Cache-Control': 'no-store',
 };
 
@@ -72,79 +104,199 @@ function json(status, body) {
   return { statusCode: status, headers: CORS, body: JSON.stringify(body) };
 }
 
-function store() {
-  try {
-    // eslint-disable-next-line global-require
-    return require('@netlify/blobs').getStore(TOKEN_STORE);
-  } catch (e) {
-    return null;
-  }
-}
-
-async function readToken() {
-  const s = store();
-  if (!s) return null;
-  try {
-    return await s.getJSON('token');
-  } catch (e) {
-    return null;
-  }
-}
-
-/** A valid access token, refreshing it if the current one has expired. */
-async function accessToken() {
-  const saved = await readToken();
-  if (!saved) return null;
-
-  if (saved.accessToken && Date.now() < (saved.expiresAt || 0) - 60_000) {
-    return saved.accessToken;
-  }
-  if (!saved.refreshToken) return null;
-
-  const creds = credentials();
-  if (!creds) return null;
-
-  try {
-    const res = await fetch('https://oauth2.googleapis.com/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        client_id: creds.id,
-        client_secret: creds.secret,
-        refresh_token: saved.refreshToken,
-        grant_type: 'refresh_token',
-      }).toString(),
-    });
-    const data = await res.json();
-    if (!res.ok || !data.access_token) return null;
-    const next = {
-      ...saved,
-      accessToken: data.access_token,
-      expiresAt: Date.now() + (data.expires_in || 3600) * 1000,
-    };
-    await store().setJSON('token', next);
-    return next.accessToken;
-  } catch (err) {
-    console.error('[google-calendar] token refresh failed', err.message);
-    return null;
-  }
-}
-
-function redirect(res, location) {
-  return { statusCode: 302, headers: { Location: location, 'Cache-Control': 'no-store' }, body: '' };
+function redirect(location) {
+  return {
+    statusCode: 302,
+    headers: { Location: location, 'Cache-Control': 'no-store' },
+    body: '',
+  };
 }
 
 function page(title, body, status = 200) {
   return {
     statusCode: status,
     headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' },
-    body: `<!doctype html><meta charset="utf-8"><title>${title}</title>
+    body: `<!doctype html><meta charset="utf-8"><title>${escapeHtml(title)}</title>
 <style>body{font:16px/1.6 system-ui,sans-serif;max-width:44rem;margin:4rem auto;padding:0 1.5rem;color:#111}
 h1{font-size:1.6rem;margin:0 0 1rem}code{background:#f4f4f5;padding:.15em .4em;border-radius:3px}
 a{color:#c8102e}li{margin:.4rem 0}</style>
-<h1>${title}</h1>${body}`,
+<h1>${escapeHtml(title)}</h1>${body}`,
   };
 }
+
+/** Titles and messages are put into a page; a Google error string can hold
+ *  anything at all, so it is escaped rather than trusted. */
+function escapeHtml(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/* ------------------------------------------------------------------ *
+ * Signed state
+ * ------------------------------------------------------------------ */
+
+function stateSecret() {
+  return process.env.JWT_SECRET || '';
+}
+
+/**
+ * A state value that names the person who started the flow and cannot be
+ * changed.
+ *
+ * `payload.nonce.exp.sig`, base64url, HMAC-SHA256 over the first four parts.
+ * Google echoes `state` back untouched, and the callback recomputes the signature
+ * and compares it. A forged or edited state fails the comparison; an expired one
+ * fails on `exp`.
+ *
+ * Stateless on purpose: no storage to be unavailable, so this cannot be skipped
+ * by an outage the way the Blobs-backed check could.
+ */
+function signState(sub) {
+  const payload = {
+    sub,
+    nonce: crypto.randomBytes(12).toString('hex'),
+    exp: Date.now() + STATE_TTL_MS,
+  };
+  const body = base64url(JSON.stringify(payload));
+  return `${body}.${hmac(body)}`;
+}
+
+/** Verify a state value. Returns the sub, or null with a reason. */
+function readState(state) {
+  if (!state || typeof state !== 'string' || !state.includes('.')) {
+    return { ok: false, reason: 'missing' };
+  }
+  const idx = state.lastIndexOf('.');
+  const body = state.slice(0, idx);
+  const sig = state.slice(idx + 1);
+
+  const expected = hmac(body);
+  // Constant-time: a byte-by-byte compare leaks how much of a forgery was right.
+  const a = Buffer.from(sig);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+    return { ok: false, reason: 'signature' };
+  }
+
+  let payload;
+  try {
+    payload = JSON.parse(Buffer.from(body, 'base64url').toString('utf8'));
+  } catch {
+    return { ok: false, reason: 'unreadable' };
+  }
+  if (!payload || !payload.sub) return { ok: false, reason: 'no-subject' };
+  if (Date.now() > payload.exp) return { ok: false, reason: 'expired' };
+  return { ok: true, sub: payload.sub };
+}
+
+function hmac(body) {
+  return crypto.createHmac('sha256', stateSecret()).update(body).digest('base64url');
+}
+
+function base64url(text) {
+  return Buffer.from(text, 'utf8').toString('base64url');
+}
+
+/* ------------------------------------------------------------------ *
+ * Token storage -- one row per person
+ * ------------------------------------------------------------------ */
+
+async function readTokenFor(userId) {
+  if (!userId) return null;
+  try {
+    const result = await DatabaseService.query(
+      'SELECT * FROM google_calendar_tokens WHERE user_id = $1',
+      [userId]
+    );
+    return result.rows[0] || null;
+  } catch (error) {
+    console.error('[google-calendar] could not read the stored token:', error.message);
+    return null;
+  }
+}
+
+async function writeTokenFor(userId, data) {
+  await DatabaseService.query(
+    `INSERT INTO google_calendar_tokens
+       (user_id, access_token, refresh_token, expires_at, scope, google_email,
+        calendar_id, connected_at, updated_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, datetime('now'))
+     ON CONFLICT (user_id) DO UPDATE SET
+       access_token = excluded.access_token,
+       refresh_token = excluded.refresh_token,
+       expires_at   = excluded.expires_at,
+       scope        = excluded.scope,
+       google_email = excluded.google_email,
+       calendar_id  = excluded.calendar_id,
+       connected_at = excluded.connected_at,
+       updated_at   = datetime('now')`,
+    [
+      userId,
+      data.accessToken,
+      data.refreshToken,
+      data.expiresAt,
+      data.scope || SCOPES.join(' '),
+      data.email || null,
+      data.calendarId || 'primary',
+      new Date().toISOString(),
+    ]
+  );
+}
+
+async function deleteTokenFor(userId) {
+  await DatabaseService.query('DELETE FROM google_calendar_tokens WHERE user_id = $1', [userId]);
+}
+
+/**
+ * A valid access token for this person, refreshing it if it has expired.
+ *
+ * Returns null when there is nothing to refresh -- which is the normal answer for
+ * somebody who has not connected. The caller says so rather than failing.
+ */
+async function accessTokenFor(userId) {
+  const saved = await readTokenFor(userId);
+  if (!saved) return { token: null, saved: null };
+
+  const expiresAt = Number(saved.expires_at || 0);
+  if (saved.access_token && Date.now() < expiresAt - 60_000) {
+    return { token: saved.access_token, saved };
+  }
+  if (!saved.refresh_token) return { token: null, saved };
+
+  const creds = credentials();
+  if (!creds) return { token: null, saved };
+
+  try {
+    const res = await fetch(TOKEN_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id: creds.id,
+        client_secret: creds.secret,
+        refresh_token: saved.refresh_token,
+        grant_type: 'refresh_token',
+      }).toString(),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.access_token) {
+      return { token: null, saved, refreshFailed: data.error || 'refresh rejected' };
+    }
+    await DatabaseService.query(
+      'UPDATE google_calendar_tokens SET access_token = $1, expires_at = $2, updated_at = datetime(\'now\') WHERE user_id = $3',
+      [data.access_token, Date.now() + (data.expires_in || 3600) * 1000, userId]
+    );
+    return { token: data.access_token, saved };
+  } catch (err) {
+    console.error('[google-calendar] token refresh failed:', err.message);
+    return { token: null, saved };
+  }
+}
+
+/* ------------------------------------------------------------------ */
 
 const NOT_CONFIGURED = `
 <p>Google Calendar is not connected yet, because there is no OAuth client
@@ -162,17 +314,29 @@ requests are recorded and emailed — the calendar is the missing piece.</p>
   <li>Publish the consent screen (it can be in testing while only your own
       Google account is listed as a test user).</li>
 </ol>
-<p>Then <a href="?action=start">connect the calendar</a>. Requests already
-recorded will be waiting to be pushed — none of them need re-sending.</p>`;
+<p>Then <a href="?action=connect">connect your calendar</a>. Each member of staff
+connects their own — bookings go to the person they asked for, not to whoever
+connected first.</p>`;
+
+/** Unauthenticated callers get this rather than a redirect loop. */
+const SIGN_IN_REQUIRED = `
+<p>This is a staff page. Sign in and try again.</p>
+<p><a href="/admin/sign-in/">Sign in</a></p>`;
 
 async function handler(event) {
   const params = event.queryStringParameters || {};
   const q = (n) => params[n];
+  const action = q('action') || '';
 
   if (event.httpMethod === 'OPTIONS') return { statusCode: 204, headers: CORS, body: '' };
 
-  // ---------------------------------------------------------------- status
-  if (q('action') === 'status') {
+  /* ---------------------------------------------------------------- status
+   *
+   * Uses optional auth, not required auth: this is the page's own status probe,
+   * and an anonymous visitor should get `connected: false` rather than a 401
+   * that logs an error in the console for whoever is not signed in.
+   */
+  if (action === 'status') {
     const creds = credentials();
     if (!creds) {
       return json(200, {
@@ -181,49 +345,70 @@ async function handler(event) {
         message: 'GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are not set.',
       });
     }
-    const token = await accessToken();
-    if (!token) {
-      return json(200, { connected: false, reason: 'not-connected' });
+    const auth = await optionalAuthenticateRequest(event);
+    if (!auth.authenticated) {
+      return json(200, { connected: false, reason: 'not-signed-in' });
     }
-    const saved = await readToken();
+    const saved = await readTokenFor(auth.user.id);
+    if (!saved) return json(200, { connected: false, reason: 'not-connected' });
+
     return json(200, {
       connected: true,
-      email: saved && saved.email ? saved.email : null,
-      connectedAt: saved && saved.connectedAt ? saved.connectedAt : null,
+      perUser: true,
+      userId: auth.user.id,
+      email: saved.google_email || null,
+      calendarId: saved.calendar_id || 'primary',
+      connectedAt: saved.connected_at || null,
+      expiresAt: Number(saved.expires_at || 0) || null,
     });
   }
 
-  // ----------------------------------------------------------------- start
-  if (q('action') === 'start') {
+  /* -------------------------------------------------------------- connect */
+  if (action === 'connect' || action === 'start') {
     const creds = credentials();
     if (!creds) return page('Google Calendar is not configured', NOT_CONFIGURED, 400);
 
+    // Required auth: this is where a calendar gets attached to a person, and
+    // the state that comes back is what decides whose calendar it is.
+    const auth = await authenticateRequest(event);
+    if (!auth.authenticated) return page('Sign in to connect a calendar', SIGN_IN_REQUIRED, 401);
+
+    if (!stateSecret()) {
+      return page(
+        'Cannot start a connection',
+        '<p>This site has no signing key, so a connect flow cannot be issued '
+        + 'safely. A calendar must not be attached to the wrong person.</p>',
+        500
+      );
+    }
+
     const origin = `https://${event.headers.host || 'caddyed.com'}`;
     const redirectUri = `${origin}/.netlify/functions/google-calendar?action=callback`;
-    const state = crypto.randomBytes(16).toString('hex');
-    // The state is echoed back by Google; comparing it is what stops a third
-    // party from completing someone else's consent flow with our client ID.
-    const s = store();
-    if (s) await s.setJSON('state', { value: state, createdAt: Date.now() });
 
-    const auth = new URL('https://accounts.google.com/o/oauth2/v2/auth');
-    auth.searchParams.set('client_id', creds.id);
-    auth.searchParams.set('redirect_uri', redirectUri);
-    auth.searchParams.set('response_type', 'code');
-    auth.searchParams.set('scope', SCOPES.join(' '));
-    auth.searchParams.set('access_type', 'offline'); // we need a refresh token
-    auth.searchParams.set('prompt', 'consent');
-    auth.searchParams.set('state', state);
-    return redirect(res, auth.toString());
+    const auth2 = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+    auth2.searchParams.set('client_id', creds.id);
+    auth2.searchParams.set('redirect_uri', redirectUri);
+    auth2.searchParams.set('response_type', 'code');
+    auth2.searchParams.set('scope', SCOPES.join(' '));
+    auth2.searchParams.set('access_type', 'offline'); // we need a refresh token
+    // `select_account` rather than `consent`: re-connecting an account that is
+    // already authorised should not make somebody re-grant the same scopes.
+    auth2.searchParams.set('prompt', 'consent select_account');
+    auth2.searchParams.set('include_granted_scopes', 'true');
+    auth2.searchParams.set('state', signState(auth.user.id));
+
+    // The old code called `redirect(res, ...)` with `res` never defined, so
+    // this threw a ReferenceError and connecting never worked even where the
+    // token store was reachable. One argument now.
+    return redirect(auth2.toString());
   }
 
-  // -------------------------------------------------------------- callback
-  if (q('action') === 'callback') {
-    const origin = `https://${event.headers.host || 'caddyed.com'}`;
+  /* ------------------------------------------------------------- callback */
+  if (action === 'callback') {
     if (q('error')) {
       return page(
         'Calendar not connected',
-        `<p>Google returned <code>${q('error')}</code>.</p>
+        `<p>Google returned <code>${escapeHtml(q('error'))}</code>.</p>
          <p><a href="/admin/calendar/">Back to the calendar</a></p>`,
         400
       );
@@ -231,19 +416,23 @@ async function handler(event) {
     const creds = credentials();
     if (!creds) return page('Google Calendar is not configured', NOT_CONFIGURED, 400);
 
-    // Verify the state we issued, so this endpoint cannot be used to feed
-    // somebody else's authorization code into our store.
-    const s = store();
-    if (s) {
-      const saved = await s.getJSON('state');
-      if (!saved || saved.value !== q('state')) {
-        return page('Could not verify that request', '<p>The state parameter did not match. Start again from the calendar page.</p>', 400);
-      }
-      await s.delete('state');
+    // Verify the state BEFORE exchanging anything. This is not wrapped in a
+    // storage check, so it cannot be skipped: without valid, unexpired, correctly
+    // signed state this endpoint refuses the code outright.
+    const state = readState(q('state'));
+    if (!state.ok) {
+      console.warn('[google-calendar] refused a callback:', state.reason);
+      return page(
+        'Could not verify that request',
+        `<p>The state parameter did not verify (${escapeHtml(state.reason)}).`
+        + ' Start again from the calendar page.</p>',
+        400
+      );
     }
 
+    const origin = `https://${event.headers.host || 'caddyed.com'}`;
     try {
-      const res = await fetch('https://oauth2.googleapis.com/token', {
+      const res = await fetch(TOKEN_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({
@@ -255,40 +444,70 @@ async function handler(event) {
         }).toString(),
       });
       const data = await res.json();
-      if (!res.ok || !data.access_token) throw new Error(data.error_description || 'token exchange failed');
+      if (!res.ok || !data.access_token) {
+        throw new Error(data.error_description || 'token exchange failed');
+      }
 
-      // Find out which account connected, so the admin shows something better
-      // than "connected".
-      let email = null;
+      // Which account connected, so the status page can name it. Without this
+      // somebody cannot tell whether they are looking at their own calendar.
+      let googleEmail = null;
       try {
-        const who = await fetch(
-          'https://www.googleapis.com/oauth2/v2/userinfo',
-          { headers: { Authorization: `Bearer ${data.access_token}` } }
-        );
-        if (who.ok) email = (await who.json()).email || null;
+        const who = await fetch(USERINFO_ENDPOINT, {
+          headers: { Authorization: `Bearer ${data.access_token}` },
+        });
+        if (who.ok) googleEmail = (await who.json()).email || null;
       } catch (e) { /* not important enough to fail the connection over */ }
 
-      await s.setJSON('token', {
+      await writeTokenFor(state.sub, {
         accessToken: data.access_token,
         refreshToken: data.refresh_token || null,
         expiresAt: Date.now() + (data.expires_in || 3600) * 1000,
-        email,
-        connectedAt: new Date().toISOString(),
+        scope: data.scope,
+        email: googleEmail,
       });
 
-      const pending = await bookingQueue.list();
+      // A re-connect often returns no refresh token, meaning "keep using the one
+      // you have". Without this the previous refresh token would be overwritten
+      // with NULL and the connection would die an hour later with nothing to
+      // explain it.
+      if (!data.refresh_token) {
+        const existing = await readTokenFor(state.sub);
+        if (existing && existing.refresh_token) {
+          await DatabaseService.query(
+            'UPDATE google_calendar_tokens SET refresh_token = $1 WHERE user_id = $2',
+            [existing.refresh_token, state.sub]
+          );
+        }
+      }
+
+      const who = await DatabaseService.getSalesRep(state.sub);
+      const first = who ? `${who.first_name} ${who.last_name}`.trim() : 'your';
+      let pending = { entries: [] };
+      try {
+        pending = await bookingQueue.list();
+      } catch (e) { /* the calendar is connected either way */ }
+
       return page(
         'Calendar connected',
-        `<p>Connected${email ? ` as <b>${email}</b>` : ''}.</p>
+        `<p>Connected${googleEmail ? ` as <b>${escapeHtml(googleEmail)}</b>` : ''}. `
+        + `Bookings from now on go to ${escapeHtml(first)}'s calendar, and only theirs.</p>
          <p>${pending.entries.length} booking request${pending.entries.length === 1 ? '' : 's'} waiting to be pushed.</p>
          <p><a href="/admin/calendar/">Back to the calendar</a></p>`
       );
     } catch (err) {
-      return page('Could not connect', `<p>${err.message}</p>`, 400);
+      return page('Could not connect', `<p>${escapeHtml(err.message)}</p>`, 400);
     }
   }
 
-  // ------------------------------------------------------------------ POST
+  /* ------------------------------------------------------------ disconnect */
+  if (action === 'disconnect') {
+    const auth = await authenticateRequest(event);
+    if (!auth.authenticated) return json(401, { error: 'not-authenticated' });
+    await deleteTokenFor(auth.user.id);
+    return json(200, { disconnected: true, userId: auth.user.id });
+  }
+
+  /* ------------------------------------------------------------------ POST */
   if (event.httpMethod === 'POST') {
     const creds = credentials();
     if (!creds) {
@@ -297,9 +516,21 @@ async function handler(event) {
         message: 'Google Calendar is not configured for this site.',
       });
     }
-    const token = await accessToken();
+
+    // Required auth. Pushing a booking writes to a calendar, and which calendar is
+    // decided by who is asking.
+    const auth = await authenticateRequest(event);
+    if (!auth.authenticated) {
+      return json(401, { error: 'not-authenticated', message: 'Sign in to sync a calendar.' });
+    }
+
+    const { token, refreshFailed } = await accessTokenFor(auth.user.id);
     if (!token) {
-      return json(409, { error: 'not-connected', message: 'Connect the calendar first.' });
+      return json(409, {
+        error: 'not-connected',
+        message: 'Connect your calendar first.',
+        detail: refreshFailed || null,
+      });
     }
 
     let body = {};
@@ -309,13 +540,18 @@ async function handler(event) {
       return json(400, { error: 'Invalid JSON body' });
     }
 
-    const { entries } = await bookingQueue.list();
-    const pending = entries.filter((e) => e.status !== 'cancelled' && !e.googleEventId);
+    let entries = [];
+    try {
+      entries = (await bookingQueue.list()).entries;
+    } catch (e) {
+      return json(503, { error: 'queue-unavailable', message: String(e.message) });
+    }
+
+    let pending = entries.filter((e) => e.status !== 'cancelled' && !e.googleEventId);
     if (body.id) {
       const one = pending.filter((e) => e.id === body.id);
       if (!one.length) return json(404, { error: 'No pending request with that id' });
-      pending.length = 0;
-      pending.push(one[0]);
+      pending = one;
     }
 
     const pushed = [];
@@ -336,18 +572,20 @@ async function handler(event) {
           body: JSON.stringify({
             summary: `Test drive: ${req.vehicleTitle || 'Cadillac'}`,
             description:
-              `Requested by ${req.fullName || req.name} (${req.email}).\n` +
-              `Phone: ${req.phone || 'not given'}.\n` +
-              (req.vehicleId ? `Stock reference: ${req.vehicleId}.\n` : '') +
-              (req.comments ? `Note: ${req.comments}\n` : '') +
-              `Sent to Caddy Ed via caddyed.com. Reply to ${req.email} to confirm.`,
+              `Requested by ${req.fullName || req.name || 'a customer'} (${req.email}).\n`
+              + `Phone: ${req.phone || 'not given'}.\n`
+              + (req.vehicleId ? `Stock reference: ${req.vehicleId}.\n` : '')
+              + (req.comments ? `Note: ${req.comments}\n` : '')
+              + `Sent to Caddy Ed via caddyed.com. Reply to ${req.email} to confirm.`,
             location: '10725 Pineville Rd, Pineville, NC 28134',
             start: { dateTime: start.toISOString() },
             end: { dateTime: new Date(start.getTime() + 45 * 60_000).toISOString() },
           }),
         });
         const created = await res.json();
-        if (!res.ok) throw new Error(created.error && created.error.message || 'calendar rejected the event');
+        if (!res.ok) {
+          throw new Error((created.error && created.error.message) || 'calendar rejected the event');
+        }
         await bookingQueue.update(req.id, {
           googleEventId: created.id,
           googleEventLink: created.htmlLink,
@@ -361,10 +599,23 @@ async function handler(event) {
       }
     }
 
-    return json(200, { pushed, failed });
+    return json(200, {
+      pushed,
+      failed,
+      syncedTo: auth.user.id,
+      perUser: true,
+    });
   }
 
   return json(405, { error: 'Method not allowed' });
 }
 
-module.exports = { handler, SCOPES, TOKEN_STORE };
+module.exports = {
+  handler,
+  SCOPES,
+  // Exported for the test suite. Signing a state and reading one back is the
+  // security property here, and it should be testable without a live OAuth
+  // round trip.
+  signState,
+  readState,
+};

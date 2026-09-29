@@ -39,20 +39,7 @@
 
 const STORE = 'vehicle-features';
 
-// Required lazily, inside the handler. A top-level require of a module that is
-// not installed would take the whole function down at load time, and this file
-// is bundled independently of whether Blobs is configured.
-let blobs = null;
-function getBlobs() {
-  if (blobs) return blobs;
-  try {
-    // eslint-disable-next-line global-require
-    blobs = require('@netlify/blobs');
-    return blobs;
-  } catch (e) {
-    return null;
-  }
-}
+const DatabaseService = require('./utils/database-service');
 
 const CORS = {
   'Content-Type': 'application/json',
@@ -71,14 +58,20 @@ const CORS = {
  * the feature.
  */
 async function readFavourites() {
-  const b = getBlobs();
-  if (!b) return { slugs: [], source: 'unavailable' };
+  if (!DatabaseService.isDatabaseConfigured()) return { slugs: [], source: 'unavailable' };
   try {
-    const store = b.getStore(STORE);
-    const entry = await store.get('favourites', { type: 'json' });
-    const list = entry && Array.isArray(entry.slugs) ? entry.slugs : [];
-    return { slugs: list, source: 'blobs' };
+    // A row per vehicle rather than one document holding a list.
+    //
+    // The list-in-one-document shape is a read-modify-write on every toggle, so
+    // two people starring different vehicles at the same moment lost one of the
+    // two. A row per vehicle makes the read a SELECT and the write an INSERT,
+    // and they do not collide.
+    const result = await DatabaseService.query(
+      'SELECT slug FROM vehicle_favourites WHERE featured = 1 ORDER BY slug'
+    );
+    return { slugs: result.rows.map((r) => r.slug), source: 'database' };
   } catch (e) {
+    console.error('[vehicle-features] read failed:', e.message);
     return { slugs: [], source: 'absent' };
   }
 }
@@ -99,14 +92,13 @@ exports.handler = async function (event) {
     }
 
     if (event.httpMethod === 'POST') {
-      const b = getBlobs();
-      if (!b) {
+      if (!DatabaseService.isDatabaseConfigured()) {
         return {
           statusCode: 503,
           headers: CORS,
           body: JSON.stringify({
             error: 'Favourites storage is not configured on this site.',
-            detail: 'Create a Blobs store named "vehicle-features" to enable this.',
+            detail: 'Set TURSO_DATABASE_URL and TURSO_AUTH_TOKEN to enable this.',
           }),
         };
       }
@@ -141,18 +133,28 @@ exports.handler = async function (event) {
         };
       }
 
+      // Read-then-write, but on a ROW rather than a document, so two people
+      // toggling different vehicles cannot lose one another's change.
       const { slugs } = await readFavourites();
-      const set = new Set(slugs);
-      const on = payload.featured === undefined ? !set.has(slug) : Boolean(payload.featured);
-      if (on) set.add(slug);
-      else set.delete(slug);
+      const on = payload.featured === undefined ? !slugs.includes(slug) : Boolean(payload.featured);
 
-      const next = [...set].sort();
-      const store = b.getStore(STORE);
-      await store.setJSON('favourites', {
-        slugs: next,
-        updatedAt: new Date().toISOString(),
-      });
+      if (on) {
+        await DatabaseService.query(
+          `INSERT INTO vehicle_favourites (slug, featured, updated_at)
+           VALUES ($1, 1, datetime('now'))
+           ON CONFLICT (slug) DO UPDATE SET featured = 1, updated_at = datetime('now')`,
+          [slug]
+        );
+      } else {
+        await DatabaseService.query(
+          `INSERT INTO vehicle_favourites (slug, featured, updated_at)
+           VALUES ($1, 0, datetime('now'))
+           ON CONFLICT (slug) DO UPDATE SET featured = 0, updated_at = datetime('now')`,
+          [slug]
+        );
+      }
+
+      const { slugs: next } = await readFavourites();
 
       return {
         statusCode: 200,

@@ -600,6 +600,102 @@ CREATE TABLE IF NOT EXISTS saved_searches (
 );
 CREATE INDEX IF NOT EXISTS idx_saved_searches_user ON saved_searches (user_id, name);
 
+-- ---------------------------------------------------------------------
+-- Replacing Netlify Blobs
+--
+-- Three features were written against Blobs:
+--
+--   google-calendar   one shared OAuth token under the key `token`
+--   booking-queue     one key per request
+--   vehicle-features  one key, `favourites`
+--
+-- None of them work on this site, and the reason is not a bug in any of the
+-- three: a Netlify function cannot reach a Blobs store without an explicit
+-- siteID and token, and this account's plan refuses to issue one. The functions
+-- all report their own absence honestly rather than failing silently, which is
+-- why this was not noticed -- but bookings are emailed and not recorded,
+-- favourites do not persist, and the calendar cannot connect.
+--
+-- These three tables are the replacement. The database is the one piece of
+-- infrastructure on this site that is confirmed working, and moving to it makes
+-- the storage per-user and transactional rather than a single shared key.
+-- ---------------------------------------------------------------------
+
+-- One Google Calendar connection per staff member.
+--
+-- `user_id` is the Netlify Identity `sub`, which is the same value
+-- `sales_reps.id` is keyed on (see utils/staff-profile.js), so the foreign key
+-- holds and survives an Identity re-invite.
+--
+-- ONE ROW PER PERSON, which is the whole point. The old design had a single
+-- token under one key, so the first person to connect owned the dealership's
+-- calendar and everybody else silently shared it -- bookings landed in whoever
+-- connected first, and one person disconnecting removed it for all of them.
+--
+-- The refresh token is a long-lived credential. It is stored here and nowhere
+-- else, and `ON DELETE CASCADE` from sales_reps means it goes when the person
+-- does -- revocation is a delete, which is what makes withdrawing consent
+-- actually take effect.
+CREATE TABLE IF NOT EXISTS google_calendar_tokens (
+  user_id         TEXT PRIMARY KEY,
+  access_token    TEXT,
+  refresh_token   TEXT,
+  expires_at      INTEGER,
+  scope           TEXT,
+  google_email    TEXT,
+  calendar_id     TEXT DEFAULT 'primary',
+  connected_at    TEXT,
+  updated_at      TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (user_id) REFERENCES sales_reps (id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_google_tokens_expiry ON google_calendar_tokens (expires_at);
+
+-- A test-drive request waiting to go on a calendar.
+--
+-- Blobs stored these as `req-<id>` JSON documents. A table is the right shape:
+-- the pending queue is a filtered view, and `WHERE status = 'new'` over rows is
+-- something the database can answer with an index rather than something the
+-- application has to enumerate keys to find.
+--
+-- `status` is the queue position: new -> synced, or -> sync-failed, or ->
+-- cancelled. An index on (status, preferred_date) makes "what is waiting, soonest
+-- first" the shape the query planner wants.
+CREATE TABLE IF NOT EXISTS booking_requests (
+  id               TEXT PRIMARY KEY,
+  status           TEXT NOT NULL DEFAULT 'new'
+                   CHECK (status IN ('new','synced','sync-failed','cancelled')),
+  vehicle_id       TEXT,
+  vehicle_title    TEXT,
+  full_name        TEXT,
+  email            TEXT,
+  phone            TEXT,
+  preferred_date   TEXT,
+  preferred_time   TEXT,
+  comments         TEXT,
+  created_at       TEXT DEFAULT (datetime('now')),
+  updated_at       TEXT,
+  recorded_at      TEXT,
+  google_event_id  TEXT,
+  google_event_link TEXT,
+  synced_at        TEXT,
+  sync_error       TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_bookings_pending ON booking_requests (status, preferred_date);
+CREATE INDEX IF NOT EXISTS idx_bookings_email  ON booking_requests (email);
+
+-- Which vehicles are featured on the site.
+--
+-- One row per vehicle rather than one document holding a list of slugs. A list in
+-- a single JSON blob means every read rewrites the whole document and two people
+-- starring different vehicles at the same moment loses one of the two. A row per
+-- vehicle makes the read a SELECT and the write an INSERT, and they do not
+-- collide.
+CREATE TABLE IF NOT EXISTS vehicle_favourites (
+  slug         TEXT PRIMARY KEY,
+  featured     INTEGER NOT NULL DEFAULT 1,
+  updated_at   TEXT DEFAULT (datetime('now'))
+);
+
 -- Indexes
 
 -- Foreign keys

@@ -159,6 +159,81 @@ function isDatabaseConfigured() {
 }
 
 /**
+ * Rewrite `$1`-style placeholders to sequential `?`, in the order they appear.
+ *
+ * WHY THIS IS HERE
+ * ----------------
+ * libSQL -- and SQLite's own numbered-parameter handling behind it -- binds `$n`
+ * parameters correctly ONLY when they appear in ascending order. The common
+ * shape of an UPDATE in this codebase puts the id in the WHERE clause and the
+ * new values in the SET clause, and the SET clause comes first:
+ *
+ *     UPDATE booking_requests
+ *        SET status = $2, google_event_id = $3
+ *      WHERE id = $1
+ *
+ * The placeholders are read in the order 2, 3, 1. libSQL binds $1 to the first
+ * value it sees, the value of `status`, and matches `WHERE id = 'synced'` --
+ * which matches nothing.
+ *
+ * AND IT DOES NOT ERROR. The statement succeeds. It returns zero rows. There is
+ * no exception, no warning, nothing in the log except a normal-looking query.
+ * The caller sees a successful UPDATE that changed nothing, and a booking that
+ * will not mark itself synced no matter how many times it is asked.
+ *
+ * That is the worst shape a database bug can have: silent, total, and
+ * indistinguishable from "there was nothing to update".
+ *
+ * WHY IT IS FIXED HERE AND NOT AT THE CALL SITES
+ * -----------------------------------------------
+ * Because the call sites are not where the error is, and the pattern is built at
+ * runtime in at least six places -- `SET` clauses assembled from an allowlist of
+ * field names -- so a static search cannot enumerate them. Fixing it in `query()`
+ * fixes all of them, existing and future, and cannot be forgotten at a new call
+ * site.
+ *
+ * `$1` may be repeated (`WHERE a = $1 OR b = $1`), so the argument list is
+ * rebuilt in textual order with repeats preserved. `?NNN` explicit indices are
+ * left alone, since those are unambiguous.
+ */
+function normalisePlaceholders(sql, params) {
+  if (!Array.isArray(params) || params.length === 0) return { sql, params };
+  if (!/\$/.test(sql)) return { sql, params };
+  // Leave `:name` and `::type` casts alone; only $n is ours.
+  if (/\$\d+\s*::/.test(sql)) return { sql, params };
+
+  const order = [];
+  let out = '';
+  let i = 0;
+  while (i < sql.length) {
+    const ch = sql[i];
+    if (ch === '$' && /\d/.test(sql[i + 1] || '')) {
+      let j = i + 1;
+      while (j < sql.length && /\d/.test(sql[j])) j++;
+      const n = Number(sql.slice(i + 1, j));
+      // A number with no matching argument means the caller and the SQL
+      // disagree. Leave it exactly as written so the database reports it,
+      // rather than quietly binding something else.
+      if (n < 1 || n > params.length) return { sql, params };
+      order.push(params[n - 1]);
+      out += '?';
+      i = j;
+      continue;
+    }
+    // Copy the character, but not a `$` that is part of a template
+    // interpolation or a cast.
+    if (ch === '$' && sql[i + 1] === '{') {
+      out += '${';
+      i += 2;
+      continue;
+    }
+    out += ch;
+    i++;
+  }
+  return { sql: out, params: order };
+}
+
+/**
  * Generic database query function with hybrid routing
  * Routes operations between Supabase (writes/complex) and Turso (reads/cache)
  */
@@ -167,16 +242,21 @@ async function query(sql, params = [], options = {}) {
 
   const { forceSupabase = false, forceTurso = false, readOnly = false } = options;
 
-  console.log('🔍 Database Query:', sql.substring(0, 100) + '...');
-  console.log('📋 Parameters:', params);
+  // Rewritten here, once, for the reason in the comment above.
+  const bound = normalisePlaceholders(sql, Array.isArray(params) ? params : []);
+  const effectiveSql = bound.sql;
+  const effectiveParams = bound.params;
 
-  const safeParams = Array.isArray(params) ? params : [];
+  console.log('🔍 Database Query:', effectiveSql.substring(0, 100) + '...');
+  console.log('📋 Parameters:', effectiveParams);
+
+  const safeParams = effectiveParams;
 
   // Prefer direct Postgres connection when available
   try {
     const pool = await getPgPool();
     if (pool) {
-      const result = await pool.query(sql, safeParams);
+      const result = await pool.query(effectiveSql, safeParams);
       return {
         rows: result.rows,
         rowCount: result.rowCount
@@ -217,7 +297,7 @@ async function query(sql, params = [], options = {}) {
   }
 
   try {
-    const result = await target.execute({ sql, args: safeParams });
+    const result = await target.execute({ sql: effectiveSql, args: safeParams });
     return {
       rows: result.rows,
       rowCount: result.rowsAffected != null ? result.rowsAffected : result.rows.length
