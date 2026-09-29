@@ -30,7 +30,7 @@
   so a half-filled section cannot ship by accident.
 */ -}}
 
-{{- $reviews := site.Data.reviews | default slice -}}
+{{- $reviews := hugo.Data.reviews | default slice -}}
 
 <section class="section">
   <div class="container">

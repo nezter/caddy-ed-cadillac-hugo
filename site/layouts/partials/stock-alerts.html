@@ -13,7 +13,7 @@
   Context: the Page.
 */ -}}
 {{- $alerts := dict "form_name" "stock-alerts" -}}
-{{- $social := site.Data.social | default dict -}}
+{{- $social := hugo.Data.social | default dict -}}
 {{- $smsNumber := "+17045557890" -}}
 {{- with $social }}{{ with .text }}{{ $smsNumber = .number | default $smsNumber }}{{ end }}{{ end -}}
 {{- $phone := .Site.Params.phone | default "803-431-6180" -}}

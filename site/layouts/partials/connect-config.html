@@ -18,7 +18,7 @@
     title, status, price, subtitle, image, year
 */ -}}
 
-{{- $social := site.Data.social | default dict -}}
+{{- $social := hugo.Data.social | default dict -}}
 {{- $fb := "" -}}
 {{- with $social.facebook }}{{ $fb = .url | default "" }}{{ end -}}
 {{- $xh := "" -}}

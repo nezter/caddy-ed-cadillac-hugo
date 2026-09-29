@@ -10,7 +10,7 @@
   box -- so each panel carries a plain-text fallback underneath it that is
   always readable without JavaScript or a third party.
 */ -}}
-{{- $social := site.Data.social | default dict -}}
+{{- $social := hugo.Data.social | default dict -}}
 {{- $fbUrl := "" }}{{ with $social }}{{ with .facebook }}{{ $fbUrl = .url | default "" }}{{ end }}{{ end -}}
 {{- $xUrl := "" }}{{ with $social }}{{ with .x }}{{ $xUrl = .url | default "" }}{{ end }}{{ end -}}
 
