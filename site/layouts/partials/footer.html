@@ -46,6 +46,7 @@
           Luxury Cadillac sales and factory-trained service in South Charlotte.
           One person, start to finish.
         </p>
+        <p class="footer-hours">{{ .Site.Params.hours | default "Mon-Fri 9am-7pm &middot; Sat 9am-5pm" | safeHTML }}</p>
       </div>
 
       <div>
@@ -87,3 +88,10 @@
     </div>
   </div>
 </footer>
+
+{{/* Mobile action bar: the two actions worth having under a thumb at all
+     times. Hidden above 760px by .stickycta in direct-2026.css. */}}
+<div class="stickycta">
+  <a class="btn btn--ghost" href="/inventory/">Inventory</a>
+  <a class="btn btn--red" href="tel:+1{{ $phoneHref }}">Call Ed</a>
+</div>

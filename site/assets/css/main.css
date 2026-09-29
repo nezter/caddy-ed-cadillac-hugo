@@ -71,7 +71,7 @@
      next upgrade if brand typography becomes a priority. */
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI Variable Text",
                "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-display: var(--font-sans);
+  --font-display:'Inter Tight', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 
   /* Fluid type scale. clamp() means no breakpoint jumps. */
