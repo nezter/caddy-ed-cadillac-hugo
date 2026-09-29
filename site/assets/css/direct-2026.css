@@ -1224,3 +1224,26 @@ body.home .dock .social-body > div{max-width:100%}
 .vehicle-detail .vehicle-cta .card__title{font-size:clamp(1.1rem,1rem + .5vw,1.35rem)}
 .vehicle-detail .vehicle-cta__actions{display:grid;gap:.5rem}
 .vehicle-detail .vehicle-cta__actions .btn{width:100%;justify-content:center}
+
+
+/* --- the fleet is the light band in the middle of a dark page -----------
+   The mockup puts the cars on white with dark cards on top, and that contrast
+   is the point: the page is a dark room with one lit wall, and the inventory
+   is the thing the light falls on. I had made the band dark too, which lost
+   the whole effect -- a rendered comparison showed it immediately ("the fleet
+   section is dark, not light/white").
+   ---------------------------------------------------------------------- */
+body.home #fleet{
+  background:#fff;color:var(--ink-1);
+  border-block:1px solid #e7e9ee;
+}
+body.home #fleet .lede{color:#515863}
+body.home #fleet .h-sec{color:var(--ink-1)}
+body.home #fleet .kicker--light span{color:#6f7683}
+body.home #fleet .kicker--light::after{background:#e7e9ee}
+body.home #fleet .tag-live{color:#a8862f}
+body.home #fleet .btn-outline{border-color:#dde0e6;color:var(--ink-1)}
+body.home #fleet .btn-outline:hover{border-color:var(--brand-red);color:var(--brand-red);background:transparent}
+body.home #fleet .vehicle-card{
+  box-shadow:0 10px 30px rgba(11,13,16,.10);
+}
