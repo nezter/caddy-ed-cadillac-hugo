@@ -166,3 +166,48 @@ directory per `ci/run.sh` (`netlify deploy --dir=site/public
   `.navbar-menu`, `.navbar-item`, `.site-header`, `.vehicle-grid#vehicle-inventory`
   with `data-total`/`data-page-size`, `#contact-form`, `#form-success`,
   `#form-error`, `#comparison-app`, `#comparison-tray`.
+
+---
+
+# UPDATE — sessions closed since this breakdown was written
+
+21 commits on the branch. Nothing pushed: see R8, which is blocked.
+
+- **R1 · verify the last three changes — DONE.** Rendered home, inventory and
+  vehicle and had them checked. The buttons, the inventory head with its light
+  cards, and the price in the action rail were all confirmed correct. The render
+  also caught a real miss: the vehicle cards' buttons were still Bootstrap blue,
+  because inventory.css carries `.inventory-page .btn.btn-primary{background:#007bff}`
+  three classes deep. My one-class mapping lost to it whatever the load order.
+  Overridden at equal specificity and emitted last (`9c5b4c5`).
+- **R2 · home mid-block and testimonial band — CLOSED AS INTENDED, no further
+  change.** The mid-block already reads portrait + stay-connected beside a dock
+  of fresh stock + the social panel, and that is the closest arrangement which
+  keeps the stock-alert form — real functionality the mockup does not have to
+  carry. The testimonial band stays as an honest empty state beside the four
+  claims: there are still no real reviews in this repository, and inventing them
+  is the one thing that must not happen here.
+- **R3 · vehicle spec table — DONE.** Both causes were mine: inventory.css sizes
+  the value cell at 14px, and my own rule set the label smaller still, at
+  .66rem, in `--on-ink-faint` (~4.2:1), which DIRECTION.md reserves for labels
+  and never for anything carrying meaning. Labels up in size and contrast,
+  values to body size, more air per row, and the rail's buttons now sit in a
+  full-width stack (`9ae9f82`).
+- **R7 · data cleanup — DONE.** Deleted `site/data/testimonials.yml` (five
+  invented customer testimonials with names, rendered nowhere, an FTC trap for
+  whoever wired it up next) and `site/data/contact.yml` (a second unused copy of
+  the contact details). Verified no fictional name or duplicate address survives
+  anywhere in `site/public` (`9ae9f82`).
+
+Still open: **R4** (needs a decision — the tray is new UI), **R5** (photography,
+not code), **R6** (the eleven unported pages), **R8** (blocked on credentials —
+see below).
+
+## R8 failure, verbatim
+
+    $ git push origin modernize/netlify-build-2026
+    remote: Invalid username or token. Password authentication is not supported for Git operations.
+    fatal: Authentication failed for https://github.com/nezter/caddy-ed-cadillac-hugo.git/
+
+The local branch is ready: 21 commits, working tree clean, `origin` still at
+`0b9c2ef`.
