@@ -344,6 +344,55 @@
       </form>
     </section>
   </div>
+
+  {{/* Three more like this. The buying decision is comparative and the page
+       offered nothing to compare with, so this picks real vehicles from the
+       same collection -- same model first, then same make, then anything in
+       stock -- and stops at three. Nothing here is invented: if the lot has
+       nothing else, the section does not render. */}}
+  {{- $stock := where .Site.RegularPages "Section" "inventory" -}}
+  {{- $stock = where $stock "Params.available" "!=" false -}}
+  {{- $others := slice -}}
+  {{- range $stock -}}
+    {{- if ne .RelPermalink $.RelPermalink -}}{{- $others = $others | append . -}}{{- end -}}
+  {{- end -}}
+  {{- $seen := slice -}}
+  {{- $picks := slice -}}
+  {{- with .Params.model -}}
+    {{- range where $others "Params.model" . -}}
+      {{- if and (lt (len $picks) 3) (not (in $seen .RelPermalink)) -}}
+        {{- $picks = $picks | append . -}}{{- $seen = $seen | append .RelPermalink -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+  {{- with .Params.make -}}
+    {{- range where $others "Params.make" . -}}
+      {{- if and (lt (len $picks) 3) (not (in $seen .RelPermalink)) -}}
+        {{- $picks = $picks | append . -}}{{- $seen = $seen | append .RelPermalink -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+  {{- range $others -}}
+    {{- if and (lt (len $picks) 3) (not (in $seen .RelPermalink)) -}}
+      {{- $picks = $picks | append . -}}{{- $seen = $seen | append .RelPermalink -}}
+    {{- end -}}
+  {{- end -}}
+  {{ with $picks }}
+  <section class="stage grain pad">
+    <div class="wrap">
+      <div style="display:flex;align-items:end;justify-content:space-between;gap:2rem;flex-wrap:wrap;margin-bottom:1.5rem">
+        <div>
+          <p class="eyebrow">Same money, different shape</p>
+          <h2 class="h-sec" style="color:#fff">Three to compare against</h2>
+        </div>
+        <a class="btn btn--ghost btn--sm" href="/inventory/">All inventory</a>
+      </div>
+      <div class="grid grid-3">
+        {{ range . }}{{ partial "vehicle-card.html" (dict "vehicle" . "eager" false) }}{{ end }}
+      </div>
+    </div>
+  </section>
+  {{ end }}
 </article>
 
 {{/* Progressive enhancement only. Everything above this line is complete markup. */}}
