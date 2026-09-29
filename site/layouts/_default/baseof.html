@@ -14,6 +14,11 @@
     {{ partial "assets.html" (dict "page" . "mode" "css") }}
 
     {{ block "headStyles" . }}{{ end }}
+    {{/* The 2026 direction, emitted LAST on purpose. The section stylesheets
+         above re-declare .hero__ask, .proof-strip__value and others with the
+         previous design's values, so a stylesheet loaded before them loses the
+         cascade. This one has to win. */}}
+    {{ partial "stylesheet.html" "direct-2026.css" }}
     {{ block "headScripts" . }}{{ end }}
   </head>
   

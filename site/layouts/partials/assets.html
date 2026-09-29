@@ -38,7 +38,12 @@
 {{- /* ---------------------------------------------------------------- CSS */ -}}
 {{- if or (eq $mode "css") (eq $mode "all") -}}
   {{- partial "stylesheet.html" "main.css" -}}
-  {{- partial "stylesheet.html" "direct-2026.css" -}}
+  {{- /* direct-2026.css is emitted by baseof.html AFTER the headStyles block,
+         not here. The section stylesheets (home.css, inventory.css, connect.css,
+         shortlist.css) are emitted in that block, and they re-declare some of
+         the same selectors -- .hero__ask, .proof-strip__value -- with the
+         previous design's values. Loading this file first meant those won, which
+         is why the home page looked half-converted. */ -}}
 {{- end -}}
 
 {{- /* ----------------------------------------------------------------- JS */ -}}
