@@ -1395,3 +1395,24 @@ body.home .bento--4 .tile__idx,
 .plate > figure{display:block;width:100%;height:100%;margin:0}
 .plate > figure > picture,
 .plate > figure > img{display:block;width:100%;height:100%;object-fit:cover}
+
+
+/* --- the specification, two columns -------------------------------------
+   Measured on the rendered car page: .vehicle-specs__list is 893px tall,
+   because every field gets a full-width row. Ten fields stacked is a long
+   scroll for something people scan, and the mockup sets it as two columns of
+   five. Same rows, same labels, half the height.
+   ---------------------------------------------------------------------- */
+@media (min-width:60rem){
+  .vehicle-detail .vehicle-specs__list{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    column-gap:clamp(1.6rem,4vw,3rem);
+    align-content:start;
+  }
+  .vehicle-detail .vehicle-specs__row{
+    grid-template-columns:minmax(6.5rem,9rem) 1fr;
+  }
+  /* the last row of each column should not trail a rule into empty space */
+  .vehicle-detail .vehicle-specs__row:last-child{border-bottom:0}
+}
