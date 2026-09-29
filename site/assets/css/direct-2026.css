@@ -1307,3 +1307,70 @@ body.home #fleet .vehicle-card{
 section.section:has(> .container > .comments > .comments-empty),
 section.section:has(.comments-empty),
 .stage:has(.comments-empty){display:none}
+
+
+/* ==========================================================================
+   THE ED BAND AND THE CLAIMS TILES — the two bands a full-page render called
+   cramped. "Three unequal cards, a narrow inventory list, and a floating light
+   box that feels pasted on"; and tiles that are "plain: tiny text, dark boxes,
+   no presence".
+   ========================================================================== */
+body.home .ed-and-feed{align-items:stretch}
+body.home .ed-column{display:flex;flex-direction:column;gap:clamp(1rem,2vw,1.4rem)}
+body.home .ed-column > *{margin:0}
+
+/* the portrait and the card under it are one column, same width, same edges */
+body.home .ed-portrait,
+body.home .stay-connected{
+  width:100%;border-radius:var(--r-card);overflow:hidden;
+}
+body.home .stay-connected{
+  background:var(--ink-2);
+  border:1px solid rgba(255,255,255,.08);
+  border-top:1px solid var(--bronze-line);
+  padding:clamp(1.1rem,2.2vw,1.5rem);
+  position:relative;
+}
+body.home .stay-connected::before{
+  content:"";position:absolute;inset-inline:0;top:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--bronze-line) 20%,var(--bronze-line) 80%,transparent);
+}
+body.home .stay-connected__title{font-size:clamp(1.05rem,1rem + .4vw,1.25rem);margin:0 0 .35rem}
+body.home .stay-connected__body{font-size:.92rem;margin:0 0 .9rem}
+body.home .stay-connected .notify-form{gap:.5rem}
+
+/* the dock: two tiles the same height, with room to breathe */
+body.home .dock{align-items:stretch}
+body.home .dock > *{
+  display:flex;flex-direction:column;height:100%;
+  border-radius:var(--r-card);
+}
+body.home .dock .tile{padding:clamp(1.15rem,2.2vw,1.6rem)}
+body.home .dock .tile h3{font-size:clamp(1.05rem,1rem + .4vw,1.25rem);margin-bottom:.5rem}
+body.home .dock .feed li{align-items:baseline;padding:.8rem 0}
+body.home .dock .feed .what{
+  font-size:.94rem;color:var(--on-ink);line-height:1.3;
+}
+body.home .dock .feed .when{
+  font-family:var(--f-display);font-weight:620;letter-spacing:-.02em;
+  font-variant-numeric:tabular-nums;color:var(--bronze-hi);font-size:.95rem;
+}
+body.home .dock .chip-row{margin-top:auto;padding-top:1rem}
+
+/* the four claims: give them presence rather than four small dark boxes */
+body.home .bento--4 .tile,
+.stage .bento--4 .tile{
+  padding:clamp(1.35rem,2.6vw,2rem);
+  display:flex;flex-direction:column;gap:.5rem;
+}
+body.home .bento--4 .tile h3,
+.stage .bento--4 .tile h3{
+  font-size:clamp(1.12rem,1rem + .55vw,1.4rem);
+  letter-spacing:-.022em;line-height:1.15;margin:0;
+}
+body.home .bento--4 .tile p,
+.stage .bento--4 .tile p{font-size:.94rem;line-height:1.5;margin:0}
+body.home .bento--4 .tile__idx,
+.stage .bento--4 .tile__idx{
+  font-size:.74rem;margin-bottom:.35rem;
+}
