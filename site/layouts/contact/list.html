@@ -1,125 +1,168 @@
 {{ define "main" }}
-<article class="contact-page">
-  <header class="page-header">
-    <div class="container">
-      <h1>{{ .Title }}</h1>
-      {{ if .Params.subtitle }}<p class="subtitle">{{ .Params.subtitle }}</p>{{ end }}
-    </div>
-  </header>
-  
-  <div class="container">
-    <div class="contact-content">
-      <section class="contact-message">
-        {{ .Content }}
-      </section>
-      
-      <section class="contact-form-section">
-        <h2>{{ .Params.form.heading | default "Contact Us" }}</h2>
-        
-        {{/* id="contact-form" is load-bearing: site/assets/js/index.js binds
-             `#contact-form` and was matching nothing, so the entire submit
-             handler -- fetch, success state, error state, network-error state
-             -- was dead on the site's primary conversion form. The ids below
-             are the two message hosts the handler writes into. Without them a
-             failure would have thrown on `.textContent` of null.
+{{- /* ---------------------------------------------------------------
+   CONTACT
 
-             action/method remain so the form still works with JavaScript off:
-             a native POST to /api/contact, which is a [[redirects]] alias for
-             the contact-form function. The script enhances it, it is not the
-             only path. */}}
-        <form class="contact-form" id="contact-form" action="/api/contact" method="post" aria-describedby="form-description">
-          <p id="form-description" class="visually-hidden">
-            All fields marked with an asterisk (*) are required.
-          </p>
-          
-          <div class="form-group">
-            <label for="name">{{ .Params.form.name_label | default "Your Name" }} *</label>
-            <input type="text" id="name" name="name" required aria-required="true">
-          </div>
-          
-          <div class="form-group">
-            <label for="email">{{ .Params.form.email_label | default "Email Address" }} *</label>
-            <input type="email" id="email" name="email" required aria-required="true">
-          </div>
-          
-          <div class="form-group">
-            <label for="phone">{{ .Params.form.phone_label | default "Phone Number (Optional)" }}</label>
-            <input type="tel" id="phone" name="phone">
-          </div>
-          
-          <div class="form-group">
-            <label for="vehicle-interest">{{ .Params.form.vehicle_label | default "Vehicle of Interest (Optional)" }}</label>
-            <select id="vehicle-interest" name="vehicleInterest">
-              <option value="">Select a Vehicle (Optional)</option>
-              <option value="Escalade">Escalade</option>
-              <option value="CT4">CT4</option>
-              <option value="CT5">CT5</option>
-              <option value="XT4">XT4</option>
-              <option value="XT5">XT5</option>
-              <option value="XT6">XT6</option>
-              <option value="LYRIQ">LYRIQ</option>
-            </select>
-          </div>
-          
-          <div class="form-group">
-            <label for="message">{{ .Params.form.message_label | default "Your Message" }} *</label>
-            <textarea id="message" name="message" rows="5" required aria-required="true"></textarea>
-          </div>
-          
-          <div class="form-group">
-            <button type="submit" class="btn btn-primary">{{ .Params.form.submit_button | default "Send Message" }}</button>
-          </div>
+   SOURCE OF TRUTH. This page used to render its phone, address and
+   hours from the page's own front matter, which carried placeholder
+   values from the starter template: (704) 555-1234, "123 Luxury Lane,
+   Charlotte NC 28277", Saturday 10-6. The site had drifted away from
+   them -- config.toml, the header, the footer and every vehicle page
+   all use the values below -- so this page disagreed with the rest of
+   the site about how to reach the person it exists to reach.
 
-          {{/* Message hosts. role="status" so a screen reader announces the
-                 outcome; `aria-live` is redundant with it but harmless. The
-                 error host is a live region so a failure is not silent. */}}
-          <p class="form-message form-message--success hidden" id="form-success"
-             role="status">
-            Thanks -- your message is with Ed and you will hear back shortly.
-          </p>
-          <p class="form-message form-message--error hidden" id="form-error"
-             role="alert"></p>
-        </form>
-      </section>
-      
-      <aside class="contact-info">
-        <h2>{{ .Params.contact_info.heading | default "Contact Information" }}</h2>
-        
-        <address>
-          {{ if .Params.contact_info.dealership }}<p class="dealership-name">{{ .Params.contact_info.dealership }}</p>{{ end }}
-          {{ if .Params.contact_info.address }}<p class="address">{{ .Params.contact_info.address }}</p>{{ end }}
-        </address>
-        
-        <div class="contact-methods">
-          {{ if .Params.contact_info.phone }}
-          <p class="phone">
-            <span class="label">Phone:</span>
-            <a href="tel:{{ .Params.contact_info.phone | plainify }}">{{ .Params.contact_info.phone }}</a>
-          </p>
-          {{ end }}
-          
-          {{ if .Params.contact_info.email }}
-          <p class="email">
-            <span class="label">Email:</span>
-            <a href="mailto:{{ .Params.contact_info.email }}">{{ .Params.contact_info.email }}</a>
-          </p>
-          {{ end }}
-        </div>
-        
-        {{ if .Params.contact_info.hours }}
-        <div class="business-hours">
-          <h3>Business Hours</h3>
-          <ul>
-            {{ range .Params.contact_info.hours }}
-            <li><span class="day">{{ .day }}:</span> <span class="time">{{ .time }}</span></li>
-            {{ end }}
-          </ul>
-        </div>
-        {{ end }}
-        
-        <!-- Map integration would go here -->
-      </aside>
+   Three of the four 555 numbers in this repository are fictional; the
+   dialable one lives in config.toml [params]. So the facts come from
+   site parameters here, and the front matter keeps only the labels,
+   which are what the CMS edits.
+
+   The form's ids (#contact-form, #form-success, #form-error) and its
+   action are load-bearing: site/assets/js/index.js binds #contact-form
+   and writes into the two message hosts.
+   --------------------------------------------------------------- */}}
+{{- $phone := .Site.Params.phone | default "803-431-6180" -}}
+{{- $phoneHref := replace $phone "." "" -}}
+{{- $email := .Site.Params.email | default "ed@caddyed.com" -}}
+{{- $address := .Site.Params.address | default "10725 Pineville Rd, Pineville, NC 28134" -}}
+{{- $hours := .Site.Params.hours | default "Mon-Fri 9am-7pm &middot; Sat 9am-5pm" -}}
+
+<section class="stage stage--deep grain pad--tight">
+  <div class="wrap">
+    <p class="eyebrow">Contact Ed<span class="ltbar" aria-hidden="true"><i></i><i></i><i></i></span></p>
+    <div style="display:flex;align-items:end;justify-content:space-between;gap:2rem;flex-wrap:wrap">
+      <h1 class="display display--sm" style="color:#fff;max-width:20ch">Tell me what you're after. I'll answer it myself.</h1>
+      <p class="lede" style="max-width:38ch;margin:0">There is one person here. No call centre, no queue, and no second follow-up from somebody you have never spoken to.</p>
     </div>
   </div>
-</article>
+</section>
+
+<section style="background:#fafafa;padding-block:clamp(2.2rem,4.5vw,4rem)">
+  <div class="wrap" style="display:grid;grid-template-columns:1.25fr .75fr;gap:clamp(1.4rem,3vw,2.6rem);align-items:start">
+
+    <form class="contact-form" id="contact-form" action="/api/contact" method="post"
+          aria-describedby="form-description"
+          style="background:#fff;border:1px solid #e7e9ee;border-radius:var(--r-card);padding:clamp(1.2rem,2.5vw,2rem)">
+      <p class="kicker kicker--light"><i>01</i><span>{{ .Params.form.heading | default "Get in touch" }}</span></p>
+      <h2 class="h-mod" style="color:var(--ink-1)">What are you looking for?</h2>
+      <p id="form-description" style="color:#515863;font-size:.92rem;margin:.4rem 0 1.4rem">
+        A model, a budget, a car you saw months ago, or a question about one already in stock.
+        All fields marked with an asterisk (*) are required.
+      </p>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem">
+        <div class="field field--light">
+          <label for="name">{{ .Params.form.name_label | default "Your name" }} *</label>
+          <input type="text" id="name" name="name" required aria-required="true" autocomplete="name">
+        </div>
+        <div class="field field--light">
+          <label for="email">{{ .Params.form.email_label | default "Email address" }} *</label>
+          <input type="email" id="email" name="email" required aria-required="true" autocomplete="email">
+        </div>
+        <div class="field field--light">
+          <label for="phone">{{ .Params.form.phone_label | default "Phone (optional)" }}</label>
+          <input type="tel" id="phone" name="phone" autocomplete="tel">
+        </div>
+        <div class="field field--light">
+          <label for="vehicle-interest">{{ .Params.form.vehicle_label | default "Vehicle of interest (optional)" }}</label>
+          <select id="vehicle-interest" name="vehicleInterest">
+            <option value="">Not sure yet</option>
+            <option value="Escalade">Escalade</option>
+            <option value="Escalade ESV">Escalade ESV</option>
+            <option value="CT4">CT4</option>
+            <option value="CT5">CT5</option>
+            <option value="XT4">XT4</option>
+            <option value="XT5">XT5</option>
+            <option value="XT6">XT6</option>
+            <option value="LYRIQ">LYRIQ</option>
+            <option value="VISTIQ">VISTIQ</option>
+            <option value="Other">Other / not sure</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field field--light">
+        <label for="message">{{ .Params.form.message_label | default "Your message" }} *</label>
+        <textarea id="message" name="message" rows="5" required aria-required="true"
+                  placeholder="Is there room on the price of the 1SA, and what would my trade be worth against it?"></textarea>
+      </div>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-top:1rem">
+        <p class="mono-label" style="color:#6f7683;margin:0">Used to answer you. Nothing else, ever.</p>
+        <button type="submit" class="btn btn--red btn--lg">{{ .Params.form.submit_button | default "Send message" }}</button>
+      </div>
+
+      {{/* Message hosts. role="status" so a screen reader announces the
+             outcome; the error host is a live region so a failure is not
+             silent. Both are written to by js/index.js. */}}
+      <p class="form-message form-message--success hidden" id="form-success" role="status">
+        Thanks -- your message is with Ed and you will hear back shortly.
+      </p>
+      <p class="form-message form-message--error hidden" id="form-error" role="alert"></p>
+    </form>
+
+    <aside>
+      <div style="position:sticky;top:96px;background:#fff;border:1px solid #e7e9ee;border-radius:var(--r-card);overflow:hidden">
+        <div style="padding:1.2rem 1.2rem 1rem;border-bottom:1px solid #eef0f3">
+          <p class="mono-label" style="color:#6f7683;margin:0 0 .5rem">Or just call</p>
+          <a href="tel:+1{{ $phoneHref }}"
+             style="color:#a8862f;text-decoration:none;font-family:var(--f-display);font-weight:680;font-size:1.7rem;letter-spacing:-.03em">{{ $phone }}</a>
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.9rem">
+            <a class="btn btn--line btn--sm" href="sms:+1{{ $phoneHref }}">Text Ed</a>
+            <a class="btn btn--line btn--sm" href="mailto:{{ $email }}">Email</a>
+          </div>
+        </div>
+        <dl style="margin:0">
+          <div style="display:flex;justify-content:space-between;gap:1rem;padding:.9rem 1.2rem;border-top:1px solid #eef0f3">
+            <dt class="mono-label" style="color:#6f7683;margin:0">Address</dt>
+            <dd style="margin:0;font-weight:600;text-align:right">{{ $address }}</dd>
+          </div>
+          <div style="display:flex;justify-content:space-between;gap:1rem;padding:.9rem 1.2rem;border-top:1px solid #eef0f3">
+            <dt class="mono-label" style="color:#6f7683;margin:0">Email</dt>
+            <dd style="margin:0;font-weight:600;text-align:right"><a href="mailto:{{ $email }}" style="color:var(--brand-red);text-decoration:none">{{ $email }}</a></dd>
+          </div>
+          <div style="display:flex;justify-content:space-between;gap:1rem;padding:.9rem 1.2rem;border-top:1px solid #eef0f3">
+            <dt class="mono-label" style="color:#6f7683;margin:0">Hours</dt>
+            <dd style="margin:0;font-weight:600;text-align:right">{{ $hours | safeHTML }}</dd>
+          </div>
+        </dl>
+      </div>
+
+      <div style="background:#fff;border:1px solid #e7e9ee;border-radius:var(--r-card);padding:1.1rem;margin-top:1rem">
+        <p class="mono-label" style="color:#6f7683;margin:0 0 .6rem">Arriving from a vehicle</p>
+        <p style="margin:0;font-size:.85rem;color:#515863">When the URL carries <code>?vehicle=</code>, the vehicle field is filled in and the heading names that car. The page already passes the parameter.</p>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<section class="stage grain pad--tight">
+  <div class="wrap">
+    <p class="kicker"><i>02</i><span>What happens next</span></p>
+    <div class="ribbon" style="grid-template-columns:repeat(3,1fr)">
+      <div><p class="v">Same day</p><p class="l">Typical reply</p></div>
+      <div><p class="v">One person</p><p class="l">Answers every message</p></div>
+      <div><p class="v">No list</p><p class="l">Never sold, never drip-mailed</p></div>
+    </div>
+    <p class="lede" style="margin-top:1.6rem;max-width:56ch">If it is urgent — a car you are looking at elsewhere, or a service question — call. If it can wait, the form is fine and Ed will come back to you with real numbers rather than a teaser.</p>
+  </div>
+</section>
+
+<section style="background:#fff;padding-block:clamp(2.6rem,5vw,4rem)">
+  <div class="wrap">
+    <p class="kicker kicker--light"><i>03</i><span>Three faster routes</span></p>
+    <div class="bento bento--3">
+      <a class="tile tile--light" href="/inventory/" style="text-decoration:none;display:block">
+        <h3>Ask about a specific car</h3><p>Every vehicle page has an ask box that arrives here with the car already named.</p></a>
+      <a class="tile tile--light" href="/trade-in/" style="text-decoration:none;display:block">
+        <h3>Value your trade</h3><p>Send the year, mileage and a few photos and get a real number rather than a range.</p></a>
+      <a class="tile tile--light" href="/service/" style="text-decoration:none;display:block">
+        <h3>Book a service</h3><p>Factory-trained work, arranged around your week. Mon–Sat.</p></a>
+    </div>
+  </div>
+</section>
+
+{{ with .Content }}
+<section style="background:#fafafa;padding-block:clamp(2rem,4vw,3rem)">
+  <div class="wrap"><div class="prose">{{ . }}</div></div>
+</section>
+{{ end }}
 {{ end }}

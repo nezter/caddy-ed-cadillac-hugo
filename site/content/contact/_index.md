@@ -12,15 +12,15 @@ form:
   submit_button: "Send Message"
 contact_info:
   heading: "My Information"
-  phone: "(704) 555-1234"
+  phone: "803-431-6180"
   email: "ed@caddyed.com"
-  dealership: "Cadillac of South Charlotte"
-  address: "123 Luxury Lane, Charlotte, NC 28277"
+  dealership: "Caddy Ed Cadillac"
+  address: "10725 Pineville Rd, Pineville, NC 28134"
   hours:
     - day: "Monday-Friday"
       time: "9:00am - 7:00pm"
     - day: "Saturday"
-      time: "10:00am - 6:00pm"
+      time: "9:00am - 5:00pm"
     - day: "Sunday"
       time: "Closed"
 ---
