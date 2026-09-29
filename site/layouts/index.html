@@ -130,7 +130,33 @@
       </div>
       </div>
 
+      {{/* The dock: fresh stock beside what Ed is posting. The vehicles are
+           real, taken from the same collection the fleet section uses, so the
+           list cannot drift from the inventory. */}}
+      {{- $all := where .Site.RegularPages "Section" "inventory" -}}
+      {{- $all = where $all "Params.available" "!=" false -}}
+      {{- $all = where $all "Params.make" "CADILLAC" -}}
+      {{- $fresh := first 4 (sort (sort $all "Params.year" "desc") "Params.price" "desc") -}}
+      <div class="dock">
+        <div class="tile tile--bronze">
+          <span class="tile__idx">01 &middot; Fresh stock</span>
+          <h3>What landed this week</h3>
+          <p style="margin-bottom:1rem">Straight from the lot, with the real number on it.</p>
+          <ul class="feed">
+            {{ range $fresh }}
+            <li>
+              <a href="{{ .RelPermalink }}" style="color:inherit;text-decoration:none"><span class="what">{{ .Title }}</span></a>
+              <span class="when">{{ partial "money.html" .Params.price }}</span>
+            </li>
+            {{ end }}
+          </ul>
+          <div class="chip-row">
+            <a class="chip" href="/inventory/">See all {{ len $all }} Cadillacs</a>
+            <a class="chip" href="#stockAlerts">Get alerts</a>
+          </div>
+        </div>
       {{ partial "social-feed.html" . }}
+      </div>
 
     </div>
   </div>
@@ -275,6 +301,8 @@
 {{ end }}
 
 {{ partial "comments.html" . }}
+
+{{ partial "why-ed.html" (dict "index" "02" "label" "Why people buy from Ed") }}
 
 {{/* Marketing copy from _index.md renders last, so it stays editable without
      touching this template. */}}
