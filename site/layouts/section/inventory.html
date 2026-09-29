@@ -126,6 +126,17 @@
       </aside>
 
       <div class="inv-results">
+        {{/* The mockup carries a line above the cars: what is here, and which
+             page of it. The count lives inside the rail on the build, and the
+             pagination summary sits below the grid, so the top of the results
+             column was empty. This is that line. The condition chips the
+             mockup also shows stay in the rail, where they actually filter --
+             the rail's controls are a real form, and fake chips above the grid
+             would look like they filter and would not. */}}
+        <p class="inv-topline">
+          <span class="mono-label">{{ $totalAll }} {{ if eq $totalAll 1 }}vehicle{{ else }}vehicles{{ end }} in stock</span>
+          <span class="mono-label">Page {{ $paginator.PageNumber }} of {{ $paginator.TotalPages }}</span>
+        </p>
 
 {{- /* Pagination. Server-rendered and crawlable. It is not a JS
        enhancement: with scripting off these are ordinary links. */ -}}

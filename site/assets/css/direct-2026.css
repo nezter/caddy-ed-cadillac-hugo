@@ -1499,3 +1499,14 @@ body.home .vehicle-card__actions .btn-ghost:hover{
 .inv-rail .inventory-price-bands{
   display:flex;flex-wrap:wrap;gap:.4rem;padding-top:.2rem;
 }
+
+
+/* --- the line above the cars -------------------------------------------- */
+.inv-results .inv-topline{
+  display:flex;align-items:baseline;justify-content:space-between;gap:1rem;
+  flex-wrap:wrap;
+  padding-bottom:.85rem;margin:0 0 1.15rem;
+  border-bottom:1px solid var(--border);
+}
+.inv-results .inv-topline .mono-label{color:var(--text-faint)}
+.inv-results .inv-topline .mono-label:first-child{color:var(--ink-1);letter-spacing:.12em}
