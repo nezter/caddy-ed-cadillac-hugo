@@ -1202,3 +1202,25 @@ body.home .dock .social-body > div{max-width:100%}
 .inventory-page .btn.vehicle-card__compare[aria-pressed="true"]{
   background-color:rgba(182,159,88,.14);border-color:var(--bronze-hi);color:var(--ink-1);
 }
+
+
+/* --- the vehicle spec table: readable, not "tiny and low-contrast" -------
+   Two causes, both mine to answer for. inventory.css sizes the value cell at
+   --text-sm (14px), and my own rule set the label to .66rem -- smaller than
+   the site's default. The label colour was --on-ink-faint, which is ~4.2:1 on
+   this surface: my own DIRECTION.md says that level is for labels only, never
+   for anything carrying meaning, and a spec table carries meaning. Labels move
+   up a step in both size and contrast; values go to body size.
+   ---------------------------------------------------------------------- */
+.vehicle-detail .vehicle-specs__list dt{
+  font-size:.7rem;color:var(--on-ink-muted);font-weight:500;
+}
+.vehicle-detail .vehicle-specs__list dd{
+  font-size:clamp(.95rem,.9rem + .2vw,1.06rem);
+  color:#fff;font-weight:500;font-variant-numeric:tabular-nums;
+}
+.vehicle-detail .vehicle-specs__row{padding-block:.85rem}
+.vehicle-detail .vehicle-specs__heading{font-size:clamp(1.1rem,1rem + .5vw,1.35rem)}
+.vehicle-detail .vehicle-cta .card__title{font-size:clamp(1.1rem,1rem + .5vw,1.35rem)}
+.vehicle-detail .vehicle-cta__actions{display:grid;gap:.5rem}
+.vehicle-detail .vehicle-cta__actions .btn{width:100%;justify-content:center}
