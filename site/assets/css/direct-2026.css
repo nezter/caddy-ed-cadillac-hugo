@@ -1247,3 +1247,47 @@ body.home #fleet .btn-outline:hover{border-color:var(--brand-red);color:var(--br
 body.home #fleet .vehicle-card{
   box-shadow:0 10px 30px rgba(11,13,16,.10);
 }
+
+
+/* ==========================================================================
+   THE PAGE HEAD, FOR EVERY PAGE THAT WAS NEVER PORTED.
+   Eleven templates keep their old markup -- test drive, financing, trade-in,
+   service, specials, customer portal, 404, privacy, communication preferences,
+   lead form, taxonomy. The type and button layers already reach them, so they
+   read consistently, but every one still opened on black type on white while
+   the mockups give each page a dark head band and a light body beneath it.
+   Rather than rewrite eleven templates, this styles the two head wrappers they
+   actually use: .page-header (financing, service, trade-in, specials, policy
+   pages) and .vehicle-header inside .test-drive-page. The admin suite uses
+   .admin-header and is deliberately untouched.
+   ========================================================================== */
+.page-header,
+.test-drive-page .vehicle-header{
+  position:relative;
+  background:linear-gradient(150deg,var(--ink-1),var(--ink-0));
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:var(--r-card);
+  padding:clamp(1.7rem,3.2vw,2.8rem) clamp(1.3rem,2.8vw,2.2rem);
+  margin-bottom:clamp(1.5rem,2.8vw,2.2rem);
+  overflow:hidden;
+}
+.page-header::before,
+.test-drive-page .vehicle-header::before{
+  content:"";position:absolute;inset-inline:0;top:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--bronze-line) 14%,var(--bronze-line) 86%,transparent);
+}
+.page-header h1,
+.test-drive-page .vehicle-header h1{color:#fff}
+.page-header .lede,
+.test-drive-page .vehicle-header .lede{color:var(--on-ink-muted);max-width:60ch;margin-top:.7rem}
+.page-header .eyebrow,
+.test-drive-page .vehicle-header .eyebrow{color:var(--bronze)}
+
+/* the breadcrumb, wherever it is used */
+.vehicle-breadcrumb{
+  font-family:var(--f-mono);font-size:.68rem;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--text-faint);margin-bottom:1.2rem;display:flex;gap:.5rem;flex-wrap:wrap;
+}
+.vehicle-breadcrumb a{color:var(--text-faint);text-decoration:none}
+.vehicle-breadcrumb a:hover{color:var(--brand-bronze)}
+.vehicle-breadcrumb span[aria-current]{color:var(--brand-bronze)}
