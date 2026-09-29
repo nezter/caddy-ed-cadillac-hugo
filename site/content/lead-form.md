@@ -12,7 +12,7 @@ scripts:
   <noscript>
     <div class="form-message form-message--error" role="alert">
       <strong>This form needs JavaScript to submit.</strong>
-      Please call <a href="tel:+17045551234">(704) 555-1234</a> or email
+      Please call <a href="tel:+18034316180">803-431-6180</a> or email
       <a href="mailto:ed@caddyed.com">ed@caddyed.com</a> and I'll take it from there.
     </div>
   </noscript>

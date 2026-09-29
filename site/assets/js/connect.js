@@ -295,7 +295,7 @@
         }
       }
 
-      if (!window.fetch) { done(false, "This form needs JavaScript. Call 704-555-1234 instead."); return; }
+      if (!window.fetch) { done(false, "This form needs JavaScript. Call 803-431-6180 instead."); return; }
       fetch(CONFIG.askEndpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -307,11 +307,11 @@
             done(true, "Thanks, your question is with Ed. He answers the same day.");
           } else {
             done(false, (res.j && (res.j.message || (res.j.error && res.j.error.message))) ||
-              "Could not send that just now. Call 704-555-1234 or email ed@caddyed.com.");
+              "Could not send that just now. Call 803-431-6180 or email ed@caddyed.com.");
           }
         })
         .catch(function () {
-          done(false, "Could not send that just now. Call 704-555-1234 or email ed@caddyed.com.");
+          done(false, "Could not send that just now. Call 803-431-6180 or email ed@caddyed.com.");
         });
     });
   }
@@ -496,7 +496,7 @@
           form.reset();
         })
         .catch(function () {
-          if (status) { status.className = "form-message form-message--error"; status.textContent = "Could not sign you up just now. Call 704-555-1234 and I will add you."; status.hidden = false; }
+          if (status) { status.className = "form-message form-message--error"; status.textContent = "Could not sign you up just now. Call 803-431-6180 and I will add you."; status.hidden = false; }
         });
     });
   }
