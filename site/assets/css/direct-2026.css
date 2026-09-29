@@ -665,3 +665,38 @@ header.site-header .navbar-end .btn-call:hover{background:var(--brand-red-bright
 .ed-note .seal__mark{border-color:rgba(182,159,88,.5);color:#a8862f}
 .ed-note .seal__txt{color:var(--text-muted)}
 @media (min-width:64rem){.vehicle-cta{position:sticky;top:96px}}
+
+
+/* --- inventory list ----------------------------------------------------- */
+.inventory-head h1{
+  font-family:var(--f-display);font-weight:680;letter-spacing:-.038em;line-height:.96;
+  font-size:clamp(2.2rem,1.3rem + 3.6vw,4.4rem);margin:0;
+}
+.inventory-head .eyebrow{color:var(--bronze)}
+.inventory-head .lede{max-width:62ch}
+.inventory-filters,.filter-accordion{
+  background:var(--bg-subtle);border:1px solid var(--border);border-radius:var(--r-card);
+}
+.filter-accordion{border-radius:var(--r-card);overflow:hidden}
+.filter-accordion__summary{cursor:pointer}
+.filter-accordion__label{
+  font-family:var(--f-mono);font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:var(--bronze);
+}
+.filter-accordion__count{font-family:var(--f-mono);font-size:.66rem;letter-spacing:.1em;color:var(--text-faint)}
+.inventory-count{
+  font-family:var(--f-mono);font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--text-faint);
+}
+.inventory-pagination{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-top:2rem}
+.inventory-pagination__pages{display:flex;gap:.4rem;list-style:none;padding:0;margin:0}
+.inventory-pagination__page{
+  display:inline-flex;align-items:center;justify-content:center;min-width:2.4rem;height:2.4rem;
+  padding-inline:.6rem;border-radius:999px;border:1px solid var(--border);text-decoration:none;
+  font-variant-numeric:tabular-nums;color:var(--text);font-size:.9rem;
+}
+.inventory-pagination__page:hover{border-color:var(--brand-bronze);color:var(--ink-1)}
+.inventory-pagination__page--current{
+  background:var(--ink-1);border-color:var(--ink-1);color:#fff;font-weight:600;
+}
+.inventory-pagination__summary{
+  font-family:var(--f-mono);font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--text-faint);
+}
