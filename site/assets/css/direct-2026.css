@@ -1416,3 +1416,86 @@ body.home .bento--4 .tile__idx,
   /* the last row of each column should not trail a rule into empty space */
   .vehicle-detail .vehicle-specs__row:last-child{border-bottom:0}
 }
+
+
+/* ==========================================================================
+   THE CARD ACTIONS AND THE FILTER RAIL — both reported from the live page.
+
+   1. The card buttons: "you can't read the Details button and sizing is all
+      off." Three actions sit in one row -- two anchors and a button -- with a
+      small-size class on each, so they land at three different heights and the
+      outline one loses its label against the card.
+   2. The filter rail: "they don't scroll so you can access them all." The rail
+      is sticky and about 1,290px tall against a ~900px viewport, so pinning it
+      puts the bottom third of the filters permanently out of reach. A sticky
+      element needs its own scroll.
+   3. The filter fields themselves, which were never styled as a set.
+   ========================================================================== */
+
+/* --- 1. one button system for the card actions ------------------------- */
+.vehicle-card__actions{
+  align-items:stretch;gap:.5rem;
+}
+.vehicle-card__actions .btn,
+.vehicle-card__actions .btn-sm{
+  min-height:2.5rem;height:auto;
+  padding:.55rem .95rem;
+  font-size:.86rem;line-height:1.15;font-weight:600;
+  display:inline-flex;align-items:center;justify-content:center;
+  border-radius:999px;white-space:nowrap;text-align:center;
+}
+.vehicle-card__actions .btn-outline{
+  border:1px solid #c9cdd6;color:var(--ink-1);background:#fff;
+}
+.vehicle-card__actions .btn-outline:hover{border-color:var(--ink-1);color:var(--ink-1)}
+.vehicle-card__actions .btn-primary{color:#fff}
+.vehicle-card__actions .btn-ghost{border:1px solid #e7e9ee;color:#515863;background:#fff}
+.vehicle-card__actions .btn-ghost:hover{border-color:var(--ink-1);color:var(--ink-1)}
+/* on the home page's dark cards the same three flip */
+body.home .vehicle-card__actions .btn-outline,
+body.home .vehicle-card__actions .btn-ghost{
+  background:transparent;border-color:rgba(255,255,255,.22);color:var(--on-ink);
+}
+body.home .vehicle-card__actions .btn-outline:hover,
+body.home .vehicle-card__actions .btn-ghost:hover{
+  border-color:var(--bronze-hi);color:#fff;
+}
+.vehicle-card__compare[aria-pressed="true"]{
+  border-color:var(--brand-bronze);color:#a8862f;background:rgba(182,159,88,.10);
+}
+
+/* --- 2. the rail must scroll inside itself ----------------------------- */
+@media (min-width:64rem){
+  .inv-rail{
+    position:sticky;top:6.5rem;
+    max-height:calc(100vh - 8rem);
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    padding-right:.35rem;
+  }
+  .inv-rail::-webkit-scrollbar{width:8px}
+  .inv-rail::-webkit-scrollbar-track{background:transparent}
+  .inv-rail::-webkit-scrollbar-thumb{background:#d6d9df;border-radius:8px}
+  .inv-rail::-webkit-scrollbar-thumb:hover{background:#b9bfc9}
+}
+
+/* --- 3. the filter fields, as a set ------------------------------------ */
+.inv-rail .filter-accordion__body{display:grid;gap:.9rem;padding-bottom:1.2rem}
+.inv-rail .form-field{margin:0;display:grid;gap:.3rem}
+.inv-rail .form-field > label{
+  font-family:var(--f-mono);font-size:.62rem;letter-spacing:.13em;
+  text-transform:uppercase;color:#6f7683;
+}
+.inv-rail select,
+.inv-rail input[type="text"],
+.inv-rail input[type="search"],
+.inv-rail input[type="number"]{
+  width:100%;padding:.55rem .7rem;font-size:.9rem;
+  border:1px solid #dde0e6;border-radius:10px;background:#fff;color:var(--ink-1);
+}
+.inv-rail select:focus,
+.inv-rail input:focus{border-color:var(--brand-bronze);outline:none}
+.inv-rail input[type="range"]{width:100%}
+.inv-rail .inventory-price-bands{
+  display:flex;flex-wrap:wrap;gap:.4rem;padding-top:.2rem;
+}
