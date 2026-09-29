@@ -966,3 +966,68 @@ body.home .prose a{color:var(--bronze-hi)}
 .inventory-page .inventory-content h2{font-size:1.05rem;margin:0 0 .4rem}
 .inventory-page .inventory-content p{font-size:.88rem;color:var(--text-muted);max-width:62ch}
 .inventory-page .comparison-container{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;margin-top:.9rem}
+
+
+/* ==========================================================================
+   TYPOGRAPHY, SITE-WIDE.
+   The five ported pages each set their own display type, which left every
+   other page — test drive, financing, trade-in, service, specials, customer
+   portal, 404, the policy pages, the admin suite — on the base scale, so only
+   some of the site looked like the direction. This applies the type system to
+   the ELEMENTS instead, so every template inherits it without being touched.
+
+   Sizes are deliberately conservative: a page title gets the display scale,
+   everything below it steps down, and nothing here is a layout change.
+   Page-specific rules (.hero h1, .vehicle-detail .vehicle-title,
+   .inventory-head h1, card titles) are more specific and still win.
+   ========================================================================== */
+
+h1,h2,h3,h4,h5,h6{
+  font-family:var(--f-display);
+  letter-spacing:-.03em;
+  line-height:1.05;
+  font-weight:680;
+  text-wrap:balance;
+}
+h1{font-size:clamp(2.05rem,1.3rem + 2.7vw,3.4rem);line-height:.98;letter-spacing:-.036em}
+h2{font-size:clamp(1.5rem,1.15rem + 1.3vw,2.15rem);letter-spacing:-.028em}
+h3{font-size:clamp(1.12rem,1rem + .45vw,1.36rem);letter-spacing:-.02em}
+h4,h5,h6{font-weight:620;letter-spacing:-.015em;line-height:1.25}
+
+/* the label voice: mono, caps, bronze, everywhere it appears */
+.eyebrow,.section-head .eyebrow,.page-header .eyebrow,
+.mono-label,.subtitle,.footer-heading,.sync-note,.inventory-count,
+.badge,.vehicle-specs__heading + *,.staff-label{
+  font-family:var(--f-mono);
+  letter-spacing:.14em;
+  text-transform:uppercase;
+}
+.eyebrow,.section-head .eyebrow,.page-header .eyebrow{color:var(--bronze);font-size:.72rem}
+.subtitle{color:var(--text-muted);letter-spacing:.08em;font-size:.8rem}
+.footer-heading{font-size:.66rem;letter-spacing:.16em}
+
+/* the reading voice */
+.lede{font-size:clamp(1.04rem,1rem + .3vw,1.24rem);line-height:1.5}
+
+/* numbers, everywhere they carry meaning */
+.stat__value,.proof-strip__value,.vehicle-price,.vehicle-card__price,
+.stat-row .stat__value,.metric,.kpi{
+  font-family:var(--f-display);
+  font-variant-numeric:tabular-nums;
+  letter-spacing:-.025em;
+}
+
+/* the editorial voice, for anything quoted */
+blockquote,q,.pull-quote{font-family:var(--f-editorial);letter-spacing:-.01em}
+blockquote{font-size:clamp(1.15rem,1rem + .9vw,1.6rem);line-height:1.3}
+
+/* small print and machine text stay mono */
+code,kbd,samp,pre,time,.vehicle-specs__mono,.pagination__summary{font-family:var(--f-mono)}
+
+/* forms inherit the UI voice rather than the display one */
+input,select,textarea,button,.btn{font-family:var(--f-ui)}
+
+/* main.css sizes this one at --text-2xl, which would leave the admin titles
+   the only ones on the old scale. Same voice, same scale; the light admin
+   surface is untouched. */
+.admin-header h1{font-size:clamp(2.05rem,1.3rem + 2.7vw,3.4rem);line-height:.98;letter-spacing:-.036em}
