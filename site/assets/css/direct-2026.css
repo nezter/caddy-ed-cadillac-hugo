@@ -1110,3 +1110,74 @@ body.home .dock .panel__title{min-width:0}
 body.home .dock .social-body,
 body.home .dock .social-body iframe,
 body.home .dock .social-body > div{max-width:100%}
+
+
+/* ==========================================================================
+   BUTTONS, MAPPED ONTO THE SITE'S EXISTING CLASSES.
+   The templates use .btn-primary / .btn-secondary / .btn-outline / .btn-ghost
+   from main.css, not the .btn--red / .btn--ghost names the mockups use. So the
+   direction's button treatment never reached them, and rendered pages showed
+   it: a blue-ish "Details" where the mockup has red, and outline buttons with
+   no relationship to the bronze system.
+   ========================================================================== */
+.btn-primary{
+  background:var(--brand-red);color:#fff;border-color:transparent;
+}
+.btn-primary:hover{background:var(--brand-red-bright)}
+.btn-secondary{
+  background:var(--ink-1);color:#fff;border-color:transparent;
+}
+.btn-secondary:hover{background:var(--ink-3)}
+.btn-outline{
+  background:transparent;border:1px solid var(--border-strong);color:var(--ink-1);
+}
+.btn-outline:hover{border-color:var(--brand-bronze);color:var(--ink-1);background:rgba(182,159,88,.06)}
+.btn-ghost{background:transparent;border:1px solid transparent;color:var(--text-muted)}
+.btn-ghost:hover{color:var(--ink-1);border-color:var(--border)}
+
+/* on ink, the same buttons flip */
+.stage .btn-outline,.vehicle-detail .btn-outline,body.home .btn-outline{
+  border-color:var(--bronze-line);color:var(--on-ink);background:transparent;
+}
+.stage .btn-outline:hover,.vehicle-detail .btn-outline:hover,body.home .btn-outline:hover{
+  border-color:var(--bronze-hi);color:#fff;background:rgba(182,159,88,.08);
+}
+.stage .btn-ghost,.vehicle-detail .btn-ghost,body.home .btn-ghost{color:var(--on-ink-muted)}
+.stage .btn-ghost:hover,.vehicle-detail .btn-ghost:hover,body.home .btn-ghost:hover{color:#fff;border-color:rgba(255,255,255,.2)}
+.vehicle-detail .btn-primary,body.home .btn-primary{box-shadow:0 6px 20px rgba(200,16,46,.28)}
+
+/* links on the dark surfaces, so nothing renders in the default blue */
+.vehicle-detail .prose a,.vehicle-detail .vehicle-specs a,.vehicle-detail .lede a{color:var(--bronze-hi)}
+.stage a:not(.btn):not(.chip),body.home .section a:not(.btn):not(.chip){color:var(--bronze-hi)}
+
+/* --- inventory: the page head, with more presence ---------------------- */
+.inventory-page .inventory-head{
+  padding:clamp(1.8rem,3.4vw,2.8rem) clamp(1.4rem,3vw,2.4rem);
+  margin-bottom:clamp(1.4rem,2.6vw,2rem);
+}
+.inventory-page .inventory-head h1{
+  font-size:clamp(2.3rem,1.3rem + 4vw,4.6rem);line-height:.96;
+}
+.inventory-page .inventory-head .lede{font-size:clamp(1.05rem,1rem + .4vw,1.3rem);margin-top:.8rem}
+
+/* --- inventory: the rail reads as a set of labelled groups -------------- */
+.inv-rail .filter-accordion__body{padding-top:.2rem}
+.inv-rail .inventory-filters__grid{display:grid;gap:.85rem}
+.inv-rail .form-field{display:grid;gap:.3rem}
+.inv-rail .form-field label{
+  font-family:var(--f-mono);font-size:.62rem;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--text-faint);
+}
+.inv-rail .inventory-filters__actions{
+  border-top:1px solid var(--border);margin-top:.9rem;padding-top:.9rem;
+  display:flex;align-items:center;justify-content:space-between;gap:.5rem;
+}
+.inv-rail .inventory-price-bands{display:flex;flex-wrap:wrap;gap:.4rem}
+
+/* the price, now at the head of the vehicle action rail */
+.vehicle-detail .vehicle-cta__label{color:var(--on-ink-faint);margin:0 0 .2rem}
+.vehicle-detail .vehicle-cta .vehicle-price{margin:0 0 .3rem}
+.vehicle-detail .vehicle-cta__note{
+  font-size:.78rem;color:var(--on-ink-faint);margin:0 0 1rem;max-width:34ch;
+}
+.vehicle-detail .vehicle-cta .card__title{margin-top:1.1rem}

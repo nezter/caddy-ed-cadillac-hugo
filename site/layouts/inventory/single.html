@@ -119,14 +119,6 @@
         {{- with .Params.vin }}{{ if $stock }}<span aria-hidden="true">&middot;</span>{{ end }}<span>VIN {{ . }}</span>{{ end -}}
       </p>
       {{ end }}
-      {{ if gt $price 0 }}
-      <p class="vehicle-price">
-        {{- $thousands := div (mod $price 1000000) 1000 }}{{ $remainder := mod $price 1000 -}}
-        {{- $out := "" }}{{ if gt $thousands 0 }}{{ $out = printf "%d," $thousands }}{{ end -}}
-        {{- printf "$%s%03d" $out $remainder -}}
-        {{ with .Params.price_note }}<small>{{ . }}</small>{{ end }}
-      </p>
-      {{ end }}
     </header>
 
     <div class="vehicle-gallery" data-vehicle-gallery>
@@ -208,6 +200,18 @@
 
       {{/* The four actions a vehicle page exists to drive. */}}
       <aside class="vehicle-cta card">
+        {{/* The price belongs with the actions, not under the title. On the
+             mockup it heads the rail that also carries Book / Ask / Trade /
+             Payment, so the number and the ways to act on it are one object. */}}
+        {{ if gt $price 0 }}
+        <p class="mono-label vehicle-cta__label">Asking price</p>
+        <p class="vehicle-price">
+          {{- $thousands := div (mod $price 1000000) 1000 }}{{ $remainder := mod $price 1000 -}}
+          {{- $out := "" }}{{ if gt $thousands 0 }}{{ $out = printf "%d," $thousands }}{{ end -}}
+          {{- printf "$%s%03d" $out $remainder -}}
+        </p>
+        {{ with .Params.price_note }}<p class="vehicle-cta__note">{{ . }}</p>{{ end }}
+        {{ end }}
         <h2 class="card__title">Interested in this {{ with .Params.model }}{{ . }}{{ end }}?</h2>
         <p class="text-muted">
           Ask about availability, current incentives, or trade it in against a
