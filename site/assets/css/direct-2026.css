@@ -614,3 +614,22 @@ header.site-header .navbar-end .btn-call:hover{background:var(--brand-red-bright
 .section-subtle#fleet .lede{color:var(--on-ink-muted)}
 .section-subtle#fleet .btn-outline{border-color:var(--bronze-line);color:var(--on-ink)}
 #fleet + .section-subtle{background:var(--ink-1)}
+
+
+/* --- interim portrait grade ---------------------------------------------
+   The existing photograph of Ed is a flash-lit snapshot (see IMAGERY.md).
+   A bronze duotone makes it read as a deliberate treatment until the
+   single reshoot replaces it. Apply to the .plate that wraps the portrait.
+   ---------------------------------------------------------------------- */
+.duo{position:relative}
+.duo img{filter:grayscale(1) contrast(1.1) brightness(.92)}
+.duo::before{
+  content:"";position:absolute;inset:0;z-index:1;mix-blend-mode:color;
+  background:linear-gradient(155deg,#cdb072,#6d5a2c 60%,#241f10);
+}
+.duo::after{background:linear-gradient(180deg,rgba(7,9,11,.05),rgba(7,9,11,.82))}
+
+/* --- prose inside a section, with the site's own .prose intact ---------- */
+.stage .prose h2,.stage .prose h3{color:#fff}
+.stage .prose p,.stage .prose li{color:var(--on-ink-muted)}
+.stage .prose a{color:var(--bronze-hi)}

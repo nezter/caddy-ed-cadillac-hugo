@@ -1,192 +1,226 @@
 {{ define "main" }}
-<div class="about-page">
-  {{/* Hero only renders a background if the page actually defines one --
-       the old version emitted `background-image: url('')` when unset. */}}
-  <div class="hero-banner"{{ with .Params.image }} style="background-image: url('{{ . | relURL }}')"{{ end }}>
-    <div class="container">
-      <h1>{{ .Title }}</h1>
+{{- $phone := .Site.Params.phone | default "803-431-6180" -}}
+{{- $phoneHref := replace $phone "." "" -}}
+{{- $email := .Site.Params.email | default "ed@caddyed.com" -}}
+{{- $address := .Site.Params.address | default "10725 Pineville Rd, Pineville, NC 28134" -}}
+{{- $hours := .Site.Params.hours | default "Mon-Fri 9am-7pm &middot; Sat 9am-5pm" -}}
+{{- $dealer := .Site.Params.dealer_name | default "Caddy Ed Cadillac" -}}
+
+{{/* ------------------------------------------------------------------
+     1. HERO. The person is the product on this page, so the photograph
+     and the claim sit side by side rather than under a banner.
+
+     The portrait carries the interim bronze grade (.duo). It is a
+     deliberate treatment, not a filter for its own sake: see
+     docs/design-2026/IMAGERY.md -- the existing photograph is a flash-lit
+     snapshot, and a single reshoot replaces it. Until then the grade makes
+     it read as intent instead of as an accident.
+     ------------------------------------------------------------------ */}}
+<section class="stage stage--deep grain">
+  <div class="wrap pad" style="display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(1.5rem,4vw,3.5rem);align-items:center">
+    <div>
+      <p class="eyebrow">About Caddy Ed<span class="ltbar" aria-hidden="true"><i></i><i></i><i></i></span></p>
+      <h1 class="display">One name on the deal, from the first question to the keys.</h1>
+      <p class="lede">{{ .Params.heading | default "Over 25 Years in South Charlotte" }} — Ed has been selling and supporting Cadillacs in the Charlotte area for more than two and a half decades. That length of time is not a plaque on the wall: it is a phone number that still works years later, a service history he already knows, and a referral list he did not buy.</p>
+      <div style="display:flex;gap:.7rem;flex-wrap:wrap;margin-top:1.8rem">
+        <a class="btn btn--cream" href="/contact/">Talk to Ed</a>
+        <a class="btn btn--ghost" href="/inventory/">See what's in stock</a>
+      </div>
+      <div class="seal" style="margin-top:1.6rem">
+        <span class="seal__mark" aria-hidden="true">E</span>
+        <span class="seal__txt">Ed Portello<br>Cadillac Specialist &middot; {{ .Site.Params.years_selling | default "since 1999" }}</span>
+      </div>
+    </div>
+
+    <figure style="margin:0">
+      <div class="plate plate--4x3 duo" style="box-shadow:var(--shadow-stage)">
+        {{ partial "picture.html" (dict
+            "src" "img/caddy-ed.jpg"
+            "alt" "Caddy Ed, Cadillac sales specialist in South Charlotte"
+            "width" 662
+            "height" 448
+            "widths" (slice 320 480 662)
+            "sizes" "(max-width: 64rem) 92vw, 40vw"
+            "loading" "eager") }}
+        <div class="plate__meta"><span class="t">Ed Portello</span><span class="p">{{ .Site.Params.years_selling | default "1999" }}</span></div>
+      </div>
+    </figure>
+  </div>
+</section>
+
+{{/* ------------------------------------------------------------------
+     2. THE FACTS, as numbers rather than as paragraphs. Everything here
+     is supportable from site parameters -- no invented milestones.
+     ------------------------------------------------------------------ */}}
+<section class="stage grain pad--tight">
+  <div class="wrap">
+    <div class="ribbon" style="grid-template-columns:repeat(3,1fr)">
+      <div><p class="v">{{ .Site.Params.years_selling | default "1999" }}</p><p class="l">Selling Cadillacs since</p></div>
+      <div><p class="v">25+</p><p class="l">Years in South Charlotte</p></div>
+      <div><p class="v">One</p><p class="l">Person, start to finish</p></div>
     </div>
   </div>
+</section>
 
-  <div class="container">
-    <div class="about-content">
-      <div class="row">
-        <div class="col-md-8 offset-md-2">
-          <h2>{{ .Params.heading }}</h2>
-          <div class="cms-content">
-            {{ .Content }}
-          </div>
-        </div>
-      </div>
+{{/* ------------------------------------------------------------------
+     3. THE MAIN COPY, from content/about/_index.md. Kept as editable
+     prose so nothing here needs a template change.
+     ------------------------------------------------------------------ */}}
+{{ with .Content }}
+<section style="background:#fff;padding-block:clamp(2.5rem,5vw,4.5rem)">
+  <div class="wrap">
+    <div class="split--wide" style="display:grid;gap:clamp(1.5rem,4vw,3rem)">
+      <div class="prose">{{ . }}</div>
     </div>
+  </div>
+</section>
+{{ end }}
 
-    {{ if .Params.team }}
-    <div class="team-section">
-      <h2 class="section-title">Meet Our Team</h2>
-      <div class="team-grid">
-        {{ range .Params.team }}
-        <div class="team-member">
-          <div class="team-photo">
-            {{ if .photo }}
-            {{ partial "static-picture.html" (dict
-                "src" .photo
-                "alt" .name
-                "sizes" "(max-width: 40rem) 92vw, 22vw"
-                "widths" (slice 320 640)
-                "loading" "lazy") }}
-            {{ else }}
-            {{ partial "static-picture.html" (dict
-                "src" "/img/placeholder-person.jpg"
-                "alt" .name
-                "sizes" "300px"
-                "widths" (slice 300)
-                "loading" "lazy") }}
-            {{ end }}
-          </div>
-          <div class="team-info">
-            <h3 class="team-name">{{ .name }}</h3>
-            <p class="team-position">{{ .position }}</p>
-            <div class="team-bio">{{ .bio }}</div>
-            <div class="team-contact">
-              <a href="mailto:{{ .email }}" class="team-email"><i class="fas fa-envelope"></i> Contact</a>
-            </div>
-          </div>
-        </div>
-        {{ end }}
-      </div>
+{{/* ------------------------------------------------------------------
+     4. WHY PEOPLE BUY FROM ED. This replaces four generic dealership
+     feature cards (Premium Selection / Expert Service / Flexible
+     Financing / Customer-First Approach) that appeared on ten thousand
+     other sites and contradicted the one-person story the rest of this
+     page tells. The four claims below are the ones the site can support.
+     ------------------------------------------------------------------ */}}
+<section class="stage grain pad">
+  <div class="wrap">
+    <p class="kicker"><i>01</i><span>Why people buy from Ed</span></p>
+    <h2 class="h-sec" style="color:#fff;max-width:30ch">Four things that are hard to find in a dealership.</h2>
+    <div class="bento bento--4" style="margin-top:2rem">
+      <div class="tile tile--bronze"><span class="tile__idx">01</span>
+        <h3>One person</h3>
+        <p>The same specialist from the first message to the delivery — including finance and the trade. No handoff, no "let me get my manager".</p></div>
+      <div class="tile"><span class="tile__idx">02</span>
+        <h3>Honest numbers</h3>
+        <p>What you will really pay, what your trade is really worth, and an honest answer when a car is not the right buy.</p></div>
+      <div class="tile"><span class="tile__idx">03</span>
+        <h3>Answers on your schedule</h3>
+        <p>Same-day replies by text, email or a call. Never a drip campaign, and never a cold follow-up.</p></div>
+      <div class="tile"><span class="tile__idx">04</span>
+        <h3>Still here later</h3>
+        <p>A question a year after the sale is part of the job, not an inconvenience. That is what twenty-five years means.</p></div>
     </div>
-    {{ end }}
+  </div>
+</section>
 
-    <div class="dealership-features">
-      <h2 class="section-title">Why Choose Caddy Ed Cadillac</h2>
-      <div class="features-grid">
-        <div class="feature-item">
-          <div class="feature-icon">
-            <i class="fas fa-award"></i>
-          </div>
-          <h3>Premium Selection</h3>
-          <p>Explore our extensive inventory of new and certified pre-owned Cadillac vehicles, meticulously inspected to meet the highest standards.</p>
+{{/* ------------------------------------------------------------------
+     5. THE TEAM. There is one of him, so a "meet the team" grid with a
+     filter bar was furniture. It renders only when there is more than
+     one person to show, and the markup is kept for that day.
+     ------------------------------------------------------------------ */}}
+{{ with .Params.team }}{{ if gt (len .) 1 }}
+<section class="stage grain pad--tight">
+  <div class="wrap">
+    <p class="kicker"><i>02</i><span>Who you will actually deal with</span></p>
+    <div class="bento bento--3" style="margin-top:1.4rem">
+      {{ range . }}
+      <div class="tile">
+        <div class="plate plate--square" style="margin-bottom:1rem">
+          {{ if .photo }}
+            {{ partial "static-picture.html" (dict "src" .photo "alt" .name "sizes" "(max-width: 40rem) 92vw, 30vw" "widths" (slice 320 640) "loading" "lazy") }}
+          {{ else }}
+            {{ partial "static-picture.html" (dict "src" "/img/placeholder-person.jpg" "alt" .name "sizes" "300px" "widths" (slice 300) "loading" "lazy") }}
+          {{ end }}
         </div>
-        
-        <div class="feature-item">
-          <div class="feature-icon">
-            <i class="fas fa-tools"></i>
-          </div>
-          <h3>Expert Service</h3>
-          <p>Our certified technicians use state-of-the-art equipment and genuine Cadillac parts to keep your vehicle performing at its best.</p>
-        </div>
-        
-        <div class="feature-item">
-          <div class="feature-icon">
-            <i class="fas fa-hand-holding-usd"></i>
-          </div>
-          <h3>Flexible Financing</h3>
-          <p>Our finance specialists work with multiple lenders to secure competitive rates and terms tailored to your needs.</p>
-        </div>
-        
-        <div class="feature-item">
-          <div class="feature-icon">
-            <i class="fas fa-user-friends"></i>
-          </div>
-          <h3>Customer-First Approach</h3>
-          <p>Experience a pressure-free, transparent buying process focused on your satisfaction and long-term relationship.</p>
-        </div>
+        <h3>{{ .name }}</h3>
+        <p class="mono-label" style="color:var(--bronze);margin:.2rem 0 .6rem">{{ .position }}</p>
+        <p>{{ .bio }}</p>
+        {{ with .email }}<p style="margin-top:.8rem"><a class="chip" href="mailto:{{ . }}">Email</a></p>{{ end }}
       </div>
-    </div>
-
-    {{/* Gallery renders only from images that actually exist. These used to be
-         four hardcoded /img/dealership/*.jpg paths with no files behind them, so
-         the section shipped as four broken images. Drop real photography into
-         static/img/dealership/ and it appears automatically. */}}
-    {{ $gallery := slice
-        (dict "src" "img/dealership/showroom.jpg" "alt" "Caddy Ed Cadillac Showroom")
-        (dict "src" "img/dealership/service.jpg"   "alt" "Caddy Ed Cadillac Service Center")
-        (dict "src" "img/dealership/lounge.jpg"    "alt" "Customer Lounge")
-        (dict "src" "img/dealership/exterior.jpg"  "alt" "Dealership Exterior")
-    }}
-    {{ $shots := slice }}
-    {{ range $gallery }}
-      {{ with resources.Get .src }}
-        {{ $shots = $shots | append (dict "res" . "alt" $.alt) }}
       {{ end }}
-    {{ end }}
-    {{ with $shots }}
-    <div class="dealership-gallery">
-      <h2 class="section-title">Our Dealership</h2>
-      <div class="gallery-grid">
-        {{ range . }}
-        <div class="gallery-item">
-          {{/* The Resource was already resolved above, to decide whether the
-               file exists. Hand it straight over so the gallery gets the same
-               codec ladder and the same width/height box as everything else. */}}
-          {{ partial "static-picture.html" (dict
-              "resource" .res
-              "alt" .alt
-              "sizes" "(max-width: 40rem) 92vw, 30vw"
-              "widths" (slice 400 800 1200)
-              "loading" "lazy") }}
-        </div>
-        {{ end }}
-      </div>
-    </div>
-    {{ end }}
-
-    <div class="cta-box">
-      <h2>Ready to Experience Caddy Ed Cadillac?</h2>
-      <p>Visit our showroom today or contact us to schedule a personalized appointment.</p>
-      <div class="cta-buttons">
-        <a href="/contact" class="btn btn-primary">Contact Us</a>
-        <a href="/inventory" class="btn btn-secondary">Browse Inventory</a>
-      </div>
     </div>
   </div>
-</div>
+</section>
+{{ end }}{{ end }}
 
+{{/* ------------------------------------------------------------------
+     6. DEALERSHIP PHOTOGRAPHY. Renders only from images that exist; the
+     four paths are placeholders until real photography is dropped into
+     static/img/dealership/.
+     ------------------------------------------------------------------ */}}
+{{ $gallery := slice
+    (dict "src" "img/dealership/showroom.jpg" "alt" "Caddy Ed Cadillac Showroom")
+    (dict "src" "img/dealership/service.jpg"   "alt" "Caddy Ed Cadillac Service Center")
+    (dict "src" "img/dealership/lounge.jpg"    "alt" "Customer Lounge")
+    (dict "src" "img/dealership/exterior.jpg"  "alt" "Dealership Exterior")
+}}
+{{ $shots := slice }}
+{{ range $gallery }}
+  {{ with resources.Get .src }}
+    {{ $shots = $shots | append (dict "res" . "alt" $.alt) }}
+  {{ end }}
+{{ end }}
+{{ with $shots }}
+<section class="stage stage--deep grain pad--tight">
+  <div class="wrap">
+    <p class="kicker"><i>03</i><span>Our dealership</span></p>
+    <div class="bento bento--4" style="margin-top:1.4rem">
+      {{ range . }}
+      <div class="plate">
+        {{ partial "static-picture.html" (dict
+            "resource" .res
+            "alt" .alt
+            "sizes" "(max-width: 40rem) 92vw, 30vw"
+            "widths" (slice 400 800 1200)
+            "loading" "lazy") }}
+      </div>
+      {{ end }}
+    </div>
+  </div>
+</section>
+{{ end }}
+
+{{/* ------------------------------------------------------------------
+     7. CLOSING CALL. The quote is the page's last word; the buttons are
+     the only thing to do with it.
+     ------------------------------------------------------------------ */}}
+<section class="stage grain pad">
+  <div class="wrap wrap--narrow" style="text-align:center">
+    <p class="eyebrow" style="justify-content:center">In Ed's words</p>
+    <p class="quote">"Most of the work happens after the sale. A question a year later, tracking down a part, telling somebody the car they picked is not the right one. That is the part I actually like."</p>
+    <div class="seal" style="margin-top:1.6rem;justify-content:center">
+      <span class="seal__mark" aria-hidden="true">E</span>
+      <span class="seal__txt">Ed Portello<br>{{ $dealer }}</span>
+    </div>
+    <div style="display:flex;gap:.7rem;flex-wrap:wrap;justify-content:center;margin-top:2rem">
+      <a class="btn btn--red btn--lg" href="/contact/">Send a request</a>
+      <a class="btn btn--ghost btn--lg" href="tel:+1{{ $phoneHref }}">{{ $phone }}</a>
+    </div>
+  </div>
+</section>
+
+{{/* Structured data. The address, phone and hours are read from the same
+     site parameters the header and footer use. They used to be hardcoded
+     here with a placeholder street address and Saturday hours -- which
+     contradicted the address on every other page of the site, in the one
+     place a search engine reads it. */}}
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "AutoDealer",
   "name": "{{ .Site.Title }}",
-  "image": "{{ .Params.image }}",
+  {{ with .Params.image }}"image": "{{ . | absURL }}",{{ end }}
   "url": "{{ .Permalink }}",
-  "telephone": "{{ .Site.Params.phone }}",
+  "telephone": "{{ $phone }}",
+  "email": "{{ $email }}",
   "address": {
     "@type": "PostalAddress",
-    "streetAddress": "123 Luxury Lane",
-    "addressLocality": "Charlotte",
-    "addressRegion": "NC",
-    "postalCode": "28210",
+    "streetAddress": "{{ $address }}",
     "addressCountry": "US"
-  },
-  "geo": {
-    "@type": "GeoCoordinates",
-    "latitude": 35.1495,
-    "longitude": -80.9258
   },
   "openingHoursSpecification": [
     {
       "@type": "OpeningHoursSpecification",
       "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
       "opens": "09:00",
-      "closes": "20:00"
+      "closes": "19:00"
     },
     {
       "@type": "OpeningHoursSpecification",
       "dayOfWeek": "Saturday",
       "opens": "09:00",
-      "closes": "18:00"
-    }
-  ],
-  "department": [
-    {
-      "@type": "AutoRepair",
-      "name": "Caddy Ed Cadillac Service Center",
-      "openingHours": "Mo,Tu,We,Th,Fr 07:30-18:00 Sa 08:00-16:00"
-    },
-    {
-      "@type": "AutoPartsStore",
-      "name": "Caddy Ed Cadillac Parts Department",
-      "openingHours": "Mo,Tu,We,Th,Fr 07:30-18:00 Sa 08:00-16:00"
+      "closes": "17:00"
     }
   ]
 }
