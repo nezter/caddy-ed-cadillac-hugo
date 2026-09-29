@@ -1291,3 +1291,19 @@ body.home #fleet .vehicle-card{
 .vehicle-breadcrumb a{color:var(--text-faint);text-decoration:none}
 .vehicle-breadcrumb a:hover{color:var(--brand-bronze)}
 .vehicle-breadcrumb span[aria-current]{color:var(--brand-bronze)}
+
+
+/* --- the reviews band, while there are no reviews -----------------------
+   A rendered pass called this band "broken/empty: dashed placeholder, no real
+   reviews", and it was worse than that: the empty state was printing an
+   instruction to whoever edits the site -- "Add real quotes to
+   site/data/reviews.yaml" -- on the live page, in front of customers.
+
+   Two fixes. The instruction is gone from the markup. And the whole band now
+   hides itself whenever the empty state is what would render, so a visitor
+   sees nothing rather than an empty shell. The moment real quotes are added
+   the band returns on its own, with no template change.
+   ---------------------------------------------------------------------- */
+section.section:has(> .container > .comments > .comments-empty),
+section.section:has(.comments-empty),
+.stage:has(.comments-empty){display:none}
