@@ -95,7 +95,8 @@
     <header class="inventory-head">
       <p class="eyebrow">In stock &middot; synced {{ now.Format "2 January 2006" }}<span class="ltbar" aria-hidden="true"><i></i><i></i><i></i></span></p>
       <h1 class="display display--sm">{{ .Title | default "Inventory" }}</h1>
-      {{ with .Content }}<div class="lede">{{ . }}</div>{{ end }}
+      <p class="lede">Every car below is in stock today. Filter it down, compare
+        two or three side by side, or ask about any of them without leaving the page.</p>
       <p class="mono-label" style="color:var(--text-faint);margin-top:.7rem">
         {{ $totalAll }} {{ if eq $totalAll 1 }}vehicle{{ else }}vehicles{{ end }} in stock
         &middot; page {{ $paginator.PageNumber }} of {{ $paginator.TotalPages }}
@@ -120,10 +121,42 @@
         to a page, and every page is a normal link.
       </p>
     </noscript>
+      <aside class="inv-rail">
       {{ partial "inventory-filters.html" (dict "page" .) }}
+      </aside>
+
+      <div class="inv-results">
 
 {{- /* Pagination. Server-rendered and crawlable. It is not a JS
        enhancement: with scripting off these are ordinary links. */ -}}
+
+    {{/* ---------------------------------------------------------------
+         The list. Server-rendered from content, filtered client-side.
+         data-* attributes carry the filter/sort keys so the script never has
+         to scrape text out of the markup.
+         --------------------------------------------------------------- */}}
+    <div class="vehicle-grid" id="vehicle-inventory"
+         data-total="{{ $totalMatched }}" data-page-size="{{ $perPage }}">
+      {{/* One card, from partials/vehicle-card.html. This markup used to be
+           written out here as well as in layouts/index.html, and the two copies
+           had already drifted -- the home page printed "$112899" and this one
+           printed "$112,899". The data-* attributes the live filter reads are
+           part of the partial now, and they are documented there as a contract
+           with inventory-filter.js. */}}
+      {{ range $paginator.Pages }}
+        {{ partial "vehicle-card.html" (dict "vehicle" .) }}
+      {{ end }}
+    </div>
+
+    {{/* Two different situations share this block. The script rewrites the
+         message: "no matches" is undoable, "no stock" is not, and a page that
+         renders blank in the second case gives the visitor nothing to do. */}}
+    <div class="inventory-empty hidden" id="inventory-empty">
+      <p data-empty-message>No vehicles match those filters.</p>
+      <button class="btn btn-ghost btn-sm" type="button" data-inventory-reset>Clear them</button>
+      or <a href="/contact/">tell me what you're after</a> — stock turns over.
+    </div>
+
     {{ if gt $paginator.TotalPages 1 }}
     <nav class="inventory-pagination" aria-label="Inventory pages">
       {{ if $paginator.HasPrev }}
@@ -157,33 +190,14 @@
       {{- if gt $paginator.TotalPages 1 }}, page {{ $paginator.PageNumber }} of {{ $paginator.TotalPages }}{{ end }}.
     </p>
     {{ end }}
+      </div>
 
-    {{/* ---------------------------------------------------------------
-         The list. Server-rendered from content, filtered client-side.
-         data-* attributes carry the filter/sort keys so the script never has
-         to scrape text out of the markup.
-         --------------------------------------------------------------- */}}
-    <div class="vehicle-grid" id="vehicle-inventory"
-         data-total="{{ $totalMatched }}" data-page-size="{{ $perPage }}">
-      {{/* One card, from partials/vehicle-card.html. This markup used to be
-           written out here as well as in layouts/index.html, and the two copies
-           had already drifted -- the home page printed "$112899" and this one
-           printed "$112,899". The data-* attributes the live filter reads are
-           part of the partial now, and they are documented there as a contract
-           with inventory-filter.js. */}}
-      {{ range $paginator.Pages }}
-        {{ partial "vehicle-card.html" (dict "vehicle" .) }}
-      {{ end }}
-    </div>
-
-    {{/* Two different situations share this block. The script rewrites the
-         message: "no matches" is undoable, "no stock" is not, and a page that
-         renders blank in the second case gives the visitor nothing to do. */}}
-    <div class="inventory-empty hidden" id="inventory-empty">
-      <p data-empty-message>No vehicles match those filters.</p>
-      <button class="btn btn-ghost btn-sm" type="button" data-inventory-reset>Clear them</button>
-      or <a href="/contact/">tell me what you're after</a> — stock turns over.
-    </div>
+    {{/* The page's own content, and with it the compare app that a shortcode
+         renders into #comparison-app. It used to sit in the page header, which
+         put a full-width "Compare Vehicles" panel between the title and the
+         cars -- instructions for a surface that was empty, above the thing the
+         visitor came for. It belongs at the end, next to the tray it fills. */}}
+    {{ with .Content }}<div class="lede inventory-content">{{ . }}</div>{{ end }}
 
     {{ with .Params.show_cta | default true }}
     <div class="cta-band" style="margin-top: var(--space-8)">

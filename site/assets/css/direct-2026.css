@@ -853,3 +853,46 @@ body.home .prose a{color:var(--bronze-hi)}
   background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);color:#fff;border-radius:10px;
 }
 .vehicle-detail .vehicle-booking__note,.vehicle-detail .vehicle-booking__noscript{color:var(--on-ink-faint)}
+
+
+/* --- inventory: the rail beside the results ----------------------------
+   The mockup puts the filters in a persistent column next to the cars, and
+   the cars two across, rather than a full-width accordion above a three-across
+   grid. The wrapper elements (.inv-rail / .inv-results) are emitted by
+   section/inventory.html; below 64rem they are display:contents, so the page
+   falls back to its plain stacked flow with no extra markup. */
+@media (min-width:64rem){
+  .inventory-page .container{
+    display:grid;grid-template-columns:290px minmax(0,1fr);
+    gap:clamp(1.2rem,2.6vw,2.2rem);align-items:start;
+  }
+  .inventory-head{grid-column:1 / -1}
+  .inventory-page .container > noscript{grid-column:1 / -1}
+  .inv-rail{grid-column:1;align-self:start;position:sticky;top:96px}
+  .inv-results{grid-column:2;min-width:0}
+  .inventory-page .cta-band{grid-column:1 / -1}
+  .inv-results .vehicle-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .inv-rail .filter-accordion{background:#fff}
+}
+@media (max-width:63.99rem){
+  .inv-rail,.inv-results{display:contents}
+}
+/* the rail reads as a card, not as an accordion, once it is a column */
+.inv-rail .filter-accordion{
+  border:1px solid var(--border);border-radius:var(--r-card);
+  background:var(--bg-subtle);box-shadow:var(--shadow-sm);
+}
+.inv-rail .filter-accordion__summary{padding:.9rem 1.1rem}
+.inv-rail .filter-accordion__body{padding:0 1.1rem 1.1rem}
+.inv-rail .inventory-filters__grid{grid-template-columns:1fr}
+.inv-rail .inventory-filters__actions{gap:.5rem;flex-wrap:wrap}
+.inv-results .inventory-pagination{margin-top:2rem;padding-top:1.4rem;border-top:1px solid var(--border)}
+.inv-results .inventory-pagination__summary{margin-top:.6rem}
+@media (min-width:64rem){
+  /* The compare panel is injected by vehicleComparison.js and lands between
+     the page head and the results, full width, even when it holds nothing but
+     its own instructions. The mockup puts the equivalent surface at the
+     bottom of the page as a tray, so this places it there. order handles it
+     because the item is auto-placed onto the grid. */
+  .inventory-page .comparison-container{grid-column:1 / -1;order:9}
+}
