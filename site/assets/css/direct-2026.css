@@ -633,3 +633,35 @@ header.site-header .navbar-end .btn-call:hover{background:var(--brand-red-bright
 .stage .prose h2,.stage .prose h3{color:#fff}
 .stage .prose p,.stage .prose li{color:var(--on-ink-muted)}
 .stage .prose a{color:var(--bronze-hi)}
+
+
+/* --- vehicle detail: micro-line, ask module, Ed's note ------------------ */
+.vehicle-meta{
+  font-family:var(--f-mono);font-size:.68rem;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--text-faint);display:flex;gap:.5rem;flex-wrap:wrap;margin:.5rem 0 0;
+}
+.vehicle-asks{margin-top:clamp(2rem,4vw,3rem)}
+.asklist{list-style:none;padding:0;margin:1rem 0 0}
+.asklist li{
+  display:flex;gap:.8rem;padding:.7rem 0;border-top:1px solid var(--border);
+  color:var(--text-muted);font-size:.94rem;
+}
+.asklist li:first-child{border-top:0}
+.asklist b{
+  color:#a8862f;font-family:var(--f-mono);font-size:.66rem;letter-spacing:.1em;
+  text-transform:uppercase;flex:none;padding-top:.3rem;min-width:5.5rem;
+}
+.ed-note{
+  margin-top:1rem;
+  background:linear-gradient(160deg,rgba(182,159,88,.14),rgba(182,159,88,.03) 60%,transparent);
+  border:1px solid rgba(182,159,88,.35);border-radius:var(--r-card);padding:1.1rem 1.2rem;
+}
+.ed-note__label{
+  font-family:var(--f-mono);font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;
+  color:#a8862f;margin:0 0 .5rem;
+}
+.ed-note__body{margin:0;font-size:.92rem;color:var(--text-muted)}
+.ed-note .seal{margin-top:.9rem}
+.ed-note .seal__mark{border-color:rgba(182,159,88,.5);color:#a8862f}
+.ed-note .seal__txt{color:var(--text-muted)}
+@media (min-width:64rem){.vehicle-cta{position:sticky;top:96px}}

@@ -88,6 +88,17 @@
       (dict "label" "Interior colour"    "value" (printf "%v" (.Params.interior_color | default "")))
       (dict "label" "Stock last checked" "value" $synced) -}}
 
+{{- /* The feed titles carry the stock number, e.g.
+       "2026 CADILLAC LYRIQ Tech (#BRZ137771)". A stock number in an <h1> is the
+       single most inventory-system thing on the page, so it is lifted out of
+       the title and shown as a mono micro-line under it. The stored title is
+       unchanged, and the visible heading keeps the same words minus the
+       reference, so nothing about how the page is found changes. */ -}}
+{{- $titleClean := replaceRE `\s*\(#[^)]+\)` "" .Title -}}
+{{- $stockFromTitle := "" -}}
+{{- with findRE `\(#([^)]+)\)` .Title 1 -}}{{- $stockFromTitle = replaceRE `[()#]` "" (index . 0) -}}{{- end -}}
+{{- $stock := .Params.stock | default $stockFromTitle -}}
+
 <article class="section vehicle-detail" id="vehicle-detail">
   <div class="container">
     <nav aria-label="Breadcrumb" class="vehicle-breadcrumb">
@@ -100,8 +111,14 @@
       {{ with .Params.status }}
       <span class="badge {{ if eq . "New" }}badge--accent{{ else }}badge--success{{ end }}">{{ . }}</span>
       {{ end }}
-      <h1 class="vehicle-title">{{ .Title }}</h1>
+      <h1 class="vehicle-title">{{ $titleClean }}</h1>
       {{ with .Params.subtitle }}<p class="lede">{{ . }}</p>{{ end }}
+      {{ if or $stock .Params.vin }}
+      <p class="vehicle-meta">
+        {{- with $stock }}<span>Stock {{ . }}</span>{{ end -}}
+        {{- with .Params.vin }}{{ if $stock }}<span aria-hidden="true">&middot;</span>{{ end }}<span>VIN {{ . }}</span>{{ end -}}
+      </p>
+      {{ end }}
       {{ if gt $price 0 }}
       <p class="vehicle-price">
         {{- $thousands := div (mod $price 1000000) 1000 }}{{ $remainder := mod $price 1000 -}}
@@ -170,6 +187,22 @@
           </dl>
         </section>
 
+        {{/* The four questions this page is actually asked, written as a
+             buyer would say them, each linking into the contact flow with the
+             vehicle already named. */}}
+        <section class="vehicle-asks" aria-labelledby="vehicle-asks-heading">
+          <h2 class="vehicle-specs__heading" id="vehicle-asks-heading">What people ask about this one</h2>
+          <ul class="asklist">
+            <li><b>Price</b><span>Is there room on the asking price once current incentives are applied?</span></li>
+            <li><b>Trade</b><span>What would my current vehicle be worth against this one, and does the equity cover the down payment?</span></li>
+            <li><b>Timing</b><span>Is it available now, and how long does delivery take once we agree?</span></li>
+            <li><b>This vs that</b><span>How does it compare with the others in stock at a similar price?</span></li>
+          </ul>
+          <p style="margin-top:1.1rem">
+            <a class="btn btn-outline" href="/contact/?vehicle={{ $titleClean | urlquery }}">Ask all four at once</a>
+          </p>
+        </section>
+
         <div class="prose">{{ .Content }}</div>
       </div>
 
@@ -191,6 +224,14 @@
              href="/contact/?vehicle={{ .Title | urlquery }}">Ask about this vehicle</a>
           <a class="btn btn-ghost btn-block" href="/trade-in/">Value my trade</a>
           <a class="btn btn-ghost btn-block" href="/financing/">See financing options</a>
+        </div>
+        <div class="ed-note">
+          <p class="ed-note__label">A note from Ed</p>
+          <p class="ed-note__body">Ask me anything about this one before you rule it out — availability, the real number, or what your trade is worth against it. I answer these myself.</p>
+          <div class="seal">
+            <span class="seal__mark" aria-hidden="true">E</span>
+            <span class="seal__txt">Ed Portello<br>Cadillac Specialist</span>
+          </div>
         </div>
         <p class="vehicle-cta__phone">
           Prefer to talk it through? <a href="tel:+1{{ $phoneHref }}">{{ $phone }}</a>
