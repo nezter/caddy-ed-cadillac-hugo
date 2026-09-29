@@ -1031,3 +1031,82 @@ input,select,textarea,button,.btn{font-family:var(--f-ui)}
    the only ones on the old scale. Same voice, same scale; the light admin
    surface is untouched. */
 .admin-header h1{font-size:clamp(2.05rem,1.3rem + 2.7vw,3.4rem);line-height:.98;letter-spacing:-.036em}
+
+
+/* --- home: the ask panel's inputs, and Ed's portrait frame --------------
+   Two things the rendered page showed that structure checks cannot: the
+   quick-ask form's inputs stayed on the browser default white inside the now
+   dark panel, and the portrait carried a light frame that read as pasted in.
+   ---------------------------------------------------------------------- */
+body.home .hero__ask .input,
+body.home .hero__ask .textarea,
+body.home .hero__ask select{
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.14);
+  color:#fff;
+  border-radius:10px;
+  width:100%;
+}
+body.home .hero__ask .input::placeholder,
+body.home .hero__ask .textarea::placeholder{color:#6b727e}
+body.home .hero__ask .input:focus,
+body.home .hero__ask .textarea:focus{
+  border-color:var(--bronze-hi);background:rgba(255,255,255,.08);outline:none;
+}
+body.home .hero__ask .form-field label{
+  display:block;
+  font-family:var(--f-mono);font-size:.63rem;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--on-ink-faint);margin-bottom:.3rem;
+}
+body.home .hero__ask .text-muted{color:var(--on-ink-faint)}
+body.home .hero__ask .form-message--error{color:#ffc4cd}
+
+/* the portrait: no frame, and it sits in the plate like every other image */
+body.home .ed-portrait{
+  border:0;background:none;box-shadow:none;padding:0;
+  border-radius:var(--r-plate);overflow:hidden;
+}
+body.home .ed-portrait img{
+  display:block;width:100%;height:auto;
+  border:0;border-radius:var(--r-plate);
+  filter:grayscale(1) contrast(1.08) brightness(.92);
+}
+/* the interim bronze grade, matching .duo on the About page */
+body.home .ed-portrait{position:relative}
+body.home .ed-portrait::before{
+  content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
+  mix-blend-mode:color;
+  background:linear-gradient(155deg,#cdb072,#6d5a2c 60%,#241f10);
+}
+body.home .ed-portrait__overlay{z-index:2}
+
+
+/* --- three defects the rendered page showed -----------------------------
+   1. A stray bronze sliver sat just left of "See what's in stock". It was a
+      decorative bar I hung off ::before on the hero copy column; at this size
+      it read as a rendering artifact, not as intent. Removed -- the light bar
+      in the eyebrow already carries the motif.
+   2. The hero photograph was washed out: a .88 brightness filter under a
+      three-stop scrim buried the car. The scrim is lighter and the grade is
+      lifted so the subject is visible.
+   3. The social panel bled out of its dock column and its heading ran past the
+      card edge. Grid children default to min-width:auto, so a wide embed
+      stretches the column instead of scrolling inside it.
+   ---------------------------------------------------------------------- */
+body.home .hero__content::before{display:none}
+
+.hero__media img{filter:saturate(1.04) contrast(1.12) brightness(1.28)}
+.hero__media::after{
+  background:
+    radial-gradient(58% 62% at 68% 46%,rgba(230,214,166,.10),transparent 62%),
+    linear-gradient(90deg,rgba(7,9,11,.92) 0%,rgba(7,9,11,.58) 32%,rgba(7,9,11,.02) 60%,rgba(7,9,11,.06) 100%),
+    linear-gradient(180deg,rgba(7,9,11,.35),transparent 26%,rgba(7,9,11,.7));
+}
+
+body.home .dock > *{min-width:0}
+body.home .dock .panel{overflow:hidden;max-width:100%}
+body.home .dock .panel__head{flex-wrap:wrap;gap:.6rem}
+body.home .dock .panel__title{min-width:0}
+body.home .dock .social-body,
+body.home .dock .social-body iframe,
+body.home .dock .social-body > div{max-width:100%}
