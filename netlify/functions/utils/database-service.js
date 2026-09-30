@@ -211,10 +211,32 @@ function isDatabaseConfigured() {
  */
 function normalisePlaceholders(sql, params) {
   if (!Array.isArray(params) || params.length === 0) return { sql, params };
-  if (!/\$/.test(sql)) return { sql, params };
-  // Leave `:name` and `::type` casts alone; only $n is ours.
-  if (/\$\d+\s*::/.test(sql)) return { sql, params };
 
+  // undefined becomes null, ALWAYS, before anything else.
+  //
+  // A helper that destructures its input with defaults -- `const { city,
+  // state, zip_code } = customerData` -- produces `undefined` for every field
+  // the caller did not supply, and that undefined goes straight into the
+  // parameter array. libSQL then rejects the whole statement with "Unsupported
+  // type of value", which surfaces to the caller as a generic failure rather
+  // than as a missing optional column.
+  //
+  // It is in query() rather than at each call site because it is not a property
+  // of any one helper: createCustomer, createInteraction, createLead and
+  // createBooking all build parameter lists this way, and each of them was
+  // failing for a field the customer never filled in. "Absent" and "null" mean
+  // the same thing to SQL, and a caller that forgot a field is a normal
+  // situation, not an error.
+  //
+  // Done first, and unconditionally: the loop below indexes into `params` by
+  // placeholder number, and coercing afterwards would have moved the values.
+  const coerced = params.map((v) => (v === undefined ? null : v));
+
+  if (!/\$/.test(sql)) return { sql, params: coerced };
+  // Leave `:name` and `::type` casts alone; only $n is ours.
+  if (/\$\d+\s*::/.test(sql)) return { sql, params: coerced };
+
+  const source = coerced;
   const order = [];
   let out = '';
   let i = 0;
@@ -228,7 +250,7 @@ function normalisePlaceholders(sql, params) {
       // disagree. Leave it exactly as written so the database reports it,
       // rather than quietly binding something else.
       if (n < 1 || n > params.length) return { sql, params };
-      order.push(params[n - 1]);
+      order.push(source[n - 1]);
       out += '?';
       i = j;
       continue;

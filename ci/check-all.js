@@ -25,6 +25,8 @@
  *   insert columns         every INSERT has a real id and real columns
  *   select columns         every SELECT names real columns
  *   permissions            the required-permission vocabulary is used correctly
+ *   inquiry path           a form submission survives its own notification failing
+ *   compare + shortlist    the two card buttons do two different things
  *   build output           no page references a missing asset
  *
  * Run:
@@ -90,6 +92,19 @@ const CHECKS = [
     name: 'permissions',
     file: 'check-permissions.js',
     why: 'the required-permission vocabulary is used correctly',
+  },
+  {
+    name: 'inquiry path',
+    file: 'check-inquiry-path.js',
+    needsDatabase: true,
+    slow: true,
+    why: 'a customer enquiry survives its own notification failing',
+  },
+  {
+    name: 'compare + shortlist',
+    file: 'check-compare-shortlist.js',
+    needsBuild: true,
+    why: 'the two card buttons do two different things, and both do them',
   },
   {
     name: 'build output',
@@ -197,6 +212,25 @@ function run(check) {
   if (result.error) {
     return { state: 'fail', detail: result.error.message.split('\n')[0], output: '' };
   }
+
+  // A check that cannot run announces it and exits 0. The runner reads the
+  // announcement rather than the exit code, because "could not run" and "ran and
+  // failed" are different facts and one exit code cannot carry both.
+  //
+  // Without this the three self-skipping checks had to exit non-zero to signal a
+  // skip, and the runner then reported them as failures -- so a build host with
+  // no devDependencies showed a red build for a missing test dependency, which
+  // is both wrong and the kind of red people stop reading.
+  const output = `${result.stdout || ''}${result.stderr || ''}`;
+  const skipLine = output.split('\n').find((l) => /^\s*SKIP\b/.test(l));
+  if (skipLine) {
+    return {
+      state: 'skip',
+      detail: skipLine.replace(/^\s*SKIP\s*/, '').trim() || 'check could not run',
+      output,
+    };
+  }
+
   if (result.status !== 0) {
     return {
       state: 'fail',

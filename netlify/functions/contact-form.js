@@ -1,4 +1,4 @@
-const nodemailer = require('nodemailer');
+const inquiry = require('./utils/inquiry');
 const errorHandler = require('./utils/error-handler');
 const InteractionService = require('./utils/interaction-service');
 const DatabaseService = require('./utils/database-service');
@@ -34,57 +34,27 @@ exports.handler = async function(event, context) {
       });
     }
 
-    // Setup email transport
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT || '587'),
-      secure: process.env.SMTP_SECURE === 'true',
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
-      }
+    // RECORD FIRST, THEN NOTIFY.
+    //
+    // This used to build a nodemailer transport and send, and on a send failure
+    // `return errorHandler.serverError(...)` -- which skipped the interaction
+    // logging below entirely. So with SMTP unconfigured, a contact form
+    // submission was a 500 AND left no trace: no customer, no interaction, no
+    // lead. The enquiry existed for about forty milliseconds and then not at all.
+    //
+    // The database is the system of record. /admin/customers and
+    // /admin/interactions read it, and they work. The email is a convenience for
+    // someone not looking at the admin, and it cannot be allowed to decide
+    // whether the enquiry exists. See utils/inquiry.js.
+    const outcome = await inquiry.submit('lead', {
+      name: formData.name,
+      email: formData.email,
+      phone: formData.phone,
+      message: formData.message,
+      subject: formData.subject,
+      formType: 'contact',
+      source: 'contact_form',
     });
-
-    // Build email content
-    const subject = `New Contact Form Submission from ${formData.name}`;
-    let htmlContent = `
-      <h2>New Contact Form Submission</h2>
-      <p><strong>Name:</strong> ${formData.name}</p>
-      <p><strong>Email:</strong> ${formData.email}</p>
-    `;
-    
-    if (formData.phone) {
-      htmlContent += `<p><strong>Phone:</strong> ${formData.phone}</p>`;
-    }
-    
-    if (formData.subject) {
-      htmlContent += `<p><strong>Subject:</strong> ${formData.subject}</p>`;
-    }
-    
-    if (formData.message) {
-      htmlContent += `<p><strong>Message:</strong></p><p>${formData.message.replace(/\n/g, '<br>')}</p>`;
-    }
-    
-    // Add any additional form fields
-    Object.entries(formData).forEach(([key, value]) => {
-      if (!['name', 'email', 'phone', 'subject', 'message'].includes(key) && value) {
-        htmlContent += `<p><strong>${key}:</strong> ${value}</p>`;
-      }
-    });
-
-    // Send the email
-    try {
-      await transporter.sendMail({
-        from: `"Website Form" <${process.env.SMTP_USER}>`,
-        to: process.env.NOTIFICATION_EMAIL || 'info@caddyed.com',
-        subject: subject,
-        html: htmlContent,
-        replyTo: formData.email
-      });
-    } catch (emailError) {
-      console.error('Email sending error:', emailError);
-      return errorHandler.serverError('Failed to send email', emailError);
-    }
 
     // Log the contact form submission as an interaction
     try {
@@ -147,8 +117,16 @@ exports.handler = async function(event, context) {
     }
 
     // Return success response
+    // The customer is told it is received, which is TRUE -- the lead is in the
+    // database and the sales rep can see it. `notified` is in the body so an
+    // operator can tell a working mail path from a dead one without reading logs.
     return errorHandler.createSuccessResponse(
-      { submitted: new Date().toISOString() },
+      {
+        submitted: new Date().toISOString(),
+        leadId: outcome.id,
+        notified: outcome.notified,
+        notifyReason: outcome.notifyReason || null,
+      },
       'Thank you for your message. We will get back to you as soon as possible.'
     );
   } catch (error) {

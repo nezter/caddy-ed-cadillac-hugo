@@ -1,4 +1,4 @@
-const nodemailer = require('nodemailer');
+const inquiry = require('./utils/inquiry');
 const errorHandler = require('./utils/error-handler');
 const InteractionService = require('./utils/interaction-service');
 const FollowupService = require('./utils/followup-service');
@@ -154,70 +154,53 @@ exports.handler = async function(event, context) {
     // values that are known to parse.
     const startsAt = new Date(`${data.preferredDate}T${data.preferredTime}:00`);
 
-    // Where does this booking actually go? See bug 7.
-    const to = recipient();
-    if (!to) {
-      console.error(
-        '[schedule-test-drive] EMAIL_TO / NOTIFICATION_EMAIL is not set. The request was ' +
-        'NOT delivered and NOT booked. Set one of them in the Netlify environment.'
-      );
+    // RECORD FIRST, THEN NOTIFY.
+    //
+    // This used to check for a notification address, bail out with a 503 if there
+    // was none, send the email, and only afterwards write the booking. So with no
+    // EMAIL_TO -- which is how it is deployed -- the request was refused AND
+    // never written. The visitor was told to phone, and the phone call had
+    // nothing to look up.
+    //
+    // The booking is the record. The email is a convenience for someone not
+    // looking at the admin, and it cannot be allowed to decide whether the
+    // booking exists. See utils/inquiry.js.
+    const outcome = await inquiry.submit('booking', {
+      name: data.fullName,
+      email: data.email,
+      phone: data.phone,
+      vehicleId: data.vehicleId,
+      vehicleTitle: data.vehicleTitle,
+      vehicleYear: data.vehicleYear,
+      vehicleMake: data.vehicleMake,
+      preferredDate: data.preferredDate,
+      preferredTime: data.preferredTime,
+      comments: data.comments,
+      pageUrl: data.pageUrl,
+    });
+
+    if (outcome.fatal) {
+      // No database: there is no system of record, so a success would be a lie.
       return {
         statusCode: 503,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           success: false,
           message:
-            'Test-drive requests are not being received at the moment. Please call instead.',
+            'We could not record that just now. Please call us on the number on this page and we will book it for you.',
         }),
       };
     }
 
-    // Send email using nodemailer
-    // Note: In production, you'd store these credentials securely
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || 'smtp.example.com',
-      port: process.env.SMTP_PORT || 587,
-      secure: process.env.SMTP_SECURE === 'true',
-      auth: {
-        user: process.env.SMTP_USER,
-        // SMTP_PASSWORD is the documented name (.env.example); SMTP_PASS is
-        // accepted for older deployments. See bug 6.
-        pass: process.env.SMTP_PASSWORD || process.env.SMTP_PASS
-      }
-    });
-
-    // Format the email content
-    const emailContent = `
-      Test Drive Request
-
-      Vehicle ID: ${data.vehicleId}
-      Customer Name: ${data.fullName}
-      Email: ${data.email}
-      Phone: ${data.phone}
-      Preferred Date: ${data.preferredDate}
-      Preferred Time: ${data.preferredTime}
-      Comments: ${data.comments || 'No comments provided'}
-
-      This request was submitted on ${new Date().toLocaleString()}.
-    `;
-
-    // Send email
-    try {
-      await transporter.sendMail({
-        from: process.env.EMAIL_FROM || 'website@example.com',
-        to,
-        replyTo: data.email,
-        subject: 'New Test Drive Request',
-        text: emailContent
-      });
-    } catch (emailError) {
-      // A mail transport failure is not a booking: saying otherwise would
-      // leave the visitor believing a drive is arranged when it is not.
-      console.error('Test drive notification email failed:', emailError);
-      return errorHandler.serverError(
-        'The request could not be delivered. Please try again, or call the dealership.'
-      );
-    }
+    // The email is sent by utils/inquiry.js, after the booking is written, and
+    // its failure is reported in the response rather than deciding the outcome.
+    //
+    // The block that used to be here sent the email FIRST, through its own
+    // nodemailer transport built from a hardcoded `smtp.example.com` fallback,
+    // and returned a 500 if it threw -- so the visitor got an error, the booking
+    // was never written, and nothing reached anybody. Removed rather than
+    // repaired: a second transport, in the same function, is a second thing to
+    // get wrong, and there is now exactly one.
 
     // Log the test drive request as an interaction
     try {
@@ -259,8 +242,17 @@ exports.handler = async function(event, context) {
 
       // Log the interaction
       if (customerId) {
+        // Every field is explicit. createInteraction builds its parameter list
+        // straight from the destructured object, so a field that is ABSENT is
+        // `undefined`, and libSQL rejects the whole statement with "Unsupported
+        // type of value" -- which surfaced as a generic 500 on the request
+        // rather than as a missing interaction. `?? null`, deliberately, on the
+        // optional ones.
         await InteractionService.logCustomerInteraction({
           customer_id: customerId,
+          lead_id: data.leadId ?? null,
+          sales_rep_id: data.salesRepId ?? null,
+          sales_rep_name: data.salesRepName ?? null,
           interaction_type: 'test_drive',
           subject: `Test Drive Request - ${data.vehicleId}`,
           content: `Test drive requested for vehicle ${data.vehicleId}. Preferred date: ${data.preferredDate}, Time: ${data.preferredTime}. Comments: ${data.comments || 'None'}`,
@@ -293,41 +285,32 @@ exports.handler = async function(event, context) {
       // Continue with success response even if interaction logging fails
     }
 
-      // Record the request durably.
-      //
-      // Until this existed a booking was emailed and then written to Postgres.
-      // With no database configured the email arrived and the request was gone:
-      // nothing listed it, nothing reminded Ed, and the customer believed they
-      // had booked. A Blobs-backed queue makes the record survive independently
-      // of the database, and it is what the admin calendar syncs from.
-      //
-      // Placed AFTER the database work on purpose: failing to record must never
-      // turn a request the customer successfully made into an error they see.
-      try {
-        const bookingQueue = require('./booking-queue');
-        const id = bookingQueue.makeId(leadData);
-        await bookingQueue.record({
-          id,
-          status: 'new',
-          vehicleId: leadData.vehicleId,
-          vehicleTitle: leadData.vehicleTitle,
-          fullName: leadData.fullName,
-          email: leadData.email,
-          phone: leadData.phone,
-          preferredDate: leadData.preferredDate,
-          preferredTime: leadData.preferredTime,
-          comments: leadData.comments,
-          createdAt: new Date().toISOString(),
-        });
-      } catch (queueError) {
-        console.error('Could not record the request in the booking queue:', queueError);
-      }
+    // The booking is ALREADY written, by utils/inquiry.submit() above, before this
+    // point. There used to be a second write here, in its own try/catch, which
+    // referenced `leadData` -- a variable this function has never had -- so it
+    // threw a ReferenceError on every single request and logged "Could not
+    // record the request in the booking queue". It HAD been recorded, moments
+    // earlier. Two writes, one of them broken, and the log blaming the wrong
+    // one.
+    //
+    // Removed rather than repaired: one place writes the booking, and it writes
+    // it before anything optional happens.
 
     // Return success
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ success: true, message: 'Test drive scheduled successfully' })
+      // The email outcome is in the response, because a caller that cannot tell
+      // "recorded but not emailed" from "recorded and emailed" will say the
+      // wrong thing to somebody. The CUSTOMER is told it is booked either way,
+      // which is true -- the booking exists.
+      body: JSON.stringify({
+        success: true,
+        message: 'Test drive scheduled successfully',
+        bookingId: outcome.id,
+        notified: outcome.notified,
+        notifyReason: outcome.notifyReason || null
+      })
     };
   } catch (error) {
     console.error('Error scheduling test drive:', error);

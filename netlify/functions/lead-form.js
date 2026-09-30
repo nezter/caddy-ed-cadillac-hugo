@@ -1,4 +1,4 @@
-const nodemailer = require('nodemailer');
+const inquiry = require('./utils/inquiry');
 const errorHandler = require('./utils/error-handler');
 
 const MIN_FILL_MS = 2000; // same threshold as the front-end timing gate
@@ -58,40 +58,40 @@ exports.handler = async function(event, context) {
   }
 
   try {
-    // Determine email recipient based on form type
-    let recipient = process.env.DEFAULT_FORM_RECIPIENT || process.env.NOTIFICATION_EMAIL || 'sales@caddyed.com';
-    let subject = 'New Website Lead';
+    // RECORD FIRST, THEN NOTIFY.
+    //
+    // This block chose a recipient -- defaulting to 'sales@caddyed.com', which
+    // is a fabricated address and is not the one on this site -- and then, if
+    // CRM_API_KEY happened to be set, wrote to an external CRM. With no CRM key
+    // (the deployed state) NOTHING was written anywhere, and the only remaining
+    // step was sendEmailNotification, which throws without SMTP and became a 500.
+    //
+    // So: a lead form submission on the deployed configuration was a 500 and no
+    // record. utils/inquiry.js writes to THIS site's database first, always, and
+    // then notifies -- to a real recipient resolved from the staff table or the
+    // environment -- with the outcome reported rather than thrown.
+    const outcome = await inquiry.submit('lead', {
+      name: data.name,
+      email: data.email,
+      phone: data.phone,
+      message: data.message || data.subject || null,
+      subject: data.subject,
+      vehicleTitle: data.vehicle || data.vehicleId || null,
+      vehicleYear: data.year || null,
+      vehicleMake: data.make || null,
+      formType,
+      source: 'website',
+    });
 
-    switch (formType) {
-      case 'test-drive':
-        recipient = process.env.TEST_DRIVE_RECIPIENT || recipient;
-        subject = 'New Test Drive Request';
-        break;
-      case 'contact':
-        recipient = process.env.CONTACT_RECIPIENT || recipient;
-        subject = 'New Contact Form Submission';
-        break;
-      case 'service':
-        recipient = process.env.SERVICE_RECIPIENT || recipient;
-        subject = 'New Service Appointment Request';
-        break;
-    }
-
-    // Save to CRM if API key is provided (errors are logged, not fatal)
-    if (process.env.CRM_API_KEY) {
-      try {
-        await saveToCRM(data);
-      } catch (crmError) {
-        console.error('CRM save failed:', crmError);
-      }
-    }
-
-    // Send email notification
-    await sendEmailNotification(data, recipient, subject);
-
-    // Return success using the same shape as the rest of the repo
+    // The customer is told it is received, which is TRUE: the lead is a row in
+    // this site's database and /admin/leads lists it.
     return errorHandler.createSuccessResponse(
-      { submitted: new Date().toISOString() },
+      {
+        submitted: new Date().toISOString(),
+        leadId: outcome.id,
+        notified: outcome.notified,
+        notifyReason: outcome.notifyReason || null
+      },
       'Thank you — your details have been sent and Ed will be in touch shortly.'
     );
   } catch (error) {
