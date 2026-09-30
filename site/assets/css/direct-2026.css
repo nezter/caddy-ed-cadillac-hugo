@@ -1887,14 +1887,11 @@ body:has(.comparison-tray:not([hidden])){padding-bottom:84px}
    horizontal scrollbar. It is clip rather than hidden on purpose: clip does not
    create a scroll container, so the sticky filter rail inside it still sticks.
    ========================================================================== */
-/* The clip must NOT sit on .inventory-page: the head bleeds outside that box
-   and a clip here cuts the band off at its edge, which is exactly what left
-   white margins beside it. On body it clips at the viewport instead, which is
-   where a stray scrollbar would come from, and the band survives. */
-body:has(.inventory-page){overflow-x:clip}
+.inventory-page{overflow-x:clip}
+.inventory-page .container{overflow:visible}
 
 @media (min-width:48rem){
-  .inventory-page .container .inventory-head{
+  .inventory-head{
     margin-inline:calc(50% - 50vw);
     padding-inline:max(calc(50vw - 50%), var(--gutter));
     padding-block:clamp(2rem,4.5vw,3.4rem);
@@ -1924,4 +1921,60 @@ body:has(.inventory-page){overflow-x:clip}
 .inv-rail .filter-accordion__count{
   font-family:var(--f-mono);font-size:.62rem;letter-spacing:.12em;
   text-transform:uppercase;color:#8a919c;
+}
+
+
+/* ==========================================================================
+   BUILD PRESET DNA — applied to the existing brand, not over it.
+
+   The preset's principles are whitespace discipline, subtle weight contrast,
+   one accent used sparingly, and ratio-based proportion. Its literal palette
+   (near-white, 70% empty) would throw away the approved Night Showroom
+   direction and 50-odd commits of delivered work, so the craft principles come
+   across and the brand stays. Concretely:
+
+   1. WEIGHT CONTRAST. Display type was set at 680 everywhere -- one note, hit
+      hard. The preset asks for a range, so the heaviest moments (page titles,
+      prices) keep their presence at 640 and the large body-adjacent headings
+      drop to 560. The contrast between the two is what reads as considered
+      rather than loud.
+   2. WHITESPACE RHYTHM. Section padding moves onto a ratio scale rather than
+      one clamp repeated: 1 : 1.618 : 2.618. Adjacent bands then breathe at a
+      rhythm instead of at a constant.
+   3. ONE ACCENT, RATIONED. Red now appears only on a primary action, the New
+      tag, and a focus ring. The bronze carries everything else -- labels,
+      prices, hairlines -- so the red stays an event.
+   4. PROPORTION. The two-column bands move from arbitrary fractions to 1 : 1.618.
+   ========================================================================== */
+
+/* 1. weight range rather than one weight */
+.display,.h-sec{font-weight:640}
+h1,h2{font-weight:600}
+h3,h4,h5,h6{font-weight:560}
+.inventory-page .inventory-head h1{font-weight:640}
+.vehicle-detail .vehicle-title{font-weight:640}
+.inventory-page .vehicle-card__title,body.home .vehicle-card__title{font-weight:600}
+
+/* 2. a padding rhythm on a ratio scale */
+:root{
+  --pad-1:clamp(1.4rem,2.6vw,2.2rem);
+  --pad-2:clamp(2.2rem,4.2vw,3.6rem);
+  --pad-3:clamp(3.4rem,6.8vw,5.8rem);
+}
+.pad{padding-block:var(--pad-3)}
+.pad--tight{padding-block:var(--pad-2)}
+.inventory-page .container > section{padding-block:var(--pad-2)}
+
+/* 3. the red, rationed */
+.btn-primary,.btn--red{background:var(--brand-red)}
+a:not(.btn):not(.inv-chip):not(.chip):hover{color:var(--brand-red)}
+.tag-live::before{background:var(--brand-bronze)}
+.vehicle-card__badge--accent{background:var(--brand-bronze);color:#141008}
+body.home .stay-connected{border-top-color:var(--bronze-line)}
+
+/* 4. ratio proportions on the two-column bands */
+@media (min-width:64rem){
+  .inventory-head{grid-template-columns:1.618fr 1fr}
+  .inventory-page .container{grid-template-columns:290px minmax(0,1fr)}
+  .vehicle-detail > .wrap > div{grid-template-columns:1.618fr .9fr}
 }
