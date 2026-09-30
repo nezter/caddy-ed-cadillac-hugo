@@ -1840,3 +1840,32 @@ body:has(.comparison-tray:not([hidden])){padding-bottom:84px}
   padding:1.2rem;border:1px dashed var(--border);border-radius:var(--r-card);
   color:#6f7683;font-size:.9rem;
 }
+
+/* --- the slider reads out its value ------------------------------------- */
+.inv-rail .range-readout{
+  display:flex;align-items:baseline;justify-content:space-between;gap:.6rem;
+  margin:.4rem 0 0;
+}
+.inv-rail .range-readout__value{
+  font-family:var(--f-display);font-weight:620;letter-spacing:-.02em;
+  font-variant-numeric:tabular-nums;color:var(--ink-1);font-size:.95rem;
+}
+.inv-rail .range-readout__scale{
+  font-family:var(--f-mono);font-size:.6rem;letter-spacing:.1em;color:#8a919c;
+}
+
+/* --- the compare card, now that it sits with the cars -------------------- */
+.inventory-page .inventory-content{
+  margin:clamp(1.6rem,3vw,2.4rem) 0 0;
+  padding:clamp(1.1rem,2.2vw,1.5rem);
+  background:#fafafa;border:1px solid var(--border);border-radius:var(--r-card);
+}
+.inventory-page .inventory-content h2{
+  font-size:clamp(1.05rem,1rem + .3vw,1.25rem);margin:0 0 .5rem;
+  letter-spacing:-.02em;color:var(--ink-1);
+}
+.inventory-page .inventory-content p{
+  font-size:.92rem;color:#515863;max-width:70ch;margin:0 0 .55rem;line-height:1.6;
+}
+.inventory-page .inventory-content p:last-child{margin-bottom:0}
+.inventory-page .inventory-content .comparison-container{margin-top:.9rem}
