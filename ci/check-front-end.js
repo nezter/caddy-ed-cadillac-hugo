@@ -60,40 +60,19 @@ const REVIEWED = {
   'refactored/tests/EventHandlers.test.js': 'test, run by jest',
   'refactored/tests/Calendar.test.js': 'test, run by jest',
 
-  // --- leftovers of the webpack era. ---------------------------------------
-  // `assets.html` builds js/index.js with targetPath "js/main.js". The checked-in
-  // assets/js/main.js shares that NAME with the build output, which is why it
-  // looks live and is not: nothing ever `resources.Get`s it. Its whole import
-  // tree came out of the old webpack entry and went with it.
-  'main.js': 'webpack-era entry; the real entry is index.js, built to main.js',
-  'contact-form.js': 'imported only by the dead main.js',
-  'lead-generator.js': 'imported only by the dead main.js',
-  'components/notification.js': 'imported only by the dead main.js; no page mounts it',
-  'utils/error-event-system.js': 'imported only by the dead main.js; no page mounts it',
-
-  // --- superseded. ---------------------------------------------------------
-  // index.js imports ./navbar, so this is not it.
-  'menu.js': 'superseded by navbar.js, which index.js imports',
-  // The inventory page loads components/vehicleComparison.js via `scripts:`.
-  'vehicle-comparison.js': 'superseded by components/vehicleComparison.js (kebab vs camel)',
-  // Two finance calculators. The financing page declares financingCalculator.js
-  // (18 KB). finance-calculator.js (8 KB) does monthly payments only and is
-  // named in exactly one place: a comment in partials/footer.html describing the
-  // inline script that used to 404. Nothing mounts it.
-  'finance-calculator.js': 'superseded by financingCalculator.js; no page declares it',
-  // index.js binds #contact-form itself and posts to /api/contact.
-  'utils.js': 'superseded by the utils/ directory; index.js imports ./utils',
-  'site.js': 'no entry point; index.js is the site entry',
-  'carousel.js': 'no entry point mounts it',
-  'fleet-highlight.js': 'entry.html loads it; kept listed here only if it stops resolving',
-  'utils/error-handler.js': 'no entry point; the error path uses utils/error-event-system.js',
-  'performanceTracker.js': 'no entry point; 18 KB of dead analytics',
-  'services/api-service.js': 'no entry point; pages call the functions directly',
-  'api/inventory-proxy.js': 'no entry point; the inventory page is server-rendered by Hugo',
-
   // --- a CMS component that has no editor UI yet. --------------------------
   'cms-preview-templates/sales-rep.js': 'CMS preview for a component that does not exist yet',
 };
+
+/**
+ * Stylesheets with no entry point, keyed the same way.
+ *
+ * None currently: every CSS file is either named by a page, derived from a
+ * script name, or gone. The map is kept because the check needs somewhere to
+ * put a deliberate exception, and because an empty one is a fact that a reader
+ * can verify rather than a thing they have to assume.
+ */
+
 
 /**
  * Same idea for CSS, which lives under a different root.

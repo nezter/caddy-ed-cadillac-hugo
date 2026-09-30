@@ -1,5 +1,5 @@
 {{ define "headStyles" }}{{ partial "stylesheet.html" "connect.css" }}{{ partial "stylesheet.html" "components/shortlist.css" }}{{ partial "stylesheet.html" "components/home.css" }}{{ end }}
-{{ define "scripts" }}{{ partial "connect-config.html" . }}{{ partial "entry.html" (dict "entry" "connect.js" "page" .) }}{{ partial "entry.html" (dict "entry" "social-feed.js" "page" .) }}{{ partial "entry.html" (dict "entry" "shortlist.js" "page" .) }}{{ partial "entry.html" (dict "entry" "inventory-filter.js" "page" .) }}{{ partial "entry.html" (dict "entry" "fleet-highlight.js" "page" .) }}{{ end }}
+{{ define "scripts" }}{{ partial "connect-config.html" . }}{{ partial "entry.html" (dict "entry" "connect.js" "page" .) }}{{ partial "entry.html" (dict "entry" "social-feed.js" "page" .) }}{{ partial "entry.html" (dict "entry" "shortlist.js" "page" .) }}{{ partial "entry.html" (dict "entry" "inventory-filter.js" "page" .) }}{{ partial "entry.html" (dict "entry" "ed-picks.js" "page" .) }}{{ end }}
 
 {{ define "main" }}
 {{- $phone := .Site.Params.phone | default "803-431-6180" -}}

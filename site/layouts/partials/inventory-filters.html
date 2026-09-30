@@ -162,7 +162,13 @@
 
         <div class="form-field">
           <label for="f-sort">Sort</label>
-          <select class="select" id="f-sort" name="sort">
+          {{/* data-default is the machine-readable form of `selected` on the option
+     below. It exists so ed-picks.js can tell "the visitor chose a sort"
+     from "this is the sort they were given" -- and then leave their choice
+     alone. Reading the `selected` attribute from JS is not possible, and
+     reordering under someone who just asked for price low-to-high is the
+     page ignoring them. */}}
+            <select class="select" id="f-sort" name="sort" data-default="year-desc">
             <option value="price-asc">Price: low to high</option>
             <option value="price-desc">Price: high to low</option>
             <option value="year-desc" selected>Newest first</option>

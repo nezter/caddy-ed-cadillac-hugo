@@ -189,8 +189,8 @@ can each be wrong — and the site shipped `(704) 555-1234` in the header of all
 ## Still open
 
 - Google OAuth credentials, so the per-user calendar can actually connect.
-- `refactored/` — abandoned calendar rewrite, ~40 KB, unreachable. See
-  `docs/FRONTEND.md`.
+- `refactored/` — the name says abandoned; the code is live. It is the test-drive
+  scheduling calendar. See `docs/FRONTEND.md`.
 - `components/notification.js` — a written, styled notification system no page
   mounts. This is the natural first home for the stock alerts.
 - 18 failing tests, mostly the calendar suite's ESM/DOM setup and integration

@@ -128,6 +128,7 @@ grouped by what happened:
 | webpack-era leftovers | `main.js`, `contact-form.js`, `lead-generator.js`, `components/notification.js`, `utils/error-event-system.js` | `assets.html` builds `index.js` to an output *named* `js/main.js`. The checked-in `assets/js/main.js` shares that name, so it looks live and is not. Its whole import tree came out of the old entry point. |
 | name-variant losers | `menu.js`, `vehicle-comparison.js`, `finance-calculator.js`, `utils.js` | a winner was chosen and the loser kept |
 | never mounted | `site.js`, `carousel.js`, `performanceTracker.js`, `utils/error-handler.js`, `services/api-service.js`, `api/inventory-proxy.js` | written, never wired to a page |
+| tests | `refactored/tests/*.test.js` | not bundled, run by jest — the ONLY genuinely unreachable files in `refactored/` |
 | tests | `refactored/tests/*.test.js` | not bundled, run by jest |
 | orphan CSS | `components/notification.css`, `components/lazy-loading.css` | paired with, or alongside, unmounted JS |
 
@@ -136,11 +137,19 @@ that no page mounts.** `partials/stock-alerts.html` is a plain form. If a
 toast/notification system is wanted, that is the implementation and mounting it
 is the only thing missing. Flagged rather than deleted because it is a choice.
 
-**`refactored/` (7 files, ~40 KB, plus 2 tests) is an abandoned rewrite** of the
-booking calendar. It is entirely unreachable. `appointment-scheduler.js` and
-`schedulingCalendar.js` are the live implementations. This is the largest
-single deletion available if someone wants the tree smaller — and it is the one
-worth deciding on deliberately rather than by accident.
+**`refactored/` is NOT dead, and an earlier version of this document said it
+was.** The name is a leftover, not a status.
+
+`schedulingCalendar.js` — the bundle the test-drive page loads — does
+`import { initSchedulingCalendar } from './refactored/index.js'`, and `index.js`
+pulls in the rest. Seven of the nine files in that directory are live, and they
+are the implementation of the test-drive scheduling calendar.
+
+The correction matters because the false version recommended deleting ~40 KB of
+working code, and it was wrong because it was written from the broken filename
+search described below rather than from the graph. Only `refactored/tests/`
+(2 files) is genuinely unreferenced. The directory name should be changed --
+`refactored/` describes a migration that finished -- but the code stays.
 
 ---
 
@@ -209,7 +218,7 @@ place they cannot disagree with each other. See `docs/BUILD.md`.
 
 ## Things that are still open
 
-- `refactored/` — abandoned calendar rewrite, ~40 KB, delete or resurrect.
+- `refactored/` — LIVE, despite the name. See above. Rename it; do not delete it.
 - `components/notification.js` — written, styled, not mounted. Mount it or drop it.
 - `performanceTracker.js` — 18 KB of analytics nothing loads.
 - `libphonenumber-js` is 13 MB on disk for the 6 KB the code uses. That is a
