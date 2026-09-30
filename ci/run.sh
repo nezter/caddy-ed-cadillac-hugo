@@ -14,6 +14,8 @@
 #   ./ci/run.sh inventory-write   apply the inventory sync
 #   ./ci/run.sh verify       build + assert no broken asset references
 #   ./ci/run.sh test         unit + integration tests for netlify/functions
+#   ./ci/run.sh lint         ESLint over the tree (in the build image)
+#   ./ci/run.sh audit        npm audit --audit-level=high for netlify/functions
 #   ./ci/run.sh shell        interactive shell inside the build container
 #   ./ci/run.sh image        (re)build the podman image on .25
 #   ./ci/run.sh deploy       upload prebuilt site/public to Netlify
@@ -255,6 +257,21 @@ do_test() {
   in_container 'npm install --include=dev --omit=optional --no-audit --no-fund >/dev/null 2>&1 && cd netlify/functions && npm install --include=dev --no-audit --no-fund >/dev/null 2>&1 && ./node_modules/.bin/jest --ci --coverage=false --config /site/jest.config.js --rootDir /site/netlify/functions'
 }
 
+do_lint() {
+  sync_to_ci
+  require_image
+  log "Running ESLint on ${CI_HOST}"
+  # --include=dev: the image sets NODE_ENV=production, and eslint is a dev dep.
+  in_container 'npm install --include=dev --no-audit --no-fund >/dev/null 2>&1 && npm run lint'
+}
+
+do_audit() {
+  sync_to_ci
+  require_image
+  log "Auditing netlify/functions dependencies on ${CI_HOST}"
+  in_container 'cd netlify/functions && npm install --include=dev --no-audit --no-fund >/dev/null 2>&1 && npm audit --audit-level=high'
+}
+
 do_deploy() {
   local channel_flag="${1:-}"
   preflight_deploy
@@ -295,6 +312,8 @@ case "${1:-build}" in
   build)       do_build ;;
   verify)      do_verify ;;
   test)        do_test ;;
+  lint)        do_lint ;;
+  audit)       do_audit ;;
   shell)       sync_to_ci; require_image; in_container 'bash' ;;
   image)       sync_to_ci; build_image ;;
   deploy)      do_deploy "" ;;
