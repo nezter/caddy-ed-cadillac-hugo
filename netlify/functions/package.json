@@ -23,7 +23,7 @@
     "joi": "^18.2.9",
     "jsonwebtoken": "^9.0.2",
     "libphonenumber-js": "^1.11.20",
-    "nodemailer": "^6.9.1",
+    "nodemailer": "^7.0.11",
     "pg": "^8.16.3",
     "@netlify/blobs": "^10.0.0"
   },

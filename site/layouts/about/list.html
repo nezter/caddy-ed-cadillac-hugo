@@ -152,17 +152,22 @@
   "telephone": "{{ .Site.Params.phone }}",
   "address": {
     "@type": "PostalAddress",
-    "streetAddress": "123 Luxury Lane",
-    "addressLocality": "Charlotte",
+    "streetAddress": "10725 Pineville Rd",
+    "addressLocality": "Pineville",
     "addressRegion": "NC",
-    "postalCode": "28210",
+    "postalCode": "28134",
     "addressCountry": "US"
   },
-  "geo": {
-    "@type": "GeoCoordinates",
-    "latitude": 35.1495,
-    "longitude": -80.9258
-  },
+{{/* "geo" is intentionally absent.
+
+     It used to be latitude 35.1495, longitude -80.9258 -- a point in Charlotte,
+     about 25 miles from the dealership at 10725 Pineville Rd in Pineville. A
+     wrong pin sends a customer to the wrong city, which is worse than no pin:
+     without "geo" the address above still produces a correct map link, and
+     nothing claims a location it cannot vouch for.
+
+     To restore it, put the real entrance coordinates here -- checked against
+     the lot, not geocoded from the postal address and assumed correct. */}}
   "openingHoursSpecification": [
     {
       "@type": "OpeningHoursSpecification",

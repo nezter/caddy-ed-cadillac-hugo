@@ -109,6 +109,37 @@ const RULES = [
   ],
 ];
 
+/**
+ * The one true address, read from site/config.toml.
+ *
+ * Four different streets were in this repository at one point: "123 Luxury
+ * Lane" (contact page front matter AND the JSON-LD that Google reads), "9020
+ * South Blvd" (a data file no template referenced) and "9315 South Boulevard"
+ * (an old build). Only the Pineville address is real.
+ *
+ * Duplicated because of a Hugo-specific trap: a page's own front matter WINS
+ * over a site param. Correcting site/config.toml therefore could never have
+ * fixed the contact page, and did not fix the schema.org block either, which is
+ * a template literal with the address typed into it.
+ *
+ * So this is an invariant rather than a lint: any street address in the built
+ * site that is not this one is a defect, wherever it came from.
+ */
+const CONFIRMED_STREET = '10725 Pineville Rd';
+
+function confirmedStreet() {
+  try {
+    const toml = fs.readFileSync(path.join(ROOT, 'site', 'config.toml'), 'utf8');
+    const m = toml.match(/^\s*address\s*=\s*"([^"]+)"/m);
+    return m ? m[1].split(',')[0].trim() : CONFIRMED_STREET;
+  } catch {
+    return CONFIRMED_STREET;
+  }
+}
+
+/** A US street address: house number, street words, a street-type suffix. */
+const STREET_RE = /\b\d{1,6}\s+[A-Z][A-Za-z]*(?:[\s-][A-Z][A-Za-z]*)*\s+(?:St|Street|Ave|Avenue|Rd|Road|Blvd|Boulevard|Lane|Ln|Drive|Dr|Way|Ct|Court|Highway|Hwy|Parkway|Pkwy|Trail|Trl|Circle|Cir)\b\.?/g;
+
 function htmlFiles(dir, out = []) {
   let entries;
   try {
@@ -136,14 +167,25 @@ function main() {
   const files = htmlFiles(PUBLIC);
   const findings = [];
 
+  // The address invariant, applied as its own rule so a mismatch reads as a
+  // wrong-street-address problem rather than as a generic placeholder.
+  const street = confirmedStreet();
+  const streetRule = [
+    `a street address other than the confirmed one ("${street}")`,
+    STREET_RE,
+    'every street address on this site must be the one in site/config.toml',
+  ];
+
   for (const file of files) {
     const body = fs.readFileSync(file, 'utf8');
-    for (const [label, re, fix] of RULES) {
+    for (const [label, re, fix] of [...RULES, streetRule]) {
       // A fresh RegExp per file: these carry /g and would otherwise carry
       // lastIndex across files and miss every second match.
       const rx = new RegExp(re.source, re.flags);
       let m;
       while ((m = rx.exec(body)) !== null) {
+        // The address rule admits the confirmed street and rejects the rest.
+        if (label === streetRule[0] && m[0].replace(/\.$/, '').trim() === street) continue;
         findings.push({
           file: path.relative(ROOT, file),
           label,

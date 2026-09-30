@@ -20,7 +20,11 @@
 {{- $smsNumber := "+18034316180" -}}
 {{- with $social }}{{ with .text }}{{ $smsNumber = .number | default $smsNumber }}{{ end }}{{ end -}}
 {{- $phone := .Site.Params.phone | default "803-431-6180" -}}
-{{- $phoneHref := replace $phone "." "" | replace "(" "" | replace ")" "" | replace " " "" -}}
+{{- /* $phoneHref is gone: the E.164 form is computed by
+       partials/phone-href.html, so all seven templates that link to the
+       dealership agree on it. Six of them stripped dots and one stripped
+       dots and parentheses, which is how "(803) 431-6180" produced a working
+       link on one page and a broken one on another. */ -}}
 {{- $email := .Site.Params.email | default "ed@caddyed.com" -}}
 
 <form class="notify-form" id="stockAlerts" name="{{ $alerts.form_name }}"
@@ -38,7 +42,7 @@
 </form>
 
 <div class="contact-chips stay-connected__chips">
-  <a class="btn btn-outline btn-sm" href="tel:+1{{ $phoneHref }}">Call {{ $phone }}</a>
+  <a class="btn btn-outline btn-sm" href="tel:{{ partial "phone-href.html" $phone }}">Call {{ $phone }}</a>
   <a class="btn btn-outline btn-sm" href="sms:{{ $smsNumber }}">Text Ed</a>
   <a class="btn btn-outline btn-sm" href="mailto:{{ $email }}">{{ $email }}</a>
 </div>

@@ -42,7 +42,11 @@
        renders a 555 line is worse than no default at all: a customer who
        dials it reaches nobody and nothing on the page looks wrong. */ -}}
 {{- $phone := .Site.Params.phone | default "803-431-6180" -}}
-{{- $phoneHref := replace $phone "." "" -}}
+{{- /* $phoneHref is gone: the E.164 form is computed by
+       partials/phone-href.html, so all seven templates that link to the
+       dealership agree on it. Six of them stripped dots and one stripped
+       dots and parentheses, which is how "(803) 431-6180" produced a working
+       link on one page and a broken one on another. */ -}}
 
 {{/* The identifier the dealer quotes: stock number, then VIN, then the title. */}}
 {{- $vehicleId := "" -}}
@@ -196,7 +200,7 @@
           <a class="btn btn-ghost btn-block" href="/financing/">See financing options</a>
         </div>
         <p class="vehicle-cta__phone">
-          Prefer to talk it through? <a href="tel:+1{{ $phoneHref }}">{{ $phone }}</a>
+          Prefer to talk it through? <a href="tel:{{ partial "phone-href.html" $phone }}">{{ $phone }}</a>
         </p>
       </aside>
     </div>
@@ -226,7 +230,7 @@
         <style>.vehicle-booking__form{display:none}</style>
         <p class="vehicle-booking__noscript">
           Sending this request needs JavaScript. Call
-          <a href="tel:+1{{ $phoneHref }}">{{ $phone }}</a> or
+          <a href="tel:{{ partial "phone-href.html" $phone }}">{{ $phone }}</a> or
           <a href="/contact/">send a message</a> instead and I'll get you behind
           the wheel.
         </p>
@@ -295,7 +299,7 @@
         <button class="btn btn-primary" type="submit">Request this test drive</button>
         <p class="vehicle-booking__note">
           I take these myself, so you'll hear back from a person. Prefer to
-          call? <a href="tel:+1{{ $phoneHref }}">{{ $phone }}</a>
+          call? <a href="tel:{{ partial "phone-href.html" $phone }}">{{ $phone }}</a>
         </p>
 
         {{/* Filled in by vehicle-detail.js. Server-rendered and empty, so the

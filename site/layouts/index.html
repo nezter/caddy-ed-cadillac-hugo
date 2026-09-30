@@ -3,7 +3,11 @@
 
 {{ define "main" }}
 {{- $phone := .Site.Params.phone | default "803-431-6180" -}}
-{{- $phoneHref := replace $phone "." "" -}}
+{{- /* $phoneHref is gone: the E.164 form is computed by
+       partials/phone-href.html, so all seven templates that link to the
+       dealership agree on it. Six of them stripped dots and one stripped
+       dots and parentheses, which is how "(803) 431-6180" produced a working
+       link on one page and a broken one on another. */ -}}
 {{- $tagline := .Site.Params.tagline | default "Always looking out for the best car for you!" -}}
 
 {{/* ------------------------------------------------------------------
@@ -33,7 +37,7 @@
 
         <div class="hero__actions">
           <a class="btn btn-primary btn-lg" href="/inventory/">See what's in stock</a>
-          <a class="btn btn-inverse btn-lg" href="tel:+1{{ $phoneHref }}">
+          <a class="btn btn-inverse btn-lg" href="tel:{{ partial "phone-href.html" $phone }}">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a.75.75 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a.75.75 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/>
             </svg>

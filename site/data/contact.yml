@@ -1,15 +1,14 @@
 # NOT REFERENCED by any template. Kept because it records the business
-# details in one place, but nothing reads it -- do not wire a template to it
-# without resolving the address below first.
+# details in one place, but nothing reads it -- do not wire a template to
+# it without checking site/config.toml still agrees.
 #
-# THE ADDRESS IS UNRESOLVED. Three different streets are in this repository:
-#   site/config.toml   10725 Pineville Rd, Pineville, NC 28134   (the live one)
-#   an older build     9315 South Boulevard, Charlotte, NC 28273
-#   this file          9020 South Blvd, Charlotte, NC 28273
-# Only the first is live. The other two are unconfirmed and have not been
-# guessed at.
+# The address was RESOLVED on 2026-09-29, confirmed by the owner. Three
+# different streets had been in this repository: "123 Luxury Lane",
+# "9020 South Blvd" and "9315 South Boulevard". Only this one is real.
+# site/config.toml is the live source; this file and the contact page's
+# own front matter both duplicated it, which is how they drifted apart.
 phone: "803-431-6180"
 email: "ed@cadillacofsouthcharlotte.com"
 dealership: "Cadillac of South Charlotte"
-address: "9020 South Blvd, Charlotte, NC 28273"
+address: "10725 Pineville Rd, Pineville, NC 28134"
 hours: "Mon-Fri: 9am-8pm, Sat: 9am-7pm, Sun: Closed"

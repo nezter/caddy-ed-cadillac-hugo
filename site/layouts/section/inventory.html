@@ -18,7 +18,11 @@
        renders a 555 line is worse than no default at all: a customer who
        dials it reaches nobody and nothing on the page looks wrong. */ -}}
 {{- $phone := .Site.Params.phone | default "803-431-6180" -}}
-{{- $phoneHref := replace $phone "." "" -}}
+{{- /* $phoneHref is gone: the E.164 form is computed by
+       partials/phone-href.html, so all seven templates that link to the
+       dealership agree on it. Six of them stripped dots and one stripped
+       dots and parentheses, which is how "(803) 431-6180" produced a working
+       link on one page and a broken one on another. */ -}}
 
 {{/* Build the filter vocabularies from the content itself, so the options can
      never drift out of step with what is actually in stock. */}}
@@ -191,7 +195,7 @@
       </div>
       <div class="cta-band__actions">
         <a class="btn btn-primary btn-lg" href="/contact/">Send a message</a>
-        <a class="btn btn-inverse btn-lg" href="tel:+1{{ $phoneHref }}">{{ $phone }}</a>
+        <a class="btn btn-inverse btn-lg" href="tel:{{ partial "phone-href.html" $phone }}">{{ $phone }}</a>
       </div>
     </div>
     {{ end }}

@@ -94,7 +94,12 @@
           {{ if .Params.contact_info.phone }}
           <p class="phone">
             <span class="label">Phone:</span>
-            <a href="tel:{{ .Params.contact_info.phone | plainify }}">{{ .Params.contact_info.phone }}</a>
+            {{/* tel: takes digits only. plainify leaves "(803) 431-6180" with its
+               parentheses and spaces, which rendered as
+               tel:%28704%29%20555-1234 -- a malformed URI that happened to
+               work in some browsers and not others. */}}
+          {{- $phoneDigits := replaceRE "[^0-9]" "" (.Params.contact_info.phone | plainify) -}}
+          <a href="tel:+1{{ $phoneDigits }}">{{ .Params.contact_info.phone }}</a>
           </p>
           {{ end }}
           

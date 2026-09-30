@@ -15,7 +15,7 @@ contact_info:
   phone: "(803) 431-6180"
   email: "ed@caddyed.com"
   dealership: "Cadillac of South Charlotte"
-  address: "123 Luxury Lane, Charlotte, NC 28277"
+  address: "10725 Pineville Rd, Pineville, NC 28134"
   hours:
     - day: "Monday-Friday"
       time: "9:00am - 7:00pm"

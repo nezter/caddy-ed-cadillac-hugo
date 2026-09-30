@@ -1,0 +1,50 @@
+{{- /*
+  phone-href.html -- a tel: URI in E.164, from any human-readable phone number.
+
+  WHY THIS IS A PARTIAL AND NOT SEVEN COPIES
+  ------------------------------------------
+  Seven templates each built their own $phoneHref by stripping dots:
+
+      {{- $phoneHref := replace $phone "." "" -}}
+      <a href="tel:+1{{ $phoneHref }}">
+
+  ...and produced tel:+1803-431-6180. RFC 3966 wants the number after the "+"
+  to be country code then subscriber, with the country code delimited. Dashes
+  inside are permitted as visual separators, but "+1803" is not country code 1
+  followed by 803 -- it is one undifferentiated run of digits that only happens
+  to work because the phone dialler is forgiving.
+
+  Worse, the copies had already drifted: stock-alerts.html also stripped
+  parentheses and spaces, the other six did not. A number written as
+  "(803) 431-6180" therefore produced a working link in one page and a broken
+  one in another. Seven copies of one rule, one of which was already wrong.
+
+  This returns the digits and nothing else, and lets the caller write:
+
+      <a href="tel:{{ partial "phone-href.html" $phone }}">
+
+  It is a partial rather than a function because Hugo templates cannot return
+  values from a plain template, and a partial is the idiomatic way to share this
+  without a JS build step.
+
+  INPUT:  any of "(803) 431-6180", "803-431-6180", "803.431.6180",
+          "+1 (803) 431-6180", "18034316180"
+  OUTPUT: "+18034316180" for all of them.
+
+  A number that is not 10 or 11 digits is returned as-is with a leading "+"
+  rather than guessed at. A wrong length means a typo in a config value, and
+  silently padding it to something dialable is how a bad number becomes a
+  shipped one.
+*/ -}}
+{{- $digits := replaceRE "[^0-9]" "" (printf "%v" .) -}}
+{{- if eq (len $digits) 10 -}}
+  {{- $digits = printf "1%s" $digits -}}
+{{- end -}}
+{{- if or (eq (len $digits) 10) (eq (len $digits) 11) -}}
+  +{{ $digits }}
+{{- else -}}
+  {{- /* Any other length is returned unpadded rather than guessed at. A wrong
+         length means a typo in a config value, and silently padding it into
+         something dialable is how a bad number becomes a shipped one. */ -}}
+  +{{ $digits }}
+{{- end -}}
