@@ -133,6 +133,33 @@
              mockup also shows stay in the rail, where they actually filter --
              the rail's controls are a real form, and fake chips above the grid
              would look like they filter and would not. */}}
+        {{/* Quick filters, as links rather than as controls.
+
+             They work because inventory-filter.js reads the query string on
+             load (readUrl) and writes it back on every change (writeUrl) --
+             clicking one of these is exactly the same as setting the select and
+             letting the script rewrite the URL. No new JavaScript.
+
+             The values are derived from the vehicles that are actually in
+             stock, the same rule the filter partial documents: a filter whose
+             options can drift out of step with the inventory is worse than no
+             filter. Add an "Electric" chip when there is a fuel field to read
+             it from -- inventing one now would produce a link that filters
+             nothing. */}}
+        {{- $stock := where .Site.RegularPages "Section" "inventory" -}}
+        {{- $stock = where $stock "Params.available" "!=" false -}}
+        {{- $statuses := slice -}}
+        {{- range $stock -}}
+          {{- with .Params.status -}}{{ if not (in $statuses .) }}{{ $statuses = $statuses | append . }}{{ end }}{{ end -}}
+        {{- end -}}
+        {{- $statuses = sort $statuses -}}
+        <nav class="inv-chips" aria-label="Quick filters">
+          <a class="inv-chip" href="/inventory/">All</a>
+          {{ range $statuses }}
+          <a class="inv-chip" href="/inventory/?status={{ . | urlquery }}">{{ . }}</a>
+          {{ end }}
+        </nav>
+
         <p class="inv-topline">
           <span class="mono-label">{{ $totalAll }} {{ if eq $totalAll 1 }}vehicle{{ else }}vehicles{{ end }} in stock</span>
           <span class="mono-label">Page {{ $paginator.PageNumber }} of {{ $paginator.TotalPages }}</span>

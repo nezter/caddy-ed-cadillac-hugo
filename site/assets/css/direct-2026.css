@@ -1657,3 +1657,19 @@ body.home .vehicle-card__actions .btn-ghost:hover{
   margin-top:1.4rem;padding-top:1.2rem;border-top:1px solid var(--border);
   font-variant-numeric:tabular-nums;
 }
+
+
+/* --- the quick-filter chips above the cars ------------------------------
+   Real links, not decoration: inventory-filter.js reads the query string on
+   load, so /inventory/?status=New arrives already filtered. The values come
+   from the inventory itself, so a chip can never point at nothing.
+   ---------------------------------------------------------------------- */
+.inv-results .inv-chips{display:flex;flex-wrap:wrap;gap:.4rem;margin:0 0 1rem}
+.inv-results .inv-chip{
+  font-family:var(--f-mono);font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;
+  padding:.42rem .8rem;border:1px solid #dde0e6;border-radius:999px;
+  color:#515863;text-decoration:none;background:#fff;white-space:nowrap;
+  transition:border-color .2s,color .2s,background .2s;
+}
+.inv-results .inv-chip:hover{border-color:var(--ink-1);color:var(--ink-1)}
+.inv-results .inv-chip[aria-current="page"]{background:var(--ink-1);border-color:var(--ink-1);color:#fff}
