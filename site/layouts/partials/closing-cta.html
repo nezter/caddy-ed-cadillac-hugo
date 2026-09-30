@@ -1,0 +1,25 @@
+{{- /*
+  closing-cta.html -- the band every interior page ends on.
+
+  The pages that were never ported simply stopped: a wall of prose, then the
+  footer. A page that has just explained financing, or trade-in, or service and
+  then offers nothing to do with it is not finished, however good the prose is.
+  One shared band means every one of them ends the same way, and the copy can
+  be adjusted in a single place.
+
+  Context: (dict "label" "..." "heading" "..." "phone" "803-431-6180" "phoneHref" "18034316180")
+*/ -}}
+{{- $phone := .phone | default "803-431-6180" -}}
+{{- $href := .phoneHref | default (replace $phone "." "") -}}
+<section class="stage stage--deep grain pad--tight">
+  <div class="wrap" style="display:flex;align-items:center;justify-content:space-between;gap:2rem;flex-wrap:wrap">
+    <div>
+      <p class="eyebrow" style="margin-bottom:.5rem">{{ .label | default "Next step" }}</p>
+      <h2 class="h-sec" style="max-width:26ch;color:#fff">{{ .heading | default "Tell Ed what you're after. He'll tell you what it really costs." }}</h2>
+    </div>
+    <div style="display:flex;gap:.7rem;flex-wrap:wrap">
+      <a class="btn btn--red btn--lg" href="/contact/">Send a request</a>
+      <a class="btn btn--ghost btn--lg" href="tel:+1{{ $href }}">{{ $phone }}</a>
+    </div>
+  </div>
+</section>

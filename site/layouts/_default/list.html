@@ -98,4 +98,10 @@
     {{ end }}
   </div>
 </div>
+{{/* Every page rendered by this template -- financing, trade-in, service,
+     specials, and the policy pages -- ends on the same band. They used to end
+     on prose and then the footer: a page that has just explained financing and
+     then offers nothing to do about it is not finished. One shared partial, so
+     the copy lives in one place. */}}
+{{ partial "closing-cta.html" (dict "phone" (.Site.Params.phone | default "803-431-6180") "phoneHref" (replace (.Site.Params.phone | default "803-431-6180") "." "")) }}
 {{ end }}
