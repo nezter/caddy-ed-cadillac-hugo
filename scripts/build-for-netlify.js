@@ -183,21 +183,21 @@ run('node ci/verify-build.js', { label: 'verify build output' });
 // a template default, a page's own front matter, a JS string, a data file.
 // The site shipped 704-555-1234 in the header of every page while
 // config.toml held the right number, and verify-build passed.
-run('node ci/check-no-placeholder-contact.js', {
-  label: 'no placeholder contact details in the output',
-});
-
-// Resolves the front-end module graph. Catches a `scripts:` entry that no longer
-// exists (that page then loads no JavaScript, silently) and any new file no
-// entry point reaches. Both of the first three load paths are easy to miss by
-// inspection -- see docs/FRONTEND.md.
-run('node ci/check-front-end.js', { label: 'front-end module graph' });
-
-// Every URL a page calls must name a function that exists. Three forms had
-// '/api/...' from a Gatsby era, and a fourth called a function nobody wrote.
-// In each case the payload was correct, so nothing looked wrong until a
-// visitor pressed the button. See ci/check-function-endpoints.js.
-run('node ci/check-function-endpoints.js', { label: 'client function endpoints' });
+// One runner, one report.
+//
+// These used to be eight separate `run()` calls, so a failing build printed
+// eight things to read, most of them "pass", and the two that mattered were
+// buried. That is how a gate gets ignored: not by being wrong, but by being
+// noisy enough that nobody reads it.
+//
+// ci/check-all.js runs them all, prints one table, and says in the last line
+// which failed. It also reports SKIP rather than PASS for a check it could not
+// actually run, and warns when site/public is older than the sources it would be
+// reading -- both of which matter, because a skipped check and a stale check
+// both look like a passing one in a log.
+// run() exits non-zero on failure, which is what stops the build before a
+// deploy of something that does not pass its own gates.
+run('node ci/check-all.js', { label: 'all checks' });
 
 // 7. Summary.
 function dirSize(dir) {

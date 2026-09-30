@@ -28,6 +28,8 @@
     "build:hugo": "hugo --source=site --destination=../site/public --minify --gc --cleanDestinationDir",
     "build:cms": "webpack --config webpack.cms.js",
     "verify": "node ci/verify-build.js",
+    "check": "node ci/check-all.js",
+    "check:quick": "node ci/check-all.js --quick",
     "dev": "hugo server --source=site --port 1313 --buildDrafts --buildFuture",
     "dev:hugo": "hugo server --source=site --port 1313 --buildDrafts --buildFuture",
     "dev:functions": "netlify dev --dir=site/public --functions=netlify/functions --port 8888",

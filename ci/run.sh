@@ -139,12 +139,15 @@ do_verify() {
   # built html, which is the only place a template default, a front-matter
   # override, a JS string and a data file cannot disagree with each other.
   log "Checking for placeholder contact details in the built site"
-  in_container 'node ci/check-no-placeholder-contact.js'
+  # One runner, one report: ci/check-all.js. The individual checks still run on
+  # their own, and ci/run.sh names each for a targeted re-run; this is what a
+  # build prints so the result is one table instead of eight transcripts.
+  log "Running all checks"
+  in_container 'node ci/check-all.js'
   # Resolves the front-end module graph: a page whose `scripts:` entry no longer
   # exists loads no JavaScript and the build says nothing, and a new file no
   # entry point reaches is either dead or unmounted by mistake. docs/FRONTEND.md
   # has the four load paths and the history of this report being wrong.
-  log "Resolving the front-end module graph"
   in_container 'node ci/check-front-end.js'
   # Three forms POSTed to /api/... -- a Gatsby convention with no route on this
   # Hugo site -- and a fourth called a function that was never written. The
