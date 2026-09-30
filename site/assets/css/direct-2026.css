@@ -1673,3 +1673,36 @@ body.home .vehicle-card__actions .btn-ghost:hover{
 }
 .inv-results .inv-chip:hover{border-color:var(--ink-1);color:var(--ink-1)}
 .inv-results .inv-chip[aria-current="page"]{background:var(--ink-1);border-color:var(--ink-1);color:#fff}
+
+
+/* --- the car list, matched to the mockup's proportions ------------------
+   Measured against the mockup: its cards are larger with the photograph
+   filling ~60-65% of the card height and very little beneath; the build sat at
+   45-50% with more text. A taller image frame, more room around the body, and
+   a card title that no longer carries a stock reference nobody reads on a card.
+   ---------------------------------------------------------------------- */
+.inventory-page .vehicle-card__media{aspect-ratio:4/3}
+.inventory-page .vehicle-card__body{padding:1.15rem 1.25rem 1.3rem;gap:.5rem}
+.inventory-page .vehicle-card__title{font-size:1.06rem;line-height:1.25}
+.inventory-page .vehicle-card__actions{padding-top:.65rem}
+
+/* --- the filter panel reads as a named panel, not a run of controls ----- */
+.inv-rail .filter-accordion__summary{
+  font-family:var(--f-mono);font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;
+  color:var(--bronze);padding:1rem 1.15rem .85rem;border-bottom:1px solid var(--border);
+}
+.inv-rail .filter-accordion__label{color:var(--bronze)}
+.inv-rail .filter-accordion__body{padding:1.1rem 1.15rem 1.3rem}
+.inv-rail .filter-accordion__body > .form-field{border-top:1px solid #f0f2f5;padding-top:.85rem}
+.inv-rail .filter-accordion__body > .form-field:first-child{border-top:0;padding-top:0}
+
+/* the saved-shortlist panel the mockup carries under the filters */
+.inv-rail .inv-shortlist{
+  margin-top:1rem;padding:1rem 1.15rem;background:#fff;
+  border:1px solid var(--border);border-radius:var(--r-card);
+}
+.inv-rail .inv-shortlist__label{
+  font-family:var(--f-mono);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;
+  color:#6f7683;margin:0 0 .5rem;
+}
+.inv-rail .inv-shortlist__body{margin:0;font-size:.84rem;color:#515863;line-height:1.5}

@@ -77,7 +77,11 @@
 
   <div class="vehicle-card__body">
     <h3 class="vehicle-card__title">
-      <a href="{{ $v.RelPermalink }}">{{ $v.Title }}</a>
+      {{/* The stored title carries the feed's stock reference, e.g.
+           "2026 CADILLAC LYRIQ V-Series Premium (#DTZ601661)". On a card that
+           is noise -- the mockup shows the model, the trim, the price and
+           nothing else. The reference is still on the vehicle page itself. */}}
+      <a href="{{ $v.RelPermalink }}">{{ replaceRE `\s*\(#[^)]+\)` "" $v.Title }}</a>
     </h3>
     {{ with $v.Params.subtitle }}<p class="vehicle-card__meta">{{ . }}</p>{{ end }}
 
