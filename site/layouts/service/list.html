@@ -1,0 +1,109 @@
+{{ define "main" }}
+{{- $phone := .Site.Params.phone | default "803-431-6180" -}}
+{{- $phoneHref := replace $phone "." "" -}}
+
+{{/* Service was prose: a section per topic, each a heading followed by a list
+     of bullets, and no way to book any of it. The site's own three categories
+     -- routine maintenance, diagnostics and repair, collision -- are now cards
+     that say what each covers and what happens next, and the booking request
+     sits on the page instead of behind a link to the contact form.
+
+     The form posts to the same public endpoint as every other message here and
+     carries the ids site/assets/js/index.js binds; that handler parses JSON, so
+     a plain HTML post would be rejected. The service type and the vehicle go in
+     one message field rather than as separate inputs the endpoint would discard.
+
+     No price is shown for any of it. Service costs depend on the car and the
+     work, and a number invented here would be worse than none. */}}
+<section class="stage stage--deep grain pad--tight">
+  <div class="wrap">
+    <p class="eyebrow">Service<span class="ltbar" aria-hidden="true"><i></i><i></i><i></i></span></p>
+    <div style="display:flex;align-items:end;justify-content:space-between;gap:2rem;flex-wrap:wrap">
+      <h1 class="display display--sm" style="color:#fff;max-width:22ch">{{ .Title | default "Service" }}</h1>
+      <p class="lede" style="max-width:40ch;margin:0">Factory-trained work, booked around your week, on the car you already own.</p>
+    </div>
+  </div>
+</section>
+
+<section style="background:#fff;padding-block:clamp(2.4rem,5vw,4rem)">
+  <div class="wrap">
+    <p class="kicker kicker--light"><i>01</i><span>Three kinds of visit</span></p>
+    <h2 class="h-sec">What it needs, and what it takes.</h2>
+    <div class="bento bento--3" style="margin-top:2rem">
+      <div class="tile tile--light">
+        <span class="tile__idx">01</span>
+        <h3>Routine maintenance</h3>
+        <p>Scheduled service, oil and filters, tyres and brakes, and the inspections that keep the warranty intact. Usually a morning.</p>
+        <p class="mono-label" style="margin-top:1rem;color:#6f7683">Same day · while you wait</p>
+      </div>
+      <div class="tile tile--light">
+        <span class="tile__idx">02</span>
+        <h3>Diagnostics and repair</h3>
+        <p>A warning light, a noise, something that only happens on the motorway. Described properly before anything is replaced.</p>
+        <p class="mono-label" style="margin-top:1rem;color:#6f7683">Dropped off · kept informed</p>
+      </div>
+      <div class="tile tile--light">
+        <span class="tile__idx">03</span>
+        <h3>Collision</h3>
+        <p>Panel and paint work, and the part most people are not told about: cameras and radar need recalibrating after a repair, and that is not optional.</p>
+        <p class="mono-label" style="margin-top:1rem;color:#6f7683">Insurance handled</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+{{ with .Content }}
+<section style="background:#fafafa;padding-block:clamp(2rem,4vw,3rem)">
+  <div class="wrap"><div class="prose">{{ . }}</div></div>
+</section>
+{{ end }}
+
+<section class="stage grain pad">
+  <div class="wrap" style="display:grid;grid-template-columns:1fr 1fr;gap:clamp(1.5rem,4vw,3.5rem);align-items:start">
+    <div>
+      <p class="kicker"><i>02</i><span>Book it in</span></p>
+      <h2 class="h-sec" style="color:#fff;max-width:24ch">Tell Ed what it is doing. He will tell you what it needs.</h2>
+      <p class="lede" style="margin-top:1rem">This is a request, not a locked slot. You will get a time back, and an idea of how long the car will be with us, before you commit to anything.</p>
+      <div class="trio" style="margin-top:2rem">
+        <div><p class="v">Mon–Sat</p><p class="l">Service hours</p></div>
+        <div><p class="v">Same day</p><p class="l">Typical reply</p></div>
+      </div>
+    </div>
+
+    <form class="form" id="contact-form" method="post" action="/api/contact" novalidate
+          style="background:var(--ink-2);border:1px solid rgba(255,255,255,.08);border-radius:var(--r-card);padding:clamp(1.2rem,2.5vw,1.8rem)">
+      <div class="form-grid form-grid-2">
+        <div class="form-field">
+          <label for="name">Your name</label>
+          <input class="input" id="name" name="name" type="text" autocomplete="name" required aria-required="true">
+        </div>
+        <div class="form-field">
+          <label for="email">Email</label>
+          <input class="input" id="email" name="email" type="email" autocomplete="email" required aria-required="true">
+        </div>
+      </div>
+      <div class="form-field">
+        <label for="phone">Phone <span class="hint">(optional)</span></label>
+        <input class="input" id="phone" name="phone" type="tel" autocomplete="tel">
+      </div>
+      <div class="form-field">
+        <label for="message">The car and what it is doing</label>
+        <textarea class="textarea" id="message" name="message" rows="6" required aria-required="true">I would like to book a service.
+
+Vehicle and year:
+Mileage:
+What it is doing, or which service it is due:
+Preferred day:
+</textarea>
+      </div>
+      <button type="submit" class="btn btn-primary btn-lg" style="width:100%">Request a service slot</button>
+      <p class="form-message form-message--success hidden" id="form-success" role="status">
+        Thank you — your request is with Ed, and you will get a time back shortly.
+      </p>
+      <p class="form-message form-message--error hidden" id="form-error" role="alert"></p>
+    </form>
+  </div>
+</section>
+
+{{ partial "closing-cta.html" (dict "phone" $phone "phoneHref" $phoneHref "label" "Rather talk it through" "heading" "Describe the noise. That is usually enough.") }}
+{{ end }}
