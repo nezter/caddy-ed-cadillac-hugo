@@ -92,8 +92,15 @@
       return;
     }
 
+    /* Fields are resolved inside the form first, then anywhere in the document
+       that is associated with it by the form attribute. That second lookup is
+       what lets the quick-filter toolbar above the grid carry its own copy of
+       the controls without a second JavaScript path: one field of each name is
+       authoritative, and a control bound with form="inventory-filters" is the
+       same control as far as the form is concerned. */
     function fieldEl(name) {
-      return form.querySelector('[name="' + name + '"]');
+      return form.querySelector('[name="' + name + '"]') ||
+             document.querySelector('[form="' + form.id + '"][name="' + name + '"]');
     }
 
     function val(name) {
