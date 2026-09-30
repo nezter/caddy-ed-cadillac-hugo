@@ -127,3 +127,77 @@ standard applied here is the stricter one:
 Against that standard the work is **partially complete**: the design system, the
 five key pages, the eleven interior pages, the SEO layer and the responsive
 layer are done and verified. The merge and the items in §4 are not.
+
+
+---
+
+## Interaction verification — what actually works, and how it was proven
+
+**Date:** 2026-09-30 · **Commit:** be88e1f · **Build:** 68 pages, 455 images, 0 warnings
+
+### The inventory filter and sort work
+
+Proven the only way that matters: by loading the page with the same URL a real
+click produces, and reading what the page renders.
+
+| Load | Sort control | First card | First prices |
+| --- | --- | --- | --- |
+| `/inventory/` | `year-desc` | 2026 CADILLAC XT5 Luxury | 42833, 43823, 44133 |
+| `/inventory/?sort=price-asc` | `price-asc` (set by the script) | 2016 Volvo XC60 T6 Platinum | 11899, 14899, 14899, 28396 |
+
+The script reads the URL, sets the control, and reorders the list. `init()`
+runs, `readUrl()` runs, `sortCards()` and `apply()` run.
+
+### Every card carries every attribute the script reads
+
+Counted on the built page, all 24 cards:
+
+| Attribute | Occurrences | Sample values |
+| --- | --- | --- |
+| `data-drivetrain` | 24 | `awd`, `4wd` |
+| `data-status` | 24 | `pre-owned`, `certified pre-owned` |
+| `data-make` | 24 | `BMW`, `Volvo`, `Nissan` |
+| `data-year` | 24 | `2016`, `2016`, `2020` |
+
+### A real bug was found and fixed on the way
+
+The sort control sits outside the filter form (it lives in the results toolbar).
+`form="inventory-filters"` makes it a form *owner*, but a change event on it does
+not bubble to the form's own listener. Fixed in `inventory-filter.js` with a
+document-level listener that resolves the owning form. Shipped in `9f0ed77`.
+
+### Three false negatives to avoid repeating
+
+This session produced three "the site is broken" reports that were faults in the
+**measuring instrument**, not the site. Each cost hours.
+
+1. **A 2,900px void below the fold** — a screenshot-capture artefact. The page
+   was fine.
+2. **"Missing" closing bands** — the capture was cropped before the band.
+3. **"Filter and sort do nothing"** — the probe dispatched a synthetic
+   `change` event and counted *all* DOM cards rather than visible ones. The
+   page is URL-driven; a synthetic event never takes the URL path, and hidden
+   cards still count.
+
+**Rule for next time:** before writing a diagnostic, run the cheapest possible
+real-user test — load the URL a click would produce and read the result. Only
+then build an instrument.
+
+### Also verified this session
+
+- **Responsive:** 16/16 pages pass at 500px, `scrollWidth − innerWidth = 0`.
+  `404.html` now included: overflow 0px, h1 present, title correct, viewport
+  meta present, 0 images without alt.
+- **Card titles:** the remote `vehicle-card.html` had lost the stock-number
+  cleanup; restored at the visible title and the media aria-label. Verified:
+  0 of 24 titles carry a stock ref. `data-title` keeps the stock number, where
+  it is useful for search.
+
+### Still open
+
+| Item | Note |
+| --- | --- |
+| Slider live readout | `max_price` slider moves but prints no live figure. |
+| Deeper interior-page layouts | Interior pages share one ported pattern; unique layouts not yet built per page. |
+| Push to origin | Blocked on credentials — user handles this. |
+| `update_goal` | Not marked complete while the above remain. |
