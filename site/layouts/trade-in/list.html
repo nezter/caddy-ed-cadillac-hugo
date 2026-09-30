@@ -1,0 +1,92 @@
+{{ define "main" }}
+{{- $phone := .Site.Params.phone | default "803-431-6180" -}}
+{{- $phoneHref := replace $phone "." "" -}}
+
+{{/* Trade-in was a page about a number with no way to enter one: prose, then a
+     link to the contact page, and nothing else.
+
+     The appraisal form posts to the same public endpoint every other message on
+     the site uses, and carries the ids site/assets/js/index.js binds
+     (#contact-form, #form-success, #form-error) -- that handler parses JSON,
+     so a plain HTML post would be rejected as invalid. The vehicle details go
+     in one message field rather than five separate inputs, because the endpoint
+     reads name, email, phone and message only; asking for fields it discards
+     would be theatre. */}}
+<section class="stage stage--deep grain pad--tight">
+  <div class="wrap">
+    <p class="eyebrow">Trade-in<span class="ltbar" aria-hidden="true"><i></i><i></i><i></i></span></p>
+    <div style="display:flex;align-items:end;justify-content:space-between;gap:2rem;flex-wrap:wrap">
+      <h1 class="display display--sm" style="color:#fff;max-width:22ch">{{ .Title | default "Trade-In" }}</h1>
+      <p class="lede" style="max-width:40ch;margin:0">Two numbers matter when you trade. What the car you are buying costs, and what the one you are driving is worth. This is the second one.</p>
+    </div>
+  </div>
+</section>
+
+<section style="background:#fff;padding-block:clamp(2.2rem,4.5vw,3.5rem)">
+  <div class="wrap" style="display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(1.5rem,4vw,3rem);align-items:start">
+    <div class="prose">{{ .Content }}</div>
+
+    <div>
+      <form class="form" id="contact-form" method="post" action="/api/contact" novalidate
+            style="background:#fafafa;border:1px solid #e7e9ee;border-radius:var(--r-card);padding:clamp(1.2rem,2.5vw,1.8rem)">
+        <p class="kicker kicker--light"><i>01</i><span>What is it worth?</span></p>
+        <h2 class="h-mod" style="color:var(--ink-1);margin-bottom:.4rem">Get a real number</h2>
+        <p style="color:#515863;font-size:.92rem;margin:0 0 1.2rem">
+          Tell Ed the car and how it has been kept, and he comes back with a figure
+          rather than a range. No obligation, and it does not commit you to anything.
+        </p>
+
+        <div class="form-grid form-grid-2">
+          <div class="form-field">
+            <label for="name">Your name</label>
+            <input class="input" id="name" name="name" type="text" autocomplete="name" required aria-required="true">
+          </div>
+          <div class="form-field">
+            <label for="email">Email</label>
+            <input class="input" id="email" name="email" type="email" autocomplete="email" required aria-required="true">
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label for="phone">Phone <span class="hint">(optional)</span></label>
+          <input class="input" id="phone" name="phone" type="tel" autocomplete="tel">
+        </div>
+
+        <div class="form-field">
+          <label for="message">The car</label>
+          <textarea class="textarea" id="message" name="message" rows="6" required aria-required="true">I would like an appraisal.
+
+Year / make / model:
+Mileage:
+Condition (and anything it needs):
+VIN (if you have it to hand):
+</textarea>
+          <p class="hint">
+            A photograph of each side helps more than anything else — attach them
+            when Ed replies, or bring the car in and it is fifteen minutes.
+          </p>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg" style="width:100%">Ask for an appraisal</button>
+
+        <p class="form-message form-message--success hidden" id="form-success" role="status">
+          Thank you — your details are with Ed, and you will get a number back, not a range.
+        </p>
+        <p class="form-message form-message--error hidden" id="form-error" role="alert"></p>
+      </form>
+
+      <div style="background:#fafafa;border:1px solid #e7e9ee;border-radius:var(--r-card);padding:1.1rem;margin-top:1rem">
+        <p class="mono-label" style="color:#6f7683;margin:0 0 .6rem">Or do it in a minute</p>
+        <p style="margin:0 0 .8rem;font-size:.9rem;color:#515863">
+          Read the year, the mileage and the condition down the phone and you will
+          have a working figure before you hang up.
+        </p>
+        <a class="btn btn--line btn--sm" href="tel:+1{{ $phoneHref }}">{{ $phone }}</a>
+        <a class="btn btn--line btn--sm" href="sms:+1{{ $phoneHref }}">Text Ed</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+{{ partial "closing-cta.html" (dict "phone" $phone "phoneHref" $phoneHref "label" "Ready when you are" "heading" "Bring it in, or just ask the question first.") }}
+{{ end }}
