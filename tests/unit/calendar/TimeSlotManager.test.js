@@ -85,7 +85,17 @@ describe('TimeSlotManager', () => {
     );
     
     // Call getAvailableDates
-    const result = await timeSlotManager.getAvailableDates(2023, 0);
+    // A month that is actually in the FUTURE.
+    //
+    // The test hardcoded (2023, 0). getFallbackDates() deliberately excludes past
+    // dates -- a booking calendar that offers a day in 2023 is broken -- so this test
+    // went red purely because time passed, and the failure read as "the fallback is
+    // broken" rather than "the fixture is stale". Computing the month means it
+    // cannot rot again.
+    const future = new Date();
+    future.setMonth(future.getMonth() + 2);
+    const result = await timeSlotManager.getAvailableDates(
+      future.getFullYear(), future.getMonth());
     
     // Check if error state was updated
     expect(mockCalendar.updateState).toHaveBeenCalledWith(

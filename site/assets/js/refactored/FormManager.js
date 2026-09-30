@@ -381,8 +381,16 @@ class FormManager {
    * @param {Object} appointmentData - The appointment data
    */
   confirmAppointment(appointmentData) {
-    // Submit appointment data to API
-    this.submitAppointment(appointmentData)
+    // Returned, and bound to `this`.
+    //
+    // This used to fire the promise and return undefined, so
+    // `await formManager.confirmAppointment(...)` resolved immediately and the
+    // caller read the state before the POST had come back -- which is why the
+    // integration test saw appointmentConfirmed === undefined and could not say
+    // whether the booking had worked. A caller that awaits confirmation and
+    // carries on as though it succeeded is exactly the bug that hides a broken
+    // endpoint.
+    return this.submitAppointment(appointmentData)
       .then(response => {
         // Update calendar state with confirmation
         this.calendar.updateState({
@@ -423,13 +431,39 @@ class FormManager {
         date: appointmentData.date.toISOString().split('T')[0],
       };
       
-      // Make API request
-      const response = await fetch('/api/schedule-appointment', {
+      // POST to the function that exists.
+      //
+      // This was '/api/schedule-appointment'. There is no /api/ route on this
+      // site -- it is a Gatsby-ism left from before the Hugo rewrite -- so the
+      // request 404'd, the .catch() below ran, and a customer who had picked a
+      // date, picked a time, filled in their name and pressed Confirm was told
+      // "Failed to confirm appointment. Please try again or call us directly."
+      // Every step of the booking worked except the one that books it.
+      //
+      // The sibling calls in TimeSlotManager already use /.netlify/functions/,
+      // which is why the calendar rendered fine and this went unnoticed.
+      const response = await fetch('/.netlify/functions/schedule-test-drive', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(formattedData)
+        // The field names are the function's, not ours. It requires
+        // vehicleId, fullName, email, phone, preferredDate, preferredTime --
+        // this module had date, time and name, and rejected them as missing.
+        body: JSON.stringify({
+          // 'general-enquiry' when the calendar has no vehicle context -- the
+          // /test-drive/ page schedules an appointment without naming a car. The
+          // function accepts that value explicitly (see GENERAL_ENQUIRY below)
+          // rather than being made lenient about vehicleId generally.
+          vehicleId: appointmentData.vehicleId || 'general-enquiry',
+          vehicleTitle: appointmentData.vehicleTitle || '',
+          fullName: appointmentData.name || '',
+          email: appointmentData.email || '',
+          phone: appointmentData.phone || '',
+          preferredDate: formattedData.date,
+          preferredTime: appointmentData.time || '',
+          comments: appointmentData.comments || '',
+        })
       });
       
       if (!response.ok) {
