@@ -30,7 +30,24 @@
 
 const fs = require('fs');
 const path = require('path');
-const { JSDOM } = require(path.join(__dirname, '..', 'netlify', 'functions', 'node_modules', 'jsdom'));
+
+// jsdom is a jest devDependency, and the production build installs with
+// --omit=dev. So on a build host this module is simply absent, and requiring it
+// unconditionally took the whole BUILD down with "Cannot find module 'jsdom'" --
+// a missing test dependency stopping a site deploy.
+//
+// A check that cannot run says so and stops. It does not throw, and it does not
+// take the build with it.
+let JSDOM = null;
+try {
+  ({ JSDOM } = require(path.join(__dirname, '..', 'netlify', 'functions', 'node_modules', 'jsdom')));
+} catch (e) {
+  console.log('  SKIP  jsdom is not installed (it is a devDependency).');
+  console.log('        This check loads the built page and runs the real scripts against it,');
+  console.log('        which needs a DOM. `npm ci` in netlify/functions, or run it where');
+  console.log('        devDependencies are installed.');
+  process.exit(0);   // a skip is not a failure; ci/check-all.js reads the line above
+}
 
 const ROOT = path.resolve(__dirname, '..');
 const PAGE = path.join(ROOT, 'site', 'public', 'inventory', 'index.html');
