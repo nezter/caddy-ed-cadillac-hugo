@@ -1572,7 +1572,7 @@ body.home .vehicle-card__actions .btn-ghost:hover{
    from a text file.
    ========================================================================== */
 .page-container{padding-block:clamp(2rem,4.5vw,3.5rem)}
-.page-content{max-width:74ch}
+.page-content{max-width:70ch}
 
 .page-content h2,
 .prose h2{
@@ -1592,8 +1592,8 @@ body.home .vehicle-card__actions .btn-ghost:hover{
 .page-content li,
 .prose p,
 .prose li{
-  font-size:clamp(1rem,.97rem + .15vw,1.08rem);
-  line-height:1.68;
+  font-size:clamp(1.03rem,1rem + .22vw,1.13rem);
+  line-height:1.7;
 }
 .page-content p + p,.prose p + p{margin-top:1.1rem}
 
