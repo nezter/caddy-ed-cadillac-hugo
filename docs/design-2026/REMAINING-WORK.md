@@ -78,7 +78,7 @@ seal, price in the action rail under "Asking price", three-to-compare section,
    address differs from it. The card scrim covers it; the detail page's large
    image shows it. *Blocked on the feed. A CSS crop could cover the band on the
    detail page — worth trying.*
-3. **No payment estimate** on the page, though the financing page has a
+3. ~~No payment estimate on the page.~~ **Corrected in a later pass:** an inline payment estimate needs rate data, and the financing page states plainly that its calculator is off until the quote endpoints exist. Inventing a rate here to fill the gap would be worse than the gap. **Not buildable honestly until there are rates.** What the rail does instead is route to `/financing/`, where that explanation lives.
    calculator. The mockup's rail lists "Estimate the payment" as an action.
    *Template job, small.*
 
