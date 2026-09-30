@@ -153,13 +153,35 @@ search described below rather than from the graph. Only `refactored/tests/`
 
 ---
 
-## The gate
+## The gates
 
 ```bash
-node ci/check-front-end.js          # gate
-node scripts/front-end-graph.js     # the report
-node ci/check-front-end.js --report # the graph as JSON
+npm run check                 # all nine, one table
+npm run check:quick           # skip the slow one
+node ci/check-front-end.js    # the module graph, on its own
 ```
+
+`ci/check-all.js` is the one to read. It exists because a failing build used to
+print eight transcripts, most of them "pass", with the two that mattered buried —
+and a gate nobody reads is a gate that catches nothing.
+
+Two things it does that the individual checks do not:
+
+- **SKIP is not PASS.** A check that needs Turso and has no credentials reports
+  SKIP, and the summary counts it separately. `check-insert-columns.js` once
+  printed "live column check SKIPPED" and still reported OK, after the libSQL
+  native binding stopped resolving.
+- **A stale build is a skip, not a failure.** Hugo builds on the CI host, not
+  here, so a local `site/public` is whatever the last sync left behind. It
+  compared newer-mtime and reports the two output-reading checks as SKIP with
+  the reason. Before that, every local run reported the *fixed* 555 number and
+  *fixed* fake street addresses as failures, on a clean tree.
+
+`ci/check-compare-shortlist.js` is the one to read for behaviour. It loads the
+**built** inventory page into jsdom, runs both real scripts, and clicks the
+buttons — because the compare feature was inert for three stacked reasons and
+every one of them passed a build and passed every gate. A build checks that files
+exist and that scripts parse; it cannot check that a button does something.
 
 It fails the build when:
 

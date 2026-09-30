@@ -92,6 +92,12 @@ const CHECKS = [
     why: 'the required-permission vocabulary is used correctly',
   },
   {
+    name: 'compare + shortlist',
+    file: 'check-compare-shortlist.js',
+    needsBuild: true,
+    why: 'the two card buttons do two different things, and both do them',
+  },
+  {
     name: 'build output',
     file: 'verify-build.js',
     needsBuild: true,
