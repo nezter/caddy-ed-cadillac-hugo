@@ -140,6 +140,12 @@ do_verify() {
   # override, a JS string and a data file cannot disagree with each other.
   log "Checking for placeholder contact details in the built site"
   in_container 'node ci/check-no-placeholder-contact.js'
+  # Resolves the front-end module graph: a page whose `scripts:` entry no longer
+  # exists loads no JavaScript and the build says nothing, and a new file no
+  # entry point reaches is either dead or unmounted by mistake. docs/FRONTEND.md
+  # has the four load paths and the history of this report being wrong.
+  log "Resolving the front-end module graph"
+  in_container 'node ci/check-front-end.js'
   # Source-tree check. Runs before the output check would have any chance of
   # passing anyway, because the failure it catches (starter-template demo
   # content, e.g. the Kaldi Coffee pricing page) produces a perfectly valid

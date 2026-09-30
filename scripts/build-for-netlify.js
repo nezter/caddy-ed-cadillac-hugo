@@ -187,6 +187,12 @@ run('node ci/check-no-placeholder-contact.js', {
   label: 'no placeholder contact details in the output',
 });
 
+// Resolves the front-end module graph. Catches a `scripts:` entry that no longer
+// exists (that page then loads no JavaScript, silently) and any new file no
+// entry point reaches. Both of the first three load paths are easy to miss by
+// inspection -- see docs/FRONTEND.md.
+run('node ci/check-front-end.js', { label: 'front-end module graph' });
+
 // 7. Summary.
 function dirSize(dir) {
   let total = 0;
