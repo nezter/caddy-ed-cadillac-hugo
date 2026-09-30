@@ -129,13 +129,25 @@ ok('cleaned site/public and site/resources');
 
 // 2. Root dependencies -- Hugo Pipes resolves bare npm imports
 //    (lazysizes, date-fns) out of ./node_modules via esbuild.
-run('npm install --no-audit --no-fund', { label: 'install root dependencies' });
+//    --omit=optional on this install AND the functions one: the platform-native
+//    libSQL binaries are optional dependencies that no code path can load (the
+//    database is reached over HTTPS through `@libsql/client/http`). See the
+//    [functions] section of netlify.toml for the measurement.
+//
+//    The flag is needed on the ROOT install too, not just the functions tree. The
+//    Netlify bundler resolves a module it cannot find by walking up the tree, so
+//    with only netlify/functions cleaned it found the same two 10 MB binaries in
+//    ./node_modules and shipped those instead -- which is why removing the
+//    `included_files` glob by itself changed nothing at all.
+run('npm install --omit=optional --no-audit --no-fund', {
+  label: 'install root dependencies',
+});
 
 // 3. Function dependencies.
 if (fs.existsSync(path.join(FUNCTIONS_DIR, 'package.json'))) {
   // The functions are bundled by Netlify at deploy time, so dev deps are not
   // needed for a production build.
-  run('npm install --omit=dev --no-audit --no-fund', {
+  run('npm install --omit=dev --omit=optional --no-audit --no-fund', {
     label: 'install netlify/functions dependencies',
     cwd: FUNCTIONS_DIR,
   });

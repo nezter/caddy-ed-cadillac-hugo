@@ -147,9 +147,27 @@ do_verify() {
   # bundle, not that the bundle RUNS. That difference is exactly where
   # @libsql/client's native binary problem hid for several sessions, with
   # included_files credited with fixing it on the strength of a comment.
+# --omit=optional: the platform-native libSQL binaries.
+#
+# `libsql` declares one optional dependency PER PLATFORM (@libsql/linux-x64-gnu,
+# @libsql/linux-x64-musl, and the darwin/arm/win32 equivalents), each carrying a
+# ~10 MB .node binary. Nothing here can load them: the database is reached over
+# HTTPS at a libsql:// URL, through `@libsql/client/http`, and a local-file native
+# binding cannot address it.
+#
+# They were still being installed, and the Netlify bundler was still shipping
+# them -- into all 41 function bundles. Measured: 317 MB of function bundle, with
+# 20 MB of it being two binaries no code path could reach. Omitting them takes it
+# to 46 MB.
+#
+# The flag has to be on the install at the REPO ROOT as well as in
+# netlify/functions. The bundler resolves a missing module by walking up, so with
+# only the functions tree cleaned it found the same two binaries in ./node_modules
+# and copied those instead. That is why removing `included_files` from
+# netlify.toml changed nothing on its own.
   # Needs netlify/functions/node_modules, so it installs them itself.
   log "Verifying every function bundles and loads"
-  in_container 'cd netlify/functions && npm install --omit=dev --no-audit --no-fund >/dev/null 2>&1; cd /site && node ci/verify-functions.js'
+  in_container 'cd netlify/functions && npm install --omit=dev --omit=optional --no-audit --no-fund >/dev/null 2>&1; cd /site && node ci/verify-functions.js'
   # Self-test for the code-block detector. A gate nobody has ever seen fail is
   # indistinguishable from a gate that cannot fail, which is how the previous
   # "restored the original and it was fine" test produced a green result for a
@@ -228,7 +246,7 @@ do_test() {
   # DIFFERENT jest into its cache whenever the local one is missing. That is how
   # a whole session's test numbers came from a jest this project does not depend
   # on, with its own @babel/core that cannot see these plugins.
-  in_container 'npm install --include=dev --no-audit --no-fund >/dev/null 2>&1 && cd netlify/functions && npm install --include=dev --no-audit --no-fund >/dev/null 2>&1 && ./node_modules/.bin/jest --ci --coverage=false --config /site/jest.config.js --rootDir /site/netlify/functions'
+  in_container 'npm install --include=dev --omit=optional --no-audit --no-fund >/dev/null 2>&1 && cd netlify/functions && npm install --include=dev --no-audit --no-fund >/dev/null 2>&1 && ./node_modules/.bin/jest --ci --coverage=false --config /site/jest.config.js --rootDir /site/netlify/functions'
 }
 
 do_deploy() {
@@ -305,7 +323,7 @@ case "${1:-build}" in
     ssh "${CI_USER}@${CI_HOST}" "podman run --rm --network=host \
         -v ${REMOTE_WORKDIR}:/site:Z -w /site -e CI=true \
         -e NETLIFY_TELEMETRY_DISABLED=1 ${IMAGE} \
-        bash -lc 'cd netlify/functions && npm install --omit=dev --no-audit --no-fund >/dev/null 2>&1; \
+        bash -lc 'cd netlify/functions && npm install --omit=dev --omit=optional --no-audit --no-fund >/dev/null 2>&1; \
                    cd /site && timeout 120 netlify dev --port 8889 --dir=site/public --functions=netlify/functions 2>&1 \
                    | grep -E \"Loaded function|Failed to load|ERROR\"' || true"
     ;;
