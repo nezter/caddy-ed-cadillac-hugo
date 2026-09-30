@@ -5,98 +5,100 @@
 {{ define "headStyles" }}{{ partial "stylesheet.html" "inventory.scss" }}{{ partial "stylesheet.html" "components/shortlist.css" }}{{ end }}
 
 {{ define "main" }}
+{{- /* ---------------------------------------------------------------------
+     INVENTORY LISTING
+
+     Rebuilt in one pass. It had been patched fourteen times and had stopped
+     being readable: the filter vocabularies were declared twice, $totalMatched
+     was computed twice, an orphaned pagination comment sat in the middle of the
+     markup, the compare app rendered below the pagination at the very foot of
+     the page, and the head's right-hand column rendered .Content, which lives
+     at the foot -- so that column was always empty and the head read as a
+     squashed left column with a hole beside it.
+
+     The shape now, in order:
+
+       1. head        eyebrow, title, count  |  the page's own sentence
+       2. body        filter rail beside results
+       3. results     toolbar (quick filters + sort + count)
+                      the grid
+                      the empty state
+                      the compare app
+                      the pagination
+       4. close       the source-it CTA
+
+     Contracts that must not move, because scripts read them:
+       #vehicle-inventory with data-total and data-page-size
+       #inventory-empty, [data-empty-message], [data-inventory-reset]
+       #inventory-filters (inside the partial) and every control's name
+       #comparison-app (rendered by a shortcode inside .Content)
+     --------------------------------------------------------------------- */}}
+
 {{- /* Sold and withdrawn vehicles stay on disk deliberately: a car that comes
        back (a trade returned to stock) is then recognised rather than
        republished as new. But it must not be shoppable.
 
        `available` is only ever set to false by a sync. A vehicle with no
-       `available` field is a normal, sellable car, so the filter is
-       "not false" rather than "is true" -- a hand-written page with no
-       availability field is never accidentally hidden. */ -}}
-{{- $all := where .RegularPages "Params.available" "!=" false }}
+       `available` field is a normal, sellable car, so the filter is "not false"
+       rather than "is true" -- a hand-written page with no availability field
+       is never accidentally hidden. */ -}}
+{{- $all := where .RegularPages "Params.available" "!=" false -}}
 {{- $phone := .Site.Params.phone | default "803-431-6180" -}}
 {{- $phoneHref := replace $phone "." "" -}}
 
-{{/* Build the filter vocabularies from the content itself, so the options can
-     never drift out of step with what is actually in stock. */}}
+{{- /* Filter vocabularies, derived from the content so an option can only exist
+       if a vehicle actually carries that value. body_style was collected here
+       and rendered as a "Body" filter; 0 of 36 content files define it, so the
+       control matched nothing and has been left out. */ -}}
 {{- $models := slice -}}
 {{- $years := slice -}}
 {{- $drivetrains := slice -}}
 {{- $transmissions := slice -}}
-{{- $drivetrains := slice -}}
-{{- $transmissions := slice -}}
-{{- $models := slice -}}
-{{- $years := slice -}}
+{{- $statuses := slice -}}
 {{- range $all -}}
   {{- with .Params.model }}{{ $models = $models | append . }}{{ end -}}
   {{- with .Params.year }}{{ $years = $years | append (int .) }}{{ end -}}
   {{- with .Params.drivetrain }}{{ $drivetrains = $drivetrains | append . }}{{ end -}}
   {{- with .Params.transmission }}{{ $transmissions = $transmissions | append . }}{{ end -}}
+  {{- with .Params.status }}{{ $statuses = $statuses | append . }}{{ end -}}
 {{- end -}}
 {{- $models = $models | uniq | sort -}}
 {{- $years = $years | uniq | sort -}}
-{{- /* body_style was collected here and rendered as a "Body" filter. 0 of 36
-       content files define it, so the control matched nothing. drivetrain and
-       transmission are present in 35 of 36 and were never surfaced at all.
-       Every vocabulary is derived from the content, so an option can only
-       exist if a vehicle actually carries that value. */}}
 {{- $drivetrains = $drivetrains | uniq | sort -}}
 {{- $transmissions = $transmissions | uniq | sort -}}
+{{- $statuses = $statuses | uniq | sort -}}
 
-{{- /* ---------------------------------------------------------------------
-     Pagination is build-time, server-side, and crawlable.
+{{- /* Pagination is build-time, server-side, and crawlable.
 
-     A dealership's inventory grows. Measured cost of one card in the built
-     page: 1,892 bytes and 3 image elements.
+       A dealership's inventory grows. Measured cost of one card in the built
+       page: 1,892 bytes and 3 image elements.
 
-         35 vehicles ->   73 KB of grid HTML,  105 elements
-        150 vehicles ->  277 KB,                 450 elements
-        300 vehicles ->  554 KB,                 900 elements
+           35 vehicles ->   73 KB of grid HTML,  105 elements
+          150 vehicles ->  277 KB,                 450 elements
+          300 vehicles ->  554 KB,                 900 elements
 
-     So the list is paginated here to 24 per page. The DOM stays bounded no
-     matter how much stock there is, every page is reachable by a crawler, and
-     only the current page's photographs are fetched. A dealership's inventory
-     IS the product; it has to be indexable.
+       So the list is paginated to 24 per page. The DOM stays bounded however
+       much stock there is, every page is reachable by a crawler, and only the
+       current page's photographs are fetched.
 
-     Filtering, by contrast, is client-side, and that is a platform limit
-     rather than a preference: Hugo 0.166 no longer exposes the request query
-     string to templates. `$.Get` and `site.Get` were removed, and `$.Params`
-     carries front matter only -- verified against hugo 0.166.0, not assumed.
-     A static build therefore cannot filter by ?drivetrain=awd, and the honest
-     options are to pre-generate a page per facet combination (26 pages for
-     this inventory: 10 models, 7 years, 4 drivetrains, 2 transmissions,
-     3 conditions) or to filter in the browser. The browser is what is here
-     today; the facet pages are the follow-up, and they are worth doing
-     because each one is a real, indexable URL.
+       Filtering, by contrast, is client-side, and that is a platform limit
+       rather than a preference: Hugo 0.166 no longer exposes the request query
+       string to templates. A static build therefore cannot filter by
+       ?drivetrain=awd, and the honest options are to pre-generate a page per
+       facet combination or to filter in the browser. The browser is what is
+       here today; the facet pages are the follow-up and are worth doing,
+       because each one is a real, indexable URL.
 
-     The form is still method="get", because the query string is what makes a
-     filtered view shareable: the script writes it, and re-reads it on load.
-     With scripting off the form is hidden rather than left as a control that
-     cannot work -- see the noscript block below.
-     --------------------------------------------------------------------- */}}
+       The form stays method="get" because the query string is what makes a
+       filtered view shareable: the script writes it and re-reads it on load. */ -}}
 {{- $perPage := 24 -}}
-{{- $fSort := "" -}}
-{{- with $.Params.sort }}{{ $fSort = . }}{{ end -}}
-{{- $sorted := $all -}}
-{{- if eq $fSort "price-asc" }}{{ $sorted = $sorted.ByParams "price" }}{{ end -}}
-{{- if eq $fSort "price-desc" }}{{ $sorted = $sorted.ByParams "price" "desc" }}{{ end -}}
-{{- if eq $fSort "year-desc" }}{{ $sorted = $sorted.ByParams "year" "desc" }}{{ end -}}
-{{- if eq $fSort "mileage-asc" }}{{ $sorted = $sorted.ByParams "mileage" }}{{ end -}}
-{{- $totalMatched := len $sorted -}}
-
-{{- $paginator := .Paginate $sorted $perPage -}}
-{{- $totalMatched := len $sorted -}}
 {{- $totalAll := len $all -}}
-
+{{- $totalMatched := len $all -}}
+{{- $paginator := .Paginate $all $perPage -}}
 
 <section class="section inventory-page">
   <div class="container">
 
-    {{/* The head was a left-aligned stack: eyebrow, title, a paragraph, a count
-         -- all down the left edge of a full-width dark band, with the right
-         half of it empty. The mockup sets the title and the lede as a pair, so
-         they sit side by side and the band reads as composed rather than as
-         something that ran out. */}}
     <header class="inventory-head">
       <div class="inventory-head__main">
         <p class="eyebrow">In stock &middot; synced {{ now.Format "2 January 2006" }}<span class="ltbar" aria-hidden="true"><i></i><i></i><i></i></span></p>
@@ -107,25 +109,10 @@
         </p>
       </div>
       <div class="inventory-head__aside">
-        {{/* This column was rendering .Content, which lives at the foot of the
-             page -- so it was always empty and the head read as a squashed
-             left column with a hole beside it. It now carries the page's own
-             sentence. */}}
         <p class="lede">Every car below is in stock today. Filter it down, compare two or three side by side, or ask about any of them without leaving the page.</p>
       </div>
     </header>
 
-    {{/* ---------------------------------------------------------------
-         Filters. Progressive enhancement: the full list renders server-side
-         and is fully usable with JS off. This form only narrows what is
-         already in the DOM -- it never fetches, so browsing inventory does
-         not depend on the API or on a function being reachable.
-         --------------------------------------------------------------- */}}
-    {{/* The script intercepts submit and filters in place. The query string is
-         what makes a filtered view shareable, so the form stays method="get".
-         With scripting off this control cannot work -- Hugo 0.166 cannot read
-         the query string -- so it is hidden rather than left as a dead button;
-         see the noscript note below the grid. */}}
     <noscript>
       <style>.inventory-filters{display:none}</style>
       <p class="inventory-noscript-note">
@@ -133,140 +120,104 @@
         to a page, and every page is a normal link.
       </p>
     </noscript>
-      <aside class="inv-rail">
+
+    {{/* Filters. Progressive enhancement: the full list renders server-side and
+         is fully usable with JS off. This form only narrows what is already in
+         the DOM -- it never fetches, so browsing inventory does not depend on
+         the API or on a function being reachable. */}}
+    <aside class="inv-rail">
       {{ partial "inventory-filters.html" (dict "page" .) }}
-      </aside>
+    </aside>
 
-      <div class="inv-results">
-        {{/* The mockup carries a line above the cars: what is here, and which
-             page of it. The count lives inside the rail on the build, and the
-             pagination summary sits below the grid, so the top of the results
-             column was empty. This is that line. The condition chips the
-             mockup also shows stay in the rail, where they actually filter --
-             the rail's controls are a real form, and fake chips above the grid
-             would look like they filter and would not. */}}
-        {{/* Quick filters, as links rather than as controls.
+    <div class="inv-results">
 
-             They work because inventory-filter.js reads the query string on
-             load (readUrl) and writes it back on every change (writeUrl) --
-             clicking one of these is exactly the same as setting the select and
-             letting the script rewrite the URL. No new JavaScript.
+      {{/* The toolbar the mockup puts above the cars: what you are looking at,
+           how to narrow it, and how to order it -- one row, in the order a
+           person uses them. The chips are links, not controls: the filter script
+           reads the query string on load, so /inventory/?status=New arrives
+           already filtered, with no second JavaScript path.
 
-             The values are derived from the vehicles that are actually in
-             stock, the same rule the filter partial documents: a filter whose
-             options can drift out of step with the inventory is worse than no
-             filter. Add an "Electric" chip when there is a fuel field to read
-             it from -- inventing one now would produce a link that filters
-             nothing. */}}
-        {{- $stock := where .Site.RegularPages "Section" "inventory" -}}
-        {{- $stock = where $stock "Params.available" "!=" false -}}
-        {{- $statuses := slice -}}
-        {{- range $stock -}}
-          {{- with .Params.status -}}{{ if not (in $statuses .) }}{{ $statuses = $statuses | append . }}{{ end }}{{ end -}}
-        {{- end -}}
-        {{- $statuses = sort $statuses -}}
-        {{/* The quick-filter toolbar the mockup puts above the cars. The sort
-             control is the same element, moved rather than copied -- a
-             duplicate would give the script two controls of the same name and
-             no way to say which is authoritative. It carries
-             form="inventory-filters" so it still belongs to the form and still
-             submits with it; inventory-filter.js finds it through that
-             attribute. */}}
-        <div class="inv-toolbar">
-          <div class="form-field">
-                    <label for="f-sort">Sort</label>
-                    <select form="inventory-filters" class="select" id="f-sort" name="sort">
-                      <option value="price-asc">Price: low to high</option>
-                      <option value="price-desc">Price: high to low</option>
-                      <option value="year-desc" selected>Newest first</option>
-                      <option value="mileage-asc">Lowest mileage</option>
-                    </select>
-                  </div>
-        </div>
-
+           The sort control is the same element as the one in the form, moved
+           rather than copied -- a duplicate would give the script two controls
+           of the same name and no way to say which is authoritative. It carries
+           form="inventory-filters" so it still belongs to the form. */}}
+      <div class="inv-toolbar">
         <nav class="inv-chips" aria-label="Quick filters">
           <a class="inv-chip" href="/inventory/">All</a>
           {{ range $statuses }}
           <a class="inv-chip" href="/inventory/?status={{ . | urlquery }}">{{ . }}</a>
           {{ end }}
         </nav>
-
-        <p class="inv-topline">
-          <span class="mono-label">{{ $totalAll }} {{ if eq $totalAll 1 }}vehicle{{ else }}vehicles{{ end }} in stock</span>
-          <span class="mono-label">Page {{ $paginator.PageNumber }} of {{ $paginator.TotalPages }}</span>
-        </p>
-
-{{- /* Pagination. Server-rendered and crawlable. It is not a JS
-       enhancement: with scripting off these are ordinary links. */ -}}
-
-    {{/* ---------------------------------------------------------------
-         The list. Server-rendered from content, filtered client-side.
-         data-* attributes carry the filter/sort keys so the script never has
-         to scrape text out of the markup.
-         --------------------------------------------------------------- */}}
-    <div class="vehicle-grid" id="vehicle-inventory"
-         data-total="{{ $totalMatched }}" data-page-size="{{ $perPage }}">
-      {{/* One card, from partials/vehicle-card.html. This markup used to be
-           written out here as well as in layouts/index.html, and the two copies
-           had already drifted -- the home page printed "$112899" and this one
-           printed "$112,899". The data-* attributes the live filter reads are
-           part of the partial now, and they are documented there as a contract
-           with inventory-filter.js. */}}
-      {{ range $paginator.Pages }}
-        {{ partial "vehicle-card.html" (dict "vehicle" .) }}
-      {{ end }}
-    </div>
-
-    {{/* Two different situations share this block. The script rewrites the
-         message: "no matches" is undoable, "no stock" is not, and a page that
-         renders blank in the second case gives the visitor nothing to do. */}}
-    <div class="inventory-empty hidden" id="inventory-empty">
-      <p data-empty-message>No vehicles match those filters.</p>
-      <button class="btn btn-ghost btn-sm" type="button" data-inventory-reset>Clear them</button>
-      or <a href="/contact/">tell me what you're after</a> — stock turns over.
-    </div>
-
-    {{ if gt $paginator.TotalPages 1 }}
-    <nav class="inventory-pagination" aria-label="Inventory pages">
-      {{ if $paginator.HasPrev }}
-        <a class="btn btn-ghost btn-sm" rel="prev" href="{{ $paginator.Prev.URL }}">&larr; Previous</a>
-      {{ else }}
-        <span class="btn btn-ghost btn-sm" aria-disabled="true">&larr; Previous</span>
-      {{ end }}
-
-      <ol class="inventory-pagination__pages">
-        {{ range $paginator.Pagers }}
-          {{ if eq . $paginator }}
-            <li><span class="inventory-pagination__page inventory-pagination__page--current"
-                      aria-current="page">{{ .PageNumber }}</span></li>
-          {{ else }}
-            <li><a class="inventory-pagination__page"
-                      href="{{ .URL }}"
-                      aria-label="Page {{ .PageNumber }}">{{ .PageNumber }}</a></li>
-          {{ end }}
-        {{ end }}
-      </ol>
-
-      {{ if $paginator.HasNext }}
-        <a class="btn btn-ghost btn-sm" rel="next" href="{{ $paginator.Next.URL }}">Next &rarr;</a>
-      {{ else }}
-        <span class="btn btn-ghost btn-sm" aria-disabled="true">Next &rarr;</span>
-      {{ end }}
-    </nav>
-    <p class="inventory-pagination__summary">
-      Showing {{ len $paginator.Pages }} of {{ $totalMatched }}
-      {{ if eq $totalMatched 1 }}vehicle{{ else }}vehicles{{ end }}
-      {{- if gt $paginator.TotalPages 1 }}, page {{ $paginator.PageNumber }} of {{ $paginator.TotalPages }}{{ end }}.
-    </p>
-    {{ end }}
+        <div class="inv-toolbar__sort">
+          <label for="f-sort">Sort</label>
+          <select form="inventory-filters" class="select" id="f-sort" name="sort">
+            <option value="price-asc">Price: low to high</option>
+            <option value="price-desc">Price: high to low</option>
+            <option value="year-desc" selected>Newest first</option>
+            <option value="mileage-asc">Lowest mileage</option>
+          </select>
+        </div>
       </div>
 
-    {{/* The page's own content, and with it the compare app that a shortcode
-         renders into #comparison-app. It used to sit in the page header, which
-         put a full-width "Compare Vehicles" panel between the title and the
-         cars -- instructions for a surface that was empty, above the thing the
-         visitor came for. It belongs at the end, next to the tray it fills. */}}
-    {{ with .Content }}<div class="lede inventory-content">{{ . }}</div>{{ end }}
+      {{/* The list. Server-rendered from content, filtered client-side. The
+           data-* attributes carry the totals so the script never has to scrape
+           text out of the markup. */}}
+      <div class="vehicle-grid" id="vehicle-inventory"
+           data-total="{{ $totalMatched }}" data-page-size="{{ $perPage }}">
+        {{ range $paginator.Pages }}
+          {{ partial "vehicle-card.html" (dict "vehicle" .) }}
+        {{ end }}
+      </div>
+
+      {{/* Two different situations share this block. The script rewrites the
+           message: "no matches" is undoable, "no stock" is not, and a page that
+           renders blank in the second case gives the visitor nothing to do. */}}
+      <div class="inventory-empty hidden" id="inventory-empty">
+        <p data-empty-message>No vehicles match those filters.</p>
+        <button class="btn btn-ghost btn-sm" type="button" data-inventory-reset>Clear them</button>
+        or <a href="/contact/">tell me what you're after</a> — stock turns over.
+      </div>
+
+      {{/* The page's own content, and with it the compare app that a shortcode
+           renders into #comparison-app. It sits here, with the cars, above the
+           pagination -- not at the foot of the page below it, where it read as
+           an afterthought nobody would reach. */}}
+      {{ with .Content }}<div class="inventory-content">{{ . }}</div>{{ end }}
+
+      {{ if gt $paginator.TotalPages 1 }}
+      <nav class="inventory-pagination" aria-label="Inventory pages">
+        {{ if $paginator.HasPrev }}
+          <a class="btn btn-ghost btn-sm" rel="prev" href="{{ $paginator.Prev.URL }}">&larr; Previous</a>
+        {{ else }}
+          <span class="btn btn-ghost btn-sm" aria-disabled="true">&larr; Previous</span>
+        {{ end }}
+
+        <ol class="inventory-pagination__pages">
+          {{ range $paginator.Pagers }}
+            {{ if eq . $paginator }}
+              <li><span class="inventory-pagination__page inventory-pagination__page--current"
+                        aria-current="page">{{ .PageNumber }}</span></li>
+            {{ else }}
+              <li><a class="inventory-pagination__page"
+                        href="{{ .URL }}"
+                        aria-label="Page {{ .PageNumber }}">{{ .PageNumber }}</a></li>
+            {{ end }}
+          {{ end }}
+        </ol>
+
+        {{ if $paginator.HasNext }}
+          <a class="btn btn-ghost btn-sm" rel="next" href="{{ $paginator.Next.URL }}">Next &rarr;</a>
+        {{ else }}
+          <span class="btn btn-ghost btn-sm" aria-disabled="true">Next &rarr;</span>
+        {{ end }}
+      </nav>
+      <p class="inventory-pagination__summary">
+        Showing {{ len $paginator.Pages }} of {{ $totalMatched }}
+        {{ if eq $totalMatched 1 }}vehicle{{ else }}vehicles{{ end }}
+        {{- if gt $paginator.TotalPages 1 }}, page {{ $paginator.PageNumber }} of {{ $paginator.TotalPages }}{{ end }}.
+      </p>
+      {{ end }}
+    </div>
 
     {{ with .Params.show_cta | default true }}
     <div class="cta-band" style="margin-top: var(--space-8)">
