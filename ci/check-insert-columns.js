@@ -152,11 +152,23 @@ function countValues(s) {
  * ------------------------------------------------------------------ */
 
 async function checkAgainstDatabase(inserts) {
+  // `@libsql/client/http`, not `@libsql/client`. The bare entry loads the
+  // platform-native libSQL binding, which the build now omits
+  // (`npm install --omit=optional`) because nothing here can use it -- the
+  // database is an HTTPS libsql:// URL.
+  //
+  // This used to require the bare entry and catch the failure, so the gate
+  // degraded to its static checks and printed "live column check SKIPPED".
+  // That is the worst shape for a gate: it kept passing, it still found the
+  // static problems, and the live half -- the half that catches a column that
+  // exists in the schema file but not in the database -- quietly stopped
+  // running. Requiring the entry point that actually loads is what keeps it
+  // alive.
   let createClient;
   try {
-    ({ createClient } = require(path.join(FUNCTIONS, 'node_modules', '@libsql', 'client')));
-  } catch {
-    return { skipped: '@libsql/client is not installed' };
+    ({ createClient } = require('@libsql/client/http'));
+  } catch (e) {
+    return { skipped: `@libsql/client/http could not be loaded: ${e.message}` };
   }
   if (!process.env.TURSO_DATABASE_URL || !process.env.TURSO_AUTH_TOKEN) {
     return { skipped: 'TURSO_DATABASE_URL / TURSO_AUTH_TOKEN not set' };
@@ -228,6 +240,7 @@ async function checkAgainstDatabase(inserts) {
     'vehicle_search_index',       // PK vehicle_id -> vehicles.id
     'search_index_metadata',      // PK index_type, one row per index
     'google_calendar_tokens',     // PK user_id -> sales_reps.id (the Identity `sub`)
+    'site_settings',              // PK key; a setting's own name IS its identity
     'vehicle_favourites',         // PK slug, which is the vehicle's own identity
   ]);
 

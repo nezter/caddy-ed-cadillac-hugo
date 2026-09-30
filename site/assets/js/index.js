@@ -15,6 +15,13 @@ import './navbar';
 import './forms';
 import './chrome'; // header/nav behaviour, previously an inline <script> in the header partial
 
+// Database-backed copy: headings, intro text, the site-wide banner. Imported
+// into the main bundle rather than loaded per page, because a page that has
+// editable copy should not have to remember to ask for it -- that is how a
+// setting ends up half-applied across the site. Every failure path is a
+// silent no-op that leaves the built copy in place; see the note in the file.
+import './site-settings-apply';
+
 // Inventory filtering is NOT imported here. It used to be, via
 // ./inventory-init, which bootstrapped inventory/InventoryFilters.js. Both are
 // gone: the inventory page is server-rendered by Hugo and
