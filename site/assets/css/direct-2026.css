@@ -1,4 +1,50 @@
 /* ============================================================================
+   direct-2026.css — the 2026 direction. Part of the Caddy Ed site build.
+
+   One stylesheet, loaded LAST in <head> (see baseof.html), on purpose: the
+   section stylesheets are emitted through the headStyles block and re-declare
+   some of the same selectors, so a stylesheet loaded before them loses the
+   cascade. Every visual defect this file fixed by accident, it fixed by being
+   last.
+
+   Structure, in order:
+
+     1. Display faces        self-hosted @font-face, no third-party requests
+     2. Tokens               palette, type scale, surfaces, easings
+     3. Base                 reset, type, focus rings, skip link
+     4. Layout               .wrap, .pad, .stage, .grain, .split, .bento
+     5. Components           plate, ribbon, kicker, tile, dock, ask, seal,
+                             gallery rail, compare table, mobile action bar
+     6. Prose and policy     long-form reading surfaces
+     7. Motion               reveals, gated by prefers-reduced-motion
+     8. V2 additions         light bar, numbered rhythm, arrival tag, seal
+     9. Component layer      the direction applied to the classes the site's
+                             own templates emit (hero, proof strip, cards)
+    10. Typography           the type system applied to ELEMENTS, so every
+                             template inherits it without being edited
+    11. Shell                header and footer, restyled in place
+    12. Coherence            home page as one stage; vehicle page's stage
+    13. Page heads           the shared dark head for pages never ported
+    14. Inventory            rail, results, browsing cards, top line
+    15. Vehicle detail       micro-line, ask module, Ed's note, spec table
+    16. Buttons              the site's four button classes, mapped
+    17. Fixes                defects found by rendering: picture overflow,
+                             card actions, rail scroll, Bootstrap blue
+
+   Conventions:
+     - Selectors target the classes the templates ALREADY emit wherever
+       possible, so the markup and its JavaScript contracts stay untouched.
+     - Nothing here removes or redefines a rule from main.css; it is additive
+       and wins by order.
+     - Page-scoped blocks use body.home / .vehicle-detail / .inventory-page,
+       which also settles the cascade against the section stylesheets.
+
+   Companions, in docs/design-2026/: DIRECTION.md (the system), PAGE-LAYOUTS.md
+   (every URL, section by section), IMAGERY.md (the photographic programme),
+   COVERAGE.md (the audit), WORK-BREAKDOWN.md (what remains).
+   ========================================================================= */
+
+/* ============================================================================
    Caddy Ed — 2026 direction: "Night Showroom"
    Additive stylesheet for the redesign mockups.
    Every value that already exists in the site's assets/main.css tokens is

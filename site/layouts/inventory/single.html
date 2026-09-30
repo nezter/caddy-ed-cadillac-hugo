@@ -401,4 +401,40 @@
 
 {{/* Progressive enhancement only. Everything above this line is complete markup. */}}
 {{ partial "entry.html" (dict "entry" "vehicle-detail.js" "page" .) }}
+
+{{/* Structured data. A dealer's inventory page is the single most valuable
+     thing on the site to describe for a search engine: it is a product with a
+     price, a mileage and an identifier. Every field is guarded, so a vehicle
+     missing one simply omits it rather than emitting a null. */}}
+{{- $avail := "https://schema.org/InStock" -}}
+{{- if eq .Params.available false }}{{ $avail = "https://schema.org/SoldOut" }}{{ end -}}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Car",
+  "name": {{ $.Title | jsonify }},
+  "url": {{ .Permalink | jsonify }},
+  {{- with .Params.vin }}"vehicleIdentificationNumber": {{ . | jsonify }},{{ end }}
+  {{- with .Params.stock }}"sku": {{ . | jsonify }},{{ end }}
+  {{- with .Params.make }}"brand": {"@type":"Brand","name": {{ . | jsonify }}},{{ end }}
+  {{- with .Params.model }}"model": {{ . | jsonify }},{{ end }}
+  {{- with .Params.trim }}"vehicleConfiguration": {{ . | jsonify }},{{ end }}
+  {{- with .Params.year }}"vehicleModelDate": {{ . | jsonify }},{{ end }}
+  {{- with .Params.body_style }}"bodyType": {{ . | jsonify }},{{ end }}
+  {{- with .Params.exterior_color }}"color": {{ . | jsonify }},{{ end }}
+  {{- with .Params.mileage }}"mileageFromOdometer": {"@type":"QuantitativeValue","value": {{ . }},"unitCode":"SMI"},{{ end }}
+  {{- with .Params.condition }}"itemCondition": {{ . | jsonify }},{{ end }}
+  {{- with .Params.image }}"image": {{ (printf "%s%s" $.Site.BaseURL (strings.TrimPrefix "/" .)) | jsonify }},{{ end }}
+  "offers": {
+    "@type": "Offer",
+    "priceCurrency": "USD",
+    {{- with .Params.price }}"price": {{ . }},{{ end }}
+    "availability": {{ $avail | jsonify }},
+    "itemCondition": "https://schema.org/NewCondition",
+    "seller": {"@type":"AutoDealer","name": {{ .Site.Title | jsonify }},
+      "telephone": {{ .Site.Params.phone | default "803-431-6180" | jsonify }}}
+  }
+}
+</script>
+
 {{ end }}
