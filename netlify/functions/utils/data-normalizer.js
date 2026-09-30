@@ -1,4 +1,15 @@
-const { parsePhoneNumberFromString } = require('libphonenumber-js');
+// `libphonenumber-js/min`, not `libphonenumber-js`.
+//
+// The bare entry carries the full metadata for every numbering plan on earth:
+// 13 MB on disk, and the Netlify bundler copies the whole package directory
+// rather than tree-shaking it, so all 13 MB shipped in every function bundle
+// that transitively required this file. The `min` entry is 6 KB of code plus
+// the same metadata, minified -- the parsing is identical.
+//
+// It is used for exactly one thing (normalizePhone, E.164 for lead
+// deduplication), which is worth knowing: a 13 MB dependency answering one
+// question about ten-digit US numbers is a dependency to keep an eye on.
+const { parsePhoneNumberFromString } = require('libphonenumber-js/min');
 
 /**
  * Data normalization utilities for lead deduplication
@@ -37,8 +48,26 @@ class DataNormalizer {
       console.warn('Phone number parsing error:', error.message);
     }
 
-    // Fallback: basic cleaning
-    return phone.replace(/\D/g, '');
+    // The fallback used to be `phone.replace(/\D/g, '')`, which returns
+    // whatever digits were there -- and that is the wrong answer for the only
+    // thing this function is used for.
+    //
+    // This normalises phone numbers so lead DEDUPLICATION can tell whether two
+    // leads are the same person. A fallback of "8034316180" does not achieve
+    // that: the same customer entered as "(803) 431-6180" elsewhere produces
+    // "+18034316180", and the two strings differ, so the one duplicate this
+    // function exists to find is the one it misses. It also stores a value that
+    // looks normalised and is not, which is worse than an empty one because
+    // nothing downstream can tell the difference.
+    //
+    // So: reconstruct E.164 for the unambiguous lengths, and return NOTHING for
+    // the ambiguous ones. An empty string means "no key", which cannot merge two
+    // different people. A seven-digit local number has no area code, so keying
+    // it as if it were a full number WOULD merge two different people.
+    const digits = String(phone).replace(/\D/g, '');
+    if (digits.length === 10) return '+1' + digits;
+    if (digits.length === 11 && digits[0] === '1') return '+' + digits;
+    return '';
   }
 
   /**

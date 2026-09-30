@@ -119,23 +119,41 @@ which is the check that would catch a genuine missing module.
 
 ---
 
-## What is left in the bundle
+## What is left in the bundle, measured
 
-46 MB across 41 functions, ~1.1 MB each. The bulk of any single zip is
-`libphonenumber-js`:
+47 MB across 42 functions. Measured per zip, not estimated:
 
-```
-13 MB on disk   (bundle/, es6/, es6-modern/, build/, types)
-     6 KB actually used   (libphonenumber-js/min/*.js)
-```
+| | zips | size each |
+|---|---:|---|
+| contain `libphonenumber-js` | 4 | ~4.2 MB |
+| do not | 38 | ~1.0 MB |
 
-`utils/data-normalizer.js` already requires the `min` entry point. The bundler
-copies the package directory rather than tree-shaking it, so all 13 MB ship for
-6 KB of code. The lever is the installed package, not the import.
+So the library costs **~3.2 MB in each of 4 bundles, ~13 MB total**. The other
+38 sit at a ~988 KB baseline, which is mostly `pg`.
 
-Not fixed yet. The honest options are to vendor the `min` build, or to drop the
-dependency for the one thing it is used for — normalising a US phone number,
-which is a much smaller problem than a phone number database is.
+**The `/min` import does not help, and that is worth knowing.** It was tried:
+`require('libphonenumber-js/min')` instead of the bare entry, and the bundle
+went 46 MB → 47 MB. The Netlify bundler copies the whole package directory
+rather than tree-shaking it, so all 13 MB ship whether the import asks for one
+file or thirty-nine. The lever is the installed package, not the import.
+
+The only remaining way to get the 13 MB back is to **remove the dependency**,
+which means losing international phone validation. It is used for exactly one
+thing — `normalizePhone`, E.164 formatting for lead deduplication — and this is
+a single dealership in North Carolina. That is a reasonable trade, but it is a
+capability decision, not a cleanup, so it is not made unilaterally.
+
+### `pg` stays, deliberately
+
+The ~988 KB baseline on all 38 other zips is `pg`, required at the top of
+`utils/database-service.js` and `enhanced-database-service.js`. It looks like
+the same waste: a database driver for a database that is never opened.
+
+It stays because the Postgres path is **live**, not dead. `getPgPool()` is a
+real fallback and `SUPABASE_DB_URL` is referenced in `netlify.toml`. Removing
+the driver would remove a working fallback, which is a worse outcome than
+carrying 600 KB — and 600 KB is what it actually costs, once measured, rather
+than the 317 MB the native libSQL binaries were.
 
 ---
 
