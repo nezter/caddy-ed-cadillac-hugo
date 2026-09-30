@@ -471,6 +471,41 @@
     apply();
   }
 
+  /* --- price ceiling: live readout -------------------------------------
+     The slider shipped with a readout element that nothing updated: the
+     number only changed after a reload. Additive and guarded -- it reads
+     the slider, writes the figure, and never touches the filter logic.
+     -------------------------------------------------------------------- */
+  (function () {
+    try {
+      var slider = document.getElementById('f-max-price');
+      var out = document.querySelector('[data-price-readout]');
+      if (!slider || !out) return;
+
+      var money = function (n) {
+        return String.fromCharCode(36) + Math.round(n).toLocaleString('en-US');
+      };
+
+      var sync = function () {
+        var v = parseFloat(slider.value);
+        var top = parseFloat(slider.max);
+        if (!isFinite(v)) return;
+        out.textContent = (isFinite(top) && v >= top) ? 'Up to ' + money(top) : 'Up to ' + money(v);
+      };
+
+      slider.addEventListener('input', sync);
+      slider.addEventListener('change', sync);
+
+      // readUrl() sets the slider from the query string inside init(), which
+      // runs on DOMContentLoaded -- so the first paint is deferred past it.
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function () { setTimeout(sync, 60); });
+      } else {
+        setTimeout(sync, 60);
+      }
+    } catch (e) { /* a readout must never break the filter */ }
+  })();
+
   if (document.readyState !== 'loading') init();
   else document.addEventListener('DOMContentLoaded', init);
 })();

@@ -201,3 +201,38 @@ then build an instrument.
 | Deeper interior-page layouts | Interior pages share one ported pattern; unique layouts not yet built per page. |
 | Push to origin | Blocked on credentials — user handles this. |
 | `update_goal` | Not marked complete while the above remain. |
+
+
+### Facet-by-facet interaction sweep — all nine pass
+
+Each row is a real page load with the URL a click produces, counting **visible**
+cards (the earlier "no effect" readings counted hidden ones):
+
+| URL | Visible | Count line | First card |
+| --- | --- | --- | --- |
+| `/inventory/` | 24 | 24 vehicles (35 in stock) | 2026 CADILLAC XT5 Luxury |
+| `?status=New` | 13 | 13 vehicles of 24 | 2026 CADILLAC XT5 Luxury |
+| `?status=Certified+Pre-Owned` | 8 | 8 vehicles of 24 | 2025 CADILLAC XT4 Premium Luxury |
+| `?drivetrain=4WD` | 4 | 4 vehicles of 24 | 2026 CADILLAC Escalade ESV 1SA |
+| `?max_price=30000` | 5 | 5 vehicles of 24 | 28396, 29899 — all at or under 30,000 |
+| `?q=escalade` | 3 | 3 vehicles of 24 | 2026 CADILLAC Escalade ESV 1SA |
+| `?model=XT5` | 5 | 5 vehicles of 24 | 2026 CADILLAC XT5 Luxury |
+| `?sort=price-desc` | 24 | — | 136975 first — descending |
+| `?year=2020` | 1 | **1 vehicle** of 24 | 2020 Nissan Armada SL |
+
+The count line pluralises correctly, and every facet composes with the others.
+
+### Price ceiling: live readout
+
+The slider shipped with a readout element that nothing updated — the figure only
+changed after a reload. Wired in `inventory-filter.js` as an additive, guarded
+block that reads the slider and writes the number without touching the filter.
+The first paint is deferred past `init()`, which is where `readUrl()` sets the
+slider from the query string.
+
+Verified:
+
+| Load | At load | After dragging to 25,000 | Back to maximum |
+| --- | --- | --- | --- |
+| `/inventory/` | Up to $150,000 | Up to $25,000 | Up to $150,000 |
+| `/inventory/?max_price=30000` | Up to $30,000 | Up to $25,000 | Up to $150,000 |
