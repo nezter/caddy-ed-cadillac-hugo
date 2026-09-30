@@ -153,6 +153,25 @@
           {{- with .Params.status -}}{{ if not (in $statuses .) }}{{ $statuses = $statuses | append . }}{{ end }}{{ end -}}
         {{- end -}}
         {{- $statuses = sort $statuses -}}
+        {{/* The quick-filter toolbar the mockup puts above the cars. The sort
+             control is the same element, moved rather than copied -- a
+             duplicate would give the script two controls of the same name and
+             no way to say which is authoritative. It carries
+             form="inventory-filters" so it still belongs to the form and still
+             submits with it; inventory-filter.js finds it through that
+             attribute. */}}
+        <div class="inv-toolbar">
+          <div class="form-field">
+                    <label for="f-sort">Sort</label>
+                    <select form="inventory-filters" class="select" id="f-sort" name="sort">
+                      <option value="price-asc">Price: low to high</option>
+                      <option value="price-desc">Price: high to low</option>
+                      <option value="year-desc" selected>Newest first</option>
+                      <option value="mileage-asc">Lowest mileage</option>
+                    </select>
+                  </div>
+        </div>
+
         <nav class="inv-chips" aria-label="Quick filters">
           <a class="inv-chip" href="/inventory/">All</a>
           {{ range $statuses }}

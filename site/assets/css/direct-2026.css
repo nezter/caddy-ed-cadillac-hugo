@@ -1706,3 +1706,22 @@ body.home .vehicle-card__actions .btn-ghost:hover{
   color:#6f7683;margin:0 0 .5rem;
 }
 .inv-rail .inv-shortlist__body{margin:0;font-size:.84rem;color:#515863;line-height:1.5}
+
+
+/* --- the toolbar above the cars ----------------------------------------- */
+.inv-results .inv-toolbar{
+  display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;
+  padding:.7rem .9rem;margin:0 0 .9rem;
+  background:#fafafa;border:1px solid var(--border);border-radius:var(--r-card);
+}
+.inv-results .inv-toolbar .form-field{
+  display:flex;align-items:center;gap:.5rem;margin:0;
+}
+.inv-results .inv-toolbar .form-field > label{
+  font-family:var(--f-mono);font-size:.62rem;letter-spacing:.13em;text-transform:uppercase;
+  color:#6f7683;white-space:nowrap;margin:0;
+}
+.inv-results .inv-toolbar select{
+  width:auto;padding:.42rem .7rem;font-size:.86rem;
+  border:1px solid #dde0e6;border-radius:999px;background:#fff;color:var(--ink-1);
+}
