@@ -127,7 +127,7 @@ closing band. What they do not have is a ported interior.
 | **Test drive** | Vehicle picker now reads properly and the steps band is in. Still carries **two competing booking forms** — one should go, and which is your call | Small, needs a decision |
 | **Trade-in** | **The appraisal form.** A page about a number with no way to enter one. Can post to the existing `lead-form` endpoint; no new backend | Medium |
 | **Service** | **Three service cards** (maintenance / diagnostics / collision) and a **booking form** | Medium |
-| **Financing** | The calculator is behind a "Show payment calculator" toggle and is off by default; the mockup promotes it | Small |
+| **Financing** | ~~The calculator is off by default; the mockup promotes it~~ **Corrected in this pass:** the calculator is off ON PURPOSE and the page says why -- "the calculator is off until the quote endpoints it depends on exist". Promoting it would produce a calculator with no live rates behind it. Not a gap; a deliberate, honest decision. The toggle panel now reads as intentional rather than as a section that failed to load | — |
 | **Specials** | **Nothing to show.** Two headings and a link row. Either build the three offer cards or fold it into inventory and redirect | Medium |
 | **Communication preferences** | **The controls do not exist.** The privacy policy points here to opt out, and it is a heading and nothing else | Medium |
 | **404** | Could offer three similar vehicles when the URL was a vehicle that sold | Small |
