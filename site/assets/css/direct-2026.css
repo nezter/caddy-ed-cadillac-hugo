@@ -1760,3 +1760,83 @@ body.home .vehicle-card__actions .btn-ghost:hover{
   border:2px solid #fff;box-shadow:0 1px 4px rgba(11,13,16,.3);cursor:pointer;
 }
 .inv-rail input[type="range"]:focus-visible{outline:2px solid var(--bronze-hi);outline-offset:4px}
+
+
+/* ==========================================================================
+   THE COMPARISON TRAY — the new UI.
+   #comparison-tray has existed in the markup since the start and has never had
+   a single line of CSS. vehicleComparison.js fills it as cars are shortlisted
+   (max three), and until now it appeared as unstyled text at the bottom of the
+   page. This is the tray the mockup carries: a dark bar, the chosen cars as
+   swatches, what you have selected, and the two things worth doing with it.
+
+   The [hidden] guard is not decoration. The tray ships hidden and the script
+   unhides it; a display rule without that guard would override the attribute
+   and leave an empty bar stuck to the bottom of every page.
+   ========================================================================== */
+.comparison-tray{
+  position:fixed;inset:auto 0 0 0;z-index:70;
+  display:flex;align-items:center;gap:.65rem;flex-wrap:wrap;
+  padding:.75rem clamp(1rem,4vw,2.5rem);
+  background:rgba(7,9,11,.95);
+  -webkit-backdrop-filter:blur(14px) saturate(140%);
+  backdrop-filter:blur(14px) saturate(140%);
+  border-top:1px solid var(--bronze-line);
+  color:var(--on-ink);
+  box-shadow:0 -18px 40px rgba(0,0,0,.4);
+}
+.comparison-tray[hidden]{display:none}
+
+/* the chosen cars, as swatches */
+.comparison-tray img{
+  width:56px;height:38px;object-fit:cover;display:block;
+  border-radius:7px;border:1px solid rgba(255,255,255,.22);
+}
+.comparison-tray .comparison-item,
+.comparison-tray .tray-item{display:flex;align-items:center;gap:.5rem}
+
+/* the label, in the same voice as every other micro-label on the site */
+.comparison-tray h2,.comparison-tray h3,.comparison-tray strong,.comparison-tray .label{
+  font-family:var(--f-mono);font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--bronze);margin:0;font-weight:400;
+}
+.comparison-tray p,.comparison-tray span{color:var(--on-ink-muted);font-size:.86rem;margin:0}
+.comparison-tray .btn{
+  padding:.5rem .95rem;font-size:.84rem;border-radius:999px;
+}
+.comparison-tray .btn-primary{background:var(--brand-red);border-color:transparent;color:#fff}
+.comparison-tray .btn-primary:hover{background:var(--brand-red-bright)}
+.comparison-tray .btn-secondary,.comparison-tray .btn-outline,.comparison-tray .btn-ghost{
+  background:transparent;border:1px solid rgba(255,255,255,.22);color:var(--on-ink);
+}
+.comparison-tray .btn-secondary:hover,.comparison-tray .btn-outline:hover,.comparison-tray .btn-ghost:hover{
+  border-color:var(--bronze-hi);color:#fff;
+}
+.comparison-tray button[aria-label*="emove"],
+.comparison-tray .remove-item{
+  background:transparent;border:0;color:var(--on-ink-faint);cursor:pointer;
+  font-size:1rem;line-height:1;padding:.2rem .35rem;
+}
+.comparison-tray button[aria-label*="emove"]:hover,
+.comparison-tray .remove-item:hover{color:var(--brand-red-bright)}
+
+/* keep the tray from covering the last of the footer */
+body:has(.comparison-tray:not([hidden])){padding-bottom:84px}
+
+/* --- the comparison itself, when it is opened --------------------------- */
+.comparison-table{width:100%;border-collapse:collapse;margin-top:1.4rem}
+.comparison-table th,.comparison-table td{
+  padding:.8rem .7rem;border-bottom:1px solid var(--border);text-align:left;vertical-align:top;
+}
+.comparison-header th{
+  font-family:var(--f-display);font-weight:620;letter-spacing:-.018em;font-size:.98rem;color:var(--ink-1);
+}
+.comparison-row th{
+  font-family:var(--f-mono);font-size:.64rem;letter-spacing:.12em;text-transform:uppercase;
+  color:#6f7683;font-weight:400;white-space:nowrap;
+}
+.comparison-row td{font-variant-numeric:tabular-nums;color:#3a4049}
+.empty-comparison{
+  padding:1.2rem;border:1px dashed var(--border);border-radius:var(--r-card);
+  color:#6f7683;font-size:.9rem;
+}
