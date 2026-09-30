@@ -6,22 +6,15 @@ styles:
   - components/admin.css
 scripts:
   - components/advanced-search.js
----
+---
 
 Cross-entity search across customers, leads, interactions, appointments and
 vehicle stock, with the filter values the database actually holds and saved
-searches per rep.
-
-Everything here is mounted and driven by
-[components/advanced-search.js](/admin/search), bundled and fingerprinted
-through the `scripts:` key above. Its stylesheet,
-`components/advanced-search.css`, is emitted automatically by
-`partials/page-scripts.html` — the script sits in `assets/js/components/`, so
-the partial derives the matching `components/*.css` and does not emit it twice.
+searches per rep.
 
 <div id="advanced-search-app">
   <div class="loading" role="status">Loading search…</div>
-</div>
+</div>
 
 <noscript>
   <div class="admin-alert" role="note">

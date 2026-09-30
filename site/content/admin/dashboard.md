@@ -6,27 +6,22 @@ styles:
   - components/admin.css
 scripts:
   - salesDashboard.js
----
+---
 
 Your leads, upcoming appointments and performance metrics, filtered by
 timeframe, status and sort order. Actions taken here — status changes, notes,
 and completing an appointment — write straight through to the sales functions,
-so the dashboard is only as current as the last refresh.
-
-Everything below is mounted and driven by `salesDashboard.js`, which is bundled
-and fingerprinted through the `scripts:` key above. The stylesheet comes from
-`styles:`. Neither is referenced by a hardcoded path, and no CSS or JavaScript
-is inlined in this file.
+so the dashboard is only as current as the last refresh.
 
 The session token is read from the sales login; without one the dashboard
-renders a sign-in form instead of an empty list.
+renders a sign-in form instead of an empty list.
 
 <div id="sales-dashboard" data-sales-id="current-user" data-sales-name="Sales Rep">
   <div class="dashboard-loading" role="status">
     <div class="spinner" aria-hidden="true"></div>
     <p>Loading your sales dashboard...</p>
   </div>
-</div>
+</div>
 
 <!-- Filter bar. The handles are captured by salesDashboard.js in its
      constructor, before any rendering happens, so they have to exist in the
@@ -67,10 +62,10 @@ renders a sign-in form instead of an empty list.
       <input id="search-input" name="search" type="search" placeholder="Name, email or phone">
     </div>
   </div>
-</section>
+</section>
 
-<div id="sales-metrics" aria-label="Sales metrics"></div>
+<div id="sales-metrics" aria-label="Sales metrics"></div>
 
-<div id="leads-list" aria-label="Leads"></div>
+<div id="leads-list" aria-label="Leads"></div>
 
 <div id="appointments-list" aria-label="Appointments"></div>

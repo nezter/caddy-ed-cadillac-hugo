@@ -7,7 +7,7 @@ styles:
   - components/customer-relationship.css
 scripts:
   - customerRelationship.js
----
+---
 
 The book of customers assigned to the signed-in sales rep, straight from
 `/.netlify/functions/sales-customers`. The function decides whose customers
@@ -16,10 +16,10 @@ names, so this page sends no rep id and cannot see anybody else's book no
 matter what its URL says. Search matches name, email or phone; the status
 filter offers exactly the four statuses the customers table allows — active,
 inactive, archived and do-not-contact — because a filter the database would
-reject is a button that silently shows nothing.
+reject is a button that silently shows nothing.
 
 Two of the panels here are standing in for things that do not exist, and both
-say so rather than dressing an empty list up as data:
+say so rather than dressing an empty list up as data:
 
 **Appointments, not follow-ups.** The follow-up list this panel was originally
 written for never had a backend: `followups` is a real table, but no function
@@ -27,22 +27,18 @@ has ever selected its rows — it is only ever read as a COUNT inside campaign
 statistics. The panel therefore shows the per-rep appointment list from
 `/.netlify/functions/sales-appointments`, the nearest scheduled-work list a
 function actually returns, and its heading says "Appointments" rather than
-claiming to be follow-ups it cannot see.
+claiming to be follow-ups it cannot see.
 
 **Activity, honestly absent.** There is no function that lists everything a rep
 has touched. The interactions timeline reports one customer at a time and
 needs permissions a plain sales rep does not hold. Rather than render an empty
 "Activity" list that reads as "nothing has happened", the panel states that no
 activity feed exists and points at [the dashboard](/admin/dashboard) and
-[lead management](/admin/leads), where the information does live.
+[lead management](/admin/leads), where the information does live.
 
 Without a staff session the whole panel is replaced by a sign-in prompt
 linking to [the sign-in page](/admin/sign-in) — an empty customer table is
-indistinguishable from "you have no customers", and the difference matters.
-
-Everything below is mounted and driven by `customerRelationship.js`, bundled
-and fingerprinted through the `scripts:` key above, with `components/admin.css`
-and `components/customer-relationship.css` supplied by `styles:`.
+indistinguishable from "you have no customers", and the difference matters.
 
 <div id="customer-relationship">
   <div class="crm-toolbar">
@@ -62,7 +58,7 @@ and `components/customer-relationship.css` supplied by `styles:`.
     </div>
     <button type="button" class="btn btn-primary new-customer-btn">New customer</button>
     <button type="button" class="btn refresh-button">Refresh</button>
-  </div>
+  </div>
 
   <div class="crm-grid">
     <section class="crm-section crm-section--customers" aria-label="Customers">
