@@ -363,11 +363,11 @@ function main() {
   // name, because the failure mode is invisible: the file exists, every asset
   // reference resolves, and the browser simply refuses to run it.
   const extensionless = files.filter(
-    (f) => /\/(js|css)\//.test(f) && !isBundleName(path.basename(f)) &&
+    (f) => /[/\\](js|css)[/\\]/.test(f) && !isBundleName(path.basename(f)) &&
       /[a-f0-9]{32,}$/.test(path.basename(f))
   );
   const bundles = files.filter(
-    (f) => /\/(js|css)\//.test(f) && isBundleName(path.basename(f))
+    (f) => /[/\\](js|css)[/\\]/.test(f) && isBundleName(path.basename(f))
   );
 
   if (bundles.length) {

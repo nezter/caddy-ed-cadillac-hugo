@@ -231,7 +231,7 @@ function main() {
   const unreferenced = jsFiles
     .filter((f) => !reachable.has(f))
     .map((f) => ({
-      file: path.relative(JS, f),
+      file: path.relative(JS, f).split(path.sep).join('/'),
       bytes: fs.statSync(f).size,
       kind: isTest(f) ? 'test' : isCmsTemplate(f) ? 'cms-template' : 'unexplained',
     }))
@@ -252,17 +252,21 @@ function main() {
   for (const p of roots) {
     const rel = path.relative(JS, p);
     if (!rel.includes(path.sep)) continue; // only the directoryed ones derive
-    const candidate = rel.replace(/\.js$/, '.css');
+    const candidate = rel.replace(/\.js$/, '.css').split(path.sep).join('/');
     if (fs.existsSync(path.join(CSS, candidate))) cssUsed.add(candidate);
   }
+  // path.relative() yields backslashes on Windows while cssRefs are collected as
+  // forward-slash strings from the source, so every live stylesheet compared
+  // unequal and read as dead. Normalise before comparing, and report the same way.
+  const cssKey = (f) => path.relative(CSS, f).split(path.sep).join('/');
   const cssUnreferenced = cssFiles
-    .filter((f) => !cssUsed.has(path.relative(CSS, f)))
-    .map((f) => path.relative(CSS, f));
+    .filter((f) => !cssUsed.has(cssKey(f)))
+    .map((f) => cssKey(f));
 
   const result = {
     js: { total: jsFiles.length, reachable: reachable.size, unreferenced },
     css: { total: cssFiles.length, unreferenced: cssUnreferenced },
-    roots: [...roots].map((f) => ({ file: path.relative(JS, f), why: why.get(f) })),
+    roots: [...roots].map((f) => ({ file: path.relative(JS, f).split(path.sep).join('/'), why: why.get(f) })),
     // Declared but absent. Separate from `roots` on purpose: a missing entry is
     // a broken page, a live entry is just an entry.
     missingRoots: [...missingRoots].map(([file, reason]) => ({ file, why: reason })),
