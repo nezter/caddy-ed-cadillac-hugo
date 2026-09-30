@@ -12,7 +12,7 @@ form:
   submit_button: "Send Message"
 contact_info:
   heading: "My Information"
-  phone: "(704) 555-1234"
+  phone: "(803) 431-6180"
   email: "ed@caddyed.com"
   dealership: "Cadillac of South Charlotte"
   address: "123 Luxury Lane, Charlotte, NC 28277"

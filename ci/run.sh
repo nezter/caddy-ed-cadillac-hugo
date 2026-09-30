@@ -132,6 +132,12 @@ do_verify() {
   do_build
   log "Verifying build output has no dangling asset references"
   in_container 'node ci/verify-build.js'
+  # The site shipped a fictional 555 number in the header of every page while
+  # config.toml held the correct one, and verify-build passed. This reads the
+  # built html, which is the only place a template default, a front-matter
+  # override, a JS string and a data file cannot disagree with each other.
+  log "Checking for placeholder contact details in the built site"
+  in_container 'node ci/check-no-placeholder-contact.js'
   # Source-tree check. Runs before the output check would have any chance of
   # passing anyway, because the failure it catches (starter-template demo
   # content, e.g. the Kaldi Coffee pricing page) produces a perfectly valid

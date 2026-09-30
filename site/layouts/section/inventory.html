@@ -14,7 +14,10 @@
        "not false" rather than "is true" -- a hand-written page with no
        availability field is never accidentally hidden. */ -}}
 {{- $all := where .RegularPages "Params.available" "!=" false }}
-{{- $phone := .Site.Params.phone | default "704-555-1234" -}}
+{{- /* The default is the real number, not a placeholder. A `default` that
+       renders a 555 line is worse than no default at all: a customer who
+       dials it reaches nobody and nothing on the page looks wrong. */ -}}
+{{- $phone := .Site.Params.phone | default "803-431-6180" -}}
 {{- $phoneHref := replace $phone "." "" -}}
 
 {{/* Build the filter vocabularies from the content itself, so the options can
@@ -23,10 +26,6 @@
 {{- $years := slice -}}
 {{- $drivetrains := slice -}}
 {{- $transmissions := slice -}}
-{{- $drivetrains := slice -}}
-{{- $transmissions := slice -}}
-{{- $models := slice -}}
-{{- $years := slice -}}
 {{- range $all -}}
   {{- with .Params.model }}{{ $models = $models | append . }}{{ end -}}
   {{- with .Params.year }}{{ $years = $years | append (int .) }}{{ end -}}

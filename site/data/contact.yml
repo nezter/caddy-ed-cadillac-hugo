@@ -1,4 +1,14 @@
-phone: "704-555-7890"
+# NOT REFERENCED by any template. Kept because it records the business
+# details in one place, but nothing reads it -- do not wire a template to it
+# without resolving the address below first.
+#
+# THE ADDRESS IS UNRESOLVED. Three different streets are in this repository:
+#   site/config.toml   10725 Pineville Rd, Pineville, NC 28134   (the live one)
+#   an older build     9315 South Boulevard, Charlotte, NC 28273
+#   this file          9020 South Blvd, Charlotte, NC 28273
+# Only the first is live. The other two are unconfirmed and have not been
+# guessed at.
+phone: "803-431-6180"
 email: "ed@cadillacofsouthcharlotte.com"
 dealership: "Cadillac of South Charlotte"
 address: "9020 South Blvd, Charlotte, NC 28273"

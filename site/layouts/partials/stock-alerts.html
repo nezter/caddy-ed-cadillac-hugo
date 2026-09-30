@@ -14,7 +14,10 @@
 */ -}}
 {{- $alerts := dict "form_name" "stock-alerts" -}}
 {{- $social := site.Data.social | default dict -}}
-{{- $smsNumber := "+17045557890" -}}
+{{- /* The confirmed dealership line. This was +1 704-555-7890, a fictional
+     number, and it was the default for the SMS opt-in -- so a customer who
+     tapped "text me" was texting a number that does not exist. */ -}}
+{{- $smsNumber := "+18034316180" -}}
 {{- with $social }}{{ with .text }}{{ $smsNumber = .number | default $smsNumber }}{{ end }}{{ end -}}
 {{- $phone := .Site.Params.phone | default "803-431-6180" -}}
 {{- $phoneHref := replace $phone "." "" | replace "(" "" | replace ")" "" | replace " " "" -}}
@@ -27,7 +30,7 @@
   <label class="notify-form__label" for="alertsEmail">Get an email when stock lands</label>
   <div class="notify-form__row">
     <input class="input" id="alertsEmail" name="email" type="email"
-           autocomplete="email" placeholder="you@example.com" required>
+           autocomplete="email" placeholder="Your email address" required>
     <button class="btn btn-primary" type="submit">Send me alerts</button>
   </div>
   <p class="notify-form__note">Used only for stock alerts from Ed. Nothing else, ever.</p>

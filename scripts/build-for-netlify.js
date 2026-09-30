@@ -178,6 +178,15 @@ run(
 // 6. Gate: fail if any page references a local asset that does not exist.
 run('node ci/verify-build.js', { label: 'verify build output' });
 
+// Reads the BUILT html. It is here, next to verify-build, because the build is
+// the only moment all the ways a phone number can be wrong are in one place:
+// a template default, a page's own front matter, a JS string, a data file.
+// The site shipped 704-555-1234 in the header of every page while
+// config.toml held the right number, and verify-build passed.
+run('node ci/check-no-placeholder-contact.js', {
+  label: 'no placeholder contact details in the output',
+});
+
 // 7. Summary.
 function dirSize(dir) {
   let total = 0;

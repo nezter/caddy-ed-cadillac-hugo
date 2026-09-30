@@ -27,7 +27,10 @@
 {{ define "headStyles" }}{{ partial "stylesheet.html" "inventory.scss" }}{{ end }}
 
 {{ define "main" }}
-{{- $phone := .Site.Params.phone | default "704-555-1234" -}}
+{{- /* The default is the real number, not a placeholder. A `default` that
+       renders a 555 line is worse than no default at all: a customer who
+       dials it reaches nobody and nothing on the page looks wrong. */ -}}
+{{- $phone := .Site.Params.phone | default "803-431-6180" -}}
 {{- $phoneHref := replace $phone "." "" -}}
 {{- $vehicles := sort (where .Site.RegularPages "Section" "inventory") "Params.year" "desc" -}}
 <article class="section test-drive-page">
