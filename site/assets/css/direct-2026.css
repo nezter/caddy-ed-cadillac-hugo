@@ -1887,11 +1887,14 @@ body:has(.comparison-tray:not([hidden])){padding-bottom:84px}
    horizontal scrollbar. It is clip rather than hidden on purpose: clip does not
    create a scroll container, so the sticky filter rail inside it still sticks.
    ========================================================================== */
-.inventory-page{overflow-x:clip}
-.inventory-page .container{overflow:visible}
+/* The clip must NOT sit on .inventory-page: the head bleeds outside that box
+   and a clip here cuts the band off at its edge, which is exactly what left
+   white margins beside it. On body it clips at the viewport instead, which is
+   where a stray scrollbar would come from, and the band survives. */
+body:has(.inventory-page){overflow-x:clip}
 
 @media (min-width:48rem){
-  .inventory-head{
+  .inventory-page .container .inventory-head{
     margin-inline:calc(50% - 50vw);
     padding-inline:max(calc(50vw - 50%), var(--gutter));
     padding-block:clamp(2rem,4.5vw,3.4rem);
