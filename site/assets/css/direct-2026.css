@@ -1725,3 +1725,38 @@ body.home .vehicle-card__actions .btn-ghost:hover{
   width:auto;padding:.42rem .7rem;font-size:.86rem;
   border:1px solid #dde0e6;border-radius:999px;background:#fff;color:var(--ink-1);
 }
+
+
+/* --- the inventory head, composed rather than stacked -------------------- */
+.inventory-head{
+  display:grid;grid-template-columns:1.12fr .88fr;
+  gap:clamp(1.5rem,4vw,3.5rem);align-items:end;
+}
+.inventory-head__main{min-width:0}
+.inventory-head__aside{min-width:0}
+.inventory-head .inventory-head__count{color:var(--on-ink-faint);margin:1rem 0 0}
+.inventory-head .lede{margin:0;color:var(--on-ink-muted);max-width:44ch}
+@media (max-width:64rem){
+  .inventory-head{grid-template-columns:1fr;gap:1.2rem}
+}
+
+/* --- the price ceiling slider ------------------------------------------- */
+.inv-rail input[type="range"]{
+  width:100%;height:1.4rem;margin:.2rem 0 .1rem;
+  -webkit-appearance:none;appearance:none;background:transparent;
+}
+.inv-rail input[type="range"]::-webkit-slider-runnable-track{
+  height:4px;border-radius:2px;background:#e2e5ea;
+}
+.inv-rail input[type="range"]::-webkit-slider-thumb{
+  -webkit-appearance:none;appearance:none;
+  width:18px;height:18px;margin-top:-7px;border-radius:50%;
+  background:var(--ink-1);border:2px solid #fff;
+  box-shadow:0 1px 4px rgba(11,13,16,.3);cursor:pointer;
+}
+.inv-rail input[type="range"]::-moz-range-track{height:4px;border-radius:2px;background:#e2e5ea}
+.inv-rail input[type="range"]::-moz-range-thumb{
+  width:16px;height:16px;border-radius:50%;background:var(--ink-1);
+  border:2px solid #fff;box-shadow:0 1px 4px rgba(11,13,16,.3);cursor:pointer;
+}
+.inv-rail input[type="range"]:focus-visible{outline:2px solid var(--bronze-hi);outline-offset:4px}

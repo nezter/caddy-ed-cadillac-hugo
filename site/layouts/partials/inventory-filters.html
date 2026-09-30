@@ -148,16 +148,27 @@
           </select>
         </div>
 
+        {{/* The mockup's rail carries a price ceiling as a slider, and this is the
+         one control where that is possible without inventing anything:
+         max_price is a field the filter script already reads, and a range
+         input carries a value the same way a select does. The bound is the
+         highest asking price actually in stock, so the top of the slider is
+         never a number nobody can reach.
+
+         Milestone: a mileage ceiling would need a field the script does not
+         have, so it is not here. A slider bound to nothing would look like a
+         control and filter like a decoration. */}}
+        {{- $ceiling := 150000 -}}
+        {{- $stock := where site.RegularPages "Section" "inventory" -}}
+        {{- $stock = where $stock "Params.available" "!=" false -}}
+        {{- range $stock -}}{{ with .Params.price }}{{ if gt . $ceiling }}{{ $ceiling = . }}{{ end }}{{ end }}{{ end -}}
+        {{- $ceiling = mul (div (add $ceiling 9999) 10000) 10000 -}}
         <div class="form-field">
-          <label for="f-maxprice">Max price</label>
-          <select class="select" id="f-maxprice" name="max_price">
-            <option value="">No limit</option>
-            <option value="40000">Under $40,000</option>
-            <option value="55000">Under $55,000</option>
-            <option value="70000">Under $70,000</option>
-            <option value="90000">Under $90,000</option>
-            <option value="120000">Under $120,000</option>
-          </select>
+          <label for="f-max-price">Price ceiling</label>
+          <input type="range" id="f-max-price" name="max_price"
+                 min="10000" max="{{ $ceiling }}" step="5000" value="{{ $ceiling }}"
+                 data-price-ceiling>
+          <p class="hint">Up to {{ partial "money.html" $ceiling }}. Slide left to narrow the list.</p>
         </div>
 
         

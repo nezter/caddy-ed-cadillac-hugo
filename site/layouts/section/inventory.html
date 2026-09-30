@@ -92,15 +92,23 @@
 <section class="section inventory-page">
   <div class="container">
 
+    {{/* The head was a left-aligned stack: eyebrow, title, a paragraph, a count
+         -- all down the left edge of a full-width dark band, with the right
+         half of it empty. The mockup sets the title and the lede as a pair, so
+         they sit side by side and the band reads as composed rather than as
+         something that ran out. */}}
     <header class="inventory-head">
-      <p class="eyebrow">In stock &middot; synced {{ now.Format "2 January 2006" }}<span class="ltbar" aria-hidden="true"><i></i><i></i><i></i></span></p>
-      <h1 class="display display--sm">{{ .Title | default "Inventory" }}</h1>
-      <p class="lede">Every car below is in stock today. Filter it down, compare
-        two or three side by side, or ask about any of them without leaving the page.</p>
-      <p class="mono-label" style="color:var(--text-faint);margin-top:.7rem">
-        {{ $totalAll }} {{ if eq $totalAll 1 }}vehicle{{ else }}vehicles{{ end }} in stock
-        &middot; page {{ $paginator.PageNumber }} of {{ $paginator.TotalPages }}
-      </p>
+      <div class="inventory-head__main">
+        <p class="eyebrow">In stock &middot; synced {{ now.Format "2 January 2006" }}<span class="ltbar" aria-hidden="true"><i></i><i></i><i></i></span></p>
+        <h1 class="display display--sm">{{ .Title | default "Inventory" }}</h1>
+        <p class="mono-label inventory-head__count">
+          {{ $totalAll }} {{ if eq $totalAll 1 }}vehicle{{ else }}vehicles{{ end }} in stock
+          &middot; page {{ $paginator.PageNumber }} of {{ $paginator.TotalPages }}
+        </p>
+      </div>
+      <div class="inventory-head__aside">
+        {{ with .Content }}<div class="lede">{{ . }}</div>{{ end }}
+      </div>
     </header>
 
     {{/* ---------------------------------------------------------------
