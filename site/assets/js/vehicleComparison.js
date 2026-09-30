@@ -1,378 +1,239 @@
 /**
- * Vehicle Comparison Component
- * Allows users to compare multiple vehicles side by side
+ * vehicleComparison.js -- put two or three cars side by side.
+ *
+ * WHAT CHANGED, AND WHY IT HAD NEVER WORKED
+ * ------------------------------------------
+ * Three defects stacked, so the feature was inert:
+ *
+ * 1. IT NEVER INITIALISED. The bootstrap looked for `.vehicle-comparison`
+ *    elements. The page has `<div id="comparison-app">` and no such class, so
+ *    the query returned nothing and no instance was ever constructed. Every
+ *    method below was correct and unreachable.
+ *
+ * 2. IT FETCHED FROM A FUNCTION THAT HAS NO DATA. Each vehicle was fetched from
+ *    /.netlify/functions/vehicle-details, which reads a live inventory feed
+ *    through INVENTORY_SOURCE_URL -- which has no default, deliberately,
+ *    because guessing a feed means scraping someone else's dealer site. With no
+ *    feed configured the function answers "not configured", so the table could
+ *    never have had a row in it.
+ *
+ * 3. THE CALL WAS MALFORMED ANYWAY. vehicle-details reads its id from the
+ *    QUERY STRING (`?id=`). This called it with a PATH
+ *    (`/vehicle-details/${vehicleId}`), so `queryStringParameters.id` was
+ *    undefined and the function returned a validation error.
+ *
+ * So: the comparison now reads what is already on the page.
+ *
+ * Every field it shows is in the card's own data-* attributes, printed by
+ * vehicle-card.html and used by the filter. The visitor clicked a card, so the
+ * card is in the DOM, so the data is in the DOM. No fetch, no feed, no
+ * dependency -- and it works on a static preview, which is where anybody
+ * actually looks at it.
+ *
+ * SEPARATE FROM THE SHORTLIST, AND SAYS SO
+ * -----------------------------------------
+ * Compare is for deciding between cars. Shortlist is for telling Ed which ones
+ * you want. They used to share one button, labelled "Shortlist", carrying the
+ * class `vehicle-card__compare` and the attribute `data-add-comparison`, while
+ * this feature had no button anywhere.
+ *
+ * This binds [data-compare-toggle] and nothing else. shortlist.js binds
+ * [data-shortlist-toggle] and nothing else. Neither reads the other's name, and
+ * they keep their state separately -- in the URL for a comparison (so it can be
+ * shared or printed) and in localStorage for a shortlist (so it survives visits).
+ *
+ * NO MODAL, NO dialog
+ * --------------------
+ * The table is inserted into the page and the page scrolls to it. A dialog
+ * would be easier to write and worse to use: a shopper comparing two cars wants
+ * to see the cards, the prices and the specs in one view, and to be able to
+ * reach the one they did not pick.
+ *
+ * NOTHING HAPPENS SILENTLY
+ * -------------------------
+ * Comparing a car you already have, or going past the maximum, says so in the
+ * live region. The old code used `alert()`, which blocks, is unstyled, is not
+ * announced, and cannot be styled to match anything.
  */
-class VehicleComparison {
-  constructor(element) {
-    this.element = element;
-    this.vehicleData = {};
-    this.compareList = [];
-    this.maxCompare = parseInt(element.dataset.maxCompare) || 3;
-    this.compareContainer = element.querySelector('.comparison-container');
-    this.addVehicleBtn = element.querySelector('.add-vehicle-btn');
-    this.vehicleSelector = element.querySelector('.vehicle-selector');
-    this.printBtn = element.querySelector('.print-comparison');
-    this.shareBtn = element.querySelector('.share-comparison');
-    
-    this.init();
+
+'use strict';
+
+(function () {
+  var MAX = 3;
+  var APP_ID = 'comparison-app';
+  var TABLE_ID = 'comparison-table';
+  var STATUS_ID = 'comparison-status';
+
+  /**
+   * The rows, in the order a shopper decides in: what it is, what it costs,
+   * what condition it is in, then the mechanicals.
+   *
+   * `key` is the card's data-* attribute. `format` receives the RAW value, so
+   * a missing value is "-" rather than "NaN" or "undefined mi".
+   */
+  var ROWS = [
+    { label: 'Year', key: 'year' },
+    { label: 'Make', key: 'make' },
+    { label: 'Model', key: 'model' },
+    { label: 'Trim', key: 'trim' },
+    { label: 'Body', key: 'bodyStyle' },
+    { label: 'Exterior', key: 'exterior' },
+    { label: 'Interior', key: 'interior' },
+    { label: 'Price', key: 'price', format: function (v) { return '$' + Number(v).toLocaleString('en-US'); } },
+    { label: 'Mileage', key: 'mileage', format: function (v) { return Number(v).toLocaleString('en-US') + ' mi'; } },
+    { label: 'Drivetrain', key: 'drivetrain' },
+    { label: 'Transmission', key: 'transmission' },
+    { label: 'Stock', key: 'stock' },
+  ];
+
+  function esc(v) {
+    return String(v == null ? '' : v)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
-  
-  init() {
-    // Load comparison from URL if present
-    this.loadFromUrl();
-    
-    // Initialize vehicle selector
-    if (this.addVehicleBtn && this.vehicleSelector) {
-      this.setupVehicleSelector();
-    }
-    
-    // Setup print functionality
-    if (this.printBtn) {
-      this.setupPrintButton();
-    }
-    
-    // Setup share functionality
-    if (this.shareBtn) {
-      this.setupShareButton();
-    }
-    
-    // Setup feature toggle
-    this.setupFeatureToggles();
-    
-    // Render initial comparison
-    this.renderComparison();
-  }
-  
-  loadFromUrl() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const vehicleIds = urlParams.getAll('id');
-    
-    if (vehicleIds.length > 0) {
-      // Fetch data for all vehicles
-      Promise.all(vehicleIds.map(id => this.fetchVehicleData(id)))
-        .then(() => {
-          this.renderComparison();
-        })
-        .catch(error => {
-          console.error('Error loading comparison vehicles:', error);
-        });
-    }
-  }
-  
-  setupVehicleSelector() {
-    this.addVehicleBtn.addEventListener('click', () => {
-      if (this.compareList.length >= this.maxCompare) {
-        alert(`You can compare up to ${this.maxCompare} vehicles at once.`);
-        return;
-      }
-      
-      this.vehicleSelector.style.display = 'block';
+
+  /** slug -> the data the card already carries. */
+  function readCards() {
+    var byslug = {};
+    document.querySelectorAll('.vehicle-card[data-slug]').forEach(function (card) {
+      byslug[card.dataset.slug] = card.dataset;
     });
-    
-    // Close selector when clicking outside
-    document.addEventListener('click', (event) => {
-      if (!this.vehicleSelector.contains(event.target) && 
-          event.target !== this.addVehicleBtn) {
-        this.vehicleSelector.style.display = 'none';
-      }
+    return byslug;
+  }
+
+  function stateFromUrl(cards) {
+    var out = [];
+    var params = new URLSearchParams(window.location.search);
+    var raw = params.get('compare');
+    if (!raw) return out;
+    raw.split(',').forEach(function (slug) {
+      var s = slug.trim();
+      // Only keep a slug that is actually on this page. A shared link from
+      // yesterday's inventory should show what it can, not a table of blanks.
+      if (s && cards[s] && out.length < MAX) out.push(s);
     });
-    
-    // Search functionality
-    const searchInput = this.vehicleSelector.querySelector('.vehicle-search');
-    if (searchInput) {
-      searchInput.addEventListener('input', (e) => {
-        const searchTerm = e.target.value.toLowerCase();
-        const vehicleOptions = this.vehicleSelector.querySelectorAll('.vehicle-option');
-        
-        vehicleOptions.forEach(option => {
-          const vehicleText = option.textContent.toLowerCase();
-          if (vehicleText.includes(searchTerm)) {
-            option.style.display = 'block';
-          } else {
-            option.style.display = 'none';
-          }
-        });
-      });
-    }
-    
-    // Vehicle selection
-    const vehicleOptions = this.vehicleSelector.querySelectorAll('.vehicle-option');
-    vehicleOptions.forEach(option => {
-      option.addEventListener('click', () => {
-        const vehicleId = option.dataset.vehicleId;
-        this.addVehicleToComparison(vehicleId);
-        this.vehicleSelector.style.display = 'none';
-      });
-    });
+    return out;
   }
-  
-  addVehicleToComparison(vehicleId) {
-    if (this.compareList.includes(vehicleId)) {
-      return;
-    }
-    
-    if (this.compareList.length >= this.maxCompare) {
-      alert(`You can compare up to ${this.maxCompare} vehicles at once.`);
-      return;
-    }
-    
-    this.fetchVehicleData(vehicleId)
-      .then(() => {
-        this.renderComparison();
-        this.updateUrl();
-      })
-      .catch(error => {
-        console.error(`Error adding vehicle ${vehicleId} to comparison:`, error);
-      });
-  }
-  
-  async fetchVehicleData(vehicleId) {
-    const response = await fetch(`/.netlify/functions/vehicle-details/${vehicleId}`);
-    const data = await response.json();
-    this.vehicleData[vehicleId] = data;
-    if (!this.compareList.includes(vehicleId)) {
-      this.compareList.push(vehicleId);
-    }
-    return data;
-  }
-  
-  removeVehicle(vehicleId) {
-    this.compareList = this.compareList.filter(id => id !== vehicleId);
-    this.renderComparison();
-    this.updateUrl();
-  }
-  
-  updateUrl() {
-    const url = new URL(window.location);
-    url.search = '';
-    
-    this.compareList.forEach(id => {
-      url.searchParams.append('id', id);
-    });
-    
+
+  function writeUrl(list) {
+    var url = new URL(window.location);
+    if (list.length) url.searchParams.set('compare', list.join(','));
+    else url.searchParams.delete('compare');
+    // replaceState, not assign: pushing a history entry per toggle means the
+    // back button walks through shortlist changes one at a time.
     window.history.replaceState({}, '', url);
   }
-  
-  setupPrintButton() {
-    this.printBtn.addEventListener('click', () => {
-      window.print();
-    });
+
+  function app() { return document.getElementById(APP_ID); }
+  function table() { return document.getElementById(TABLE_ID); }
+
+  function status(message) {
+    var el = document.getElementById(STATUS_ID);
+    if (!el) return;
+    el.textContent = message || '';
+    el.hidden = !message;
   }
-  
-  setupShareButton() {
-    this.shareBtn.addEventListener('click', () => {
-      const url = window.location.href;
-      
-      if (navigator.share) {
-        navigator.share({
-          title: 'Vehicle Comparison',
-          text: 'Check out these Cadillac vehicles I\'m comparing',
-          url: url
-        })
-        .catch(error => console.log('Error sharing:', error));
-      } else {
-        // Fallback for browsers that don't support the Web Share API
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(url)
-            .then(() => {
-              alert('Comparison link copied to clipboard!');
-            })
-            .catch(err => {
-              console.error('Failed to copy: ', err);
-              alert('Failed to copy URL. Please copy it manually.');
-            });
-        } else {
-          prompt('Copy this URL to share your comparison:', url);
-        }
-      }
-    });
-  }
-  
-  setupFeatureToggles() {
-    this.element.addEventListener('click', (e) => {
-      if (e.target.classList.contains('toggle-section')) {
-        const section = e.target.dataset.section;
-        const rows = this.element.querySelectorAll(`.comparison-row[data-section="${section}"]`);
-        
-        rows.forEach(row => {
-          row.classList.toggle('hidden');
-        });
-        
-        // Toggle button icon/text
-        e.target.classList.toggle('expanded');
-      }
-    });
-  }
-  
-  renderComparison() {
-    if (!this.compareContainer) return;
-    
-    if (this.compareList.length === 0) {
-      this.compareContainer.innerHTML = `
-        <div class="empty-comparison">
-          <p>No vehicles selected for comparison.</p>
-          <p>Click "Add Vehicle" to start comparing.</p>
-        </div>
-      `;
+
+  var list = [];
+  var cards = {};
+
+  function render() {
+    var t = table();
+    if (!t) return;
+
+    if (!list.length) {
+      t.classList.add('hidden');
+      t.innerHTML = '';
+      document.querySelectorAll('[data-compare-toggle]').forEach(function (btn) {
+        btn.setAttribute('aria-pressed', 'false');
+        var label = btn.querySelector('[data-compare-label]');
+        if (label) label.textContent = 'Compare';
+      });
       return;
     }
-    
-    // Build comparison table
-    let html = `<table class="comparison-table">`;
-    
-    // Vehicle headers
-    html += `<tr class="comparison-header">
-      <th>Features</th>`;
-      
-    this.compareList.forEach(vehicleId => {
-      const vehicle = this.vehicleData[vehicleId];
-      const imageUrl = vehicle.images && vehicle.images.length > 0 ? vehicle.images[0] : '';
-      const price = vehicle.price ? vehicle.price.toLocaleString() : 'N/A';
-      
-      html += `
-        <th class="vehicle-column">
-          <div class="vehicle-header">
-            <button class="remove-vehicle" data-vehicle-id="${vehicleId}">&times;</button>
-            <img src="${imageUrl}" alt="${vehicle.year || ''} ${vehicle.make || ''} ${vehicle.model || ''}">
-            <h3>${vehicle.year || ''} ${vehicle.make || ''}<br>${vehicle.model || ''} ${vehicle.trim || ''}</h3>
-            <div class="vehicle-price">${price !== 'N/A' ? '$' + price : price}</div>
-          </div>
-        </th>`;
-    });
-    
-    html += `</tr>`;
-    
-    // Basic Info Section
-    html += this.renderComparisonSection('Basic Info', [
-      { label: 'Year', field: 'year' },
-      { label: 'Make', field: 'make' },
-      { label: 'Model', field: 'model' },
-      { label: 'Trim', field: 'trim' },
-      { label: 'Body Style', field: 'bodyStyle' },
-      { label: 'Exterior Color', field: 'exteriorColor' },
-      { label: 'Interior Color', field: 'interiorColor' },
-      { label: 'Mileage', field: 'mileage', format: value => value.toLocaleString() + ' mi' },
-      { label: 'Stock #', field: 'stockNumber' },
-      { label: 'VIN', field: 'vin' }
-    ]);
-    
-    // Performance Section
-    html += this.renderComparisonSection('Performance', [
-      { label: 'Engine', field: 'engine' },
-      { label: 'Horsepower', field: 'horsepower', format: value => value + ' hp' },
-      { label: 'Torque', field: 'torque', format: value => value + ' lb-ft' },
-      { label: 'Transmission', field: 'transmission' },
-      { label: 'Drivetrain', field: 'drivetrain' },
-      { label: 'Fuel Economy (City)', field: 'mpgCity', format: value => value + ' mpg' },
-      { label: 'Fuel Economy (Highway)', field: 'mpgHighway', format: value => value + ' mpg' },
-      { label: 'Fuel Economy (Combined)', field: 'mpgCombined', format: value => value + ' mpg' },
-      { label: 'Fuel Type', field: 'fuelType' }
-    ]);
-    
-    // Dimensions Section
-    html += this.renderComparisonSection('Dimensions', [
-      { label: 'Length', field: 'length', format: value => value + ' in' },
-      { label: 'Width', field: 'width', format: value => value + ' in' },
-      { label: 'Height', field: 'height', format: value => value + ' in' },
-      { label: 'Wheelbase', field: 'wheelbase', format: value => value + ' in' },
-      { label: 'Ground Clearance', field: 'groundClearance', format: value => value + ' in' },
-      { label: 'Passenger Capacity', field: 'passengerCapacity' },
-      { label: 'Cargo Volume', field: 'cargoVolume', format: value => value + ' cu ft' },
-      { label: 'Fuel Tank', field: 'fuelTank', format: value => value + ' gal' }
-    ]);
-    
-    // Features Section
-    html += `
-      <tr>
-        <td colspan="${this.compareList.length + 1}" class="section-divider">
-          <button class="toggle-section expanded" data-section="features">Features</button>
-        </td>
-      </tr>`;
-    
-    // Get all unique features
-    const allFeatures = new Set();
-    this.compareList.forEach(vehicleId => {
-      const vehicle = this.vehicleData[vehicleId];
-      if (vehicle.features && Array.isArray(vehicle.features)) {
-        vehicle.features.forEach(feature => allFeatures.add(feature));
-      }
-    });
-    
-    // Create a row for each feature
-    allFeatures.forEach(feature => {
-      html += `<tr class="comparison-row" data-section="features">
-        <td class="feature-name">${feature}</td>`;
-      
-      this.compareList.forEach(vehicleId => {
-        const vehicle = this.vehicleData[vehicleId];
-        const hasFeature = vehicle.features && vehicle.features.includes(feature);
-        
-        html += `<td class="feature-value">${hasFeature ? 
-          '<span class="feature-check">✓</span>' : 
-          '<span class="feature-missing">-</span>'}</td>`;
-      });
-      
-      html += `</tr>`;
-    });
-    
-    html += `</table>`;
-    
-    this.compareContainer.innerHTML = html;
-    
-    // Add event listeners to remove buttons
-    const removeButtons = this.compareContainer.querySelectorAll('.remove-vehicle');
-    removeButtons.forEach(button => {
-      button.addEventListener('click', () => {
-        const vehicleId = button.dataset.vehicleId;
-        this.removeVehicle(vehicleId);
-      });
-    });
-    
-    return html;
-  }
-  
-  renderComparisonSection(title, fields) {
-    let html = `
-      <tr>
-        <td colspan="${this.compareList.length + 1}" class="section-divider">
-          <button class="toggle-section expanded" data-section="${title.toLowerCase().replace(/\s+/g, '-')}">${title}</button>
-        </td>
-      </tr>`;
-    
-    fields.forEach(field => {
-      html += `<tr class="comparison-row" data-section="${title.toLowerCase().replace(/\s+/g, '-')}">
-        <td class="feature-name">${field.label}</td>`;
-      
-      this.compareList.forEach(vehicleId => {
-        const vehicle = this.vehicleData[vehicleId] || {};
-        let value = vehicle[field.field];
-        
-        // Handle numeric values that might be 0
-        if (field.format && (value !== undefined && value !== null)) {
-          try {
-            value = field.format(value);
-          } catch (error) {
-            console.error(`Error formatting value for ${field.field}:`, error);
-            value = '-';
-          }
-        }
-        
-        html += `<td class="feature-value">${value !== undefined && value !== null ? value : '-'}</td>`;
-      });
-      
-      html += `</tr>`;
-    });
-    
-    return html;
-  }
-}
 
-// Initialize all comparison components when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-  const comparisonElements = document.querySelectorAll('.vehicle-comparison');
-  comparisonElements.forEach(element => {
-    new VehicleComparison(element);
-  });
-});
+    var chosen = list.map(function (slug) { return cards[slug]; }).filter(Boolean);
 
-export default VehicleComparison;
+    var html = '<table class="comparison-table__grid"><caption class="visually-hidden">'
+      + 'Side-by-side comparison of the cars you selected</caption><thead><tr><th scope="col">'
+      + '<span class="visually-hidden">Specification</span></th>';
+    chosen.forEach(function (d) {
+      html += '<th scope="col"><span class="comparison-table__name">' + esc(d.title || d.slug) + '</span>'
+        + '<button type="button" class="comparison-table__remove" data-compare-remove="' + esc(d.slug)
+        + '">Remove<span class="visually-hidden"> ' + esc(d.title || d.slug) + ' from the comparison</span></button>'
+        + '</th>';
+    });
+    html += '</tr></thead><tbody>';
+
+    ROWS.forEach(function (row) {
+      html += '<tr><th scope="row">' + esc(row.label) + '</th>';
+      chosen.forEach(function (d) {
+        var raw = d[row.key];
+        var text = raw === undefined || raw === null || raw === '' ? '—' : (row.format ? row.format(raw) : raw);
+        html += '<td class="feature-value">' + esc(text) + '</td>';
+      });
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+
+    t.innerHTML = html;
+    t.classList.remove('hidden');
+
+    document.querySelectorAll('[data-compare-toggle]').forEach(function (btn) {
+      var on = list.indexOf(btn.dataset.compareToggle) !== -1;
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      var label = btn.querySelector('[data-compare-label]');
+      if (label) label.textContent = on ? 'Comparing' : 'Compare';
+    });
+  }
+
+  function toggle(slug) {
+    var at = list.indexOf(slug);
+    if (at !== -1) {
+      list.splice(at, 1);
+      status('');
+      render();
+      writeUrl(list);
+      return;
+    }
+    if (list.length >= MAX) {
+      // Not alert(). An alert blocks, is unstyled, and is not announced.
+      status('You can compare up to ' + MAX + ' cars. Remove one to add another.');
+      return;
+    }
+    if (!cards[slug]) {
+      status('That car is no longer on this page.');
+      return;
+    }
+    list.push(slug);
+    status('');
+    render();
+    writeUrl(list);
+  }
+
+  function ready() {
+    var a = app();
+    if (!a) return;
+    cards = readCards();
+    list = stateFromUrl(cards);
+    render();
+
+    document.addEventListener('click', function (e) {
+      var add = e.target.closest('[data-compare-toggle]');
+      if (add) { toggle(add.dataset.compareToggle); return; }
+      var remove = e.target.closest('[data-compare-remove]');
+      if (remove) { toggle(remove.dataset.compareRemove); }
+    });
+
+    if (list.length) {
+      var t = table();
+      if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', ready);
+  } else {
+    ready();
+  }
+})();

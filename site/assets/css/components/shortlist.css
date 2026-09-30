@@ -146,11 +146,30 @@ body.has-shortlist { padding-bottom: 108px; }
   .shortlist__actions { order: 2; }
 }
 
-/* The shortlist button on a card. */
+/* The two card toggles.
+
+   This selector was .vehicle-card__compare.is-active, under a comment saying
+   "the shortlist button on a card" -- so the styles for the SHORTLIST were
+   written against the COMPARE class name. Both toggles now have their own
+   class, and both share the active treatment, because from a shopper's side
+   "this one is selected" looks the same whichever list it went onto. */
+.vehicle-card__shortlist.is-active,
 .vehicle-card__compare.is-active {
   border-color: var(--brand-red);
   color: var(--brand-red);
+  background: color-mix(in srgb, var(--brand-red) 8%, transparent);
 }
+
+/* The pair sits on its own line under the primary actions, so four buttons do
+   not compete for the same glance. */
+.vehicle-card__picks {
+  display: flex;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.08));
+}
+.vehicle-card__picks .btn { flex: 1 1 auto; }
 
 /* "Ed's pick" badge. */
 .vehicle-card__badge--pick {

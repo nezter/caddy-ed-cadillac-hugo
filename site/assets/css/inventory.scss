@@ -785,3 +785,103 @@
   border-color: var(--brand-red);
   color: var(--brand-red);
 }
+
+/* ---------------------------------------------------------------------------
+   The comparison table.
+
+   It had no styles at all. vehicleComparison.js built a table, `#comparison-app`
+   had no `.vehicle-comparison` class for the script to find, and
+   #comparison-table had nothing setting `display` — so even if the script had
+   run, the table would have rendered as unstyled markup at the bottom of the
+   page, which is indistinguishable from it not working.
+
+   It is placed here rather than in components/ because it is a section concern:
+   it only exists on the inventory section, and inventory.scss is what the
+   section layout already loads. A component sheet for one element on one
+   section is a file to keep in step for no benefit.
+   --------------------------------------------------------------------------- */
+
+.comparison-status {
+  padding: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-3);
+  border-left: 3px solid var(--brand-red);
+  background: var(--bg-subtle, rgba(0, 0, 0, 0.04));
+  font-size: var(--text-sm);
+  color: var(--text);
+}
+.comparison-status[hidden] { display: none; }
+
+.comparison-table { margin-top: var(--space-4); }
+
+.comparison-table__grid {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+.comparison-table__grid th,
+.comparison-table__grid td {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+
+/* Row headers are the specification names; column headers are the cars. */
+.comparison-table__grid thead th {
+  background: var(--bg-subtle, rgba(0, 0, 0, 0.04));
+  vertical-align: bottom;
+}
+.comparison-table__grid tbody th {
+  font-weight: 600;
+  color: var(--text-muted, #555);
+  white-space: nowrap;
+}
+.comparison-table__grid .feature-value { font-variant-numeric: tabular-nums; }
+
+.comparison-table__name {
+  display: block;
+  font-weight: 700;
+  margin-bottom: var(--space-1);
+}
+
+.comparison-table__remove {
+  font: inherit;
+  font-size: var(--text-xs);
+  color: var(--brand-red);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.comparison-table__remove:hover { color: var(--brand-ink); }
+
+/* A missing value is shown as an em dash rather than "undefined" or a gap, so
+   an empty cell reads as "not specified" and not as "something broke". */
+.comparison-table__grid .feature-value { color: var(--text); }
+
+/* On a phone the table is a grid of cars, not a grid of rows: the specification
+   name goes above its value so a column stays readable at 320px. */
+@media (max-width: 40rem) {
+  .comparison-table__grid,
+  .comparison-table__grid tbody,
+  .comparison-table__grid tr,
+  .comparison-table__grid th,
+  .comparison-table__grid td { display: block; width: 100%; }
+
+  .comparison-table__grid thead { display: none; }
+
+  .comparison-table__grid tbody tr {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: var(--space-3);
+    padding: var(--space-2) 0;
+  }
+  .comparison-table__grid tbody th {
+    border: 0;
+    white-space: normal;
+    padding-bottom: var(--space-1);
+  }
+  .comparison-table__grid td { border: 0; padding-top: 0; }
+}
