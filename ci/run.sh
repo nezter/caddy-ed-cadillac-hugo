@@ -146,6 +146,13 @@ do_verify() {
   # has the four load paths and the history of this report being wrong.
   log "Resolving the front-end module graph"
   in_container 'node ci/check-front-end.js'
+  # Three forms POSTed to /api/... -- a Gatsby convention with no route on this
+  # Hugo site -- and a fourth called a function that was never written. The
+  # payloads were correct in every case, so the failure only appeared when a
+  # visitor pressed the button. ci/verify-endpoints.js still declares the one
+  # real gap; this reads that same declaration rather than a second list.
+  log "Checking that every client URL names a real function"
+  in_container 'node ci/check-function-endpoints.js'
   # Source-tree check. Runs before the output check would have any chance of
   # passing anyway, because the failure it catches (starter-template demo
   # content, e.g. the Kaldi Coffee pricing page) produces a perfectly valid

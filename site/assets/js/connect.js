@@ -19,7 +19,11 @@
     socialEndpoint: cfg.socialEndpoint || "",
     facebookPageUrl: cfg.facebookPageUrl || "",
     xHandle: cfg.xHandle || "",
-    askEndpoint: cfg.askEndpoint || "/api/contact",
+    // /.netlify/functions/contact-form, not /api/contact. There is no /api/
+    // route on this site -- a Gatsby-ism from before the Hugo rewrite -- so the
+    // "Ask Ed" form submitted into a 404 and reported a generic failure. The
+    // payload was already correct; only the URL was from another framework.
+    askEndpoint: cfg.askEndpoint || "/.netlify/functions/contact-form",
     alertFormName: cfg.alertFormName || "stock-alerts",
     visibleCount: cfg.visibleCount || 6,
     totalStock: cfg.totalStock || null,

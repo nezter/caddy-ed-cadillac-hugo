@@ -193,6 +193,12 @@ run('node ci/check-no-placeholder-contact.js', {
 // inspection -- see docs/FRONTEND.md.
 run('node ci/check-front-end.js', { label: 'front-end module graph' });
 
+// Every URL a page calls must name a function that exists. Three forms had
+// '/api/...' from a Gatsby era, and a fourth called a function nobody wrote.
+// In each case the payload was correct, so nothing looked wrong until a
+// visitor pressed the button. See ci/check-function-endpoints.js.
+run('node ci/check-function-endpoints.js', { label: 'client function endpoints' });
+
 // 7. Summary.
 function dirSize(dir) {
   let total = 0;
