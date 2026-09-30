@@ -68,8 +68,17 @@
           <label for="ttd-vehicle">Which car?</label>
           <select class="select" id="ttd-vehicle" name="vehicleId" required>
             <option value="">Choose from current inventory</option>
+            {{/* A stock number is not a choice anyone can make in a dropdown, so
+                 the label carries what a person actually picks by: what it is,
+                 whether it is new or used, and what it costs. The value stays
+                 the stock number, which is what the endpoint expects. */}}
             {{ range $vehicles }}
-            <option value="{{ with .Params.stock }}{{ . }}{{ else }}{{ .Title }}{{ end }}">{{ .Title }}{{ with .Params.status }} — {{ . }}{{ end }}</option>
+            <option value="{{ with .Params.stock }}{{ . }}{{ else }}{{ .Title }}{{ end }}">
+              {{- .Title -}}
+              {{- with .Params.status }} — {{ . }}{{ end -}}
+              {{- with .Params.mileage }} · {{ lang.FormatNumber 0 . }} mi{{ end -}}
+              {{- with .Params.price }} · {{ partial "money.html" . }}{{ end -}}
+            </option>
             {{ end }}
             <option value="other">Something else — I'll describe it below</option>
           </select>
@@ -149,4 +158,40 @@
 </article>
 
 {{ partial "entry.html" (dict "entry" "vehicle-detail.js" "page" .) }}
+
+{{/* The three steps, which the page previously kept as a bulleted list inside
+     the body copy. The point of this page is that booking is small: say which
+     car, say when, and turn up. Three tiles say that faster than a list. */}}
+<section class="stage grain pad">
+  <div class="wrap">
+    <p class="kicker"><i>01</i><span>How it works</span></p>
+    <h2 class="h-sec" style="color:#fff;max-width:26ch">Say which car. Say when. Turn up.</h2>
+    <div class="bento bento--3" style="margin-top:2rem">
+      <div class="tile tile--bronze"><span class="tile__idx">01</span>
+        <h3>Pick the car</h3>
+        <p>Anything in stock, or describe the one you want and Ed will find it. You are not limited to what is on the site.</p></div>
+      <div class="tile"><span class="tile__idx">02</span>
+        <h3>Pick a time that suits you</h3>
+        <p>It is a request, not a locked slot. Ed confirms the exact time and checks the car is still here before you set off.</p></div>
+      <div class="tile"><span class="tile__idx">03</span>
+        <h3>Bring your trade if you have one</h3>
+        <p>Do it on the same visit and you leave with one number instead of two appointments. No obligation either way.</p></div>
+    </div>
+  </div>
+</section>
+
+{{/* And the alternative, for anyone who would rather not fill in a form. */}}
+<section class="stage stage--deep grain pad--tight">
+  <div class="wrap" style="display:flex;align-items:center;justify-content:space-between;gap:2rem;flex-wrap:wrap">
+    <div>
+      <p class="eyebrow" style="margin-bottom:.5rem">Rather just talk?</p>
+      <h2 class="h-sec" style="max-width:24ch;color:#fff">Call or text and I will set it up for you.</h2>
+    </div>
+    <div style="display:flex;gap:.7rem;flex-wrap:wrap">
+      <a class="btn btn--red btn--lg" href="tel:+1{{ $phoneHref }}">{{ $phone }}</a>
+      <a class="btn btn--ghost btn--lg" href="/contact/">Send a message</a>
+    </div>
+  </div>
+</section>
+
 {{ end }}
