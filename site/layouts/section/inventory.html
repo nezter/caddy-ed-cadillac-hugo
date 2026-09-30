@@ -107,7 +107,11 @@
         </p>
       </div>
       <div class="inventory-head__aside">
-        {{ with .Content }}<div class="lede">{{ . }}</div>{{ end }}
+        {{/* This column was rendering .Content, which lives at the foot of the
+             page -- so it was always empty and the head read as a squashed
+             left column with a hole beside it. It now carries the page's own
+             sentence. */}}
+        <p class="lede">Every car below is in stock today. Filter it down, compare two or three side by side, or ask about any of them without leaving the page.</p>
       </div>
     </header>
 
