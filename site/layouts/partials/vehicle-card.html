@@ -80,7 +80,7 @@
          data-transmission="{{ with $v.Params.transmission }}{{ . | lower }}{{ end }}"
          data-stock="{{ $v.Params.stock }}">
 
-  <a class="vehicle-card__media" href="{{ $v.RelPermalink }}" aria-label="{{ $v.Title }}">
+  <a class="vehicle-card__media" href="{{ $v.RelPermalink }}" aria-label="{{ replaceRE `\s*\(#[^)]+\)` "" $v.Title }}">
     {{ partial "vehicle-image.html" (dict
         "src" $img
         "alt" $v.Title
@@ -98,7 +98,7 @@
 
   <div class="vehicle-card__body">
     <h3 class="vehicle-card__title">
-      <a href="{{ $v.RelPermalink }}">{{ $v.Title }}</a>
+      <a href="{{ $v.RelPermalink }}">{{ replaceRE `\s*\(#[^)]+\)` "" $v.Title }}</a>
     </h3>
     {{ with $v.Params.subtitle }}<p class="vehicle-card__meta">{{ . }}</p>{{ end }}
 
