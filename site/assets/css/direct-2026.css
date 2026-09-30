@@ -1556,3 +1556,75 @@ body.home .vehicle-card__actions .btn-ghost:hover{
 }
 .inv-results .inv-topline .mono-label{color:var(--text-faint)}
 .inv-results .inv-topline .mono-label:first-child{color:var(--ink-1);letter-spacing:.12em}
+
+
+/* ==========================================================================
+   THE READING SURFACES — one pass, eleven pages.
+   Test drive, financing, trade-in, service, specials, the policy pages and
+   the lead form all render as a .page-header followed by a .page-content or a
+   .prose body. They inherit the head band and the type system now, but the
+   bodies underneath were still default browser typography: undifferentiated
+   paragraphs, headings with no rhythm, and lists with no markers worth having.
+
+   Nothing here restructures a page. It gives the prose the reading measures,
+   the heading rhythm and the small courtesies -- marker colour, link
+   underlay, a rule above each major section -- that separate a designed page
+   from a text file.
+   ========================================================================== */
+.page-container{padding-block:clamp(2rem,4.5vw,3.5rem)}
+.page-content{max-width:74ch}
+
+.page-content h2,
+.prose h2{
+  font-size:clamp(1.4rem,1.15rem + 1.2vw,2rem);
+  letter-spacing:-.028em;line-height:1.12;
+  margin:clamp(2.2rem,4vw,3.2rem) 0 .8rem;
+  padding-top:clamp(1.2rem,2.4vw,1.8rem);
+  border-top:1px solid var(--border);
+}
+.page-content h2:first-child,
+.prose h2:first-child{margin-top:0;padding-top:0;border-top:0}
+
+.page-content h3,
+.prose h3{font-size:clamp(1.1rem,1rem + .5vw,1.35rem);letter-spacing:-.02em;margin:1.9rem 0 .55rem}
+
+.page-content p,
+.page-content li,
+.prose p,
+.prose li{
+  font-size:clamp(1rem,.97rem + .15vw,1.08rem);
+  line-height:1.68;
+}
+.page-content p + p,.prose p + p{margin-top:1.1rem}
+
+.page-content ul,.page-content ol,
+.prose ul,.prose ol{padding-left:1.25rem;display:grid;gap:.55rem;margin:1.1rem 0}
+.page-content ul li::marker,.prose ul li::marker{color:var(--brand-bronze)}
+.page-content ol li::marker,.prose ol li::marker{color:var(--brand-bronze);font-family:var(--f-mono);font-size:.9em}
+
+.page-content strong,.prose strong{color:var(--ink-1);font-weight:620}
+.page-content a,.prose a{color:#a8862f;text-decoration-thickness:1px;text-underline-offset:3px}
+.page-content a:hover,.prose a:hover{color:var(--brand-red)}
+
+.page-content hr,.prose hr{border:0;height:1px;background:var(--border);margin:clamp(2rem,4vw,3rem) 0}
+.page-content blockquote,.prose blockquote{
+  margin:1.9rem 0;padding-left:1.25rem;border-left:2px solid var(--bronze-line);
+  font-family:var(--f-editorial);font-size:clamp(1.15rem,1rem + .8vw,1.5rem);line-height:1.35;
+}
+.page-content table,.prose table{width:100%;border-collapse:collapse;margin:1.4rem 0}
+.page-content th,.page-content td,.prose th,.prose td{
+  padding:.75rem .6rem;border-bottom:1px solid var(--border);text-align:left;
+  font-variant-numeric:tabular-nums;
+}
+.page-content th,.prose th{
+  font-family:var(--f-mono);font-size:.66rem;letter-spacing:.13em;text-transform:uppercase;color:#6f7683;
+}
+.page-content code,.prose code{
+  background:#f4f5f7;border:1px solid var(--border);border-radius:6px;padding:.1rem .35rem;font-size:.9em;
+}
+
+/* the first paragraph after a head band should not start at the same weight
+   as the rest: a short intro line reads as a lede */
+.page-content > p:first-of-type,.prose > p:first-of-type{
+  font-size:clamp(1.06rem,1rem + .35vw,1.2rem);color:#3a4049;
+}
