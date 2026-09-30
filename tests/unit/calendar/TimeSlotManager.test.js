@@ -11,6 +11,13 @@
  */
 import TimeSlotManager from '../../../site/assets/js/refactored/TimeSlotManager';
 
+    // The code passes a URL OBJECT to fetch, not a string -- which is better,
+    // because `new URL(path, origin)` resolves the base for it. These assertions
+    // were written for a string, so expect.stringContaining() was compared
+    // against a URL object and could never match. Jest prints the object as its
+    // href, which makes the failure look like a near-miss on the path rather
+    // than a type mismatch.
+
 describe('TimeSlotManager', () => {
   let timeSlotManager;
   let mockCalendar;
@@ -58,7 +65,8 @@ describe('TimeSlotManager', () => {
     const result = await timeSlotManager.getAvailableDates(2023, 0);
     
     // Check if fetch was called correctly
-    expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('/api/available-dates?year=2023&month=1'));
+    expect(String(global.fetch.mock.calls[0][0]))
+      .toContain('/.netlify/functions/available-dates?year=2023&month=1');
     
     // Check if state was updated
     expect(mockCalendar.updateState).toHaveBeenCalledWith({ availableDates: mockAvailableDates });
@@ -77,7 +85,17 @@ describe('TimeSlotManager', () => {
     );
     
     // Call getAvailableDates
-    const result = await timeSlotManager.getAvailableDates(2023, 0);
+    // A month that is actually in the FUTURE.
+    //
+    // The test hardcoded (2023, 0). getFallbackDates() deliberately excludes past
+    // dates -- a booking calendar that offers a day in 2023 is broken -- so this test
+    // went red purely because time passed, and the failure read as "the fallback is
+    // broken" rather than "the fixture is stale". Computing the month means it
+    // cannot rot again.
+    const future = new Date();
+    future.setMonth(future.getMonth() + 2);
+    const result = await timeSlotManager.getAvailableDates(
+      future.getFullYear(), future.getMonth());
     
     // Check if error state was updated
     expect(mockCalendar.updateState).toHaveBeenCalledWith(
@@ -108,7 +126,8 @@ describe('TimeSlotManager', () => {
     const result = await timeSlotManager.getTimeSlots(date);
     
     // Check if fetch was called correctly
-    expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('/api/available-times?date=2023-01-15'));
+    expect(String(global.fetch.mock.calls[0][0]))
+      .toContain('/.netlify/functions/available-times?date=2023-01-15');
     
     // Check if state was updated
     expect(mockCalendar.updateState).toHaveBeenCalledWith({ timeSlots: mockTimeSlots });

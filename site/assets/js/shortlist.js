@@ -225,11 +225,21 @@
 
     // Reflect state on every button so the page is honest about what is ticked,
     // including buttons that are not currently on screen.
-    document.querySelectorAll('[data-add-comparison]').forEach(function (btn) {
-      const on = has(btn.dataset.addComparison);
+    // [data-shortlist-toggle], NOT [data-add-comparison].
+    //
+    // This script bound a button labelled "Shortlist" through an attribute called
+    // `data-add-comparison`, in a class called `vehicle-card__compare`, next to a
+    // Compare feature that had no button on any card. The markup, the label and
+    // the behaviour were three different names for one control, which is how a
+    // reader of the template cannot tell which feature they are looking at.
+    //
+    // The attribute now says shortlist because that is what this is, and it is
+    // not the one vehicleComparison.js listens for.
+    document.querySelectorAll('[data-shortlist-toggle]').forEach(function (btn) {
+      const on = has(btn.dataset.shortlistToggle);
       btn.setAttribute('aria-pressed', on ? 'true' : 'false');
       btn.classList.toggle('is-active', on);
-      var label = btn.querySelector('[data-compare-label]');
+      var label = btn.querySelector('[data-shortlist-label]');
       if (label) label.textContent = on ? 'Shortlisted' : 'Shortlist';
     });
   }
@@ -244,9 +254,9 @@
   }
 
   document.addEventListener('DOMContentLoaded', function () {
-    document.querySelectorAll('[data-add-comparison]').forEach(function (btn) {
+    document.querySelectorAll('[data-shortlist-toggle]').forEach(function (btn) {
       btn.addEventListener('click', function () {
-        toggle(btn.dataset.addComparison);
+        toggle(btn.dataset.shortlistToggle);
       });
     });
     render();

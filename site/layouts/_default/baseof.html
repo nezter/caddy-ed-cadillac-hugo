@@ -26,6 +26,11 @@
     <!-- Skip to content link -->
     <a href="#main-content" class="skip-link">Skip to main content</a>
     
+    {{/* Site-wide banner. Built EMPTY and hidden: site-settings-apply.js fills it
+     from the database when a value is set, and hides it when it is not.
+     Rendering nothing by default means a database outage leaves a page with no
+     banner rather than a page with yesterday's notice. */}}
+    <div class="site-banner" id="site-banner" role="status" hidden></div>
     {{ block "header" . }}{{ partial "header" . }}{{ end }}
     
     <main role="main" id="main-content">

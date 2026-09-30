@@ -14,6 +14,8 @@
 #   ./ci/run.sh inventory-write   apply the inventory sync
 #   ./ci/run.sh verify       build + assert no broken asset references
 #   ./ci/run.sh test         unit + integration tests for netlify/functions
+#   ./ci/run.sh lint         ESLint over the tree (in the build image)
+#   ./ci/run.sh audit        npm audit --audit-level=high for netlify/functions
 #   ./ci/run.sh shell        interactive shell inside the build container
 #   ./ci/run.sh image        (re)build the podman image on .25
 #   ./ci/run.sh deploy       upload prebuilt site/public to Netlify
@@ -132,6 +134,28 @@ do_verify() {
   do_build
   log "Verifying build output has no dangling asset references"
   in_container 'node ci/verify-build.js'
+  # The site shipped a fictional 555 number in the header of every page while
+  # config.toml held the correct one, and verify-build passed. This reads the
+  # built html, which is the only place a template default, a front-matter
+  # override, a JS string and a data file cannot disagree with each other.
+  log "Checking for placeholder contact details in the built site"
+  # One runner, one report: ci/check-all.js. The individual checks still run on
+  # their own, and ci/run.sh names each for a targeted re-run; this is what a
+  # build prints so the result is one table instead of eight transcripts.
+  log "Running all checks"
+  in_container 'node ci/check-all.js'
+  # Resolves the front-end module graph: a page whose `scripts:` entry no longer
+  # exists loads no JavaScript and the build says nothing, and a new file no
+  # entry point reaches is either dead or unmounted by mistake. docs/FRONTEND.md
+  # has the four load paths and the history of this report being wrong.
+  in_container 'node ci/check-front-end.js'
+  # Three forms POSTed to /api/... -- a Gatsby convention with no route on this
+  # Hugo site -- and a fourth called a function that was never written. The
+  # payloads were correct in every case, so the failure only appeared when a
+  # visitor pressed the button. ci/verify-endpoints.js still declares the one
+  # real gap; this reads that same declaration rather than a second list.
+  log "Checking that every client URL names a real function"
+  in_container 'node ci/check-function-endpoints.js'
   # Source-tree check. Runs before the output check would have any chance of
   # passing anyway, because the failure it catches (starter-template demo
   # content, e.g. the Kaldi Coffee pricing page) produces a perfectly valid
@@ -147,9 +171,27 @@ do_verify() {
   # bundle, not that the bundle RUNS. That difference is exactly where
   # @libsql/client's native binary problem hid for several sessions, with
   # included_files credited with fixing it on the strength of a comment.
+# --omit=optional: the platform-native libSQL binaries.
+#
+# `libsql` declares one optional dependency PER PLATFORM (@libsql/linux-x64-gnu,
+# @libsql/linux-x64-musl, and the darwin/arm/win32 equivalents), each carrying a
+# ~10 MB .node binary. Nothing here can load them: the database is reached over
+# HTTPS at a libsql:// URL, through `@libsql/client/http`, and a local-file native
+# binding cannot address it.
+#
+# They were still being installed, and the Netlify bundler was still shipping
+# them -- into all 41 function bundles. Measured: 317 MB of function bundle, with
+# 20 MB of it being two binaries no code path could reach. Omitting them takes it
+# to 46 MB.
+#
+# The flag has to be on the install at the REPO ROOT as well as in
+# netlify/functions. The bundler resolves a missing module by walking up, so with
+# only the functions tree cleaned it found the same two binaries in ./node_modules
+# and copied those instead. That is why removing `included_files` from
+# netlify.toml changed nothing on its own.
   # Needs netlify/functions/node_modules, so it installs them itself.
   log "Verifying every function bundles and loads"
-  in_container 'cd netlify/functions && npm install --omit=dev --no-audit --no-fund >/dev/null 2>&1; cd /site && node ci/verify-functions.js'
+  in_container 'cd netlify/functions && npm install --omit=dev --omit=optional --no-audit --no-fund >/dev/null 2>&1; cd /site && node ci/verify-functions.js'
   # Self-test for the code-block detector. A gate nobody has ever seen fail is
   # indistinguishable from a gate that cannot fail, which is how the previous
   # "restored the original and it was fine" test produced a green result for a
@@ -228,7 +270,22 @@ do_test() {
   # DIFFERENT jest into its cache whenever the local one is missing. That is how
   # a whole session's test numbers came from a jest this project does not depend
   # on, with its own @babel/core that cannot see these plugins.
-  in_container 'npm install --include=dev --no-audit --no-fund >/dev/null 2>&1 && cd netlify/functions && npm install --include=dev --no-audit --no-fund >/dev/null 2>&1 && ./node_modules/.bin/jest --ci --coverage=false --config /site/jest.config.js --rootDir /site/netlify/functions'
+  in_container 'npm install --include=dev --omit=optional --no-audit --no-fund >/dev/null 2>&1 && cd netlify/functions && npm install --include=dev --no-audit --no-fund >/dev/null 2>&1 && ./node_modules/.bin/jest --ci --coverage=false --config /site/jest.config.js --rootDir /site/netlify/functions'
+}
+
+do_lint() {
+  sync_to_ci
+  require_image
+  log "Running ESLint on ${CI_HOST}"
+  # --include=dev: the image sets NODE_ENV=production, and eslint is a dev dep.
+  in_container 'npm install --include=dev --no-audit --no-fund >/dev/null 2>&1 && npm run lint'
+}
+
+do_audit() {
+  sync_to_ci
+  require_image
+  log "Auditing netlify/functions dependencies on ${CI_HOST}"
+  in_container 'cd netlify/functions && npm install --include=dev --no-audit --no-fund >/dev/null 2>&1 && npm audit --audit-level=high'
 }
 
 do_deploy() {
@@ -271,6 +328,8 @@ case "${1:-build}" in
   build)       do_build ;;
   verify)      do_verify ;;
   test)        do_test ;;
+  lint)        do_lint ;;
+  audit)       do_audit ;;
   shell)       sync_to_ci; require_image; in_container 'bash' ;;
   image)       sync_to_ci; build_image ;;
   deploy)      do_deploy "" ;;
@@ -305,7 +364,7 @@ case "${1:-build}" in
     ssh "${CI_USER}@${CI_HOST}" "podman run --rm --network=host \
         -v ${REMOTE_WORKDIR}:/site:Z -w /site -e CI=true \
         -e NETLIFY_TELEMETRY_DISABLED=1 ${IMAGE} \
-        bash -lc 'cd netlify/functions && npm install --omit=dev --no-audit --no-fund >/dev/null 2>&1; \
+        bash -lc 'cd netlify/functions && npm install --omit=dev --omit=optional --no-audit --no-fund >/dev/null 2>&1; \
                    cd /site && timeout 120 netlify dev --port 8889 --dir=site/public --functions=netlify/functions 2>&1 \
                    | grep -E \"Loaded function|Failed to load|ERROR\"' || true"
     ;;

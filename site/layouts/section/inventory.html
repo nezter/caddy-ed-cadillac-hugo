@@ -44,7 +44,6 @@
        is never accidentally hidden. */ -}}
 {{- $all := where .RegularPages "Params.available" "!=" false -}}
 {{- $phone := .Site.Params.phone | default "803-431-6180" -}}
-{{- $phoneHref := replace $phone "." "" -}}
 
 {{- /* Filter vocabularies, derived from the content so an option can only exist
        if a vehicle actually carries that value. body_style was collected here
@@ -230,7 +229,7 @@
       </div>
       <div class="cta-band__actions">
         <a class="btn btn-primary btn-lg" href="/contact/">Send a message</a>
-        <a class="btn btn-inverse btn-lg" href="tel:+1{{ $phoneHref }}">{{ $phone }}</a>
+        <a class="btn btn-inverse btn-lg" href="tel:{{ partial "phone-href.html" $phone }}">{{ $phone }}</a>
       </div>
     </div>
     {{ end }}

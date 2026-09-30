@@ -37,14 +37,18 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  CI_HOST: 10.1.0.25
+  # The self-hosted runner lives ON the CI host, so the build host is
+  # loopback; GitHub-hosted runners have no route to a private LAN address,
+  # which is why the previous SSH-to-10.1.0.25 shape could never run.
+  CI_HOST: 127.0.0.1
+  CI_USER: gha
   IMAGE: caddy-netlify-build:2026
   SITE_ID: 532a7445-ce96-40c1-bebb-b9d14a0d0e10
 
 jobs:
   deploy:
     name: Deploy prebuilt site to production
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, caddy-ci]
     environment: production
 
     steps:
@@ -67,6 +71,20 @@ jobs:
             exit 1
           fi
 
+      - name: Require Netlify credentials
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+        run: |
+          set -euo pipefail
+          # Fail BEFORE any build/verification work: a deploy that dies on a
+          # missing token after two minutes has told you nothing new.
+          if [ -z "$NETLIFY_AUTH_TOKEN" ]; then
+            echo "::error::secret NETLIFY_AUTH_TOKEN is not set on this repository"
+            echo "Add it via repo Settings -> Secrets and variables -> Actions."
+            echo "Token needs deploy rights on the site and nothing else."
+            exit 1
+          fi
+
       - name: Download the verified build artifact
         uses: actions/download-artifact@v8
         with:
@@ -78,8 +96,10 @@ jobs:
           set -euo pipefail
           test -f site/public/index.html || { echo "::error::no index.html in artifact"; exit 1; }
           echo "pages: $(find site/public -name '*.html' | wc -l)"
-          # Re-run the asset gate against the downloaded artifact.
-          node ci/verify-build.js site/public
+          # Re-run the asset gate against the downloaded artifact. In the build
+          # image -- the runner host has no node.
+          podman run --rm -v "$PWD":/site:Z -w /site "$IMAGE" \
+            bash -lc 'node ci/verify-build.js site/public'
 
       - name: Authenticate to Netlify
         env:
@@ -94,15 +114,14 @@ jobs:
           set -euo pipefail
           # Run the CLI from the pinned build image so the deploy tool version is
           # reproducible rather than whatever is newest on the runner.
-          ssh -o StrictHostKeyChecking=no "$CI_HOST" \
-            "podman run --rm -v \"$PWD\":/site:Z -w /site \
-               -e NETLIFY_AUTH_TOKEN -e NETLIFY_SITE_ID \
-               '$IMAGE' \
-               bash -lc 'netlify deploy --prod \
-                 --site=\"\$NETLIFY_SITE_ID\" \
-                 --dir=site/public \
-                 --functions=netlify/functions \
-                 --message=\"${{ github.actor }}: ${{ inputs.reason }}\"'"
+          podman run --rm -v "$PWD":/site:Z -w /site \
+            -e NETLIFY_AUTH_TOKEN -e NETLIFY_SITE_ID \
+            "$IMAGE" \
+            bash -lc 'netlify deploy --prod \
+              --site="$NETLIFY_SITE_ID" \
+              --dir=site/public \
+              --functions=netlify/functions \
+              --message="${{ github.actor }}: ${{ inputs.reason }}"'
 
       - name: Post-deploy smoke test
         run: |

@@ -34,7 +34,7 @@
     socialEndpoint: "",
     facebookPageUrl: {{ $fb | jsonify }},
     xHandle: {{ $xh | jsonify }},
-    askEndpoint: "/api/contact",
+    askEndpoint: "/.netlify/functions/contact-form",
     alertFormName: "stock-alerts",
     visibleCount: 6,
     totalStock: {{ len $vehicles }},

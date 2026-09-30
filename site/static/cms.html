@@ -30,6 +30,39 @@
         min-height: 60vh; font: 14px/1.5 -apple-system, BlinkMacSystemFont,
         'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; color: #555;
       }
+
+      /*
+        The rebuild notice.
+
+        A save in this CMS COMMITS TO GIT. It does not change the website, and it
+        did not, silently, until this notice was added.
+
+        netlify.toml sets [build] command = "" -- this site deploys PREBUILT from
+        the CI host so that it spends no Netlify build minutes. So a CMS save
+        produces a commit and no build, and the published site is untouched. The
+        editor sees "Saved", closes the tab, and reasonably concludes the change
+        is live. It is not.
+
+        That is the worst shape a CMS failure can have: it reports success, and
+        the only way to find out is for a customer to meet the old copy first.
+
+        The fix is not a louder warning -- it is knowing what "published" means
+        here. Until content moves to the database, the truth is: SAVED TO GIT,
+        NOT LIVE. Ask for a build and deploy.
+      */
+      .rebuild-notice {
+        position: sticky; top: 0; z-index: 9999; box-sizing: border-box;
+        background: #1b1b1b; color: #f5f5f5; margin: 0;
+        padding: 12px 20px 13px; font: 14px/1.55 -apple-system, BlinkMacSystemFont,
+          'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        border-bottom: 3px solid #c8102e;
+      }
+      .rebuild-notice strong { color: #fff; }
+      .rebuild-notice em { color: #ffd9de; font-style: normal; font-weight: 700; }
+      .rebuild-notice .rn-title {
+        display: block; font-size: 13px; letter-spacing: .04em;
+        text-transform: uppercase; color: #ff8f9a; margin-bottom: 3px; font-weight: 700;
+      }
     </style>
 
     <!--
@@ -41,6 +74,22 @@
   </head>
 
   <body>
+    <!--
+      Not dismissible, and deliberately above the CMS rather than inside it.
+      Decap renders into <body>, so anything after it gets replaced; a banner
+      inside the editor would be the first thing an update unmounts.
+    -->
+    <div class="rebuild-notice" role="status">
+      <span class="rn-title">Read this before you save</span>
+      <strong>Saving here commits to git. It does not change the website.</strong>
+      The live site is built and deployed separately, so an edit is
+      <em>saved, not published</em> &mdash; it goes live when the next build and
+      deploy runs. Anything changed in the <strong>admin</strong> section
+      (favourites, leads, bookings, customers) <em>is</em> live immediately,
+      because that is stored in the database. Ask for a rebuild when you need a
+      page change to appear.
+    </div>
+
     <div class="cms-loading" id="cms-loading">Loading the CMS&hellip;</div>
 
     <script>

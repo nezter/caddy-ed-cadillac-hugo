@@ -4,31 +4,33 @@ description: "Browse current new and certified pre-owned Cadillac inventory avai
 date: 2024-01-15
 layout: "inventory"
 scripts:
+  - ed-picks.js
   - vehicleComparison.js
 ---
 
-## Compare Vehicles
+## Two buttons, two different jobs
 
-Pick two or more cars from the list above and they will appear side by side here.
-Comparison is saved in this browser, so you can build it up over several visits and
-it will still be here when you come back.
+Every car card has two small buttons, and they are not variations of each other.
+
+**Compare** puts that car in the table below, next to the others you pick, so you
+can see the prices and the specs together. Up to three at once. The address bar
+carries your selection, so you can send someone the comparison you are looking
+at, or come back to it.
+
+**Shortlist** is for deciding later. It stays in this browser between visits, and
+it has one job at the end: send Ed the list of cars you actually want, with their
+stock numbers, so he knows what you are coming in for.
+
+Comparing three cars and shortlisting eleven are different errands. They used to
+share one button, and the compare feature had none.
 
 <div id="comparison-app">
-  <div id="comparison-tray" class="comparison-tray" hidden aria-live="polite"></div>
-  <div class="comparison-container">
-    <button type="button" class="add-vehicle-btn btn btn-secondary">Add a vehicle</button>
-    <div class="vehicle-selector hidden">
-      <input type="search" class="vehicle-search" placeholder="Search vehicles" aria-label="Search vehicles to compare">
-      <div class="vehicle-options"></div>
-    </div>
-    <button type="button" class="print-comparison btn btn-link">Print</button>
-    <button type="button" class="share-comparison btn btn-link">Share</button>
-  </div>
-  <div id="comparison-table" class="comparison-table hidden"></div>
+<div id="comparison-status" class="comparison-status" role="status" hidden></div>
+<div id="comparison-table" class="comparison-table" hidden></div>
 </div>
 
-<p class="comparison-hint">To add a vehicle, use the compare button on any vehicle
-card. The table compares price, mileage, drivetrain, transmission, exterior and
-interior colour, and stock number.</p>
+<p class="comparison-hint">Use the <strong>Compare</strong> button on any card to
+add it here. The table shows year, make, model, trim, body, exterior and interior
+colour, price, mileage, drivetrain, transmission and stock number.</p>
 
 

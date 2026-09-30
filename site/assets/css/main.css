@@ -417,6 +417,12 @@ p { text-wrap: pretty; }
 
 .btn-lg { padding: 0.95rem 1.9rem; font-size: var(--text-base); min-height: 52px; }
 .btn-sm { padding: 0.5rem 1rem;   font-size: var(--text-xs); min-height: 36px; }
+/* btn-xs is for a secondary action sitting beside a primary one, not for
+   making a real action small. A card's Details and Ask about this stay btn-sm;
+   the Shortlist and Compare toggles drop to this so the row reads as one
+   obvious next step plus a quiet pair. min-height 32px is the floor, and it is
+   still above the 24px where a touch target stops being reliably tappable. */
+.btn-xs { padding: 0.35rem 0.7rem; font-size: var(--text-xs); min-height: 32px; }
 .btn-block { width: 100%; }
 
 /* The phone CTA is the single most valuable action on a dealership site, so

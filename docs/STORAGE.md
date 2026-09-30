@@ -46,7 +46,11 @@ The repository already contains the whole integration, in
 
 ```js
 if (!turso && process.env.TURSO_DATABASE_URL) {
-  const { createClient } = require('@libsql/client');
+  // The `/http` entry point, not the bare one. This is a libsql:// URL reached
+  // over HTTPS; the bare entry loads a platform-native binding that cannot open
+  // it. Using `/http` is also what lets the build omit those optional platform
+  // binaries -- 20 MB per function that nothing could load.
+  const { createClient } = require('@libsql/client/http');
   turso = createClient({
     url: process.env.TURSO_DATABASE_URL,
     authToken: process.env.TURSO_AUTH_TOKEN,

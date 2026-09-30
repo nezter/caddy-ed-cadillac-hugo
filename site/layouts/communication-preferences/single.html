@@ -1,6 +1,5 @@
 {{ define "main" }}
 {{- $phone := .Site.Params.phone | default "803-431-6180" -}}
-{{- $phoneHref := replace $phone "." "" -}}
 {{- $email := .Site.Params.email | default "ed@caddyed.com" -}}
 
 {{/* This page existed as a heading and nothing else, while the privacy policy
@@ -76,7 +75,7 @@
       <div style="background:#fafafa;border:1px solid #e7e9ee;border-radius:var(--r-card);padding:1.1rem;margin-top:1rem">
         <p class="mono-label" style="color:#6f7683;margin:0 0 .6rem">Rather do it by voice</p>
         <p style="margin:0 0 .8rem;font-size:.9rem;color:#515863">It takes about a minute.</p>
-        <a class="btn btn--line btn--sm" href="tel:+1{{ $phoneHref }}">{{ $phone }}</a>
+        <a class="btn btn--line btn--sm" href="tel:{{ partial "phone-href.html" $phone }}">{{ $phone }}</a>
         <a class="btn btn--line btn--sm" href="mailto:{{ $email }}">Email</a>
       </div>
     </div>

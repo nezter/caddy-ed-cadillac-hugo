@@ -4,7 +4,10 @@
  */
 
 const { Pool } = require('pg');
-const { createClient: createTursoClient } = require('@libsql/client');
+// `@libsql/client/http`, not `@libsql/client`. The bare entry carries a 20 MB
+// native binding for a local-file transport this database cannot be reached
+// with. See utils/database-service.js for the full note.
+const { createClient: createTursoClient } = require('@libsql/client/http');
 
 // Enhanced connection management
 class EnhancedDatabaseService {

@@ -1,8 +1,13 @@
 backend:
   name: git-gateway
-  # The repository's default branch is `master`. This was `main`, so every CMS
-  # publish would have targeted a branch that does not exist.
-  branch: master
+  # The branch the site is actually built from.
+  #
+  # This said `master`, with a comment explaining that `main` did not exist. That
+  # was true, and the fix found a branch that exists and is eight months stale.
+  # Every CMS save was committing page and inventory edits to a tree that none of
+  # the Netlify, database or calendar work exists in, so a save could not have
+  # reached the built site even if a build had run.
+  branch: modernize/netlify-build-2026
   commit_messages:
     create: 'Create {{collection}} "{{slug}}"'
     update: 'Update {{collection}} "{{slug}}"'

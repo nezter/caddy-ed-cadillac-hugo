@@ -129,13 +129,25 @@ ok('cleaned site/public and site/resources');
 
 // 2. Root dependencies -- Hugo Pipes resolves bare npm imports
 //    (lazysizes, date-fns) out of ./node_modules via esbuild.
-run('npm install --no-audit --no-fund', { label: 'install root dependencies' });
+//    --omit=optional on this install AND the functions one: the platform-native
+//    libSQL binaries are optional dependencies that no code path can load (the
+//    database is reached over HTTPS through `@libsql/client/http`). See the
+//    [functions] section of netlify.toml for the measurement.
+//
+//    The flag is needed on the ROOT install too, not just the functions tree. The
+//    Netlify bundler resolves a module it cannot find by walking up the tree, so
+//    with only netlify/functions cleaned it found the same two 10 MB binaries in
+//    ./node_modules and shipped those instead -- which is why removing the
+//    `included_files` glob by itself changed nothing at all.
+run('npm install --omit=optional --no-audit --no-fund', {
+  label: 'install root dependencies',
+});
 
 // 3. Function dependencies.
 if (fs.existsSync(path.join(FUNCTIONS_DIR, 'package.json'))) {
   // The functions are bundled by Netlify at deploy time, so dev deps are not
   // needed for a production build.
-  run('npm install --omit=dev --no-audit --no-fund', {
+  run('npm install --omit=dev --omit=optional --no-audit --no-fund', {
     label: 'install netlify/functions dependencies',
     cwd: FUNCTIONS_DIR,
   });
@@ -165,6 +177,27 @@ run(
 
 // 6. Gate: fail if any page references a local asset that does not exist.
 run('node ci/verify-build.js', { label: 'verify build output' });
+
+// Reads the BUILT html. It is here, next to verify-build, because the build is
+// the only moment all the ways a phone number can be wrong are in one place:
+// a template default, a page's own front matter, a JS string, a data file.
+// The site shipped 704-555-1234 in the header of every page while
+// config.toml held the right number, and verify-build passed.
+// One runner, one report.
+//
+// These used to be eight separate `run()` calls, so a failing build printed
+// eight things to read, most of them "pass", and the two that mattered were
+// buried. That is how a gate gets ignored: not by being wrong, but by being
+// noisy enough that nobody reads it.
+//
+// ci/check-all.js runs them all, prints one table, and says in the last line
+// which failed. It also reports SKIP rather than PASS for a check it could not
+// actually run, and warns when site/public is older than the sources it would be
+// reading -- both of which matter, because a skipped check and a stale check
+// both look like a passing one in a log.
+// run() exits non-zero on failure, which is what stops the build before a
+// deploy of something that does not pass its own gates.
+run('node ci/check-all.js', { label: 'all checks' });
 
 // 7. Summary.
 function dirSize(dir) {

@@ -105,16 +105,36 @@
   # The functions are CommonJS on Node 24.
   node_bundler = "esbuild"
 
-  # @libsql/client loads its platform-native binary through an OPTIONAL
-  # dependency (@libsql/linux-x64-gnu, or the musl/darwin equivalents). esbuild
-  # cannot see through that conditional require, so it is left unresolved and
-  # the function dies at runtime with:
-  #   Error: Cannot find module '@libsql/linux-x64-gnu'
-  # Shipping the platform packages alongside the bundle resolves it.
-  included_files = [
-    "node_modules/@libsql/**",
-    "node_modules/libsql/**",
-  ]
+  # Nothing is force-included any more, and that is a 320 MB saving.
+  #
+  # This used to say:
+  #
+  #     included_files = ["node_modules/@libsql/**", "node_modules/libsql/**"]
+  #
+  # with the reason that @libsql/client loads its platform-native binary through
+  # an OPTIONAL dependency that esbuild cannot see through a conditional require,
+  # so functions died at runtime with:
+  #
+  #     Error: Cannot find module '@libsql/linux-x64-gnu'
+  #
+  # That reason was real, and the fix was right AT THE TIME. But the diagnosis
+  # has since changed: the code requires `@libsql/client/http`, which is the same
+  # createClient with the same arguments and none of the local-file transports.
+  # A database reached over HTTPS at a libsql:// URL cannot be opened through a
+  # Linux native binding at all.
+  #
+  # So those 20 MB -- a 10 MB binary for glibc and another for musl -- were being
+  # copied into all 41 function bundles, zipped, uploaded and unpacked on every
+  # cold start, for a module no code path could load. Measured: the function
+  # bundle was 317 MB for a 67-page static site.
+  #
+  # esbuild traces what is actually required, so with the native transport gone
+  # there is nothing to force-include. ci/verify-functions.js loads every bundled
+  # function, which is the check that would catch a genuine missing module -- and
+  # it runs on every build.
+  #
+  # If a missing module ever does appear, the fix is to add THAT module back here,
+  # not to re-add the platform packages wholesale.
 
 # -----------------------------------------------------------------------------
 # Local dev server

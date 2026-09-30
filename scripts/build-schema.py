@@ -292,6 +292,64 @@ CREATE TABLE IF NOT EXISTS google_calendar_tokens (
 );
 CREATE INDEX IF NOT EXISTS idx_google_tokens_expiry ON google_calendar_tokens (expires_at);
 
+-- ---------------------------------------------------------------------
+-- Site settings
+--
+-- WHY THIS TABLE EXISTS
+-- ---------------------
+-- The Decap CMS cannot be used for anything that has to change NOW. It commits
+-- to git, and this site deploys PREBUILT from the CI host (netlify.toml sets
+-- [build] command = ""), so a save produces a commit and no build: the change
+-- stays unpublished until someone runs a build. An editor pressing Save and
+-- seeing "Saved" is the failure mode, not a feature -- see docs/ADMIN.md.
+--
+-- So the copy an admin actually needs to change during business hours lives
+-- here, and the front end reads it at request time. The build stays prebuilt and
+-- costs no Netlify build minutes.
+--
+-- WHAT IS AND IS NOT IN HERE
+-- --------------------------
+-- Chrome and settings only: the signage copy, the stock-alert pitch, the
+-- contact chips, an emergency banner.
+--
+-- NOT page content. Inventory and specials are the pages search traffic lands
+-- on, and a value injected by JavaScript is invisible to a crawler, so those
+-- must be in the served HTML. Moving them here would trade a working search
+-- presence for convenience. They need a build, and the build is the honest
+-- answer for them.
+--
+-- One row per key rather than one document holding an object, for the same
+-- reason vehicle_favourites is one row per vehicle: a document is a
+-- read-modify-write on every edit, so two people changing two different values
+-- at the same moment lose one of the two. Rows do not collide.
+--
+-- `is_public` decides who may read it. Settings the public front end fetches
+-- are public; anything internal is not, and is refused without a session rather
+-- than filtered out client-side.
+CREATE TABLE IF NOT EXISTS site_settings (
+  key         TEXT PRIMARY KEY,
+  value       TEXT,
+  -- 'text' | 'textarea' | 'boolean' | 'url' | 'phone'
+  -- The admin form is built from this, so a setting cannot need a form change
+  -- to be edited, and a textarea cannot be silently truncated to a line.
+  kind        TEXT NOT NULL DEFAULT 'text'
+              CHECK (kind IN ('text','textarea','boolean','url','phone')),
+  label       TEXT,
+  -- Which page the value appears on, so the form can be grouped and so a
+  -- reader knows where to look. 'global' means footer/header chrome.
+  applies_to  TEXT NOT NULL DEFAULT 'global',
+  -- False for internal notes; never served to the public front end.
+  is_public   INTEGER NOT NULL DEFAULT 1 CHECK (is_public IN (0, 1)),
+  -- Set when a value has deliberately been blanked, so "not set" and
+  -- "somebody typed a space" are different states.
+  is_blank    INTEGER NOT NULL DEFAULT 0 CHECK (is_blank IN (0, 1)),
+  updated_by  TEXT,
+  updated_at  TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (updated_by) REFERENCES sales_reps (id) ON DELETE SET NULL
+);
+CREATE INDEX IF NOT EXISTS idx_site_settings_applies ON site_settings (applies_to);
+CREATE INDEX IF NOT EXISTS idx_site_settings_public ON site_settings (is_public, key);
+
 -- A test-drive request waiting to go on a calendar.
 --
 -- Blobs stored these as `req-<id>` JSON documents. A table is the right shape:

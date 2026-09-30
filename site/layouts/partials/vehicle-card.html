@@ -21,17 +21,25 @@
 
     1. Look at this car          -> the title, linked
     2. Ask about this car        -> /contact/ with the car pre-filled
-    3. Put it on a shortlist     -> the compare tray, so they can send a
-       several back to Ed and say "these three"
+    3. Add to shortlist          -> so they can send several back to Ed and
+                                    say "these three"
+    4. Add to compare            -> so they can put two or three side by side
+                                    and see which one they actually want
 
-  (3) is the one that was missing, and it is the one that turns a browsing
-  page into something a salesperson can actually work with. The compare tray
-  persists to localStorage, so a client can build a shortlist over several
-  visits and it is still there when they come back.
+  (3) turns a browsing page into something a salesperson can work with. (4)
+  turns it into a decision. They are separate jobs and were not separate on the
+  card: there was ONE button, labelled "Shortlist", carrying the class
+  `vehicle-card__compare` and the attribute `data-add-comparison`, so the markup
+  said "compare" while the label and the behaviour said "shortlist". The compare
+  feature had no button on any card at all.
+
+  So: two small buttons, each named for what it does. `data-shortlist-toggle`
+  and `data-compare-toggle` are read by shortlist.js and vehicleComparison.js
+  respectively, and neither script reads the other's attribute.
 
   Context (dict):
-    vehicle   the Page (required)
-    compare   bool, render the shortlist checkbox (default true)
+    vehicle     the Page (required)
+    compare     bool, render both toggles (default true)
     eager     bool, load the image eagerly -- for above-the-fold cards
 */ -}}
 
@@ -46,12 +54,25 @@
   lowercased query string. They must stay lowercased or search silently stops
   matching anything, which is the single most important thing on this page to a
   shopper. A gate cannot catch it -- the attributes are all present either way.
+
+  data-make / data-trim / data-body-style / data-exterior / data-interior
+  were added so the COMPARE table can be built from the cards already on the
+  page, rather than by asking a function. vehicleComparison.js used to fetch each
+  vehicle from /.netlify/functions/vehicle-details, which reads a live
+  inventory feed -- and INVENTORY_SOURCE_URL has no default, so there is no feed,
+  so the compare table could never have had any data. Every field it shows is
+  already printed on the card the visitor clicked.
 */ -}}
 <article class="vehicle-card" data-vehicle
          data-slug="{{ $v.File.ContentBaseName }}"
          data-title="{{ $v.Title | lower }}"
          data-model="{{ with $v.Params.model }}{{ . | lower }}{{ end }}"
          data-year="{{ with $v.Params.year }}{{ int . }}{{ end }}"
+         data-make="{{ with $v.Params.make }}{{ . }}{{ end }}"
+         data-trim="{{ with $v.Params.trim }}{{ . }}{{ end }}"
+         data-body-style="{{ with $v.Params.body_style }}{{ . }}{{ end }}"
+         data-exterior="{{ with $v.Params.exterior_color }}{{ . }}{{ end }}"
+         data-interior="{{ with $v.Params.interior_color }}{{ . }}{{ end }}"
          data-status="{{ with $v.Params.status }}{{ . | lower }}{{ end }}"
          data-price="{{ with $v.Params.price }}{{ int . }}{{ end }}"
          data-mileage="{{ with $v.Params.mileage }}{{ int . }}{{ end }}"
@@ -77,11 +98,7 @@
 
   <div class="vehicle-card__body">
     <h3 class="vehicle-card__title">
-      {{/* The stored title carries the feed's stock reference, e.g.
-           "2026 CADILLAC LYRIQ V-Series Premium (#DTZ601661)". On a card that
-           is noise -- the mockup shows the model, the trim, the price and
-           nothing else. The reference is still on the vehicle page itself. */}}
-      <a href="{{ $v.RelPermalink }}">{{ replaceRE `\s*\(#[^)]+\)` "" $v.Title }}</a>
+      <a href="{{ $v.RelPermalink }}">{{ $v.Title }}</a>
     </h3>
     {{ with $v.Params.subtitle }}<p class="vehicle-card__meta">{{ . }}</p>{{ end }}
 
@@ -103,16 +120,39 @@
       <a class="btn btn-primary btn-sm"
          href="/contact/?vehicle={{ $v.Title | urlquery }}">Ask about this</a>
       {{ if $compare }}
-        {{/* The shortlist. Toggled by vehicleComparison.js, which persists the
-             selection so a client can build it up over several visits. The
-             button is a real toggle with aria-pressed so it is announced, and
-             it is a button rather than a checkbox because the label is an
-             action ("Add to shortlist"), not a field value. */}}
-        <button type="button" class="btn btn-ghost btn-sm vehicle-card__compare"
-                data-add-comparison="{{ $v.File.ContentBaseName }}"
-                aria-pressed="false">
-          <span data-compare-label>Shortlist</span>
-        </button>
+        {{/* Two toggles, not one.
+
+             Both are real buttons with aria-pressed, rather than checkboxes,
+             because the label is an ACTION -- "Add to shortlist" -- not a field
+             value, and a checkbox labelled "Shortlist" reads as "this car is
+             already a shortlist".
+
+             They are deliberately small and visually quieter than Details and
+             Ask about this: those two are the primary actions, and a row of four
+             equal-weight buttons gives a shopper four things to choose between
+             instead of one obvious next step. These two are the "I am thinking
+             about this one" pair.
+
+             The attribute names are load-bearing and are NOT interchangeable:
+             shortlist.js binds [data-shortlist-toggle] and vehicleComparison.js
+             binds [data-compare-toggle]. A card that used one name for both is
+             exactly how the two features ended up sharing a button. */}}
+        <div class="vehicle-card__picks">
+          <button type="button"
+                  class="btn btn-ghost btn-xs vehicle-card__shortlist"
+                  data-shortlist-toggle="{{ $v.File.ContentBaseName }}"
+                  aria-pressed="false"
+                  title="Add this car to a shortlist and send it to Ed">
+            <span data-shortlist-label>Shortlist</span>
+          </button>
+          <button type="button"
+                  class="btn btn-ghost btn-xs vehicle-card__compare"
+                  data-compare-toggle="{{ $v.File.ContentBaseName }}"
+                  aria-pressed="false"
+                  title="Compare this car side by side with another">
+            <span data-compare-label>Compare</span>
+          </button>
+        </div>
       {{ end }}
     </div>
   </div>

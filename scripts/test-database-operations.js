@@ -8,7 +8,11 @@
 require('dotenv').config({ path: './.env' });
 
 const { createClient: createSupabaseClient } = require('@supabase/supabase-js');
-const { createClient: createTursoClient } = require('@libsql/client');
+// `@libsql/client/http`, not `@libsql/client`. The bare entry carries the
+// platform-native libSQL binding (~20 MB across the linux/darwin variants) as an
+// optional dependency. This database is reached over HTTPS at a libsql:// URL,
+// so those binaries cannot be loaded by anything. See netlify.toml [functions].
+const { createClient: createTursoClient } = require('@libsql/client/http');
 
 // Test configuration
 const TEST_CONFIG = {

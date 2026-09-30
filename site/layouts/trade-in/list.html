@@ -81,8 +81,8 @@ VIN (if you have it to hand):
           Read the year, the mileage and the condition down the phone and you will
           have a working figure before you hang up.
         </p>
-        <a class="btn btn--line btn--sm" href="tel:+1{{ $phoneHref }}">{{ $phone }}</a>
-        <a class="btn btn--line btn--sm" href="sms:+1{{ $phoneHref }}">Text Ed</a>
+        <a class="btn btn--line btn--sm" href="tel:{{ partial "phone-href.html" $phone }}">{{ $phone }}</a>
+        <a class="btn btn--line btn--sm" href="sms:{{ partial "phone-href.html" $phone }}">Text Ed</a>
       </div>
     </div>
   </div>

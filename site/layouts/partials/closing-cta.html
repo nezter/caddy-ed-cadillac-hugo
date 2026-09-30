@@ -19,7 +19,7 @@
     </div>
     <div style="display:flex;gap:.7rem;flex-wrap:wrap">
       <a class="btn btn--red btn--lg" href="/contact/">Send a request</a>
-      <a class="btn btn--ghost btn--lg" href="tel:+1{{ $href }}">{{ $phone }}</a>
+      <a class="btn btn--ghost btn--lg" href="tel:{{ partial "phone-href.html" $phone }}">{{ $phone }}</a>
     </div>
   </div>
 </section>

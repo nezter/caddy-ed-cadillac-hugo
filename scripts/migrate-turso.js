@@ -23,7 +23,12 @@ async function initializeTurso() {
   }
 
   try {
-    const { createClient } = require('@libsql/client');
+    // `@libsql/client/http`, not `@libsql/client`. This database is a
+    // libsql:// URL reached over HTTPS; the bare entry would try to load the
+    // platform-native binding, which the build no longer installs (see
+    // netlify.toml [functions]) and which could not have opened this URL
+    // anyway. The failure is loud rather than silent, which is the point.
+    const { createClient } = require('@libsql/client/http');
     const turso = createClient({
       url: process.env.TURSO_DATABASE_URL,
       authToken: process.env.TURSO_AUTH_TOKEN,

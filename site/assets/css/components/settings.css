@@ -1,0 +1,47 @@
+/*
+  settings.css -- the admin settings form, and the site-wide banner it fills.
+
+  The form is deliberately plain. It is an internal control that has to work
+  before anything else on the page does, not a component worth designing.
+*/
+
+.settings-progress {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 2rem 0; color: #666;
+}
+
+.settings-group {
+  border: 1px solid #e2e2e2; border-radius: 6px;
+  padding: 1rem 1.25rem 1.25rem; margin: 0 0 1.5rem;
+}
+.settings-group legend {
+  font-weight: 700; font-size: 0.95rem; padding: 0 0.4rem; color: #1b1b1b;
+}
+.settings-field { margin-bottom: 1rem; }
+.settings-field:last-child { margin-bottom: 0; }
+.settings-field .input { width: 100%; }
+.settings-note { font-size: 0.8rem; color: #777; margin: 0.25rem 0 0; }
+
+.settings-actions {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 1rem 0 2rem; border-top: 1px solid #e2e2e2;
+}
+.settings-saved { color: #1a7f37; font-size: 0.9rem; }
+
+.settings-status {
+  padding: 0.75rem 1rem; border-radius: 4px; margin: 0 0 1rem;
+  font-size: 0.9rem;
+}
+.settings-status--info  { background: #eef4fb; color: #14417a; }
+.settings-status--warn  { background: #fff6e5; color: #7a5200; }
+.settings-status--error { background: #fdecec; color: #8a1c1c; }
+
+/* The banner is hidden in the markup and revealed only when a value exists,
+   so a database outage shows no banner rather than a stale one. */
+.site-banner {
+  width: 100%; padding: 0.65rem 1rem; text-align: center;
+  font-size: 0.95rem; line-height: 1.4;
+}
+.site-banner[hidden] { display: none; }
+.site-banner--info { background: #1b1b1b; color: #fff; }
+.site-banner--warn { background: #7a1f1f; color: #fff; }

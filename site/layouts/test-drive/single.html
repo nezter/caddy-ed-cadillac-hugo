@@ -28,7 +28,6 @@
 
 {{ define "main" }}
 {{- $phone := .Site.Params.phone | default "803-431-6180" -}}
-{{- $phoneHref := replace $phone "." "" -}}
 {{- $vehicles := sort (where .Site.RegularPages "Section" "inventory") "Params.year" "desc" -}}
 <article class="section test-drive-page">
   <div class="container">
@@ -55,7 +54,7 @@
           Sending this request needs JavaScript — the booking form posts to a
           JSON endpoint, so a plain HTML submission would arrive unparsed and
           come back as an error. Call
-          <a href="tel:+1{{ $phoneHref }}">{{ $phone }}</a> instead, or
+          <a href="tel:{{ partial "phone-href.html" $phone }}">{{ $phone }}</a> instead, or
           <a href="/contact/">send a message</a> with the car and the day, and
           I will set it up.
         </p>
@@ -139,7 +138,7 @@
         <button class="btn btn-primary" type="submit">Request this test drive</button>
         <p class="vehicle-booking__note">
           No obligation, and no one else phoning you. Prefer to talk it
-          through? <a href="tel:+1{{ $phoneHref }}">{{ $phone }}</a>
+          through? <a href="tel:{{ partial "phone-href.html" $phone }}">{{ $phone }}</a>
         </p>
 
         {{/* Filled in by vehicle-detail.js. Server-rendered and empty, so the
@@ -151,7 +150,7 @@
     </section>
 
     <p class="vehicle-booking__note">
-      Rather talk it through? Call <a href="tel:+1{{ $phoneHref }}">{{ $phone }}</a>,
+      Rather talk it through? Call <a href="tel:{{ partial "phone-href.html" $phone }}">{{ $phone }}</a>,
       or <a href="/contact/">send a message</a> and I'll come back to you.
     </p>
   </div>
@@ -188,7 +187,7 @@
       <h2 class="h-sec" style="max-width:24ch;color:#fff">Call or text and I will set it up for you.</h2>
     </div>
     <div style="display:flex;gap:.7rem;flex-wrap:wrap">
-      <a class="btn btn--red btn--lg" href="tel:+1{{ $phoneHref }}">{{ $phone }}</a>
+      <a class="btn btn--red btn--lg" href="tel:{{ partial "phone-href.html" $phone }}">{{ $phone }}</a>
       <a class="btn btn--ghost btn--lg" href="/contact/">Send a message</a>
     </div>
   </div>

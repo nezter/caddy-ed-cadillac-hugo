@@ -42,6 +42,14 @@ describe('FormManager', () => {
     // Create mock calendar
     mockCalendar = {
       updateState: jest.fn(),
+        // addObserver/removeObserver belong in this mock. The real Calendar has had
+        // an observer pattern from the start (refactored/Calendar.js:124) and
+        // FormManager.init() registers itself through it, so the mock omitting them
+        // made the constructor throw "addObserver is not a function" -- and a stale
+        // assertion below then ASSERTED they were missing, which pinned the broken
+        // mock in place instead of reporting it.
+        addObserver: jest.fn(),
+        removeObserver: jest.fn(),
       getState: jest.fn().mockReturnValue({
         selectedDate: new Date(2023, 0, 15),
         selectedTime: '10:30',
@@ -71,7 +79,8 @@ describe('FormManager', () => {
       .toHaveBeenCalledWith('submit', expect.any(Function));
     
     // Check if observer was added
-    expect(mockCalendar.addObserver).toBe(undefined); // Mock doesn't have this method
+    // FormManager registers itself so the calendar can push state into it.
+    expect(mockCalendar.addObserver).toHaveBeenCalledWith(formManager);
   });
   
   test('should update based on state changes', () => {

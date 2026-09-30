@@ -88,7 +88,20 @@ function initializeConnections() {
 
   if (!turso && process.env.TURSO_DATABASE_URL) {
     try {
-      const { createClient } = require('@libsql/client');
+    // `@libsql/client/http`, not `@libsql/client`.
+    //
+    // The bare entry point pulls in `libsql`, which carries a 10 MB native
+    // binding for Linux gnu AND another 10 MB for musl -- 20 MB in every one of
+    // the 41 function bundles, for a client that is never used.
+    //
+    // This database is reached over HTTP at a libsql:// URL. The local-file
+    // transport cannot address it, so those 20 MB were dead weight that still had
+    // to be bundled, zipped, uploaded and unpacked on every cold start: 317 MB of
+    // function bundle for 67 pages of static site.
+    //
+    // `./http` is the same `createClient` with the same arguments, minus the
+    // transports that cannot be used here. See docs/BUILD.md for the measurement.
+    const { createClient } = require('@libsql/client/http');
       turso = createClient({
         url: process.env.TURSO_DATABASE_URL,
         authToken: process.env.TURSO_AUTH_TOKEN,

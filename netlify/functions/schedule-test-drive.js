@@ -44,6 +44,18 @@ const DatabaseService = require('./utils/database-service');
  *      silent black hole.
  */
 
+// A booking does not have to name a car. The /test-drive/ page is a general
+// scheduling page: a customer picks a date and a time and asks to come in, and
+// has not chosen a vehicle yet.
+//
+// So vehicleId accepts one documented placeholder. That is deliberately narrow:
+// the alternative -- letting vehicleId be optional -- would make every other
+// field of a real vehicle booking optional too, in the sense that a bug in the
+// field mapping would stop being caught here. This calendar module was posting
+// { date, time, name } to a URL that did not exist; had this function been
+// lenient it would have quietly accepted nothing instead of failing loudly.
+const GENERAL_ENQUIRY = 'general-enquiry';
+
 const REQUIRED_FIELDS = ['vehicleId', 'fullName', 'email', 'phone', 'preferredDate', 'preferredTime'];
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -103,7 +115,10 @@ exports.handler = async function(event, context) {
     // Validate required fields
     const missing = {};
     for (const field of REQUIRED_FIELDS) {
-      if (!data[field]) missing[field] = `${field} is required`;
+      // vehicleId may be the general-enquiry placeholder; see GENERAL_ENQUIRY.
+      if (!data[field] || (field === 'vehicleId' && data[field] === GENERAL_ENQUIRY && !data.vehicleTitle)) {
+        missing[field] = `${field} is required`;
+      }
     }
     if (Object.keys(missing).length) {
       const first = REQUIRED_FIELDS.find((field) => !data[field]);

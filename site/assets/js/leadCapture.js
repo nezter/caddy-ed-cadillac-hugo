@@ -9,7 +9,14 @@
 (function () {
   'use strict';
 
-  const ENDPOINT = '/api/lead';
+  // /.netlify/functions/lead-form, not /api/lead.
+  //
+  // There is no /api/ route on this site -- a Gatsby-ism from before the Hugo
+  // rewrite -- and no function called `lead` either. The form on /lead-form/
+  // therefore submitted into a 404, and the visitor was told the send had
+  // failed. The field names it posts were already right for lead-form.js; only
+  // the URL was wrong.
+  const ENDPOINT = '/.netlify/functions/lead-form';
   const MIN_FILL_MS = 2000; // basic bot/rush deterrent
 
   function ready(fn) {

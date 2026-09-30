@@ -117,7 +117,10 @@ describe('Follow-up System Integration', () => {
       const activateResponse = await handler.handler(mockEvent);
       expect(activateResponse.statusCode).toBe(200);
       
-      const activatedCampaign = JSON.parse(activateResponse.body).data;
+      // The row is under data.campaign. createSuccessResponse wraps whatever the
+      // handler passed, and activateCampaign passes { message, campaign } -- so
+      // reading .data here yielded the wrapper, and .is_active on it was undefined.
+      const activatedCampaign = JSON.parse(activateResponse.body).data.campaign;
       expect(activatedCampaign.is_active).toBe(true);
     });
   });

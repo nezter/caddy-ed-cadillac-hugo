@@ -20,7 +20,6 @@
    and writes into the two message hosts.
    --------------------------------------------------------------- */}}
 {{- $phone := .Site.Params.phone | default "803-431-6180" -}}
-{{- $phoneHref := replace $phone "." "" -}}
 {{- $email := .Site.Params.email | default "ed@caddyed.com" -}}
 {{- $address := .Site.Params.address | default "10725 Pineville Rd, Pineville, NC 28134" -}}
 {{- $hours := .Site.Params.hours | default "Mon-Fri 9am-7pm &middot; Sat 9am-5pm" -}}
@@ -103,10 +102,10 @@
       <div style="position:sticky;top:96px;background:#fff;border:1px solid #e7e9ee;border-radius:var(--r-card);overflow:hidden">
         <div style="padding:1.2rem 1.2rem 1rem;border-bottom:1px solid #eef0f3">
           <p class="mono-label" style="color:#6f7683;margin:0 0 .5rem">Or just call</p>
-          <a href="tel:+1{{ $phoneHref }}"
+          <a href="tel:{{ partial "phone-href.html" $phone }}"
              style="color:#a8862f;text-decoration:none;font-family:var(--f-display);font-weight:680;font-size:1.7rem;letter-spacing:-.03em">{{ $phone }}</a>
           <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.9rem">
-            <a class="btn btn--line btn--sm" href="sms:+1{{ $phoneHref }}">Text Ed</a>
+            <a class="btn btn--line btn--sm" href="sms:{{ partial "phone-href.html" $phone }}">Text Ed</a>
             <a class="btn btn--line btn--sm" href="mailto:{{ $email }}">Email</a>
           </div>
         </div>
