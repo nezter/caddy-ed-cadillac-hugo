@@ -1869,3 +1869,56 @@ body:has(.comparison-tray:not([hidden])){padding-bottom:84px}
 }
 .inventory-page .inventory-content p:last-child{margin-bottom:0}
 .inventory-page .inventory-content .comparison-container{margin-top:.9rem}
+
+
+/* ==========================================================================
+   THE INVENTORY HEAD, FULL WIDTH.
+   A rendered comparison against the mockup put it plainly: "the heading sits in
+   a small black card indented from the left edge, leaving a huge expanse of
+   empty white space beside it; the mockup's dark band runs full width with the
+   headline spread across it."
+
+   That was the most damaging difference on the page -- it is above the fold and
+   it set the tone for everything under it. The band now bleeds to the viewport
+   edges, the headline is set at display scale, and the two columns have room to
+   be columns rather than a strip and a void.
+
+   overflow-x:clip on the wrapper is what keeps the bleed from introducing a
+   horizontal scrollbar. It is clip rather than hidden on purpose: clip does not
+   create a scroll container, so the sticky filter rail inside it still sticks.
+   ========================================================================== */
+.inventory-page{overflow-x:clip}
+.inventory-page .container{overflow:visible}
+
+@media (min-width:48rem){
+  .inventory-head{
+    margin-inline:calc(50% - 50vw);
+    padding-inline:max(calc(50vw - 50%), var(--gutter));
+    padding-block:clamp(2rem,4.5vw,3.4rem);
+    border-radius:0;border-inline:0;
+    background:linear-gradient(160deg,var(--ink-1),var(--ink-0));
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.06);
+  }
+}
+.inventory-page .inventory-head h1{
+  font-size:clamp(2.4rem,1.3rem + 4.4vw,5rem);
+  line-height:.95;letter-spacing:-.038em;
+}
+.inventory-page .inventory-head .lede{
+  font-size:clamp(1.02rem,.98rem + .25vw,1.18rem);
+  max-width:38ch;
+}
+.inventory-page .inventory-head .inventory-head__count{margin-top:1.2rem}
+
+/* --- the rail, tidied ---------------------------------------------------- */
+.inv-rail .range-readout__scale{display:none}
+.inv-rail .range-readout{justify-content:flex-start}
+.inv-rail .inventory-filters__actions{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:.5rem;flex-wrap:wrap;
+}
+.inv-rail .inventory-filters__count,
+.inv-rail .filter-accordion__count{
+  font-family:var(--f-mono);font-size:.62rem;letter-spacing:.12em;
+  text-transform:uppercase;color:#8a919c;
+}
