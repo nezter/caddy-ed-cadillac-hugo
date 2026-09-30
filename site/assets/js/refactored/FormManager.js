@@ -477,6 +477,26 @@ class FormManager {
     const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
     const formattedDate = state.selectedDate.toLocaleDateString('en-US', dateOptions);
     
+      // appointmentDetails is read unguarded here, and it is not guaranteed.
+      //
+      // It is undefined whenever the calendar reaches the confirmation step with
+      // an unfilled form: reset the calendar, then confirm again. That threw
+      // "Cannot read properties of undefined (reading 'name')" and left the
+      // customer on an empty page where a confirmation should be -- the one
+      // moment on the site where a crash is least acceptable.
+      //
+      // Rows with nothing in them are omitted rather than rendered as
+      // "undefined", and a missing details object no longer throws at all.
+      const details = state.appointmentDetails || {};
+      const detailRows = [
+        ['Name', details.name],
+        ['Email', details.email],
+        ['Phone', details.phone],
+      ]
+        .filter(([, v]) => v)
+        .map(([label, v]) => `<p><strong>${label}:</strong> ${v}</p>`)
+        .join('');
+
     // Build confirmation HTML
     this.confirmationContainer.innerHTML = `
       <div class="confirmation-content">
@@ -485,9 +505,7 @@ class FormManager {
         <div class="appointment-details">
           <p><strong>Date:</strong> ${formattedDate}</p>
           <p><strong>Time:</strong> ${state.selectedTime}</p>
-          <p><strong>Name:</strong> ${state.appointmentDetails.name}</p>
-          <p><strong>Email:</strong> ${state.appointmentDetails.email}</p>
-          <p><strong>Phone:</strong> ${state.appointmentDetails.phone}</p>
+            ${detailRows}
         </div>
         <p class="confirmation-message">
           We'll send a confirmation email with these details shortly.
