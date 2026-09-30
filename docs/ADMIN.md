@@ -127,11 +127,33 @@ the front end reads. The build stays prebuilt and costs nothing, and the change
 is live. Cost: anything rendered server-side into static HTML needs either a
 build or client-side injection, which is the SEO question below.
 
-**B. Rebuild on push, on our own host.**
-A webhook from the git push to `10.1.0.25` that runs `ci/run.sh build deploy`.
-Zero Netlify build minutes — it is our hardware. This makes Decap work as
-designed, with static HTML and correct SEO. Cost: it needs a long-lived
-webhook receiver on the CI host, and it makes every typo in a page a deploy.
+**B. Rebuild on push, on our own host. BUILT.**
+`ci/webhook-receiver.js`. A signed git-push webhook runs
+`ci/run.sh sync build deploy` on the CI host. Zero Netlify build minutes — it
+is our hardware — and Decap works as designed, with static HTML and correct SEO.
+
+It **never deploys to production.** Not as a policy but as a refusal: the only
+command it will run is `deploy`, `deploy-prod` is not in it, and a `--prod` flag
+anywhere in its configuration makes it exit at startup. Production stays a human
+decision.
+
+```bash
+# on the CI host, once
+export WEBHOOK_SECRET=$(openssl rand -hex 32)     # same value as the GitHub webhook
+node ci/webhook-receiver.js --port 8801 --branch modernize/netlify-build-2026
+
+# then, behind a reverse proxy, point the GitHub webhook at https://…/hook
+node ci/check-webhook-receiver.js                # 9/9, --dry-run, never builds
+```
+
+It refuses: unsigned requests, a signature for different content, pushes to any
+branch but the watched one, and branch deletions. Decap commits per field save,
+so three saves in a minute coalesce into one build. `/healthz` is
+unauthenticated and reveals nothing but "up, idle".
+
+Not installed as a service. It needs a long-lived process and a public URL with
+TLS, and that is a deliberate decision to make rather than something to
+half-install.
 
 **C. Restore a Netlify build on push.**
 Simplest by far and the one thing already ruled out: it spends build minutes,
