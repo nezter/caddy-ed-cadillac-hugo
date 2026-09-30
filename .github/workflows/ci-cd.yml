@@ -90,7 +90,19 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Production build
+        env:
+          # ci/run.sh deletes its per-run workdir on exit; hold it open so the
+          # publish dir can be pulled back into the checkout below.
+          CLEANUP: 0
         run: ./ci/run.sh build
+
+      - name: Pull the publish dir back from the CI-host workdir
+        run: |
+          # The build happens in the rsync workdir on the CI host (run.sh's
+          # never-mutate-the-checkout rule), so the checkout has no site/public
+          # until it is copied back. Workdir is removed after the pull.
+          rsync -az "${CI_USER}@${CI_HOST}:${REMOTE_WORKDIR}/site/public/" site/public/
+          rm -rf "${REMOTE_WORKDIR:-/nonexistent}"
 
       - name: Archive publish directory
         uses: actions/upload-artifact@v7
