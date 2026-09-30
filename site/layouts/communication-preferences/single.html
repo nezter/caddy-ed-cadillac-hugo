@@ -1,0 +1,85 @@
+{{ define "main" }}
+{{- $phone := .Site.Params.phone | default "803-431-6180" -}}
+{{- $phoneHref := replace $phone "." "" -}}
+{{- $email := .Site.Params.email | default "ed@caddyed.com" -}}
+
+{{/* This page existed as a heading and nothing else, while the privacy policy
+     pointed at it as the way to opt out. An opt-out page with no opt-out is
+     worse than no page, so the controls are here.
+
+     The form deliberately posts to the same public endpoint every other
+     message on this site uses. The alternative was a new unauthenticated write
+     endpoint, which is not something to add casually at the end of a build --
+     and this is a small dealership where a human actions the change and
+     confirms it. The ids are the ones site/assets/js/index.js binds
+     (#contact-form, #form-success, #form-error); it sends JSON, which is what
+     netlify/functions/contact-form.js parses. */}}
+<section class="stage stage--deep grain pad--tight">
+  <div class="wrap">
+    <p class="eyebrow">Communication preferences<span class="ltbar" aria-hidden="true"><i></i><i></i><i></i></span></p>
+    <div style="display:flex;align-items:end;justify-content:space-between;gap:2rem;flex-wrap:wrap">
+      <h1 class="display display--sm" style="color:#fff;max-width:22ch">{{ .Title }}</h1>
+      <p class="lede" style="max-width:38ch;margin:0">{{ .Params.subtitle | default "How Ed contacts you, and how to change it." }}</p>
+    </div>
+  </div>
+</section>
+
+<section style="background:#fff;padding-block:clamp(2.2rem,4.5vw,3.5rem)">
+  <div class="wrap" style="display:grid;grid-template-columns:1.1fr .9fr;gap:clamp(1.5rem,4vw,3rem);align-items:start">
+    <div>
+      <div class="prose">{{ .Content }}</div>
+    </div>
+
+    <div>
+      <form class="form" id="contact-form" method="post" action="/api/contact" novalidate
+            style="background:#fafafa;border:1px solid #e7e9ee;border-radius:var(--r-card);padding:clamp(1.2rem,2.5vw,1.8rem)">
+        <p class="kicker kicker--light"><i>01</i><span>Change it here</span></p>
+        <h2 class="h-mod" style="color:var(--ink-1);margin-bottom:.4rem">What would you like to change?</h2>
+        <p style="color:#515863;font-size:.92rem;margin:0 0 1.2rem">
+          Ed reads these himself and confirms the change back to you.
+        </p>
+
+        <div class="form-grid form-grid-2">
+          <div class="form-field">
+            <label for="name">Your name</label>
+            <input class="input" id="name" name="name" type="text" autocomplete="name" required aria-required="true">
+          </div>
+          <div class="form-field">
+            <label for="email">Email</label>
+            <input class="input" id="email" name="email" type="email" autocomplete="email" required aria-required="true">
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label for="phone">Phone <span class="hint">(optional)</span></label>
+          <input class="input" id="phone" name="phone" type="tel" autocomplete="tel">
+        </div>
+
+        <div class="form-field">
+          <label for="message">What should change?</label>
+          <textarea class="textarea" id="message" name="message" rows="4" required aria-required="true">Please update my communication preferences: </textarea>
+          <p class="hint">
+            For example: <em>&ldquo;Text only, no email&rdquo;</em>, or
+            <em>&ldquo;Stop all contact&rdquo;</em>, or
+            <em>&ldquo;Email is fine, please do not call&rdquo;.</em>
+          </p>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg" style="width:100%">Send the request</button>
+
+        <p class="form-message form-message--success hidden" id="form-success" role="status">
+          Thank you — your request is with Ed, and the change will be confirmed to you.
+        </p>
+        <p class="form-message form-message--error hidden" id="form-error" role="alert"></p>
+      </form>
+
+      <div style="background:#fafafa;border:1px solid #e7e9ee;border-radius:var(--r-card);padding:1.1rem;margin-top:1rem">
+        <p class="mono-label" style="color:#6f7683;margin:0 0 .6rem">Rather do it by voice</p>
+        <p style="margin:0 0 .8rem;font-size:.9rem;color:#515863">It takes about a minute.</p>
+        <a class="btn btn--line btn--sm" href="tel:+1{{ $phoneHref }}">{{ $phone }}</a>
+        <a class="btn btn--line btn--sm" href="mailto:{{ $email }}">Email</a>
+      </div>
+    </div>
+  </div>
+</section>
+{{ end }}
