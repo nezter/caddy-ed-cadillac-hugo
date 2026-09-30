@@ -118,7 +118,8 @@
       if (connectEl) connectEl.href = `${CALENDAR}?action=start`;
       if (syncEl) syncEl.disabled = true;
     } catch (err) {
-      say(statusEl, 'Could not check the calendar: ' + err.message, 'warn');
+      console.error('calendar check failed:', err);
+        say(statusEl, 'Could not check the calendar. Try again shortly.', 'warn');
       if (syncEl) syncEl.disabled = true;
     }
   }
@@ -142,7 +143,8 @@
         failed.length ? 'warn' : 'ok');
       await load();
     } catch (err) {
-      say(statusEl, 'Push failed: ' + err.message, 'warn');
+      console.error('calendar push failed:', err);
+        say(statusEl, 'Push failed. Try again shortly.', 'warn');
     }
   }
 

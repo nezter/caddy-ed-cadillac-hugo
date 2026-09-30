@@ -154,7 +154,8 @@
       })
       .catch(function (err) {
         if (el.progress) el.progress.hidden = true;
-        say('Could not reach the settings service: ' + err.message, 'error');
+        console.error('settings service unreachable:', err);
+      say('Could not reach the settings service. Check the connection and try again.', 'error');
       });
   }
 
@@ -181,7 +182,7 @@
         el.save.textContent = 'Save';
         if (res.status !== 200) {
           say(
-            'Not saved (' + res.status + '): ' + (res.body && res.body.error ? res.body.error : 'unknown error'),
+            'Not saved. Check the values and try again.',
             'error'
           );
           return;
@@ -196,7 +197,8 @@
       .catch(function (err) {
         el.save.disabled = false;
         el.save.textContent = 'Save';
-        say('Could not save: ' + err.message, 'error');
+        console.error('settings save failed:', err);
+      say('Could not save. Try again in a moment.', 'error');
       });
   });
 

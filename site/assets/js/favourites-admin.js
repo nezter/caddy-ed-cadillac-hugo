@@ -172,7 +172,7 @@
         render();
         say('All cleared.', 'ok');
       })
-      .catch(function (e) { say('Could not clear: ' + e.message, 'warn'); });
+      .catch(function (e) { console.error('clear failed:', e); say('Could not clear. Try again shortly.', 'warn'); });
   }
 
   if (filterEl) filterEl.addEventListener('input', render);
