@@ -112,8 +112,57 @@
       </div>
     </header>
 
+    {{/* The quick strip: the mockup's six controls under the head, above the rail.
+
+         These are MIRRORS, not duplicates. Each one writes the rail's field of
+         the same name, so there is still exactly one authoritative control per
+         field -- inventory-filter.js resolves the in-form control first
+         (fieldEl), and the strip follows it in both directions: a change in
+         the strip writes the rail, and every apply() refreshes the strip. The
+         price select drives the same band state as the chips in the rail.
+
+         No body control: 0 of 36 vehicles carry a body style and the dealer
+         feed does not send one, so the mockup's "Any body" would be a control
+         that matches nothing. Drivetrain has real data behind it and the same
+         shape. */}}
+    <div class="inv-strip" role="search" aria-label="Quick filters" data-inv-strip>
+      <input class="inv-strip__input" type="search" id="qs-q" placeholder="Model or trim"
+             autocomplete="off" aria-label="Search model or trim" data-mirror="q">
+      <select class="inv-strip__select" id="qs-year" aria-label="Year" data-mirror="year">
+        <option value="">Any year</option>
+        {{ range $years }}<option value="{{ . }}">{{ . }}</option>{{ end }}
+      </select>
+      <select class="inv-strip__select" id="qs-status" aria-label="Condition" data-mirror="status">
+        <option value="">Any condition</option>
+        {{ range $statuses }}<option value="{{ . }}">{{ . }}</option>{{ end }}
+      </select>
+      <select class="inv-strip__select" id="qs-drivetrain" aria-label="Drivetrain" data-mirror="drivetrain">
+        <option value="">Any drivetrain</option>
+        {{ range $drivetrains }}<option value="{{ . }}">{{ . }}</option>{{ end }}
+      </select>
+      {{/* Options are filled from PRICE_BANDS by inventory-filter.js, so the
+           select and the chips cannot list different bands. */}}
+      <select class="inv-strip__select" id="qs-price" aria-label="Price" data-mirror="price">
+        <option value="">Any price</option>
+      </select>
+      {{/* The sort control, moved rather than copied -- a duplicate would give
+           the script two controls of the same name and no way to say which is
+           authoritative. form="inventory-filters" keeps it the form's own,
+           wherever in the document it sits. */}}
+      <select form="inventory-filters" class="inv-strip__select" id="f-sort" name="sort" aria-label="Sort">
+        <option value="price-asc">Price: low to high</option>
+        <option value="price-desc">Price: high to low</option>
+        <option value="year-desc" selected>Newest first</option>
+        <option value="mileage-asc">Lowest mileage</option>
+      </select>
+      <p class="inv-strip__count" data-rail-count aria-live="polite">
+        {{ $totalAll }} {{ if eq $totalAll 1 }}vehicle{{ else }}vehicles{{ end }}
+        &middot; {{ len $paginator.Pages }} shown
+      </p>
+    </div>
+
     <noscript>
-      <style>.inventory-filters{display:none}</style>
+      <style>.inventory-filters,.inv-strip{display:none}</style>
       <p class="inventory-noscript-note">
         Filtering needs JavaScript. The full inventory is below, {{ $perPage }} vehicles
         to a page, and every page is a normal link.
@@ -136,10 +185,9 @@
            reads the query string on load, so /inventory/?status=New arrives
            already filtered, with no second JavaScript path.
 
-           The sort control is the same element as the one in the form, moved
-           rather than copied -- a duplicate would give the script two controls
-           of the same name and no way to say which is authoritative. It carries
-           form="inventory-filters" so it still belongs to the form. */}}
+           The sort control now lives in the quick strip, still bound to the
+           form by its form attribute; the chips remain the only controls
+           here, which is what the row is for. */}}
       <div class="inv-toolbar">
         <nav class="inv-chips" aria-label="Quick filters">
           <a class="inv-chip" href="/inventory/">All</a>
@@ -147,15 +195,6 @@
           <a class="inv-chip" href="/inventory/?status={{ . | urlquery }}">{{ . }}</a>
           {{ end }}
         </nav>
-        <div class="inv-toolbar__sort">
-          <label for="f-sort">Sort</label>
-          <select form="inventory-filters" class="select" id="f-sort" name="sort">
-            <option value="price-asc">Price: low to high</option>
-            <option value="price-desc">Price: high to low</option>
-            <option value="year-desc" selected>Newest first</option>
-            <option value="mileage-asc">Lowest mileage</option>
-          </select>
-        </div>
       </div>
 
       {{/* The list. Server-rendered from content, filtered client-side. The

@@ -399,3 +399,102 @@ Verified: 16 static and cascade checks (including the specificity arithmetic
 above), then 15 behavioural checks in jsdom -- both tabs, panel swapping, the
 roving tabindex, ArrowLeft/ArrowRight with wraparound, and the load button
 replacing itself with the embed. All repo gates pass.
+
+---
+
+## The four mockup gaps: strip, tray, car page, booking
+
+Four screenshots of the mockups came back as the review: the inventory
+quick strip, the tray, the vehicle page, and the booking section. Each was a
+place the build and the mockup had drifted. What follows is what was actually
+missing and what changed.
+
+### 1. The quick strip was missing entirely
+
+The mockup puts six controls and a live count between the page head and the
+cars; the build went straight to the rail. The strip now exists in
+`site/layouts/section/inventory.html`, styled in `direct-2026.css`.
+
+The important part is that its controls are MIRRORS, not duplicates.
+`inventory-filter.js` resolves the in-form control first (`fieldEl`), so one
+authoritative control per field had to stay one. A strip control writes the
+rail's field of the same name and then runs the same apply()/writeUrl();
+apply() refreshes every mirror from the authoritative field at its end. The
+strip, the rail and the URL therefore cannot disagree. The price select
+drives the same band state as the chips, built from the same `PRICE_BANDS`
+array so the two cannot list different bands. The sort control moved into the
+strip (same element, still bound by `form="inventory-filters"`).
+
+Two deliberate deviations from the mockup:
+
+- **No Body control.** 0 of 36 content files carry a body style and the
+  dealer feed does not send one, so "Any body" would be a control that
+  matches nothing -- the exact failure mode the rail already documents. The
+  Drivetrain facet has the same shape and real data behind it.
+- **The strip filters on change, like everything else on this page.** The
+  mockup has Apply/Reset in the rail; the build filters live and keeps only
+  Clear filters. A dead Apply is a control that lies.
+
+### 2. The tray did not look like the mockup's tray
+
+`shortlist.js` now renders the mockup's shape: mono "Shortlist · N" label,
+one swatch per car (the card's own photograph -- already fetched, so no new
+request), one ellipsised line of names, and the two controls the mockup
+carries: "Compare side by side" and "Send shortlist to Ed". The compare
+control scrolls to the comparison area and focuses its status line; it is
+hidden where there is no comparison area (the home page). Per-car remove and
+the tray's Clear are gone -- the rail carries both, and the mockup's tray
+carries neither. `components/shortlist.css` lost the old chip/remove rules
+and the red top border (now the mockup's bronze hairline).
+
+On the compare side, the tools' "Clear all" became a `.btn` from the same
+family as the tray's buttons, and its old underlined-link rule was deleted.
+
+### 3. The vehicle page: badge, plate caption, rail
+
+- **Badge** now carries the sync date ("New · synced 26 Sep"). The mockup
+  says "arrived"; the feed has no arrival date, and the sync date is the same
+  kind of fact in the site's own vocabulary ("In stock · synced ...").
+- **Plate caption** over the main photograph: exterior over interior, and a
+  drivetrain · engine chip. Rendered only from values the feed sent.
+- **The rail** got the mockup's four-number micro-grid (Mileage, Drivetrain,
+  Engine, Condition) and its four actions in the mockup's order and weight:
+  "Ask about this {model}" is the red one, then Book / Value my trade against
+  it / Estimate the payment, all ghost. The "Interested in this X?" heading
+  and its paragraph went with it (the mockup has neither), and so did "See
+  financing options" (the header keeps financing one click away). The phone
+  line moved above the Ed note, as in the mockup.
+
+### 4. The booking section was one stacked column
+
+Now the mockup's two columns: the argument on the left (eyebrow, heading,
+the "request, not a locked slot" line, and the 9-6 / Same day ribbon), the
+form on the right in its own panel. The form's fields, names, ids and the
+netlify function contract are untouched; only the note text changed to the
+mockup's ("No obligation · no one else phones you").
+
+### Found while verifying
+
+`reset()` restored the platform defaults for the rail's selects -- which is
+not enough, because those selects are upgraded to multi-selects at runtime
+and a form reset is the one moment their default state matters. On some
+engines the reset half-applies (value clears, selectedOptions does not), and
+the ceiling readouts kept their pre-reset text because a form reset fires no
+change event on the sliders. Both are now explicit in `reset()`.
+
+### Verification
+
+41 checks pass: 16 static on the built pages (badge text, mini-spec, plate
+caption, CTA order, booking grid/ribbon, strip markup, count, sort location),
+and 25 behavioural in jsdom -- strip→rail and rail→strip for year and
+condition, URL writes, the band select driving the chips and the chips
+driving the select, the shown-count, the slider readout across a drag and a
+reset, the tray hidden/shown, label, swatches from the cards, names line,
+both buttons, the compare control's new class. Four more on the home page:
+tray appears, compare control hidden (no comparison area there), send intact,
+swatch resolves.
+
+Rendering the built pages in Chrome was not possible during this pass (the
+browser stopped producing screenshots partway through the session and has not
+recovered); the jsdom evidence above is what stands in. The strip and the
+tray are the two places to look first when a browser is available again.

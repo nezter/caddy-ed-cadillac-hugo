@@ -879,17 +879,6 @@
   text-transform: uppercase;
   color: var(--text-muted, #6f7683);
 }
-.comparison-tools__clear {
-  font: inherit;
-  font-size: var(--text-xs);
-  color: var(--brand-red);
-  background: none;
-  border: 0;
-  padding: 0;
-  cursor: pointer;
-  text-decoration: underline;
-}
-.comparison-tools__clear:hover { color: var(--brand-ink); }
 
 /* Three cars plus their specification names is wider than a small laptop, so
    the table scrolls sideways rather than crushing its columns. */

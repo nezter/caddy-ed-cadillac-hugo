@@ -18,7 +18,7 @@
   z-index: 90;              /* under the sticky header (100), over content */
   background: var(--brand-ink);
   color: var(--text-inverse);
-  border-top: 3px solid var(--brand-red);
+  border-top: 1px solid var(--bronze-line, rgb(182 159 88 / 0.35));
   box-shadow: 0 -8px 30px rgb(0 0 0 / 0.28);
 }
 
@@ -33,7 +33,7 @@
  *
  * Measured rather than guessed: the tray is ~92px tall on desktop and ~120px on
  * a phone, where the chosen-car list wraps onto its own line. */
-body.has-shortlist { padding-bottom: 108px; }
+body.has-shortlist { padding-bottom: 78px; }
 
 @media (max-width: 40rem) {
   body.has-shortlist { padding-bottom: 148px; }
@@ -49,85 +49,69 @@ body.has-shortlist { padding-bottom: 108px; }
   flex-wrap: wrap;
 }
 
-.shortlist__count {
+/* The label, the swatches, the names, the two controls -- the mockup's tray,
+   in the order the mockup sets them. */
+.shortlist__label {
   margin: 0;
-  font-size: var(--text-sm);
+  font-family: var(--f-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--on-ink-faint, #9aa1ad);
   white-space: nowrap;
 }
 
-.shortlist__count strong { color: var(--brand-bronze); }
+.shortlist__label strong { color: #fff; font-weight: 600; }
 
-/* The list of chosen cars. Horizontally scrollable rather than wrapping: it is
-   a status bar, and wrapping it to three lines on a phone would push the
-   content behind it. */
-.shortlist__items {
+/* One swatch per car, using the card's own photograph -- already fetched, so
+   the tray costs no new request. Scrolled rather than wrapped: it is a status
+   bar, and three lines of it would push the page's content down. */
+.shortlist__thumbs {
   display: flex;
-  gap: var(--space-2);
+  gap: 0.45rem;
   list-style: none;
   margin: 0;
-  padding: 0 0 var(--space-2);
-  overflow-x: auto;
-  flex: 1 1 240px;
+  padding: 0;
+  flex: 0 1 auto;
   min-width: 0;
+  overflow-x: auto;
   scrollbar-width: thin;
 }
 
-.shortlist__item {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  flex: 0 0 auto;
-  max-width: 260px;
-  padding: var(--space-1) var(--space-2) var(--space-1) var(--space-3);
-  background: rgb(255 255 255 / 0.08);
-  border: 1px solid rgb(255 255 255 / 0.14);
-  border-radius: var(--radius);
-  font-size: var(--text-xs);
-  white-space: nowrap;
+.shortlist__thumbs li { flex: 0 0 auto; }
+
+.shortlist__thumbs img,
+.shortlist__thumb--unknown {
+  display: block;
+  width: 54px;
+  height: 36px;
+  border-radius: 6px;
+  object-fit: cover;
+  border: 1px solid rgb(255 255 255 / 0.2);
+  background: rgb(255 255 255 / 0.06);
 }
 
-/* A car whose page is no longer on this page. It is still on the client's
-   list, so it is shown rather than silently dropped -- but marked, because
-   sending Ed a list containing something that has sold makes him look
-   careless on the phone. */
-.shortlist__item.is-stale {
-  border-style: dashed;
-  opacity: 0.62;
-}
+/* A car this page cannot show a picture for -- second page, or sold -- is
+   named in the line beside it instead. It is not called gone: from here,
+   those two look identical. */
+.shortlist__thumb--unknown { border-style: dashed; opacity: 0.5; }
 
-.shortlist__name {
+/* One line of names, ellipsised. The full list is in the email and in the
+   rail; this line is a glance, not the record. */
+.shortlist__names {
+  margin: 0;
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 0.85rem;
+  color: #9aa1ad;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.shortlist__name em {
-  font-style: normal;
-  color: var(--brand-bronze);
-  margin-left: var(--space-1);
-}
-
-.shortlist__remove {
-  flex: 0 0 auto;
-  width: 20px;
-  height: 20px;
-  border: 0;
-  border-radius: 50%;
-  background: rgb(255 255 255 / 0.14);
-  color: inherit;
-  font-size: 15px;
-  line-height: 1;
-  cursor: pointer;
-}
-
-.shortlist__remove:hover,
-.shortlist__remove:focus-visible {
-  background: var(--brand-red);
-  color: #fff;
+  white-space: nowrap;
 }
 
 .shortlist__actions {
   display: flex;
-  gap: var(--space-2);
+  gap: 0.6rem;
   flex: 0 0 auto;
   margin-left: auto;
 }
@@ -138,11 +122,8 @@ body.has-shortlist { padding-bottom: 108px; }
     gap: var(--space-2);
   }
 
-  .shortlist__items {
-    order: 3;
-    flex-basis: 100%;
-  }
-
+  .shortlist__thumbs { order: 3; flex-basis: 100%; }
+  .shortlist__names { order: 4; flex-basis: 100%; white-space: normal; }
   .shortlist__actions { order: 2; }
 }
 

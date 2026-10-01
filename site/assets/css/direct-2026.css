@@ -871,7 +871,7 @@ body.home .prose a{color:var(--bronze-hi)}
 .vehicle-detail .prose a{color:var(--bronze-hi)}
 .vehicle-detail .asklist li{border-top-color:rgba(255,255,255,.08);color:var(--on-ink-muted)}
 .vehicle-detail .asklist b{color:var(--bronze-hi)}
-.vehicle-detail .vehicle-cta .text-muted{color:var(--on-ink-muted)}
+
 .vehicle-detail .vehicle-cta__phone{color:var(--on-ink-faint)}
 .vehicle-detail .vehicle-cta__phone a{color:var(--bronze-hi)}
 .vehicle-detail .btn-outline,.vehicle-detail .btn-ghost{
@@ -1228,7 +1228,7 @@ body.home .dock .social-body > div{max-width:100%}
 .vehicle-detail .vehicle-cta__note{
   font-size:.78rem;color:var(--on-ink-faint);margin:0 0 1rem;max-width:34ch;
 }
-.vehicle-detail .vehicle-cta .card__title{margin-top:1.1rem}
+
 
 /* --- the buttons inventory.css paints Bootstrap blue ---------------------
    inventory.css carries .inventory-page .btn.btn-primary{background:#007bff},
@@ -1267,7 +1267,7 @@ body.home .dock .social-body > div{max-width:100%}
 }
 .vehicle-detail .vehicle-specs__row{padding-block:.85rem}
 .vehicle-detail .vehicle-specs__heading{font-size:clamp(1.1rem,1rem + .5vw,1.35rem)}
-.vehicle-detail .vehicle-cta .card__title{font-size:clamp(1.1rem,1rem + .5vw,1.35rem)}
+
 .vehicle-detail .vehicle-cta__actions{display:grid;gap:.5rem}
 .vehicle-detail .vehicle-cta__actions .btn{width:100%;justify-content:center}
 
@@ -2027,4 +2027,99 @@ body.home .social-body .btn-ghost{
 }
 body.home .social-body .btn-ghost:hover{
   border-color:var(--bronze-hi);color:#fff;
+}
+
+/* --- the quick strip above the rail -------------------------------------
+
+   The mockup puts six controls and a live count between the head and the
+   cars. The controls are mirrors (see section/inventory.html); this is only
+   what they look like. The pill geography is the mockup's .rail: rounded-
+   full inputs on a quiet band, the count set apart on the right in mono. */
+.inv-strip{
+  display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;
+  padding:.7rem .9rem;margin:0 0 .9rem;
+  background:#fafafa;border:1px solid var(--border);border-radius:var(--r-card);
+}
+.inv-strip__input,.inv-strip__select{
+  font:inherit;font-size:.86rem;padding:.5rem .9rem;border-radius:999px;
+  border:1px solid #dde0e6;background:#fff;color:var(--ink-1);
+}
+.inv-strip__input{flex:1 1 12rem;max-width:20rem;min-width:10rem}
+.inv-strip__input::placeholder{color:#8a919c}
+.inv-strip__input:focus,.inv-strip__select:focus{border-color:var(--brand-bronze);outline:none}
+.inv-strip__count{
+  margin:0 0 0 auto;font-family:var(--f-mono);font-size:.68rem;letter-spacing:.12em;
+  text-transform:uppercase;color:#6f7683;white-space:nowrap;
+}
+@media (min-width:64rem){
+  .inv-strip{grid-column:1 / -1}
+}
+@media (max-width:48rem){
+  .inv-strip__input,.inv-strip__select{min-height:44px}
+  .inv-strip__count{margin-left:0}
+}
+
+/* --- vehicle detail: the mockup, at the last mile -----------------------
+
+   Three pieces from the mockup this page was missing: the plate caption
+   over the photograph, the four-number micro-grid in the action rail, and
+   the booking section as two columns -- an argument on the left and the
+   form on the right -- rather than one stacked column. */
+.vehicle-detail .vehicle-gallery{position:relative}
+.vehicle-detail .gallery-overlay{
+  position:absolute;left:0;right:0;bottom:0;z-index:2;
+  display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;
+  padding:.9rem 1rem;
+  background:linear-gradient(180deg,transparent,rgba(7,9,11,.72));
+  border-radius:0 0 var(--r-card) var(--r-card);
+  pointer-events:none;
+}
+.vehicle-detail .gallery-overlay__caption{color:#f4f2ee;font-size:.92rem}
+.vehicle-detail .gallery-overlay__spec{
+  flex:none;padding:.32rem .6rem;border-radius:999px;
+  background:rgba(7,9,11,.72);border:1px solid rgba(255,255,255,.16);color:#f0eee9;
+  font-family:var(--f-mono);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;
+  backdrop-filter:blur(6px);
+}
+.vehicle-detail .mini-spec{
+  display:grid;grid-template-columns:1fr 1fr;gap:.5rem .8rem;margin:1.1rem 0 0;
+}
+.vehicle-detail .mini-spec > div{border-top:1px solid rgba(255,255,255,.08);padding-top:.5rem}
+.vehicle-detail .mini-spec dt{
+  margin:0;font-family:var(--f-mono);font-size:.62rem;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--on-ink-faint);
+}
+.vehicle-detail .mini-spec dd{
+  margin:.2rem 0 0;font-size:.9rem;color:#fff;font-variant-numeric:tabular-nums;
+}
+.vehicle-detail .mini-spec__absent{color:var(--on-ink-faint);font-style:italic}
+.vehicle-detail .vehicle-booking__grid{
+  display:grid;grid-template-columns:.9fr 1.1fr;gap:clamp(1.5rem,4vw,3.5rem);align-items:start;
+}
+.vehicle-detail .vehicle-booking__copy .eyebrow{color:var(--bronze);margin:0 0 .4rem}
+.vehicle-detail .vehicle-booking__copy .card__title{margin:0 0 .6rem}
+.vehicle-detail .vehicle-booking__copy .text-muted{color:var(--on-ink-muted)}
+.vehicle-detail .vehicle-booking__ribbon{
+  display:grid;grid-template-columns:1fr 1fr;margin:2rem 0 0;
+  border-block:1px solid rgba(255,255,255,.08);
+}
+.vehicle-detail .vehicle-booking__ribbon > div{padding:1rem .2rem}
+.vehicle-detail .vehicle-booking__ribbon > div + div{
+  border-left:1px solid rgba(255,255,255,.08);padding-left:1.2rem;
+}
+.vehicle-detail .vehicle-booking__ribbon dt{
+  font-family:var(--f-display);font-weight:620;font-size:1.4rem;color:#fff;
+  letter-spacing:-.02em;font-variant-numeric:tabular-nums;
+}
+.vehicle-detail .vehicle-booking__ribbon dd{
+  margin:.25rem 0 0;font-family:var(--f-mono);font-size:.62rem;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--on-ink-faint);
+}
+.vehicle-detail .vehicle-booking__panel{
+  border:1px solid rgba(255,255,255,.08);border-radius:var(--r-card);
+  padding:clamp(1.1rem,2.2vw,1.5rem);background:rgba(255,255,255,.02);
+}
+.vehicle-detail .vehicle-booking__panel .vehicle-booking__form{margin-top:0}
+@media (max-width:64rem){
+  .vehicle-detail .vehicle-booking__grid{grid-template-columns:1fr}
 }

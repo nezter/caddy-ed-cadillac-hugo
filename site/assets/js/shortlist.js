@@ -102,7 +102,10 @@
         // list of cars the client chose.
         title: headingText(card) || card.dataset.title || '',
         stock: card.dataset.stock || '',
-        price: card.dataset.price || ''
+        price: card.dataset.price || '',
+        // The card's own photograph, for the tray swatch: already fetched,
+        // already decoded, so the tray costs the visitor nothing new.
+        thumb: thumbOf(card)
       };
     });
     return out;
@@ -112,6 +115,12 @@
   function headingText(card) {
     const h = card.querySelector('.vehicle-card__title a') || card.querySelector('.vehicle-card__title');
     return h ? h.textContent.replace(/\s+/g, ' ').trim() : '';
+  }
+
+  /** The card's own photograph, for the tray swatch. */
+  function thumbOf(card) {
+    const img = card.querySelector('.vehicle-card__media img');
+    return img ? (img.currentSrc || img.getAttribute('src') || '') : '';
   }
 
   function money(n) {
@@ -167,17 +176,37 @@
     tray.hidden = true;
     tray.innerHTML =
       '<div class="shortlist__inner">' +
-        '<p class="shortlist__count"><strong data-shortlist-count>0</strong> ' +
-          '<span data-shortlist-noun>cars</span> on your shortlist</p>' +
-        '<ul class="shortlist__items" data-shortlist-items></ul>' +
+        '<p class="shortlist__label">Shortlist &middot; <strong data-shortlist-count>0</strong></p>' +
+        '<ul class="shortlist__thumbs" data-shortlist-thumbs></ul>' +
+        '<p class="shortlist__names" data-shortlist-names></p>' +
         '<div class="shortlist__actions">' +
-          '<a class="btn btn-primary btn-sm" data-shortlist-send href="#">Send to Ed</a>' +
-          '<button type="button" class="btn btn-ghost btn-sm" data-shortlist-clear>Clear</button>' +
+          '<button type="button" class="btn btn-ghost btn-sm" data-shortlist-compare>Compare side by side</button>' +
+          '<a class="btn btn-primary btn-sm" data-shortlist-send href="#">Send shortlist to Ed</a>' +
         '</div>' +
       '</div>';
     document.body.appendChild(tray);
 
-    tray.querySelector('[data-shortlist-clear]').addEventListener('click', clear);
+    /* Compare side by side: the second thing the mockup's tray offers. It
+       scrolls to the comparison area rather than opening anything of its own
+       -- the shortlist and the comparison are two lists, and this button
+       should not silently turn one into the other. To empty the list there
+       are the per-car toggles and the rail's Clear; the mockup's tray
+       carries neither, and neither does this one. */
+    const compareBtn = tray.querySelector('[data-shortlist-compare]');
+    if (compareBtn) {
+      compareBtn.addEventListener('click', function () {
+        const host = document.getElementById('comparison-app');
+        if (!host) return;
+        const reduce = window.matchMedia &&
+          window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        host.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+        const status = document.getElementById('comparison-status');
+        if (status) {
+          status.setAttribute('tabindex', '-1');
+          status.focus({ preventScroll: true });
+        }
+      });
+    }
     return tray;
   }
 
@@ -259,31 +288,37 @@
     reserveSpace(!tray.hidden);
 
     tray.querySelector('[data-shortlist-count]').textContent = String(list.length);
-    tray.querySelector('[data-shortlist-noun]').textContent =
-      list.length === 1 ? 'car' : 'cars';
 
-    const items = tray.querySelector('[data-shortlist-items]');
-    items.innerHTML = list.map(function (slug) {
+    /* The mockup's tray: the cars as swatches, their names as one line, and
+       the two things a visitor can do next. A swatch links to its car and
+       uses the photograph the page has already fetched, so the strip costs
+       no new request. A car this page cannot show -- second page, or sold --
+       is still named, because the name is the one true thing the store
+       holds; it is not called gone, because from here those look identical. */
+    const thumbs = tray.querySelector('[data-shortlist-thumbs]');
+    const names = tray.querySelector('[data-shortlist-names]');
+    const items = list.map(function (slug) {
       const v = onPage[slug];
-      // An item whose car is no longer on this page is still listed, but marked,
-      // so the client can see why it looks different rather than wondering.
-      const stale = !v;
-      return '<li class="shortlist__item' + (stale ? ' is-stale' : '') + '">' +
-        '<span class="shortlist__name">' +
-          escapeHtml(v ? v.title : slug) +
-          (v && v.stock ? ' <em>' + escapeHtml(v.stock) + '</em>' : '') +
-        '</span>' +
-        '<button type="button" class="shortlist__remove" data-remove="' +
-          escapeHtml(slug) + '" aria-label="Remove ' +
-          escapeHtml(v ? v.title : slug) + ' from shortlist">&times;</button>' +
-        '</li>';
+      const label = escapeHtml(v ? v.title : slug);
+      if (!v) {
+        return '<li><span class="shortlist__thumb--unknown" title="' + label +
+          '" aria-hidden="true"></span></li>';
+      }
+      return '<li><a href="/inventory/' + encodeURIComponent(slug) + '/" title="' + label +
+        '" aria-label="' + label + '">' +
+        (v.thumb ? '<img src="' + escapeHtml(v.thumb) + '" alt="" width="54" height="36" loading="lazy">' : '') +
+        '</a></li>';
     }).join('');
+    thumbs.innerHTML = items;
+    names.textContent = list.map(function (slug) {
+      const v = onPage[slug];
+      return v ? v.title : slug;
+    }).join(' \u00b7 ');
 
-    items.querySelectorAll('[data-remove]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        toggle(btn.dataset.remove);
-      });
-    });
+    // Only where there is something to compare: the home page has no
+    // comparison area, and a control that scrolls nowhere is a control that lies.
+    const compareBtn = tray.querySelector('[data-shortlist-compare]');
+    if (compareBtn) compareBtn.hidden = !document.getElementById('comparison-app');
 
     tray.querySelector('[data-shortlist-send]').setAttribute('href', composeEmail());
 

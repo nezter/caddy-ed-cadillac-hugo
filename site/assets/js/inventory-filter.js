@@ -152,6 +152,53 @@
 
     let priceBand = null;
 
+    /**
+     * The quick strip above the rail carries mirrors, not duplicates.
+     *
+     * Each control writes the rail's field of the same name; apply() then
+     * refreshes every mirror from the authoritative field. One source of
+     * truth, two places to reach it -- the strip can never drift out of step
+     * with the rail, and the URL keeps describing exactly what is filtering.
+     *
+     * A facet the rail holds several values for shows its first value in the
+     * strip; choosing in the strip replaces the set with that one value, which
+     * is what a quick filter is for. Multi-select stays in the rail.
+     */
+    const mirrors = Array.prototype.slice.call(document.querySelectorAll('[data-mirror]'));
+
+    function bandKey(band) {
+      return (band.min === undefined ? 0 : band.min) + ':' + (band.max === undefined ? '' : band.max);
+    }
+
+    function setChipsPressed() {
+      const chips = document.querySelectorAll('#inventory-price-bands .chip');
+      Array.prototype.slice.call(chips).forEach(function (c) {
+        c.setAttribute('aria-pressed',
+          c.getAttribute('data-key') === (priceBand ? priceBand.key : '') ? 'true' : 'false');
+      });
+    }
+
+    function syncMirrors() {
+      mirrors.forEach(function (m) {
+        const name = m.getAttribute('data-mirror');
+        if (name === 'price') {
+          m.value = priceBand ? priceBand.key : '';
+          return;
+        }
+        const el = fieldEl(name);
+        if (!el) return;
+        if (el.multiple) {
+          const selected = Array.prototype.slice
+            .call(el.selectedOptions)
+            .map(function (o) { return o.value; })
+            .filter(Boolean);
+          m.value = selected.length ? selected[0] : '';
+        } else {
+          m.value = el.value || '';
+        }
+      });
+    }
+
     function matches(card, q, model, year, drivetrain, transmission, status, maxPrice, maxMileage) {
       if (q && (card.dataset.title || '').indexOf(q) === -1) return false;
       if (model.length && model.indexOf(card.dataset.model || '') === -1) return false;
@@ -276,17 +323,42 @@
       }
       if (emptyEl) emptyEl.classList.toggle('hidden', visible.length > 0);
       updateActiveFilterCount();
+
+      const railCount = document.querySelector('[data-rail-count]');
+      if (railCount) {
+        railCount.textContent =
+          pageTotals + (pageTotals === 1 ? ' vehicle' : ' vehicles') +
+          ' \u00b7 ' + visible.length + ' shown';
+      }
+      syncMirrors();
     }
 
     function reset() {
       form.reset();
       priceBand = null;
-      const host = document.getElementById('inventory-price-bands');
-      if (host) {
-        Array.prototype.slice.call(host.querySelectorAll('.chip')).forEach(function (c) {
-          c.setAttribute('aria-pressed', 'false');
+
+      /* The multi-selects are upgraded at runtime (el.multiple = true), and a
+         reset is the one moment their default state matters. Restoring them
+         explicitly rather than trusting the platform keeps this reset the
+         same everywhere -- including the harnesses that stand in for a
+         browser, where the platform half-does it. */
+      MULTI.forEach(function (name) {
+        const el = fieldEl(name);
+        if (!el || !el.multiple) return;
+        Array.prototype.slice.call(el.options).forEach(function (o) {
+          o.selected = !o.value;
         });
-      }
+      });
+
+      /* The readouts repaint from the sliders own change event, which a form
+         reset does not fire -- so without this the ceiling would go back to
+         Any while still reading "Up to $30,000". */
+      ["f-max-price", "f-max-mileage"].forEach(function (id) {
+        const el = document.getElementById(id);
+        if (el) el.dispatchEvent(new Event("change"));
+      });
+
+      setChipsPressed();
       apply();
       writeUrl();
       if (searchEl) searchEl.focus();
@@ -412,8 +484,21 @@
         chip.setAttribute('data-min', band.min === undefined ? '' : String(band.min));
         chip.setAttribute('data-max', band.max === undefined ? '' : String(band.max));
         chip.setAttribute('aria-pressed', 'false');
+        chip.setAttribute('data-key', bandKey(band));
         host.appendChild(chip);
       });
+
+      /* The strip's price control lists the same bands, built from the same
+         array, so the two surfaces cannot list different sets. */
+      const stripPrice = document.querySelector('[data-mirror="price"]');
+      if (stripPrice) {
+        PRICE_BANDS.forEach(function (band) {
+          const opt = document.createElement('option');
+          opt.value = bandKey(band);
+          opt.textContent = band.label;
+          stripPrice.appendChild(opt);
+        });
+      }
       host.addEventListener('click', function (e) {
         const chip = e.target.closest('.chip');
         if (!chip) return;
@@ -434,7 +519,10 @@
         // sort and the count rather than reimplementing them -- the first
         // version of this handler had its own copy of the counting logic and
         // disagreed with apply() about pagination.
-        priceBand = { lo: lo, hi: hi };
+        // `key` is the strip option value for the same band, so one click
+        // moves both surfaces to the same state.
+        priceBand = { lo: lo, hi: hi, key: chip.getAttribute('data-key') || '' };
+        setChipsPressed();
         apply();
       });
     }
@@ -481,6 +569,61 @@
         }, 200);
       });
     }
+
+    /* The strip's controls, wired to the rail. A mirror writes its field and
+       runs the same apply()/writeUrl() pair every other change runs; the
+       syncMirrors() inside apply() then refreshes it, so a programmatic
+       value and a typed one can never disagree. The price mirror drives the
+       band state instead of a form field, because that is what the chips
+       drive too. */
+    mirrors.forEach(function (m) {
+      const name = m.getAttribute('data-mirror');
+
+      if (name === 'price') {
+        m.addEventListener('change', function () {
+          if (!m.value) {
+            priceBand = null;
+          } else {
+            const parts = m.value.split(':');
+            const lo = parseFloat(parts[0]);
+            const hi = parts[1] === '' ? Infinity : parseFloat(parts[1]);
+            priceBand = {
+              lo: isNaN(lo) ? 0 : lo,
+              hi: isNaN(hi) ? Infinity : hi,
+              key: m.value,
+            };
+          }
+          setChipsPressed();
+          apply();
+          writeUrl();
+        });
+        return;
+      }
+
+      const write = function () {
+        const el = fieldEl(name);
+        if (!el) return;
+        if (el.multiple) {
+          Array.prototype.slice.call(el.options).forEach(function (o) {
+            o.selected = o.value === m.value || (m.value === '' && o.value === '');
+          });
+        } else {
+          el.value = m.value;
+        }
+        apply();
+        writeUrl();
+      };
+
+      if (m.type === 'search') {
+        let debounce;
+        m.addEventListener('input', function () {
+          clearTimeout(debounce);
+          debounce = setTimeout(write, 200);
+        });
+      } else {
+        m.addEventListener('change', write);
+      }
+    });
 
     document.addEventListener('click', function (e) {
       // The Clear filters button in the filter bar had only an id while this

@@ -73,6 +73,14 @@
   {{- $synced = (time.AsTime (printf "%v" .)).Format "2 January 2006" -}}
 {{- end -}}
 
+{{/* The badge carries the same fact at badge length: when this listing was
+     last confirmed. "Arrived" would need an arrival date the feed does not
+     send, and inventing one is not worth the costume. */}}
+{{- $syncedShort := "" -}}
+{{- with .Params.inventory_sync_synced -}}
+  {{- $syncedShort = (time.AsTime (printf "%v" .)).Format "2 Jan" -}}
+{{- end -}}
+
 {{/* Every row of the table, present or not, so a gap is visible rather than implied. */}}
 {{- $specs := slice
       (dict "label" "Condition"          "value" (printf "%v" (.Params.status | default "")))
@@ -108,7 +116,7 @@
 
     <header class="vehicle-header">
       {{ with .Params.status }}
-      <span class="badge {{ if eq . "New" }}badge--accent{{ else }}badge--success{{ end }}">{{ . }}</span>
+      <span class="badge {{ if eq . "New" }}badge--accent{{ else }}badge--success{{ end }}">{{ . }}{{ with $syncedShort }} &middot; synced {{ . }}{{ end }}</span>
       {{ end }}
       <h1 class="vehicle-title">{{ $titleClean }}</h1>
       {{ with .Params.subtitle }}<p class="lede">{{ . }}</p>{{ end }}
@@ -129,6 +137,20 @@
           "class" "gallery-featured-image"
           "sizes" "(max-width: 64rem) 92vw, 1200px"
           "loading" "eager") }}
+      {{/* The plate's own caption, as the mockup sets it: the colour pair
+           and the two numbers a walk-around starts with. Rendered only from
+           values the feed actually sent -- nothing is composed out of nothing. */}}
+      {{- $ex := .Params.exterior_color | default "" -}}
+      {{- $in := .Params.interior_color | default "" -}}
+      {{- $eng := strings.TrimSuffix " engine" $engine -}}
+      {{- if or $ex $in -}}
+      <div class="gallery-overlay">
+        <span class="gallery-overlay__caption">{{ if and $ex $in }}{{ $ex }} over {{ $in }}{{ else }}{{ $ex }}{{ $in }}{{ end }}</span>
+        {{- if or .Params.drivetrain $eng }}
+        <span class="gallery-overlay__spec">{{ with .Params.drivetrain }}{{ . }}{{ end }}{{ if and .Params.drivetrain $eng }} &middot; {{ end }}{{ $eng }}</span>
+        {{- end }}
+      </div>
+      {{- end -}}
     </div>
 
     {{/*
@@ -198,7 +220,7 @@
       </div>
 
       {{/* The four actions a vehicle page exists to drive. */}}
-      <aside class="vehicle-cta card">
+      <aside class="vehicle-cta card" aria-label="Price and next steps">
         {{/* The price belongs with the actions, not under the title. On the
              mockup it heads the rail that also carries Book / Ask / Trade /
              Payment, so the number and the ways to act on it are one object. */}}
@@ -211,23 +233,34 @@
         </p>
         {{ with .Params.price_note }}<p class="vehicle-cta__note">{{ . }}</p>{{ end }}
         {{ end }}
-        <h2 class="card__title">Interested in this {{ with .Params.model }}{{ . }}{{ end }}?</h2>
-        <p class="text-muted">
-          Ask about availability, current incentives, or trade it in against a
-          better payment.
-        </p>
+        {{/* The mockup's micro-grid: the four numbers a shopper checks
+             before anything else, guarded the same way the spec table is --
+             a field the feed did not send says so rather than sitting blank. */}}
+        <dl class="mini-spec">
+          <div><dt>Mileage</dt><dd>{{ if $miles }}{{ $miles }} mi{{ else }}<span class="mini-spec__absent">Not listed</span>{{ end }}</dd></div>
+          <div><dt>Drivetrain</dt><dd>{{ with .Params.drivetrain }}{{ . }}{{ else }}<span class="mini-spec__absent">Not listed</span>{{ end }}</dd></div>
+          <div><dt>Engine</dt><dd>{{ if $engine }}{{ humanize $engine }}{{ else }}<span class="mini-spec__absent">Not listed</span>{{ end }}</dd></div>
+          <div><dt>Condition</dt><dd>{{ with .Params.status }}{{ . }}{{ else }}<span class="mini-spec__absent">Not listed</span>{{ end }}</dd></div>
+        </dl>
+
+        {{/* Four actions, in the mockup's order and weight: the question
+             this page is asked most goes first, and it is the red one. The
+             financing page stays a click away in the header; the rail keeps
+             to the four things this page exists to do. */}}
         <div class="stack vehicle-cta__actions">
-          <a class="btn btn-primary btn-block" href="#book-a-test-drive">Book a test drive</a>
-          <button type="button" class="btn btn-outline btn-block calculate-payment"
+          <a class="btn btn-primary btn-block"
+             href="/contact/?vehicle={{ .Title | urlquery }}">Ask about this {{ with .Params.model }}{{ . }}{{ end }}</a>
+          <a class="btn btn-ghost btn-block" href="#book-a-test-drive">Book a test drive</a>
+          <a class="btn btn-ghost btn-block" href="/trade-in/">Value my trade against it</a>
+          <button type="button" class="btn btn-ghost btn-block calculate-payment"
                   data-price="{{ $price }}"
                   data-year="{{ .Params.year }}"
                   data-make="{{ .Params.make }}"
-                  data-model="{{ .Params.model }}">Estimate payment</button>
-          <a class="btn btn-outline btn-block"
-             href="/contact/?vehicle={{ .Title | urlquery }}">Ask about this vehicle</a>
-          <a class="btn btn-ghost btn-block" href="/trade-in/">Value my trade</a>
-          <a class="btn btn-ghost btn-block" href="/financing/">See financing options</a>
+                  data-model="{{ .Params.model }}">Estimate the payment</button>
         </div>
+        <p class="vehicle-cta__phone">
+          Prefer to talk it through? <a href="tel:{{ partial "phone-href.html" $phone }}">{{ $phone }}</a>
+        </p>
         <div class="ed-note">
           <p class="ed-note__label">A note from Ed</p>
           <p class="ed-note__body">Ask me anything about this one before you rule it out — availability, the real number, or what your trade is worth against it. I answer these myself.</p>
@@ -236,9 +269,6 @@
             <span class="seal__txt">Ed Portello<br>Cadillac Specialist</span>
           </div>
         </div>
-        <p class="vehicle-cta__phone">
-          Prefer to talk it through? <a href="tel:{{ partial "phone-href.html" $phone }}">{{ $phone }}</a>
-        </p>
       </aside>
     </div>
 
@@ -257,11 +287,20 @@
     */}}
     <section class="vehicle-booking card" id="book-a-test-drive"
              aria-labelledby="vehicle-booking-heading">
-      <h2 class="card__title" id="vehicle-booking-heading">Book a test drive</h2>
-      <p class="text-muted">
-        Half an hour on your own route, or just around the block. Send the
-        request and I'll come back with a time that suits you.
-      </p>
+      <div class="vehicle-booking__grid">
+        <div class="vehicle-booking__copy">
+          <p class="eyebrow">Half an hour, your route</p>
+          <h2 class="card__title" id="vehicle-booking-heading">Book a test drive</h2>
+          <p class="text-muted">
+            It's a request, not a locked slot. Ed confirms the exact time and
+            checks the car is still here &mdash; inventory moves.
+          </p>
+          <dl class="vehicle-booking__ribbon">
+            <div><dt>9&ndash;6</dt><dd>Mon&ndash;Sat drive times</dd></div>
+            <div><dt>Same day</dt><dd>Typical confirmation</dd></div>
+          </dl>
+        </div>
+        <div class="vehicle-booking__panel">
 
       <noscript>
         <style>.vehicle-booking__form{display:none}</style>
@@ -335,8 +374,8 @@
 
         <button class="btn btn-primary" type="submit">Request this test drive</button>
         <p class="vehicle-booking__note">
-          I take these myself, so you'll hear back from a person. Prefer to
-          call? <a href="tel:{{ partial "phone-href.html" $phone }}">{{ $phone }}</a>
+          No obligation &middot; no one else phones you. Or call
+          <a href="tel:{{ partial "phone-href.html" $phone }}">{{ $phone }}</a>.
         </p>
 
         {{/* Filled in by vehicle-detail.js. Server-rendered and empty, so the
@@ -345,6 +384,8 @@
         <div class="vehicle-booking__status" data-test-drive-status
              role="status" aria-live="polite" hidden></div>
       </form>
+        </div>
+      </div>
     </section>
   </div>
 

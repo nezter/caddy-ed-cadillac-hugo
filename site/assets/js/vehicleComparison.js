@@ -231,7 +231,7 @@
 
     var html = '<div class="comparison-tools">' +
       '<span class="comparison-tools__count">Comparing ' + chosen.length + ' of ' + MAX + '</span>' +
-      '<button type="button" class="comparison-tools__clear" data-compare-clear>Clear all</button>' +
+      '<button type="button" class="btn btn-ghost btn-sm" data-compare-clear>Clear all</button>' +
       '</div>';
 
     /* ---- the table (desktop) ---- */
