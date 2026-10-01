@@ -2017,3 +2017,60 @@ body.home .stay-connected{border-top-color:var(--bronze-line)}
   display:flex;justify-content:space-between;margin:.15rem 0 0;
   font-family:var(--f-mono);font-size:.62rem;letter-spacing:.08em;color:#8a919c;
 }
+
+/* --- inventory head: span the grid, and fix the readout spacing --------
+   The head sits in the container grid next to a 290px rail. When the span
+   rule loses, the whole hero is squeezed into the rail column: the title
+   overflows the card and the lede lands on top of it. Stated here at higher
+   specificity so it cannot be beaten by a later, weaker rule.
+
+   The price ceiling readout was three values on one line. Now the ceiling
+   gets its own line and the two ends of the track sit under it, apart. */
+.inventory-page .container > .inventory-head{
+  grid-column:1 / -1;width:100%;
+}
+@media (max-width:64rem){
+  .inventory-page .container{display:block}
+  .inventory-page .inventory-head{margin-inline:0}
+}
+.inv-rail .range-readout{
+  display:block;margin:.5rem 0 0;
+}
+.inv-rail .range-readout__value{
+  display:block;font-size:1.05rem;line-height:1.2;
+}
+.inv-rail .range-readout__scale,
+.inv-rail .range-readout__ends{
+  display:flex;justify-content:space-between;gap:1rem;
+  margin-top:.3rem;
+}
+.inv-rail .range-readout__scale{color:#8a919c}
+
+/* --- inventory head: measured geometry, then a layout that cannot collapse
+
+   Measured at a 1384px viewport with the rail at 290px:
+
+     container   72..1312  w=1240  cols 290px 850px
+     head         0..550   w=550   gridColumn 1 / -1
+     h1          39..296   w=257   font-size 80px
+
+   The head claimed both columns and still came out 550px wide, starting
+   outside the container, and the h1 was left a 257px box at 80px type -- which
+   is why the title overflowed and the lede sat on top of it. Whatever the
+   full-bleed margins and the head's own grid were doing to each other, the
+   result is not something to keep patching around: the head is now a plain
+   block at the container width, and its title is sized from that width. */
+.inventory-page .container > .inventory-head{
+  display:block;
+  width:100%;
+  max-width:none;
+  margin-inline:0;
+  grid-column:1 / -1;
+}
+.inventory-page .inventory-head__main{max-width:64ch}
+.inventory-page .inventory-head__aside{margin-top:clamp(.9rem,2vw,1.4rem)}
+.inventory-page .inventory-head h1{
+  font-size:clamp(2rem,1.35rem + 2.4vw,3.4rem);
+  line-height:1.02;
+  letter-spacing:-.03em;
+}
