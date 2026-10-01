@@ -2010,3 +2010,10 @@ body.home .stay-connected{border-top-color:var(--bronze-line)}
   }
   .vehicle-card__picks{gap:.5rem}
 }
+
+/* The two ends of the price track, so the slider states its own range
+   instead of leaving the reader to guess from the thumb position. */
+.inv-rail .range-readout__ends{
+  display:flex;justify-content:space-between;margin:.15rem 0 0;
+  font-family:var(--f-mono);font-size:.62rem;letter-spacing:.08em;color:#8a919c;
+}

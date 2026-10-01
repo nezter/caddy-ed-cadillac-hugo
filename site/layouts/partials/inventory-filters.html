@@ -171,6 +171,7 @@
           <p class="range-readout" id="f-max-price-out">
             <span class="range-readout__value" data-price-readout>Up to {{ partial "money.html" $ceiling }}</span>
             <span class="range-readout__scale">{{ partial "money.html" 10000 }} &ndash; {{ partial "money.html" $ceiling }}</span>
+            <span class="range-readout__ends"><span>{{ partial "money.html" 10000 }}</span><span>{{ partial "money.html" $ceiling }}</span></span>
           </p>
         </div>
 

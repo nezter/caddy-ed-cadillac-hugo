@@ -411,26 +411,26 @@
       writeUrl();
     });
     form.addEventListener('change', function () {
+      apply();
+      writeUrl();
+    });
 
-    /* Controls that live OUTSIDE the form but belong to it via the form
-       attribute -- the sort control in the toolbar above the grid -- do not
-       bubble their events to the form. A form attribute makes an element a form
-       owner for submission; it does not make it a DOM descendant, so a
+    /* Controls that live OUTSIDE the form but belong to it through the form
+       attribute -- the sort control in the toolbar, and the price slider -- do
+       not bubble their events to the form. A form attribute makes an element a
+       form owner for submission; it does not make it a DOM descendant, so a
        delegated listener on the form never sees the event.
 
-       That is why moving the sort control stopped the sort working. fieldEl
-       already resolves such controls, so the value was readable and the control
-       appeared wired; it simply never triggered anything.
-
-       This listener catches them by asking the same question fieldEl asks. */
+       These two listeners were registered INSIDE the change handler above,
+       which meant they did not exist until the form had already changed once.
+       On a freshly loaded page the price slider therefore did nothing at all:
+       dragging it fired `input`, and nothing was listening. Every change also
+       added two more listeners, so they accumulated. Registered once, here. */
     document.addEventListener('change', function (e) {
       if (e.target && e.target.form === form) { apply(); writeUrl(); }
     });
     document.addEventListener('input', function (e) {
       if (e.target && e.target.form === form && e.target.type !== 'search') { apply(); writeUrl(); }
-    });
-      apply();
-      writeUrl();
     });
     form.addEventListener('reset', function () { setTimeout(apply, 0); });
 
