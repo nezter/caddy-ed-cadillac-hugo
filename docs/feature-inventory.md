@@ -72,7 +72,25 @@ Admin: `/admin/leads` (dedupe stats, duplicate check, manual merge),
 `/admin/followup-campaigns` (campaigns + analytics tabs).
 Customer: `/communication-preferences`. Public: contact form.
 
-## Orphaned (27) — the gap
+## Orphaned — the gap
+
+> **RECHECK THIS TABLE BEFORE TRUSTING IT.** It was written before the September
+> audit, and audit changed a lot of it. Several "dead" front ends below are now
+> loaded, several functions changed what they do, and one function gained
+> authentication it never had. Line counts and sizes are as-recorded and have not
+> been re-measured.
+>
+> What is certain as of 2026-09-30:
+>
+> - `send-notification` has **no in-repo caller at all**. It is staff-only now
+>   and nothing calls it; the three functions that used to fetch it over HTTP
+>   call `utils/inquiry.js` in-process instead.
+> - `schedule-appointment` is **not** on this list. It did not exist; it exists
+>   now.
+> - `contact-salesperson` did return a directory for a POST; it records now.
+> - `vehicle-features`, `booking-queue`, `lead-merge`, `lead-duplicates`,
+>   `lead-management` are all wired and now require staff tokens. See
+>   [`SECURITY.md`](SECURITY.md).
 
 | function | lines | what it would do | front end that exists but is not wired |
 |---|---|---|---|
@@ -116,17 +134,30 @@ Netlify bundles all of them as functions on every deploy.
 
 ## Declared gap
 
-`ci/verify-endpoints.js` carries one entry in `KNOWN_MISSING`, which is a
-receipt for unimplemented functionality rather than a waiver:
+**`KNOWN_MISSING` is now EMPTY, and that is the point.**
 
-**`schedule-appointment`** — the customer portal's "schedule appointment" form
-POSTs to a function that does not exist. The nearest candidate,
-`schedule-test-drive`, requires a `vehicleId` the form never collects, and
-validates six required fields against names the portal does not send
-(`fullName` vs `customer_name`, `email` vs `customer_email`,
-`preferredDate` vs `scheduled_date`). These are two different features — a
-service appointment for an existing customer, versus a test drive for a
-prospect — not one broken call.
+`ci/verify-endpoints.js` carried one entry: **`schedule-appointment`**, the
+customer portal's "schedule appointment" form, which POSTs to a function that
+did not exist. It had 404'd on every submission since the portal was built, and
+the customer was shown an error after choosing a date.
+
+The nearest candidate, `schedule-test-drive`, was rejected for the right
+reasons — it requires a `vehicleId` the form never collects, and validates six
+required fields against names the portal does not send (`fullName` vs
+`customer_name`, `email` vs `customer_email`, `preferredDate` vs
+`scheduled_date`). These are two different features: a service appointment for an
+existing customer, versus a test drive for a prospect.
+
+So `netlify/functions/schedule-appointment.js` was written. It takes the portal's
+own field names and records through `utils/inquiry.js` into `booking_requests`,
+with `vehicle_id` blank and the service type carried in `vehicle_title` — so a
+service visit is never mistaken for a drive, and the booking lands where
+`/admin/bookings` reads it.
+
+The entry was **removed from the allowlist rather than left in it**. The list is
+a receipt for unimplemented functionality, so a receipt for something now
+implemented is just a lie that keeps a gate quiet. Every future entry added
+there is a customer-facing promise this site does not keep.
 
 It needs a storage decision before it can be written: the pending Supabase +
 Turso programme (12 taskmaster tasks, all blocked behind each other) is the

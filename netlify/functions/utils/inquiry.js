@@ -126,7 +126,13 @@ async function notify(inquiry, recipient) {
       to: recipient.email,
       replyTo: inquiry.email || undefined,
       subject: inquiry.subject,
-      text: inquiry.text,
+      // Prefer real HTML when the caller built some. utils/followup-service.js
+      // adds an unsubscribe footer and a tracking pixel to a template, and those
+      // only exist as markup -- sending the bare text body instead would deliver
+      // marketing email with the unsubscribe link stripped off, which is the part
+      // that has to survive.
+      html: inquiry.html || undefined,
+      text: inquiry.text || undefined,
     });
     return { notified: true, to: recipient.email, via: recipient.source };
   } catch (err) {

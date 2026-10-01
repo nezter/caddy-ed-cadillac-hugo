@@ -7,7 +7,10 @@ const DatabaseService = require('./utils/database-service');
 // The shared parameterised query, for the one statement here that is not worth
 // a DatabaseService static. database-service exports `query` alongside the class.
 const { query } = require('./utils/database-service');
-const nodemailer = require('nodemailer');
+// nodemailer was required here for sendLeadNotificationEmail, which is now
+// deleted. It is deliberately NOT required at module load: a function must load
+// on a deployment with no mail configured, or every lead 500s before it can
+// record anything. That was the original bug -- see utils/inquiry.js.
 const DeduplicationService = require('./utils/deduplication-service');
 
 /**
@@ -219,27 +222,58 @@ exports.handler = async function(event, context) {
 
     // Send notification email to sales team
     try {
-      // Use the send-notification function for better error handling
-      const notificationResponse = await fetch(`${process.env.URL}/.netlify/functions/send-notification`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          type: 'lead_created',
-          recipient: 'sales@caddyed.com', // Primary sales email
-          subject: `New Lead: ${processedLead.firstName} ${processedLead.lastName}`,
-          content: `A new lead has been received from the website.`,
-          metadata: {
-            lead: processedLead,
-            leadId: leadId,
-            timestamp: new Date().toISOString()
-          }
-        })
-      });
+      // Who to notify is ONE question with ONE answer.
+      //
+      // This had 'sales@caddyed.com' inline, which is a fabricated mailbox: the
+      // addresses on this site are ed@ and info@, and nobody has ever confirmed
+      // that sales@ exists. It was hardcoded in four places, none of which
+      // agreed -- leads.js said sales@caddyed.com, lead-form.js defaulted to the
+      // same string, contact-form.js defaulted to info@caddyed.com, and
+      // utils/inquiry.js resolves from the staff table. Four answers to "where
+      // does a lead go", and a form that picks the wrong one loses the lead.
+      //
+      // Resolved through the shared helper, so a rep who has signed in through
+      // Identity is found in the staff table, and the response says which source
+      // was used. If there is nobody to notify, say so -- do not invent an
+      // address, because inventing one sends a customer's name, email and phone
+      // to a mailbox that may belong to somebody else entirely.
+      const { resolveRecipient, notify } = require('./utils/inquiry');
+      const recipient = await resolveRecipient();
+      if (!recipient.email) {
+        console.warn(
+          '[leads] no notification address configured. The lead IS recorded and ' +
+            'visible in /admin/leads; it was simply not emailed.'
+        );
+      }
 
-      if (!notificationResponse.ok) {
-        console.error('Failed to send lead notification:', await notificationResponse.text());
+      // In-process, not over HTTP.
+      //
+      // This fetched send-notification.js -- its own sibling, in the same
+      // deployment, through the public internet -- with no credential, because
+      // that endpoint had no auth to check. It is now staff-only, which is right
+      // for a thing a human presses a button on and wrong for a function calling
+      // its neighbour. So this calls notify() directly.
+      //
+      // The consequence is that the answer is real. `notificationResponse.ok`
+      // used to be a 200 from a function that logged the mail to stdout and
+      // reported success; now `result.notified` is true only if nodemailer
+      // accepted the message.
+      const result = await notify(
+        {
+          email: processedLead.email,
+          name: `${processedLead.firstName || ''} ${processedLead.lastName || ''}`.trim(),
+          phone: processedLead.phone,
+          subject: `New Lead: ${processedLead.firstName} ${processedLead.lastName}`,
+          text: 'A new lead has been received from the website.',
+        },
+        recipient
+      );
+
+      if (!result.notified) {
+        console.warn(
+          `[leads] lead ${leadId} recorded but NOT emailed (${result.reason}). ` +
+            'It is in the database and in /admin/leads.'
+        );
       }
     } catch (emailError) {
       console.error('Failed to send lead notification email:', emailError);
@@ -294,58 +328,32 @@ async function updateLeadScore(leadId) {
 }
 
 /**
- * Send notification email to sales team
+ * sendLeadNotificationEmail -- DELETED, and it was a loaded gun.
+ *
+ * This function was never called. It was unreachable from every code path in
+ * this file, which is the only reason the following had not already leaked:
+ *
+ *     to: process.env.LEAD_NOTIFICATION_EMAIL
+ *         || process.env.NOTIFICATION_EMAIL
+ *         || 'leads@cadillacofsouthcharlotte.com',
+ *
+ * `cadillacofsouthcharlotte.com` is not a domain this business owns. The moment
+ * somebody configured SMTP without also setting LEAD_NOTIFICATION_EMAIL -- which
+ * is the obvious thing to do, since SMTP_HOST alone is what you go looking for
+ * -- every customer's name, email address, phone number and message would have
+ * been delivered to a stranger's mailbox. One missing environment variable, and
+ * the customer list leaves the building.
+ *
+ * The body also linked to a second unowned domain,
+ * `ADMIN_URL || 'https://admin.caddyedcadillac.com'`, and interpolated the
+ * customer's own message into HTML with no escaping, so a name or message
+ * containing markup would render in the notification.
+ *
+ * Deleted rather than repaired. It duplicates what utils/inquiry.js now does
+ * everywhere else -- record first, then notify through a recipient resolved from
+ * the staff table, with the outcome reported rather than invented -- and the
+ * live notification path in this file calls the send-notification function
+ * instead. Keeping a second, unreached mail path in a repository is a liability
+ * with no offsetting value: the next person to wire up "the obvious missing
+ * piece" gets the data leak back with a straight face.
  */
-async function sendLeadNotificationEmail(lead) {
-  const transporter = nodemailer.createTransporter({
-    host: process.env.SMTP_HOST,
-    port: parseInt(process.env.SMTP_PORT || '587'),
-    secure: process.env.SMTP_SECURE === 'true',
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS
-    }
-  });
-
-  const subject = `New Lead: ${lead.firstName} ${lead.lastName} - ${lead.formType}`;
-  const htmlContent = `
-    <h2>New Lead Received</h2>
-    <div style="background: #f5f5f5; padding: 20px; margin: 20px 0;">
-      <h3>Lead Details</h3>
-      <p><strong>Name:</strong> ${lead.firstName} ${lead.lastName}</p>
-      <p><strong>Email:</strong> <a href="mailto:${lead.email}">${lead.email}</a></p>
-      ${lead.phone ? `<p><strong>Phone:</strong> <a href="tel:${lead.phone}">${lead.phone}</a></p>` : ''}
-      <p><strong>Form Type:</strong> ${lead.formType}</p>
-      <p><strong>Lead Source:</strong> ${lead.leadSource}</p>
-      ${lead.vehicleInterest ? `<p><strong>Vehicle Interest:</strong> ${lead.vehicleInterest}</p>` : ''}
-      <p><strong>Lead Score:</strong> ${lead.score}/100</p>
-      <p><strong>Submitted:</strong> ${new Date(lead.timestamp).toLocaleString()}</p>
-    </div>
-
-    ${lead.message ? `
-    <div style="background: #fff; border: 1px solid #ddd; padding: 15px; margin: 20px 0;">
-      <h4>Customer Message:</h4>
-      <p>${lead.message.replace(/\n/g, '<br>')}</p>
-    </div>
-    ` : ''}
-
-    ${lead.utm.source ? `
-    <div style="background: #e8f4f8; padding: 15px; margin: 20px 0;">
-      <h4>UTM Tracking:</h4>
-      <p><strong>Source:</strong> ${lead.utm.source}</p>
-      <p><strong>Medium:</strong> ${lead.utm.medium}</p>
-      <p><strong>Campaign:</strong> ${lead.utm.campaign}</p>
-    </div>
-    ` : ''}
-
-    <p><a href="${process.env.ADMIN_URL || 'https://admin.caddyedcadillac.com'}/leads/${lead.id}" style="background: #007cba; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View in Admin Panel</a></p>
-  `;
-
-  await transporter.sendMail({
-    from: `"Website Leads" <${process.env.SMTP_USER}>`,
-    to: process.env.LEAD_NOTIFICATION_EMAIL || process.env.NOTIFICATION_EMAIL || 'leads@cadillacofsouthcharlotte.com',
-    subject: subject,
-    html: htmlContent,
-    replyTo: lead.email
-  });
-}

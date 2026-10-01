@@ -312,16 +312,18 @@ const fnNames = functionNames();
 // It is not a workaround; it is a receipt for unimplemented functionality, and
 // it is expected to shrink to empty.
 const KNOWN_MISSING = new Map([
-  [
-    'schedule-appointment',
-    'customer-portal.js "schedule appointment" form has no implementation. ' +
-      'It POSTs {type, scheduled_date, scheduled_time, notes, customer_*} to a ' +
-      'function that does not exist. The nearest candidate, schedule-test-drive, ' +
-      'requires a vehicleId the form never collects -- these are two different ' +
-      'features (service appointment vs test drive), not one broken call. ' +
-      'Needs a storage decision first; see docs/PROGRAMME.md. ' +
-      'TRACKED: build a schedule-appointment function, or remove the form.',
-  ],
+  // schedule-appointment was here. customer-portal.js had POSTed to it since the
+  // portal was built and it had never existed; the form returned 404 to a signed-in
+  // customer who had already chosen a date. netlify/functions/schedule-appointment.js
+  // now exists, takes the portal's own field names, and records through
+  // utils/inquiry.js -- the same record-then-notify path every other form uses.
+  //
+  // Removed from this list rather than left in it: the list is a receipt for
+  // unimplemented functionality, so a receipt for something that is now
+  // implemented is just a lie that keeps a gate quiet.
+  //
+  // It is deliberately EMPTY now. Keep it that way, and keep it that way loudly:
+  // every entry added here is a customer-facing promise this site does not keep.
 ]);
 
 const liveProblems = [];

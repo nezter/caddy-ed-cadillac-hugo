@@ -1,5 +1,6 @@
 const DatabaseService = require('./utils/database-service');
 const errorHandler = require('./utils/error-handler');
+const { isUsableSecret } = require('./utils/jwt-secret');
 
 /**
  * Read a request header by name, case-insensitively.
@@ -147,9 +148,32 @@ async function checkAuthentication(event) {
 
   try {
     const jwt = require('jsonwebtoken');
-    const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+    // Never a fallback literal.
+    //
+    // This was `process.env.JWT_SECRET || 'your-secret-key-change-in-production'`
+    // and the string is committed to a public repository. When JWT_SECRET is
+    // unset -- which is the case under [dev.environment], and for production
+    // until somebody sets it in the Netlify UI, because netlify.toml declares no
+    // [context.production.environment] -- that literal became the VERIFYING key.
+    // Anyone who reads this repo could sign a token with it, claim role 'admin',
+    // and be believed. A secret that fails open to a published constant is worse
+    // than no secret at all, because it looks configured.
+    //
+    // sales-customers.js already documented this exact hazard; four siblings kept
+    // the literal. Refusing an unusable secret is one answer, and utils/jwt-secret.js
+    // is where it lives -- including for the context markers netlify.toml writes
+    // on purpose, which are public strings and must never verify a token either.
+    const secret = process.env.JWT_SECRET;
+    if (!isUsableSecret(secret)) {
+      console.error(
+        '[sales-appointments] JWT_SECRET is not configured (absent, empty, or a ' +
+          'deploy marker). Refusing the request rather than verifying with a ' +
+          'published default.'
+      );
+      return { authenticated: false, unconfigured: true };
+    }
 
-    const decodedToken = jwt.verify(authToken, JWT_SECRET);
+    const decodedToken = jwt.verify(authToken, secret);
 
     return {
       authenticated: true,

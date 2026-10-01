@@ -4,6 +4,7 @@ description: "Browse current new and certified pre-owned Cadillac inventory avai
 date: 2024-01-15
 layout: "inventory"
 scripts:
+  - compare-tray.js
   - ed-picks.js
   - vehicleComparison.js
 ---

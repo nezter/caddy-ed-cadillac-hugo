@@ -165,7 +165,7 @@
       '&body=' + encodeURIComponent(body);
   }
 
-  function ensureTray() {
+function ensureTray() {
     let tray = document.getElementById(TRAY_ID);
     if (tray) return tray;
 
@@ -211,20 +211,21 @@
   }
 
   /**
-   * Make room for the tray.
+   * The strip.
    *
-   * The tray is fixed to the bottom of the viewport, so once it appears it sits
-   * on top of whatever is at the bottom of the page -- which, on a grid of
-   * vehicle cards, is the row of "Shortlist" buttons.
+   * It used to build its own fixed bar at the bottom of the screen, and
+   * vehicleComparison.js is now sharing that bar so a shopper can see what they
+   * have chosen to COMPARE as well as what they have shortlisted. Two fixed bars
+   * would sit on top of each other, so there is one, with a section each --
+   * compare-tray.js owns it, and this script pushes its state in.
    *
-   * That made the feature unusable: tick one car and the tray covers the
-   * buttons of every other card, so the second tick lands on the tray instead.
-   * Caught by clicking three cars in a browser and watching the count stay at 1.
-   *
-   * A class on <body> rather than an inline height, so the page reserves the
-   * space and the last row of cards can still be scrolled clear of the tray.
+   * It is rendered, not rebuilt, from here: shortlist.js never touches the
+   * compare section and compare-tray.js never touches this one, so neither can
+   * lose the other's work. The one thing this script still owns is the mailto:
+   * href, because the message body depends on which cars are no longer on the
+   * page, and only this script knows that.
    */
-  function reserveSpace(visible) {
+function reserveSpace(visible) {
     document.body.classList.toggle('has-shortlist', visible);
   }
 
@@ -279,12 +280,11 @@
     });
   }
 
-  function render() {
-    const tray = ensureTray();
+function render() {
     const list = read();
     const onPage = visibleVehicles();
 
-    tray.hidden = list.length === 0;
+tray.hidden = list.length === 0;
     reserveSpace(!tray.hidden);
 
     tray.querySelector('[data-shortlist-count]').textContent = String(list.length);
@@ -297,7 +297,7 @@
        holds; it is not called gone, because from here those look identical. */
     const thumbs = tray.querySelector('[data-shortlist-thumbs]');
     const names = tray.querySelector('[data-shortlist-names]');
-    const items = list.map(function (slug) {
+    const thumbItems = list.map(function (slug) {
       const v = onPage[slug];
       const label = escapeHtml(v ? v.title : slug);
       if (!v) {
@@ -309,7 +309,7 @@
         (v.thumb ? '<img src="' + escapeHtml(v.thumb) + '" alt="" width="54" height="36" loading="lazy">' : '') +
         '</a></li>';
     }).join('');
-    thumbs.innerHTML = items;
+    thumbs.innerHTML = thumbItems;
     names.textContent = list.map(function (slug) {
       const v = onPage[slug];
       return v ? v.title : slug;
@@ -320,7 +320,31 @@
     const compareBtn = tray.querySelector('[data-shortlist-compare]');
     if (compareBtn) compareBtn.hidden = !document.getElementById('comparison-app');
 
-    tray.querySelector('[data-shortlist-send]').setAttribute('href', composeEmail());
+    // The shared strip. Upstream rebuilt the standalone tray above into the
+    // mockup's swatch+names form; this is the other half, which the tray needs
+    // in order to keep the rail and the strip reading one store. Without it the
+    // rail would show what is saved while the strip showed something else --
+    // the exact drift ci/check-compare-shortlist.js asserts against.
+    const items = list.map(function (slug) {
+      const v = onPage[slug];
+      // A car whose page is no longer on this page is still listed, but marked,
+      // so the client can see why it looks different rather than wondering.
+      return {
+        slug: slug,
+        title: v ? v.title : slug,
+        stock: v && v.stock,
+        stale: !v,
+      };
+    });
+
+    if (window.CaddyPickTray) {
+      window.CaddyPickTray.renderShortlist(items, composeEmail());
+    } else {
+      // The strip script is not on this page. Keep the old standalone bar rather
+      // than losing the feature: a script that cannot find its strip must still
+      // function.
+      renderStandaloneTray(items);
+    }
 
     // Reflect state on every button so the page is honest about what is ticked,
     // including buttons that are not currently on screen.
@@ -345,6 +369,60 @@
     renderRail();
   }
 
+  /**
+   * The fallback strip, for a page that loads this script without the shared
+   * one. Same look, same class, same behaviour, one section instead of two.
+   */
+  function renderStandaloneTray(items) {
+    let tray = document.getElementById(TRAY_ID);
+    if (!tray) {
+      tray = document.createElement('aside');
+      tray.id = TRAY_ID;
+      tray.className = 'shortlist';
+      tray.setAttribute('aria-live', 'polite');
+      tray.innerHTML =
+        '<div class="shortlist__inner">' +
+          '<p class="shortlist__count"><strong data-shortlist-count>0</strong> ' +
+            '<span data-shortlist-noun>cars</span> on your shortlist</p>' +
+          '<ul class="shortlist__items" data-shortlist-items></ul>' +
+          '<div class="shortlist__actions">' +
+            '<a class="btn btn-primary btn-sm" data-shortlist-send href="#">Send to Ed</a>' +
+            '<button type="button" class="btn btn-ghost btn-sm" data-shortlist-clear>Clear</button>' +
+          '</div>' +
+        '</div>';
+      document.body.appendChild(tray);
+      tray.querySelector('[data-shortlist-clear]').addEventListener('click', clear);
+    }
+
+    tray.hidden = items.length === 0;
+    // Reserve room for the strip. It is fixed to the bottom of the viewport, so
+    // without this it covers the bottom row of vehicle cards -- specifically
+    // their Shortlist buttons -- and ticking one car makes every other one
+    // untickable. The class is on <body> rather than an inline height so the
+    // page reserves the space and the last row can be scrolled clear of it.
+    document.body.classList.toggle('has-shortlist', !tray.hidden);
+
+    tray.querySelector('[data-shortlist-count]').textContent = String(items.length);
+    tray.querySelector('[data-shortlist-noun]').textContent =
+      items.length === 1 ? 'car' : 'cars';
+    tray.querySelector('[data-shortlist-items]').innerHTML = items
+      .map(function (it) {
+        return '<li class="shortlist__item' + (it.stale ? ' is-stale' : '') + '">' +
+          '<span class="shortlist__name">' + escapeHtml(it.title) +
+            (it.stock ? ' <em>' + escapeHtml(it.stock) + '</em>' : '') +
+          '</span>' +
+          '<button type="button" class="shortlist__remove" data-remove="' +
+            escapeHtml(it.slug) + '" aria-label="Remove ' + escapeHtml(it.title) +
+            ' from shortlist">&times;</button>' +
+          '</li>';
+      })
+      .join('');
+    tray.querySelectorAll('[data-shortlist-items] [data-remove]').forEach(function (btn) {
+      btn.addEventListener('click', function () { toggle(btn.dataset.remove); });
+    });
+    tray.querySelector('[data-shortlist-send]').setAttribute('href', composeEmail());
+  }
+
   function escapeHtml(value) {
     return String(value)
       .replace(/&/g, '&amp;')
@@ -353,6 +431,13 @@
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#39;');
   }
+
+  // The shared strip's controls, delegated on the document so re-rendering the
+  // chips cannot lose the handlers.
+  document.addEventListener('caddy:remove-from-shortlist', function (e) {
+    toggle(e.detail.slug);
+  });
+  document.addEventListener('caddy:clear-shortlist', clear);
 
   document.addEventListener('DOMContentLoaded', function () {
     // The rail's own Clear. Bound once, here, rather than inside

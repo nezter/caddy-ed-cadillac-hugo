@@ -1,11 +1,54 @@
-const nodemailer = require('nodemailer');
 const InteractionService = require('./utils/interaction-service');
+const { authenticateRequest } = require('./utils/auth-middleware');
 
 /**
  * Send Notification Email
  * Handles sending various types of notification emails
+ *
+ * THIS WAS AN OPEN MAIL RELAY. READ THIS BEFORE ADDING A FIELD.
+ * -------------------------------------------------------------------------
+ * Until now this handler had no authentication of any kind. It accepted a POST
+ * from anybody on the internet and took three values straight from the request
+ * body:
+ *
+ *     const { type, recipient, subject, content } = data;
+ *     await transporter.sendMail({
+ *       from: process.env.SMTP_USER || 'noreply@caddyed.com',
+ *       to: recipient,
+ *       subject: emailContent.subject,
+ *       html: emailContent.html,
+ *     });
+ *
+ * Anything `recipient` happened to be, any subject, any body. With SMTP_HOST set
+ * -- and setting SMTP_HOST is exactly what the owner has to do to make email
+ * notifications work at all -- that is a relay that sends mail as the dealership
+ * to any address the internet cares to name. Spam, phishing mail that appears to
+ * come from a real car dealership, and a sender reputation that is expensive to
+ * get back. All of it triggered by a configuration step the project actively
+ * wants the owner to take.
+ *
+ * It is staff-only now, via the shared authenticateRequest, the same guard
+ * email-templates.js and lead-scoring.js use.
+ *
+ * NOTE FOR THE NEXT PERSON: this endpoint used to be called over HTTP by
+ * leads.js, utils/followup-service.js and customer-portal.js -- each function
+ * fetching a sibling function in the same deployment through the public
+ * internet, with no credential to show for it. That is not a way to call an
+ * internal function, and requiring auth is what forced the real fix: those three
+ * call utils/inquiry.js `notify()` in-process instead. If you are adding a
+ * caller, do the same. This endpoint is for a human in the admin pressing a
+ * button, not for functions talking to each other.
  */
 exports.handler = async (event, context) => {
+  // Staff only. Before this check there was none.
+  const auth = await authenticateRequest(event, {
+    requireAuth: true,
+    allowedRoles: ['admin', 'manager', 'sales_rep'],
+  });
+  if (!auth.authenticated) {
+    return auth.error;
+  }
+
   // Only allow POST requests
   if (event.httpMethod !== 'POST') {
     return {
@@ -18,8 +61,31 @@ exports.handler = async (event, context) => {
     const data = JSON.parse(event.body);
     const { type, recipient, subject, content, metadata } = data;
 
+    // Refuse rather than guess. The caller supplies the address, so an absent
+    // one is a caller bug that used to reach nodemailer as `to: undefined`.
+    if (!recipient) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ success: false, error: 'recipient is required' })
+      };
+    }
+
     // Create email transporter
     const transporter = createTransporter();
+
+    // Nothing configured to send with. Say so, loudly and specifically, rather
+    // than returning the `{ success: true }` the old mock produced.
+    if (!transporter) {
+      return {
+        statusCode: 503,
+        body: JSON.stringify({
+          success: false,
+          sent: false,
+          reason: 'smtp-not-configured',
+          error: 'No SMTP transport is configured, so nothing was sent. Set SMTP_HOST, SMTP_PORT, SMTP_USER and SMTP_PASS.',
+        })
+      };
+    }
 
     // Generate email content based on type
     const emailContent = generateEmailContent(type, data);
@@ -81,29 +147,57 @@ exports.handler = async (event, context) => {
 };
 
 function createTransporter() {
-  // For development/testing, we'll use a mock transporter
-  // In production, this would use actual SMTP credentials
-  if (process.env.NODE_ENV === 'development' || !process.env.SMTP_HOST) {
+  // The old version returned a mock whenever SMTP_HOST was missing -- which is
+  // how it is deployed -- and the mock returned a plausible messageId. The
+  // handler then answered `{ success: true, message: 'Notification sent
+  // successfully' }` and logged the interaction, so a caller could not tell the
+  // difference between a delivered email and a string in a log.
+  //
+  // leads.js called this, saw success, and carried on believing the rep had been
+  // told about a lead. This is the same defect as the enquiry forms, one layer
+  // over: a notification that reports success when it did nothing is worse than
+  // no notification, because it removes the evidence that anything is wrong.
+  //
+  // So: SMTP_HOST absent is a REFUSAL with a reason, not a pretend success. The
+  // mock survives only for local development, where pretending is the point.
+  if (process.env.NODE_ENV === 'development') {
     return {
+      isMock: true,
       sendMail: async (options) => {
-        console.log('📧 MOCK EMAIL SENT:');
+        console.log('📧 MOCK EMAIL (development only, nothing was sent):');
         console.log('To:', options.to);
         console.log('Subject:', options.subject);
-        console.log('Content:', options.text || options.html.substring(0, 200) + '...');
         return { messageId: 'mock-' + Date.now() };
       }
     };
   }
 
-  return nodemailer.createTransporter({
-    host: process.env.SMTP_HOST,
-    port: process.env.SMTP_PORT || 587,
-    secure: false, // true for 465, false for other ports
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS
-    }
-  });
+  if (!process.env.SMTP_HOST) {
+    console.error(
+      '[send-notification] SMTP_HOST is not configured. Nothing can be sent. ' +
+        'Returning a refusal so the caller learns this instead of assuming the ' +
+        'message was delivered.'
+    );
+    return null;
+  }
+
+  // Required here, not at module load: a function must load on a deployment with
+  // no mail configured. Requiring it at the top meant this file could not even be
+  // imported without nodemailer present, which is the failure mode utils/inquiry.js
+  // exists to prevent.
+  const nodemailer = require('nodemailer');
+  return {
+    isMock: false,
+    sendMail: (options) => nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: process.env.SMTP_PORT || 587,
+      secure: process.env.SMTP_SECURE === 'true',
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS
+      }
+    }).sendMail(options),
+  };
 }
 
 function generateEmailContent(type, data) {

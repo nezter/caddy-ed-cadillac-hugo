@@ -100,94 +100,23 @@ exports.handler = async function(event, context) {
   }
 };
 
-// Helper function to send email notifications
-async function sendEmailNotification(data, recipient, subject) {
-  const { name, email, phone, message, ...additionalFields } = data;
-
-  // Align SMTP variable names with the rest of the repo.
-  // .env.example documents SMTP_USER/SMTP_PASSWORD; other functions also accept SMTP_PASS.
-  const smtpUser = process.env.SMTP_USER;
-  const smtpPass = process.env.SMTP_PASSWORD || process.env.SMTP_PASS;
-
-  if (!process.env.SMTP_HOST || !smtpUser || !smtpPass) {
-    throw new Error('SMTP is not configured');
-  }
-
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: parseInt(process.env.SMTP_PORT || '587', 10),
-    secure: process.env.SMTP_SECURE === 'true',
-    auth: {
-      user: smtpUser,
-      pass: smtpPass
-    }
-  });
-
-  // Build email content
-  let emailContent = `
-    <h2>${subject}</h2>
-    <p><strong>Name:</strong> ${name}</p>
-    <p><strong>Email:</strong> ${email}</p>
-    <p><strong>Phone:</strong> ${phone}</p>
-  `;
-
-  if (message) {
-    emailContent += `<p><strong>Message:</strong> ${message.replace(/\n/g, '<br>')}</p>`;
-  }
-
-  // Add any additional fields
-  for (const [key, value] of Object.entries(additionalFields)) {
-    if (key !== 'formType' && key !== 'leadSource' && key !== 'pageUrl' && key !== 'startedAt' && key !== 'submittedAt') {
-      const formattedKey = key.replace(/([A-Z])/g, ' $1')
-        .replace(/^./, str => str.toUpperCase());
-      emailContent += `<p><strong>${formattedKey}:</strong> ${value}</p>`;
-    }
-  }
-
-  // Send the email
-  const info = await transporter.sendMail({
-    from: `"Caddy Ed Website" <${process.env.SMTP_FROM || smtpUser || 'noreply@caddyed.com'}>`,
-    to: recipient,
-    subject: subject,
-    html: emailContent,
-    replyTo: email
-  });
-
-  return info;
-}
-
-// Helper function to save lead to CRM
-async function saveToCRM(data) {
-  const { name, email, phone, message, formType } = data;
-
-  try {
-    const response = await fetch(process.env.CRM_API_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.CRM_API_KEY}`
-      },
-      body: JSON.stringify({
-        leadSource: 'Website',
-        leadType: formType || 'General',
-        contact: {
-          name,
-          email,
-          phone
-        },
-        message,
-        additionalData: data
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error(`CRM API error: ${response.status}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Error saving to CRM:', error);
-    // Don't throw so the form submission can still complete
-    return null;
-  }
-}
+// sendEmailNotification and saveToCRM -- DELETED.
+//
+// Both were unreachable once the handler started calling utils/inquiry.js, and
+// both were a hazard rather than dead weight:
+//
+//   * sendEmailNotification called `nodemailer.createTransport`, but nodemailer
+//     is no longer required at module scope -- deliberately, so a function can
+//     load on a deployment with no mail configured. That makes this function a
+//     ReferenceError waiting to happen: it reads as working, it is referenced
+//     by name in a comment above, and the moment somebody wires it back up to
+//     "fix notifications" every lead 500s.
+//   * It also threw `new Error('SMTP is not configured')` on a deployment with
+//     no SMTP, which is the exact failure that destroyed all three enquiry
+//     forms. utils/inquiry.js reports that state; this one treated it as fatal.
+//   * saveToCRM posted to `process.env.CRM_API_ENDPOINT` with no guard for it
+//     being undefined, and CRM_API_KEY is not configured. It swallowed its own
+//     errors, so it would have looked like it worked.
+//
+// The notification path is now one thing, in one file, with one recipient
+// resolver. See utils/inquiry.js.

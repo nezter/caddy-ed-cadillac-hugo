@@ -2,12 +2,38 @@ const errorHandler = require('./utils/error-handler');
 const DeduplicationService = require('./utils/deduplication-service');
 const FuzzyMatcher = require('./utils/fuzzy-matcher');
 const DataNormalizer = require('./utils/data-normalizer');
+const { authenticateRequest } = require('./utils/auth-middleware');
 
 /**
  * Lead duplicates API
  * Provides duplicate detection and statistics for admin interface
+ *
+ * STAFF ONLY.
+ *
+ * There was no authentication here, and both verbs return customer records:
+ *
+ *   GET  duplicate statistics across the whole lead table
+ *   POST check one name/email/phone against the table and return up to TWENTY
+ *        matching leads, with a confidence score
+ *
+ * That POST is a search interface over the customer database, given to anyone
+ * who sends a POST. It is the same oracle lead-management.js leaked through its
+ * duplicate branch, except wider: it answers for a query you supply rather than
+ * one you submit, it returns twenty rows, and it returns them to anyone at all.
+ *
+ * There is no public caller to preserve. site/assets/js/components/lead-management.js
+ * is the only client and it already sends `Authorization: Bearer <token>` via its
+ * callApi helper, so the guard costs the admin nothing.
  */
 exports.handler = async function(event, context) {
+  const auth = await authenticateRequest(event, {
+    requireAuth: true,
+    allowedRoles: ['admin', 'manager', 'sales_rep'],
+  });
+  if (!auth.authenticated) {
+    return auth.error;
+  }
+
   // Allow GET and POST requests
   if (!['GET', 'POST'].includes(event.httpMethod)) {
     return errorHandler.forbiddenError('Method not allowed');

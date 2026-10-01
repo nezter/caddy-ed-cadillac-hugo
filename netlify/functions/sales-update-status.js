@@ -1,5 +1,6 @@
 const DatabaseService = require('./utils/database-service');
 const errorHandler = require('./utils/error-handler');
+const { isUsableSecret } = require('./utils/jwt-secret');
 
 /**
  * Read a request header by name, case-insensitively.
@@ -154,9 +155,22 @@ async function checkAuthentication(event) {
 
   try {
     const jwt = require('jsonwebtoken');
-    const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+    // Never a fallback literal. See the long note in sales-appointments.js: the
+    // old default is a string committed to a public repository, and with
+    // JWT_SECRET unset -- which [dev.environment] deliberately does, and
+    // production does until it is set in the Netlify UI -- it became the
+    // VERIFYING key, so a forged token with role 'admin' would be believed.
+    const secret = process.env.JWT_SECRET;
+    if (!isUsableSecret(secret)) {
+      console.error(
+        '[sales-update-status] JWT_SECRET is not configured (absent, empty, or ' +
+          'a deploy marker). Refusing the request rather than verifying with a ' +
+          'published default.'
+      );
+      return { authenticated: false, unconfigured: true };
+    }
 
-    const decodedToken = jwt.verify(authToken, JWT_SECRET);
+    const decodedToken = jwt.verify(authToken, secret);
 
     return {
       authenticated: true,

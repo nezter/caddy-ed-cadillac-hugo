@@ -2,6 +2,30 @@
  * Financing Calculator Component
  * Helps users calculate monthly payments and explore financing options
  */
+
+/**
+ * Escape a value for interpolation into innerHTML.
+ *
+ * The pre-approval result panel is built from strings that partly come from the
+ * server and partly from the failed request itself (`err.message`, the list of
+ * missing fields). Those are not attacker-controlled in the ordinary sense, but
+ * writing them into innerHTML unescaped means one future field that IS
+ * customer-supplied turns this panel into an injection point.
+ *
+ * It is defined here rather than assumed: this file had no such helper, and
+ * three call sites were written against one that did not exist -- which would
+ * have thrown ReferenceError on the success path and turned a working submission
+ * into "Not sent".
+ */
+function escapeHtml(value) {
+  return String(value === null || value === undefined ? '' : value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 class FinancingCalculator {
   constructor(element) {
     this.element = element;
@@ -399,23 +423,59 @@ class FinancingCalculator {
       submitButton.textContent = 'Submitting...';
       submitButton.disabled = true;
       
+      // JSON, not FormData.
+      //
+      // This posted `body: formData` -- multipart/form-data -- and the function
+      // does `JSON.parse(event.body)`. That throws, the function answers 400
+      // `{error: 'Invalid JSON body'}`, and this code never looked at the status:
+      // it went straight to rendering the success panel. So the customer was
+      // shown "Application Submitted! Your confirmation number is: undefined" for
+      // a request that was rejected, recorded nothing, and emailed nothing.
+      const payload = {};
+      formData.forEach((value, key) => { payload[key] = value; });
+
       fetch('/.netlify/functions/pre-approval', {
         method: 'POST',
-        body: formData
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
       })
-      .then(response => response.json())
-      .then(data => {
-        // Replace form with success message
+      .then(response =>
+        response.json().catch(() => ({})).then(data => ({ ok: response.ok, status: response.status, data }))
+      )
+      .then(({ ok, status, data }) => {
         const modalBody = modal.querySelector('.modal-body');
+
+        // Anything that is not a 2xx says what went wrong and offers a retry.
+        // A failed submission must never reach the success panel -- that is the
+        // whole bug this function had.
+        if (!ok) {
+          const missing = Array.isArray(data.fields) && data.fields.length
+            ? ' Still needed: ' + data.fields.join(', ') + '.'
+            : '';
+          modalBody.innerHTML =
+            '<h2>Not sent</h2>' +
+            '<div class="success-message">' +
+              '<p>' + escapeHtml(String(data.error || data.message || ('The request failed (HTTP ' + status + ').'))) + escapeHtml(missing) + '</p>' +
+              '<p>Please try again, or call the dealership and we will take the details over the phone.</p>' +
+            '</div>';
+          submitButton.disabled = false;
+          submitButton.textContent = 'Try again';
+          return;
+        }
+
+        // The wording is taken FROM the response rather than written here, so the
+        // modal and the server cannot drift into telling the customer two
+        // different stories about the same submission. There is no confirmation
+        // number to print -- the function returns null on purpose, because no
+        // lender integration exists yet.
         modalBody.innerHTML = `
-          <h2>Application Submitted!</h2>
+          <h2>${data.received ? 'Application received' : 'Not received'}</h2>
           <div class="success-message">
-            <p>Thank you for your application. Your confirmation number is: <strong>${data.confirmationNumber}</strong></p>
-            <p>One of our finance specialists will contact you within 24 hours to discuss your options.</p>
+            <p>${escapeHtml(String(data.message || ''))}</p>
+            <p>We have your details and one of our finance specialists will call you about your options.</p>
             <div class="next-steps">
               <h3>Next Steps:</h3>
               <ul>
-                <li>Review your email for confirmation details</li>
                 <li>Gather required documents (proof of income, ID, etc.)</li>
                 <li>Our finance specialist will call to walk through rates and terms</li>
                   <li>Bring a driver's licence and proof of income to the appointment</li>
@@ -424,63 +484,80 @@ class FinancingCalculator {
               <button type="button" class="close-modal">Done</button>
             </div>
           `;
-        });
+      })
+      .catch(err => {
+        // There was no .catch at all, so any network failure -- offline, DNS, a
+        // 502 from the platform -- left the button disabled and reading
+        // "Submitting..." for ever, with no message and no way back except
+        // reloading the page and losing the form.
+        const modalBody = modal.querySelector('.modal-body');
+        if (modalBody) {
+          modalBody.innerHTML =
+            '<h2>Not sent</h2>' +
+            '<div class="success-message">' +
+              '<p>Could not reach the server: ' + escapeHtml(err.message) + '</p>' +
+              '<p>Please try again, or call the dealership.</p>' +
+            '</div>';
+        }
+        submitButton.disabled = false;
+        submitButton.textContent = 'Try again';
       });
-    }
-  }
-
-  /**
-   * Mount, on request only.
-   *
-   * This used to run on DOMContentLoaded, which meant the calculator was live
-   * on every visit to /financing/. Two of its code paths call endpoints that do
-   * not exist -- loadVehiclePrice hits /api/vehicle/<id>, and the pre-approval
-   * modal posts to /api/pre-approval -- so a visitor who filled the form in saw
-   * either a silent failure or a fake confirmation.
-   *
-   * It is now opt-in. The page renders a toggle that is OFF by default; the
-   * calculator does not exist in the DOM until the visitor turns it on, and
-   * until then no field is focusable and no handler is attached. That is a dead
-   * form, which is the correct state for a calculator that cannot honestly
-   * finish what it starts.
-   *
-   * When the endpoints exist this becomes a one-line change back: call
-   * mountFinancingCalculator() from the toggle's click handler without the gate,
-   * or drop the hidden attribute from the container.
-   */
-  function mountFinancingCalculator() {
-    const el = document.getElementById('financing-calculator');
-    if (!el || el.dataset.mounted === 'true') return;
-    el.dataset.mounted = 'true';
-    el.hidden = false;
-    el.setAttribute('aria-hidden', 'false');
-    return new FinancingCalculator(el);
-  }
-
-  function initFinancingToggle() {
-    const toggle = document.getElementById('financing-calculator-toggle');
-    const el = document.getElementById('financing-calculator');
-    if (!toggle || !el) return;
-
-    // The container starts hidden and stays that way until the visitor acts.
-    el.hidden = true;
-    el.setAttribute('aria-hidden', 'true');
-    toggle.setAttribute('aria-expanded', 'false');
-    toggle.setAttribute('aria-controls', 'financing-calculator');
-
-    toggle.addEventListener('click', () => {
-      const open = toggle.getAttribute('aria-expanded') === 'true';
-      toggle.setAttribute('aria-expanded', String(!open));
-      if (open) {
-        el.hidden = true;
-        el.setAttribute('aria-hidden', 'true');
-      } else {
-        mountFinancingCalculator();
-      }
     });
   }
+}
 
-  document.addEventListener('DOMContentLoaded', initFinancingToggle);
+/**
+ * Mount, on request only.
+ *
+ * This used to run on DOMContentLoaded, which meant the calculator was live
+ * on every visit to /financing/. Two of its code paths call endpoints that do
+ * not exist -- loadVehiclePrice hits /api/vehicle/<id>, and the pre-approval
+ * modal posts to /api/pre-approval -- so a visitor who filled the form in saw
+ * either a silent failure or a fake confirmation.
+ *
+ * It is now opt-in. The page renders a toggle that is OFF by default; the
+ * calculator does not exist in the DOM until the visitor turns it on, and
+ * until then no field is focusable and no handler is attached. That is a dead
+ * form, which is the correct state for a calculator that cannot honestly
+ * finish what it starts.
+ *
+ * When the endpoints exist this becomes a one-line change back: call
+ * mountFinancingCalculator() from the toggle's click handler without the gate,
+ * or drop the hidden attribute from the container.
+ */
+function mountFinancingCalculator() {
+  const el = document.getElementById('financing-calculator');
+  if (!el || el.dataset.mounted === 'true') return;
+  el.dataset.mounted = 'true';
+  el.hidden = false;
+  el.setAttribute('aria-hidden', 'false');
+  return new FinancingCalculator(el);
+}
 
-  export default FinancingCalculator;
-  export { mountFinancingCalculator, initFinancingToggle };
+function initFinancingToggle() {
+  const toggle = document.getElementById('financing-calculator-toggle');
+  const el = document.getElementById('financing-calculator');
+  if (!toggle || !el) return;
+
+  // The container starts hidden and stays that way until the visitor acts.
+  el.hidden = true;
+  el.setAttribute('aria-hidden', 'true');
+  toggle.setAttribute('aria-expanded', 'false');
+  toggle.setAttribute('aria-controls', 'financing-calculator');
+
+  toggle.addEventListener('click', () => {
+    const open = toggle.getAttribute('aria-expanded') === 'true';
+    toggle.setAttribute('aria-expanded', String(!open));
+    if (open) {
+      el.hidden = true;
+      el.setAttribute('aria-hidden', 'true');
+    } else {
+      mountFinancingCalculator();
+    }
+  });
+}
+
+document.addEventListener('DOMContentLoaded', initFinancingToggle);
+
+export default FinancingCalculator;
+export { mountFinancingCalculator, initFinancingToggle };

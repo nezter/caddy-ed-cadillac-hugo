@@ -101,14 +101,113 @@ class FollowupService {
   /**
    * Check if a followup should still be sent
    */
+  /**
+   * Read a customer's communication consent.
+   *
+   * Normalised through hasConsent() and returned as the strings the `followups`
+   * TEXT columns expect, so the value written there means the same thing as the
+   * value read from `customers`.
+   *
+   * A missing customer or an unreadable table is treated as NO CONSENT, not as
+   * an error to propagate. Two reasons, and the second is the important one:
+   *
+   *   1. consent defaults to the safe answer, so a transient database problem
+   *      suppresses a message rather than sending it.
+   *   2. A thrown error here would abort lead creation entirely, because this
+   *      runs inside createFollowupFromRule, which runs inside the lead path. A
+   *      customer's enquiry must not be lost because a preference lookup failed.
+   *      Losing a lead is worse than missing one follow-up.
+   *
+   * @param {string} customerId
+   * @returns {Promise<{email: string, sms: string}>}
+   */
+  static async consentFor(customerId) {
+    const refuse = { email: 'false', sms: 'false' };
+    if (!customerId) return refuse;
+    try {
+      const result = await DatabaseService.query(
+        'SELECT email_consent, sms_consent FROM customers WHERE id = $1 LIMIT 1',
+        [customerId]
+      );
+      const row = result.rows && result.rows[0];
+      if (!row) return refuse;
+      return {
+        email: FollowupService.hasConsent(row.email_consent) ? 'true' : 'false',
+        sms: FollowupService.hasConsent(row.sms_consent) ? 'true' : 'false'
+      };
+    } catch (error) {
+      console.error(
+        '[followup] consent lookup failed for customer ' + customerId +
+          '. Treating as NO consent, so nothing is sent. The enquiry is not lost:',
+        error.message
+      );
+      return refuse;
+    }
+  }
+
+  /**
+   * Is a consent flag actually consent?
+   *
+   * THE BUG THIS IS FOR
+   * -------------------
+   * The guard read `!followup.email_consent`. The column is:
+   *
+   *     email_consent TEXT DEFAULT false      -- database/turso/schema.sql
+   *
+   * So an unconsented followup carries the STRING 'false'. A non-empty string is
+   * truthy in JavaScript, so `!'false'` is `false`, the guard did not fire, and
+   * the message went out anyway. A control that is present, plausible and inert.
+   *
+   * It looked right because it reads correctly. It would have been invisible for
+   * as long as SMTP was unconfigured -- and it goes live the moment SMTP is
+   * configured, which is the next thing anybody does with this project.
+   *
+   * WHY THIS AND NOT "CHANGE THE COLUMN TO BOOLEAN"
+   * ------------------------------------------------
+   * Because rows already exist. Migrating the column fixes new writes and leaves
+   * every stored 'false' as text unless it is rewritten too, so the migration is
+   * the version that needs a backup and a verification query. This is the
+   * version that is correct for old rows, new rows, SQLite and Turso, and both
+   * types, with no data change at all.
+   *
+   * Consent is the one flag where the safe reading of ambiguity is "no". So
+   * anything that is not recognisably a grant is a refusal:
+   *
+   *     'true', true, 1, '1', 'yes', 'y', 'on'   -> consent
+   *     'false', false, 0, '0', 'no', 'n', 'off' -> refusal  (and NULL, '', 'undefined')
+   *
+   * @param {*} value as read from the database, or from JSON
+   * @returns {boolean}
+   */
+  static hasConsent(value) {
+    if (value === true) return true;
+    if (value === false || value === null || value === undefined) return false;
+    // Anything numeric: only a non-zero number is consent. SQLite has no
+    // boolean type, so a BOOLEAN column arrives here as 0 or 1.
+    if (typeof value === 'number') return value === 1;
+    if (typeof value !== 'string') return false;
+    return ['true', '1', 'yes', 'y', 'on'].includes(value.trim().toLowerCase());
+  }
+
   static async shouldSendFollowup(followup) {
     try {
-      // Check if customer has unsubscribed
-      if (followup.email && !followup.email_consent) {
+      // Check if customer has unsubscribed.
+      //
+      // hasConsent(), not `!`. The reasoning is above and it is the whole reason
+      // this guard never worked.
+      if (followup.email && !FollowupService.hasConsent(followup.email_consent)) {
+        console.log(
+          `[followup] suppressing email for ${followup.id}: ` +
+            `email_consent is ${JSON.stringify(followup.email_consent)}, which is not consent`
+        );
         return false;
       }
 
-      if (followup.sms && !followup.sms_consent) {
+      if (followup.sms && !FollowupService.hasConsent(followup.sms_consent)) {
+        console.log(
+          `[followup] suppressing SMS for ${followup.id}: ` +
+            `sms_consent is ${JSON.stringify(followup.sms_consent)}, which is not consent`
+        );
         return false;
       }
 
@@ -204,29 +303,49 @@ class FollowupService {
       const contentWithUnsubscribe = this.addUnsubscribeFooter(contentWithTracking, followup);
 
       // Send email using notification service
-      const emailData = {
-        type: 'followup_email',
-        recipient: followup.email,
-        subject: personalizedSubject,
-        content: contentWithUnsubscribe,
-        metadata: {
-          followup_id: followup.id,
-          customer_id: followup.customer_id,
-          lead_id: followup.lead_id,
-          campaign_id: followup.campaign_id,
-          template_name: followup.email_template
-        }
-      };
+      //
+      // The emailData object that stood here -- the payload for a sibling HTTP
+      // call -- is gone along with the call. Its metadata is preserved below.
 
-      const response = await fetch(`${process.env.URL}/.netlify/functions/send-notification`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
+      // Send in-process, not over HTTP.
+      //
+      // This used to fetch its own sibling function through the public internet
+      // to deliver an email -- one outbound request, one TLS handshake, one
+      // chance for a transient network blip to lose a follow-up -- and it did so
+      // with no credential, because send-notification.js had no auth to check.
+      // That function is now staff-only, which is the correct thing for it to be,
+      // and the correct answer for an internal caller is to not be an HTTP caller
+      // at all.
+      //
+      // notify() reports whether it actually sent, so `response.ok` becomes a real
+      // answer instead of a 200 that meant "a string was written to a log".
+      if (!followup.email) {
+        // Deliberately NOT falling back to the staff address. A follow-up belongs
+        // to the customer it was written for; sending a customer's name and their
+        // car history to Ed instead would be a quiet data leak dressed up as
+        // resilience. No address, no email, and say so.
+        console.warn(
+          `[followup] followup ${followup.id} has no recipient address and was not sent.`
+        );
+        return { sent: false, reason: 'no-recipient' };
+      }
+
+      const { notify } = require('./inquiry');
+      const result = await notify(
+        {
+          email: followup.email,
+          subject: personalizedSubject,
+          // The template body carries the unsubscribe footer and the tracking
+          // pixel, added above. It is markup, so it goes as html -- passing only
+          // `personalizedContent` here would quietly strip the unsubscribe link
+          // off marketing email.
+          html: contentWithUnsubscribe,
+          text: personalizedContent,
         },
-        body: JSON.stringify(emailData)
-      });
+        { email: followup.email, name: null, source: 'followup' }
+      );
 
-      if (response.ok) {
+      if (result.notified) {
         // Log the email interaction
         await InteractionService.logAutomatedInteraction({
           customer_id: followup.customer_id,
@@ -267,25 +386,49 @@ class FollowupService {
       // Personalize content
       const personalizedContent = this.personalizeContent(template.content, followup);
 
-      // Send SMS (placeholder - would integrate with SMS service)
-      console.log(`SMS to ${followup.phone}: ${personalizedContent}`);
+      // Send SMS.
+      //
+      // There is no SMS provider configured on this deployment -- no Twilio, no
+      // Vonage, nothing in netlify.toml and nothing in the environment. The old
+      // line here was:
+      //
+      //     console.log(`SMS to ${followup.phone}: ${personalizedContent}`);
+      //     ...log an interaction of type 'sms'...
+      //     return true;
+      //
+      // So it wrote the message to a log, recorded an interaction that reads as a
+      // delivered text message in the customer's timeline, and reported success.
+      // Nobody was ever texted. Worse, the message body -- which for a follow-up
+      // template can contain the customer's name and what they asked about -- was
+      // printed into the function log.
+      //
+      // That is the same defect as the enquiry forms one layer over: a success
+      // that removes the evidence anything is wrong. So it refuses honestly.
+      console.warn(
+        `[followup] SMS followup ${followup.id} NOT sent: no SMS provider is ` +
+          'configured. It was not texted and is not recorded as delivered.'
+      );
 
-      // Log the SMS interaction
+      // Recorded as an ATTEMPT, flagged undelivered, rather than as a
+      // conversation. The dashboard can show "queued, nothing sent yet" and the
+      // customer timeline does not claim a text exists that never did.
       await InteractionService.logAutomatedInteraction({
         customer_id: followup.customer_id,
         lead_id: followup.lead_id,
         type: 'sms',
-        subject: `SMS Follow-up`,
+        subject: `SMS Follow-up (not sent)`,
         content: personalizedContent,
         template_name: followup.sms_template,
         campaign_id: followup.campaign_id,
         metadata: {
           followup_id: followup.id,
-          automated: true
+          automated: true,
+          delivered: false,
+          not_sent_reason: 'no-sms-provider-configured',
         }
       });
 
-      return true;
+      return false;
 
     } catch (error) {
       console.error('Error sending SMS followup:', error);
@@ -528,6 +671,29 @@ Confidentiality Notice: This email contains confidential information intended on
     const scheduledDate = new Date();
     scheduledDate.setHours(scheduledDate.getHours() + rule.delay_hours);
 
+    // Consent is copied ONTO the followup row here, which it never was.
+    //
+    // This INSERT listed thirteen columns and neither `email_consent` nor
+    // `sms_consent` was among them. So every follow-up created from a rule took
+    // the column default:
+    //
+    //     email_consent TEXT DEFAULT false        -- the STRING 'false'
+    //
+    // Which is inert twice over. `!followup.email_consent` is `!'false'`, and a
+    // non-empty string is truthy, so shouldSendFollowup() saw consent where
+    // there was none. Fixing only the comparison would then have flipped the
+    // failure the other way: every follow-up suppressed, because no row would
+    // ever carry a grant.
+    //
+    // So the flag is read from the customer at creation and written explicitly.
+    // That is task 17.3 in the taskmaster database -- "integrate preference
+    // checking into lead creation and appointment workflows" -- which had been
+    // pending, and which this makes real rather than theoretical.
+    //
+    // Consent is snapshotted at creation on purpose: if someone opts out an hour
+    // after a follow-up is queued, the queued row must not still say yes.
+    const consent = await FollowupService.consentFor(customerId);
+
     const followupData = {
       customer_id: customerId,
       lead_id: leadId,
@@ -539,15 +705,18 @@ Confidentiality Notice: This email contains confidential information intended on
       sms_template: rule.sms_template,
       scheduled_date: scheduledDate.toISOString(),
       priority: rule.priority,
-      status: 'pending'
+      status: 'pending',
+      email_consent: consent.email,
+      sms_consent: consent.sms
     };
 
     const sql = `
       INSERT INTO followups (
         id, customer_id, lead_id, campaign_id, campaign_name,
         email, sms, email_template, sms_template,
-        scheduled_date, priority, status, created_by
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        scheduled_date, priority, status, created_by,
+        email_consent, sms_consent
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
       RETURNING *
     `;
 
@@ -564,7 +733,12 @@ Confidentiality Notice: This email contains confidential information intended on
       followupData.scheduled_date,
       followupData.priority,
       followupData.status,
-      'system'
+      'system',
+      // $14, $15. Written as the grant-or-refusal strings the schema's TEXT
+      // column expects, rather than as booleans, so the stored value and the
+      // comparison in hasConsent() agree.
+      FollowupService.hasConsent(followupData.email_consent) ? 'true' : 'false',
+      FollowupService.hasConsent(followupData.sms_consent) ? 'true' : 'false'
     ];
 
     try {

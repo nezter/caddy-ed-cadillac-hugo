@@ -22,6 +22,11 @@ measurement rather than by comment:
 Q3 is answered in structure — the analysis is done and only the choice of
 provider is left. See [`STORAGE.md`](STORAGE.md).
 
+**Four new questions came out of the 2026-09-30 function audit (Q15–Q18), and
+they are under Security below. Q15 is the one to answer first: it asks whether
+production is currently exposed.** The audit's findings and what now protects
+the data are in [`SECURITY.md`](SECURITY.md).
+
 ---
 
 ## Blocking — nothing reaches production until these are answered
@@ -79,6 +84,67 @@ happened.
 ---
 
 ## Security — live now, needs a call
+
+> **Added 2026-09-30.** An audit of all 44 functions found **six endpoints with no
+> authentication at all**, three of them serving or destroying customer records,
+> and four more verifying staff tokens against a literal string committed to this
+> public repository. Full detail, and what now protects the data, is in
+> [`SECURITY.md`](SECURITY.md). The decisions that audit raised are below.
+
+### Q15. Is production exposed right now? — CHECK THIS FIRST
+
+`netlify.toml` declares **no** `[context.production.environment]`. So whether
+`JWT_SECRET` exists at all depends on the Netlify UI, and it could not be checked
+from the repository.
+
+Before this audit, four functions read:
+
+```js
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+jwt.verify(authToken, JWT_SECRET);
+```
+
+That literal is in a **public** repository. With `JWT_SECRET` unset it became the
+*verifying* key, so anyone who reads this repo could mint a token with
+`role: 'admin'` and be believed by `sales-appointments`, `sales-add-note`,
+`sales-update-status` and `sales-complete-appointment`.
+
+All four now refuse an unusable secret, so this cannot be exploited going forward.
+**But if production was deployed with `JWT_SECRET` unset, every staff token
+issued in that window is worthless and should be considered compromised.**
+
+**Decision needed:** confirm `JWT_SECRET` is set in the Netlify UI, and if the
+site was ever live without it, rotate.
+
+### Q16. Two dead data layers
+
+`netlify/functions/lib/database.js` reads five Supabase env vars that are all
+unset and **is required by nothing**. `utils/enhanced-database-service.js`
+similarly prefers `SUPABASE_DB_URL`/`DATABASE_URL` over Turso.
+
+One driver behaving differently than assumed is what produced the silent-UPDATE
+defect, where `SET status=$2 … WHERE id=$1` matched zero rows and raised nothing.
+Two data paths in one repository is that hazard standing permanently.
+
+**Decision needed:** delete both, or complete the migration to Turso.
+
+### Q17. `docs/AGENTS.md` and `docs/AGENT.md` instruct agents to use task-master
+
+Both files are near-duplicates, both predate your instruction, and both tell any
+agent reading them to do the thing you told me not to do. I added a banner to each
+saying the owner's instruction wins, and that is a patch rather than a fix.
+
+**Decision needed:** delete both. `docs/OPEN-QUESTIONS.md`,
+`docs/feature-inventory.md`, `docs/SECURITY.md` and the `ci/` gates are the real
+instruction set; three of those four files are newer than the two you would
+delete.
+
+### Q18. `health-check.js` may report healthy for services that do not exist
+
+It requires `redis-cache-service` and `enhanced-database-service` at module
+scope. Neither is configured. Whether that endpoint should claim health for Redis
+and Postgres on a site that uses neither, or report them as absent, is a question
+about what the endpoint is for.
 
 ### Q4. The CSP defeats itself
 
