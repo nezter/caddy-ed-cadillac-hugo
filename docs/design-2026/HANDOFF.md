@@ -498,3 +498,38 @@ Rendering the built pages in Chrome was not possible during this pass (the
 browser stopped producing screenshots partway through the session and has not
 recovered); the jsdom evidence above is what stands in. The strip and the
 tray are the two places to look first when a browser is available again.
+
+---
+
+## The structured data was double-encoded on every page
+
+The Car schema had been reported as `"name":"\"2026 CADILLAC XT5 Luxury\""`
+and left diagnosed-but-unfixed last time, because `printf "%s"` coercion did
+not change it and a patch per field looked wrong. The cause was not the
+templates at all: it was Go `html/template` contextual escaping.
+
+Inside `<script>`, `html/template` treats an unquoted insertion as
+JavaScript and escapes the pipeline result for that context. `jsonify`
+had already produced `"2026 CADILLAC XT5 Luxury"`, and the template then
+escaped the quote characters it contained: `\"`. The block still parsed
+as JSON, so nothing noticed -- but a search engine read a name beginning
+with a quote character, on every vehicle page, in the most valuable
+structured data the site has.
+
+The about page was the tell: it hand-wrote its quotes (`"name": "{{ ... }}"`),
+so only the content got escaped (look at its `https:\/\/`), and it was clean.
+The vehicle and home pages inserted the encoder output bare, and got it
+escaped twice. `partials/favourites-data.html` had already met this bug and
+left the answer in a comment: `| safeJS`.
+
+Fixed in four places and verified: `inventory/single.html` (all fifteen
+jsonify sites plus a guard comment), `index.html` (five), `about/list.html`
+(hand-quoted strings converted to the jsonify + safeJS form) and
+`partials/connect-config.html` (the two `window.*` payloads). The vehicle
+spot check now reads `"name":"2026 CADILLAC XT5 Luxury"`, `"sku":"NTZ106005"`.
+
+And it is a gate now, not a memory: `ci/check-structured-data.js` walks every
+built page, parses every ld+json block and every `window.*` payload, and
+fails on a string value that begins with an escaped quote. It runs in
+`ci/check-all.js` as the eleventh check. A re-introduction is a red gate
+instead of a silent wrong.

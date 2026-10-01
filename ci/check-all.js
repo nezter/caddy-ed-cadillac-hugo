@@ -4,7 +4,7 @@
  *
  * WHY THIS EXISTS
  * ---------------
- * There are eight checks. Each one prints its own output, in its own format, and
+ * There are eleven checks. Each one prints its own output, in its own format, and
  * exits 0 or 1. So a failing build produced eight things to read, most of them
  * "PASS", and the two that mattered were buried.
  *
@@ -27,6 +27,7 @@
  *   permissions            the required-permission vocabulary is used correctly
  *   inquiry path           a form submission survives its own notification failing
  *   compare + shortlist    the two card buttons do two different things
+ *   structured data        every ld+json block parses, and none is double-encoded
  *   build output           no page references a missing asset
  *
  * Run:
@@ -105,6 +106,12 @@ const CHECKS = [
     file: 'check-compare-shortlist.js',
     needsBuild: true,
     why: 'the two card buttons do two different things, and both do them',
+  },
+  {
+    name: 'structured data',
+    file: 'check-structured-data.js',
+    needsBuild: true,
+    why: 'every ld+json block parses as JSON, and none is double-encoded',
   },
   {
     name: 'build output',

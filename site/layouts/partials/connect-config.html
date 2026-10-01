@@ -35,15 +35,15 @@
        Point at a feed URL to pull live instead. */
     stockEndpoint: "",
     socialEndpoint: "",
-    facebookPageUrl: {{ $fb | jsonify }},
-    xHandle: {{ $xh | jsonify }},
-    instagramUrl: {{ $ig | jsonify }},
-    instagramHandle: {{ $igh | jsonify }},
+    facebookPageUrl: {{ $fb | jsonify | safeJS }},
+    xHandle: {{ $xh | jsonify | safeJS }},
+    instagramUrl: {{ $ig | jsonify | safeJS }},
+    instagramHandle: {{ $igh | jsonify | safeJS }},
     askEndpoint: "/.netlify/functions/contact-form",
     alertFormName: "stock-alerts",
     visibleCount: 6,
     totalStock: {{ len $vehicles }},
-    buildDate: {{ now.Format "2 Jan 2006" | jsonify }}
+    buildDate: {{ now.Format "2 Jan 2006" | jsonify | safeJS }}
   };
 </script>
 
@@ -68,4 +68,4 @@
       "meta" (.Params.subtitle | default "")
   ) -}}
 {{- end -}}
-<script>window.CADDY_STOCK_FALLBACK = {{ $items | jsonify }};</script>
+<script>window.CADDY_STOCK_FALLBACK = {{ $items | jsonify | safeJS }};</script>

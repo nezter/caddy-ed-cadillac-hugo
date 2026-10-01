@@ -179,14 +179,14 @@
 {
   "@context": "https://schema.org",
   "@type": "AutoDealer",
-  "name": "{{ .Site.Title }}",
-  {{ with .Params.image }}"image": "{{ . | absURL }}",{{ end }}
-  "url": "{{ .Permalink }}",
-  "telephone": "{{ $phone }}",
-  "email": "{{ $email }}",
+  "name": {{ .Site.Title | jsonify | safeJS }},
+  {{ with .Params.image }}"image": {{ . | absURL | jsonify | safeJS }},{{ end }}
+  "url": {{ .Permalink | jsonify | safeJS }},
+  "telephone": {{ $phone | jsonify | safeJS }},
+  "email": {{ $email | jsonify | safeJS }},
   "address": {
     "@type": "PostalAddress",
-    "streetAddress": "{{ $address }}",
+    "streetAddress": {{ $address | jsonify | safeJS }},
     "addressCountry": "US"
   },
   "openingHoursSpecification": [
