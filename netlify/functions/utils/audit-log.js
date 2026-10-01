@@ -42,7 +42,28 @@ const ACTIONS = {
   SEED_RUN: 'seed.run',
 };
 
-const ACTION_SET = new Set(Object.values(ACTIONS));
+let ACTION_SET = new Set(Object.values(ACTIONS));
+
+/**
+ * Add an action to the vocabulary at runtime.
+ *
+ * Exists because a closed vocabulary has to be closed somewhere, and the
+ * alternative -- one module every feature edits -- is how a list of action names
+ * turns into a free-text column with a helper attached. A caller registers its
+ * own action and the vocabulary still rejects anything else.
+ */
+function registerAction(action) {
+  if (typeof action !== 'string' || !action) {
+    console.error(`[audit] refused to register action "${action}"`);
+    return false;
+  }
+  // Registering something already in the vocabulary is a no-op, not an error --
+  // two modules claiming the same action is harmless; a typo is not.
+  if (ACTION_SET.has(action)) return true;
+  ACTIONS[action] = action;
+  ACTION_SET.add(action);
+  return true;
+}
 
 /**
  * Actions that may not carry identifying fields in `detail`.
@@ -187,6 +208,7 @@ async function forEntity(database, entityType, entityId, limit = 200) {
 module.exports = {
   ACTIONS,
   ACTION_SET,
+  registerAction,
   SUBJECT_ACTIONS,
   IDENTIFYING,
   assertNoSubjectData,

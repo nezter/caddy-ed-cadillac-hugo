@@ -1376,9 +1376,9 @@
             "dependencies": [
               45.1
             ],
-            "details": "NOT STARTED. Note the dependency: this is what would let staff exist at all. sales_reps has one junk row and no staff, which is also why follow-up consent is never recorded and why resolveRecipient() finds nobody to notify. Netlify Identity sign-in already works (admin-guard, auth-middleware), so this is a UI over existing auth rather than new auth.",
+            "details": "DONE 2026-10-01. netlify/functions/staff-management.js + /admin/staff. Edits an existing sales_reps row: name, role, status, permissions. Admin only. THIS PAGE CANNOT CREATE A SIGN-IN -- Netlify Identity owns that; a new person accepts an invite and signs in once, and ensureStaffProfile() provisions their row on that first sign-in. The page says so on every row, because the reverse order produces an account with no permissions and a 403 with no explanation. Refuses to demote or deactivate the LAST active admin (409 last-admin): that would lock every function in the project and leave no way to undo it short of SQL. Reports on GET when nobody is active, because that is the state in which every enquiry is recorded and emailed to nobody. Gate: ci/check-staff-management.js. 45.1/45.2/45.4/45.5 remain pending.",
             "testStrategy": "Test admin user management features, role assignment, permission enforcement, and activity monitoring",
-            "status": "pending",
+            "status": "done",
             "parentId": 45
           },
           {
