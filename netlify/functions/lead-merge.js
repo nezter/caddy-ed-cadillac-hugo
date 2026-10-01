@@ -1,6 +1,8 @@
 const errorHandler = require('./utils/error-handler');
 const DeduplicationService = require('./utils/deduplication-service');
 const { authenticateRequest } = require('./utils/auth-middleware');
+const AuditLog = require('./utils/audit-log');
+const DatabaseService = require('./utils/database-service');
 
 /**
  * Manual lead merge API
@@ -59,6 +61,50 @@ exports.handler = async function(event, context) {
       });
     }
 
+    // A reason is required, because a merge is irreversible.
+    //
+    // The endpoint is now authenticated, which stopped a stranger folding any
+    // lead into any other. It is still the most destructive thing in this
+    // codebase and it left NO record: once mergeDuplicates() has run, the
+    // duplicate lead is gone, there is no undo, and six weeks later nobody can
+    // say who did it or why. A staff token turns "anyone could do this" into
+    // "a staff member did this, and we cannot tell which one".
+    //
+    // So the merge is not recorded until an audit row exists, and the audit
+    // write is refused rather than allowed to fail quietly.
+    const reason = String(mergeData.reason || '').trim();
+    if (!reason) {
+      return errorHandler.validationError('A reason is required and is recorded permanently', {
+        reason: 'Why are these leads the same person? This is kept in the audit log.'
+      });
+    }
+
+    // Written BEFORE the merge, so a crash mid-merge leaves a record that it was
+    // attempted rather than no record at all.
+    const audit = await AuditLog.record(DatabaseService, {
+      action: AuditLog.ACTIONS.LEAD_MERGE,
+      entityType: 'leads',
+      entityId: mergeData.primaryLeadId,
+      actor: auth.user,
+      reason,
+      detail: {
+        duplicateIds: mergeData.duplicateIds,
+        duplicateCount: mergeData.duplicateIds.length,
+      },
+      context: event,
+    });
+
+    if (!audit.recorded) {
+      // `requireAudit` in effect: an irreversible change that cannot be recorded
+      // does not happen. The alternative is a merge with no evidence, which is
+      // precisely the defect this row exists to close.
+      return errorHandler.serverError(
+        'Merge refused: the audit record could not be written, and an unrecorded ' +
+          'merge cannot be reviewed or reversed. Nothing was changed.',
+        new Error(audit.error)
+      );
+    }
+
     // Initialize deduplication service
     const deduplicationService = new DeduplicationService();
 
@@ -69,11 +115,16 @@ exports.handler = async function(event, context) {
     );
 
     if (!mergeResult.success) {
+      // The attempt is already recorded, which is why that ordering matters: the
+      // trail now shows a merge was tried and failed, rather than a gap.
       return errorHandler.serverError('Failed to merge leads', mergeResult.error);
     }
 
     // Return success response
-    return errorHandler.createSuccessResponse(mergeResult, 'Leads merged successfully');
+    return errorHandler.createSuccessResponse(
+      { ...mergeResult, auditId: audit.auditId || null, reason },
+      'Leads merged successfully'
+    );
 
   } catch (error) {
     console.error('Lead merge error:', error);

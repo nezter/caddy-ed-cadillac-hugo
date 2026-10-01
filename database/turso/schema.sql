@@ -767,6 +767,38 @@ CREATE TABLE IF NOT EXISTS vehicle_favourites (
 --
 -- `enabled = 0` stops every send without deleting the credentials, so a
 -- half-entered provider cannot start sending by being finished by accident.
+-- Who changed what, and when. Added 2026-10-01.
+--
+-- Deliberately NOT cascaded from `customers` or `leads`. An audit table that
+-- empties itself when the subject is erased is useless precisely when it is
+-- most needed, and `actor_id` is SET NULL so an audit row outlives the staff
+-- member who wrote it.
+--
+-- Deliberately does NOT store a customer's identifying fields. `rows_affected`
+-- on an erasure is the evidence that data was removed; retaining the removed
+-- data "for the audit trail" would make the erasure incomplete. See
+-- database/turso/005_audit_log.sql.
+CREATE TABLE IF NOT EXISTS audit_log (
+  id            TEXT PRIMARY KEY,
+  actor_id      TEXT,
+  actor_email   TEXT,
+  actor_role    TEXT,
+  action        TEXT NOT NULL,
+  entity_type   TEXT NOT NULL,
+  entity_id     TEXT,
+  reason        TEXT,
+  detail        TEXT,
+  rows_affected INTEGER NOT NULL DEFAULT 0,
+  ip            TEXT,
+  user_agent    TEXT,
+  created_at    TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (actor_id) REFERENCES sales_reps (id) ON DELETE SET NULL
+);
+CREATE INDEX IF NOT EXISTS idx_audit_created ON audit_log (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_entity  ON audit_log (entity_type, entity_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_actor   ON audit_log (actor_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_action  ON audit_log (action, created_at DESC);
+
 CREATE TABLE IF NOT EXISTS mail_config (
   id           INTEGER PRIMARY KEY CHECK (id = 1),
   provider     TEXT NOT NULL DEFAULT 'custom'

@@ -27,6 +27,7 @@
  *   permissions            the required-permission vocabulary is used correctly
  *   function auth          no customer data behind an endpoint with no door on it
  *   mail config            the admin mail settings cannot leak the SMTP password
+ *   gdpr + audit           an erasure is complete and leaves proof identifying nobody
  *   inquiry path           a form submission survives its own notification failing
  *   compare + shortlist    the two card buttons do two different things
  *   structured data        every ld+json block parses, and none is double-encoded
@@ -105,6 +106,11 @@ const CHECKS = [
     name: 'mail config',
     file: 'check-mail-config.js',
     why: 'the admin mail settings cannot leak, corrupt or lie about the password',
+  },
+  {
+    name: 'gdpr + audit',
+    file: 'check-gdpr-audit.js',
+    why: 'an erasure is complete, and leaves proof that identifies nobody',
   },
   {
     name: 'inquiry path',
