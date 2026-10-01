@@ -1866,9 +1866,6 @@ body:has(.comparison-tray:not([hidden])){padding-bottom:84px}
   font-family:var(--f-display);font-weight:620;letter-spacing:-.02em;
   font-variant-numeric:tabular-nums;color:var(--ink-1);font-size:.95rem;
 }
-.inv-rail .range-readout__scale{
-  font-family:var(--f-mono);font-size:.6rem;letter-spacing:.1em;color:#8a919c;
-}
 
 /* --- the compare card, now that it sits with the cars -------------------- */
 .inventory-page .inventory-content{
@@ -1927,7 +1924,6 @@ body:has(.comparison-tray:not([hidden])){padding-bottom:84px}
 .inventory-page .inventory-head .inventory-head__count{margin-top:1.2rem}
 
 /* --- the rail, tidied ---------------------------------------------------- */
-.inv-rail .range-readout__scale{display:none}
 .inv-rail .range-readout{justify-content:flex-start}
 .inv-rail .inventory-filters__actions{
   display:flex;align-items:center;justify-content:space-between;
@@ -2039,12 +2035,10 @@ body.home .stay-connected{border-top-color:var(--bronze-line)}
 .inv-rail .range-readout__value{
   display:block;font-size:1.05rem;line-height:1.2;
 }
-.inv-rail .range-readout__scale,
 .inv-rail .range-readout__ends{
   display:flex;justify-content:space-between;gap:1rem;
   margin-top:.3rem;
 }
-.inv-rail .range-readout__scale{color:#8a919c}
 
 /* --- inventory head: measured geometry, then a layout that cannot collapse
 
@@ -2073,4 +2067,37 @@ body.home .stay-connected{border-top-color:var(--bronze-line)}
   font-size:clamp(2rem,1.35rem + 2.4vw,3.4rem);
   line-height:1.02;
   letter-spacing:-.03em;
+}
+
+/* --- the shortlist in the filter rail -----------------------------------
+
+   The mockup carries the saved shortlist in the rail as well as in the strip
+   at the bottom of the window, and the duplication is worth it: the strip
+   only exists once something is saved, so on its own it cannot tell anyone
+   the feature is there. This block sits with the controls, where a visitor
+   is already reading.
+
+   shortlist.js renders both from the same store, so a tick on a card moves
+   the count, the list and the email in every place at once. */
+.inv-rail .inv-shortlist{
+  margin-top:.9rem;
+  padding-top:.9rem;
+  border-top:1px solid var(--border);
+}
+.inv-rail .inv-shortlist__heading{margin:0 0 .5rem;color:#8a919c}
+.inv-rail .inv-shortlist__empty{margin:0;font-size:.84rem;line-height:1.5;color:#6f7683}
+.inv-rail .inv-shortlist__empty b{font-weight:600;color:#3c434d}
+.inv-rail .inv-shortlist__items{list-style:none;margin:0;padding:0;display:grid;gap:.45rem}
+.inv-rail .inv-shortlist__item{display:flex;align-items:baseline;gap:.35rem;font-size:.86rem;line-height:1.35}
+.inv-rail .inv-shortlist__item a{color:inherit;text-decoration:none;border-bottom:1px solid rgba(11,13,16,.16)}
+.inv-rail .inv-shortlist__item a:hover{border-bottom-color:var(--brand-red)}
+.inv-rail .inv-shortlist__item em{font-style:normal;font-family:var(--f-mono);font-size:.62rem;letter-spacing:.06em;color:#8a919c}
+.inv-rail .inv-shortlist__item .is-unknown{color:#8a919c}
+.inv-rail .inv-shortlist__remove{margin-left:auto;background:none;border:0;padding:0 .2rem;font-size:1rem;line-height:1;color:#8a919c;cursor:pointer}
+.inv-rail .inv-shortlist__remove:hover{color:var(--brand-red)}
+.inv-rail .inv-shortlist__actions{display:flex;gap:.5rem;margin-top:.75rem;flex-wrap:wrap}
+/* A tap target worth having on a phone: the remove control is one glyph and
+   would otherwise be about 16px across. */
+@media (max-width:48rem){
+  .inv-rail .inv-shortlist__remove{min-width:44px;min-height:44px;padding:0}
 }

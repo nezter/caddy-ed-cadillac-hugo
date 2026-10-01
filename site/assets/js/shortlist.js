@@ -93,12 +93,25 @@
     document.querySelectorAll('.vehicle-card[data-slug]').forEach(function (card) {
       out[card.dataset.slug] = {
         slug: card.dataset.slug,
-        title: card.dataset.title || '',
+        // The card's own heading, not data-title.
+        //
+        // data-title is lowercased on purpose -- it exists so that a search
+        // for "xt5" matches a title that reads "XT5" -- and that is fine for
+        // matching. It is not fine to hand back: a shortlist that reads
+        // "2026 cadillac xt5 luxury" looks like a data dump rather than a
+        // list of cars the client chose.
+        title: headingText(card) || card.dataset.title || '',
         stock: card.dataset.stock || '',
         price: card.dataset.price || ''
       };
     });
     return out;
+  }
+
+  /** The visible title of a card, collapsed to one line. */
+  function headingText(card) {
+    const h = card.querySelector('.vehicle-card__title a') || card.querySelector('.vehicle-card__title');
+    return h ? h.textContent.replace(/\s+/g, ' ').trim() : '';
   }
 
   function money(n) {
@@ -186,6 +199,57 @@
     document.body.classList.toggle('has-shortlist', visible);
   }
 
+  /**
+   * The same shortlist, in the filter rail.
+   *
+   * The mockup keeps it in two places, and the duplication earns itself: the
+   * strip at the bottom of the window does not exist until something is
+   * saved, so it can never tell anyone the feature is there. The rail is
+   * where a visitor is already reading controls, so it is where the shortlist
+   * becomes visible before it is used.
+   *
+   * Both surfaces read the same store and are rendered by the same call, so
+   * they cannot disagree about what is saved.
+   */
+  function renderRail() {
+    const host = document.querySelector('[data-shortlist-rail-items]');
+    if (!host) return;
+
+    const list = read();
+    const onPage = visibleVehicles();
+
+    const empty = document.querySelector('[data-shortlist-rail-empty]');
+    const actions = document.querySelector('[data-shortlist-rail-actions]');
+    const send = document.querySelector('[data-shortlist-rail-send]');
+
+    host.hidden = list.length === 0;
+    if (empty) empty.hidden = list.length > 0;
+    if (actions) actions.hidden = list.length === 0;
+    if (send) send.setAttribute('href', composeEmail());
+
+    host.innerHTML = list.map(function (slug) {
+      const v = onPage[slug];
+      // Linked when the car is on this page, named but not linked when it is
+      // not. It is NOT called gone: a car on the second page of the inventory
+      // is indistinguishable from here, and claiming it sold would be a
+      // statement this page cannot support.
+      const name = v
+        ? '<a href="/inventory/' + encodeURIComponent(slug) + '/">' + escapeHtml(v.title) + '</a>'
+        : '<span class="is-unknown">' + escapeHtml(slug) + '</span>';
+      return '<li class="inv-shortlist__item">' +
+        name +
+        (v && v.stock ? ' <em>' + escapeHtml(v.stock) + '</em>' : '') +
+        '<button type="button" class="inv-shortlist__remove" data-rail-remove="' +
+          escapeHtml(slug) + '" aria-label="Remove ' +
+          escapeHtml(v ? v.title : slug) + ' from shortlist">&times;</button>' +
+        '</li>';
+    }).join('');
+
+    host.querySelectorAll('[data-rail-remove]').forEach(function (btn) {
+      btn.addEventListener('click', function () { toggle(btn.dataset.railRemove); });
+    });
+  }
+
   function render() {
     const tray = ensureTray();
     const list = read();
@@ -242,6 +306,8 @@
       var label = btn.querySelector('[data-shortlist-label]');
       if (label) label.textContent = on ? 'Shortlisted' : 'Shortlist';
     });
+
+    renderRail();
   }
 
   function escapeHtml(value) {
@@ -254,6 +320,11 @@
   }
 
   document.addEventListener('DOMContentLoaded', function () {
+    // The rail's own Clear. Bound once, here, rather than inside
+    // renderRail(), which runs on every toggle and would stack a new
+    // listener on the same button each time.
+    var railClear = document.querySelector('[data-shortlist-rail-clear]');
+    if (railClear) railClear.addEventListener('click', clear);
     document.querySelectorAll('[data-shortlist-toggle]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         toggle(btn.dataset.shortlistToggle);

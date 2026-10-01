@@ -38,7 +38,7 @@
   'use strict';
 
   const FIELDS = [
-    'q', 'model', 'year', 'drivetrain', 'transmission', 'status', 'max_price', 'sort',
+    'q', 'model', 'year', 'drivetrain', 'transmission', 'status', 'max_price', 'max_mileage', 'sort',
   ];
   // Facets that accept more than one value. OR within a facet, AND across
   // facets -- the convention every faceted search uses, and what
@@ -127,14 +127,32 @@
       return v ? [v] : [];
     }
 
+    /**
+     * Is this ceiling actually filtering?
+     *
+     * No, when it sits at the top of its own range -- that position means
+     * "any", and the readout says so. Treating it as a filter is how a page
+     * with nothing filtered ends up reporting an active filter, and how a
+     * shared link carries a ceiling nobody chose.
+     */
+    function ceilingActive(name) {
+      const el = fieldEl(name);
+      if (!el) return false;
+      const v = parseFloat(el.value);
+      const top = parseFloat(el.max);
+      if (!isFinite(v)) return false;
+      return !(isFinite(top) && v >= top);
+    }
+
     function hasFacets() {
       return vals('model').length || vals('year').length || vals('drivetrain').length ||
-        vals('transmission').length || vals('status').length || numVal('max_price') !== null;
+        vals('transmission').length || vals('status').length || ceilingActive('max_price') ||
+        ceilingActive('max_mileage');
     }
 
     let priceBand = null;
 
-    function matches(card, q, model, year, drivetrain, transmission, status, maxPrice) {
+    function matches(card, q, model, year, drivetrain, transmission, status, maxPrice, maxMileage) {
       if (q && (card.dataset.title || '').indexOf(q) === -1) return false;
       if (model.length && model.indexOf(card.dataset.model || '') === -1) return false;
       if (year.length && year.indexOf(String(card.dataset.year || '')) === -1) return false;
@@ -144,6 +162,11 @@
       if (maxPrice !== null) {
         const p = parseFloat(card.dataset.price || '0');
         if (!(p > 0 && p <= maxPrice)) return false;
+      }
+      if (maxMileage !== null) {
+        const m = parseFloat(card.dataset.mileage || '0');
+        // A car with no mileage recorded is not a low-mileage car.
+        if (!(m >= 0 && m <= maxMileage)) return false;
       }
       if (priceBand) {
         const p = parseFloat(card.dataset.price || '0');
@@ -177,8 +200,8 @@
       let n = 0;
       FIELDS.forEach(function (key) {
         if (key === 'sort') return;
-        if (key === 'max_price') {
-          if (numVal('max_price') !== null) n += 1;
+        if (key === 'max_price' || key === 'max_mileage') {
+          if (ceilingActive(key)) n += 1;
         } else if (key === 'q') {
           if (val('q')) n += 1;
         } else {
@@ -219,10 +242,11 @@
       const transmission = vals('transmission');
       const status = vals('status');
       const maxPrice = numVal('max_price');
+      const maxMileage = numVal('max_mileage');
       const sort = val('sort') || 'year-desc';
 
       let visible = cards.filter(function (card) {
-        return matches(card, q, model, year, drivetrain, transmission, status, maxPrice);
+        return matches(card, q, model, year, drivetrain, transmission, status, maxPrice, maxMileage);
       });
       visible = sortCards(visible, sort);
 
@@ -274,9 +298,22 @@
         const el = fieldEl(key);
         if (!el) return;
         if (el.multiple) {
-          const selected = Array.prototype.slice.call(el.selectedOptions).map((o) => o.value);
+          // The upgrade to a multiple select leaves the "All models" /
+          // "Any year" option selected, and its value is the empty string.
+          // Unfiltered, that wrote `model=&year=&drivetrain=...` into the
+          // address bar on every interaction: a query string full of
+          // parameters that filter nothing, sharing a URL that reads like
+          // six filters are on.
+          const selected = Array.prototype.slice
+            .call(el.selectedOptions)
+            .map((o) => o.value)
+            .filter(Boolean);
           if (selected.length) params.set(key, selected.join(','));
         } else if (el.value && el.value !== 'year-desc') {
+          // At the top of its range a ceiling changes nothing, so writing
+          // it into the address bar would make every shared link claim a
+          // filter that is not applied.
+          if (el.type === 'range' && el.max && el.value === el.max) return;
           params.set(key, el.value);
         }
       });
@@ -471,39 +508,63 @@
     apply();
   }
 
-  /* --- price ceiling: live readout -------------------------------------
+  /* --- the ceilings: live readouts -------------------------------------
      The slider shipped with a readout element that nothing updated: the
      number only changed after a reload. Additive and guarded -- it reads
      the slider, writes the figure, and never touches the filter logic.
      -------------------------------------------------------------------- */
   (function () {
     try {
-      var slider = document.getElementById('f-max-price');
-      var out = document.querySelector('[data-price-readout]');
-      if (!slider || !out) return;
+      /* Two ceilings, one behaviour. The price ceiling came first and was
+         hard-wired to one element; a second ceiling hard-wired beside it is
+         how two controls end up disagreeing, so they share one loop.
+
+         The top of the range means "any": at that position the control is
+         not filtering anything, and a readout that still names a number
+         there -- "Up to $150,000" on a list that is not being filtered --
+         describes something that is not happening. */
+      var ceilings = [
+        { id: 'f-max-price', out: '[data-price-readout]', kind: 'price' },
+        { id: 'f-max-mileage', out: '[data-mileage-readout]', kind: 'mileage' }
+      ];
 
       var money = function (n) {
         return String.fromCharCode(36) + Math.round(n).toLocaleString('en-US');
       };
+      var miles = function (n) {
+        return Math.round(n).toLocaleString('en-US') + ' mi';
+      };
 
-      var sync = function () {
+      var sync = function (c) {
+        var slider = document.getElementById(c.id);
+        var out = document.querySelector(c.out);
+        if (!slider || !out) return;
         var v = parseFloat(slider.value);
         var top = parseFloat(slider.max);
         if (!isFinite(v)) return;
-        out.textContent = (isFinite(top) && v >= top) ? 'Up to ' + money(top) : 'Up to ' + money(v);
+        var atTop = isFinite(top) && v >= top;
+        var fmt = c.kind === 'price' ? money : miles;
+        out.textContent = atTop ? 'Any ' + c.kind : 'Up to ' + fmt(v);
+        slider.setAttribute('aria-valuetext', out.textContent);
       };
 
-      slider.addEventListener('input', sync);
-      slider.addEventListener('change', sync);
+      var syncAll = function () { ceilings.forEach(sync); };
 
-      // readUrl() sets the slider from the query string inside init(), which
+      ceilings.forEach(function (c) {
+        var slider = document.getElementById(c.id);
+        if (!slider) return;
+        slider.addEventListener('input', function () { sync(c); });
+        slider.addEventListener('change', function () { sync(c); });
+      });
+
+      // readUrl() sets the sliders from the query string inside init(), which
       // runs on DOMContentLoaded -- so the first paint is deferred past it.
       if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', function () { setTimeout(sync, 60); });
+        document.addEventListener('DOMContentLoaded', function () { setTimeout(syncAll, 60); });
       } else {
-        setTimeout(sync, 60);
+        setTimeout(syncAll, 60);
       }
-    } catch (e) { /* a readout must never break the filter */ }
+        } catch (e) { /* a readout must never break the filter */ }
   })();
 
   /* --- quick-filter chips: mark the one in force ----------------------

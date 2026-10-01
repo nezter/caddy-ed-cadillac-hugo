@@ -1,0 +1,29 @@
+{{- /*
+  miles.html -- one formatter for every mileage on the site.
+
+  money.html already formats prices in one place; mileage needed the same
+  treatment because the new mileage ceiling prints its bound in three places
+  (the readout, the two ends of the track) and a bound printed as "130000"
+  next to a price printed as "$150,000" looks like a bug.
+
+  USAGE
+      {{ partial "miles.html" 130000 }}   ->  130,000 mi
+
+  RANGE: up to 999,999,999 mi, same shape as money.html. Mileage of 0 is a
+  real value here -- a car can have delivery miles and nothing else -- so it
+  prints "0 mi" rather than being treated as missing.
+*/ -}}
+
+{{- $n := 0 -}}
+{{- with . -}}
+  {{- $n = int . -}}
+{{- end -}}
+{{- if lt $n 0 -}}{{- $n = 0 -}}{{- end -}}
+
+{{- if lt $n 1000 -}}
+  {{- printf "%d mi" $n -}}
+{{- else if lt $n 1000000 -}}
+  {{- printf "%d,%03d mi" (div $n 1000) (mod $n 1000) -}}
+{{- else -}}
+  {{- printf "%d,%03d,%03d mi" (div $n 1000000) (div (mod $n 1000000) 1000) (mod $n 1000) -}}
+{{- end -}}

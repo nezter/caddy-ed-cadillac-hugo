@@ -236,3 +236,67 @@ Verified:
 | --- | --- | --- | --- |
 | `/inventory/` | Up to $150,000 | Up to $25,000 | Up to $150,000 |
 | `/inventory/?max_price=30000` | Up to $30,000 | Up to $25,000 | Up to $150,000 |
+
+---
+
+## Inventory: mockup comparison and the two gaps it found
+
+Compared `DELIVERY/caddyed-2026/mockups/inventory.html` against the built
+`/inventory/` rail, feature by feature. Most of the mockup was already
+matched -- the light browsing surface, the card rail treatment
+(`.inv-rail .filter-accordion` already carries the tile border, radius and
+shadow), the price ceiling, the chip row, the pagination footer, the compare
+tray. Two things were genuinely missing, and both are now built:
+
+| Mockup rail | Before | Now |
+|---|---|---|
+| Mileage ceiling slider | absent -- a note in the template said the script had no field for it | present, `max_mileage`, filters on the `data-mileage` every card already emits |
+| "Saved shortlist" block | tray only, which does not exist until something is saved | in the rail, rendered by `shortlist.js` from the same store |
+
+Deliberately NOT copied from the mockup:
+
+- **Apply / Reset pair.** The mockup is a static demo with two dead buttons.
+  The live form filters on change. Adding an "Apply" that does nothing would
+  be a control that lies; "Clear filters" stays the only button.
+- **The horizontal quick-filter strip.** Its facets (year, condition, body,
+  price, sort) all exist already, in the rail and the toolbar, with more
+  besides. Rebuilding them a third time would split one vocabulary across
+  three places.
+
+### Ceilings: the top of the range means "any"
+
+The readout said "Up to $150,000" while standing at the maximum, which
+describes a filter that is not applied. Both ceilings now read "Any price" /
+"Any mileage" at the top, set `aria-valuetext` to match, and stop writing
+themselves into the URL at that position.
+
+Found while wiring the second ceiling: `writeUrl`'s multi-select branch did
+not filter empty values, so every interaction wrote
+`?model=&year=&drivetrain=&transmission=&status=` -- a query string that reads
+like five filters are on and filters nothing. The "All models" option is
+selected by default and its value is the empty string; setting
+`el.multiple = true` on load preserves that selection.
+
+### Verification
+
+- jsdom sweep, 8 cases, semantic assertions (every visible card obeys the
+  filter, the set is a strict subset, sort order is monotonic): 8/8.
+- URL hygiene, pixel verdict: after a drag the query is exactly
+  `?max_mileage=5000`; a ceiling returned to its top leaves it empty. Two
+  independent methods, same answer.
+- Real browser: mileage ceiling 24 -> 13 visible at 5,000 mi, readouts
+  correct, rail shortlist follows a card click with the count and the tray.
+
+Harness notes for the next session (three false failures, all mine):
+
+1. jsdom reports `readyState === "loading"` at eval time, so the bundles
+   register a `DOMContentLoaded` listener that a harness must dispatch by
+   hand -- otherwise nothing is wired and every case fails.
+2. A busy-wait after dispatch blocks jsdom's timers, so the 60ms readout
+   paint never runs. Assertions need real `setTimeout` waits.
+3. Counting `card.hidden` measures the DOM property, not the `hidden` class
+   `apply()` toggles. Use the class, or `getComputedStyle`.
+
+Also: Chrome and Edge both stopped writing screenshots partway through this
+session (rc=0, no file, even for a data: URL). jsdom is the more reliable
+harness here once the three notes above are respected.

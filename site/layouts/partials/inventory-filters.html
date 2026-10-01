@@ -170,8 +170,33 @@
                  data-price-ceiling aria-describedby="f-max-price-out">
           <p class="range-readout" id="f-max-price-out">
             <span class="range-readout__value" data-price-readout>Up to {{ partial "money.html" $ceiling }}</span>
-            <span class="range-readout__scale">{{ partial "money.html" 10000 }} &ndash; {{ partial "money.html" $ceiling }}</span>
             <span class="range-readout__ends"><span>{{ partial "money.html" 10000 }}</span><span>{{ partial "money.html" $ceiling }}</span></span>
+          </p>
+        </div>
+
+        {{/* Mileage ceiling. The mockup's rail carries one and the data backs
+             it: every card emits data-mileage, and the script now reads a
+             max_mileage field. Two things make it honest rather than
+             decorative -- the bound is the highest mileage actually in stock,
+             rounded up, so the top of the track is a real car; and the top
+             position means "no ceiling", which is why the readout says
+             "Any mileage" there instead of naming a number nobody is
+             filtering by.
+
+             This stood at a note saying a mileage slider was deliberately not
+             here because the script had no field for it. The field exists now,
+             so the note is gone and the control is real. */}}
+        {{- $mCeiling := 0 -}}
+        {{- range $stock -}}{{ with .Params.mileage }}{{ if gt . $mCeiling }}{{ $mCeiling = . }}{{ end }}{{ end }}{{ end -}}
+        {{- $mCeiling = mul (div (add $mCeiling 4999) 5000) 5000 -}}
+        <div class="form-field">
+          <label for="f-max-mileage">Mileage ceiling</label>
+          <input type="range" id="f-max-mileage" name="max_mileage"
+                 min="0" max="{{ $mCeiling }}" step="2500" value="{{ $mCeiling }}"
+                 data-mileage-ceiling aria-describedby="f-max-mileage-out">
+          <p class="range-readout" id="f-max-mileage-out">
+            <span class="range-readout__value" data-mileage-readout>Up to {{ partial "miles.html" $mCeiling }}</span>
+            <span class="range-readout__ends"><span>0 mi</span><span>{{ partial "miles.html" $mCeiling }}</span></span>
           </p>
         </div>
 
@@ -195,6 +220,23 @@
                   data-inventory-reset>Clear filters</button>
       </div>
     </form>
+
+    {{/* Saved shortlist. The mockup keeps it in the rail as well as in the
+         strip at the bottom of the window, and that is worth copying: the
+         tray is where you act on a shortlist, the rail is where you notice
+         you have one while you are still filtering. It is filled by
+         shortlist.js from the same store the tray reads, so the two can
+         never disagree, and its empty state teaches the button -- which is
+         the part a visitor cannot guess. */}}
+    <section class="inv-shortlist" aria-labelledby="inv-shortlist-heading" data-shortlist-rail>
+      <p class="mono-label inv-shortlist__heading" id="inv-shortlist-heading">Saved shortlist</p>
+      <p class="inv-shortlist__empty" data-shortlist-rail-empty>Nothing saved yet. Tick <b>Shortlist</b> on a car to keep it here while you compare.</p>
+      <ul class="inv-shortlist__items" data-shortlist-rail-items hidden></ul>
+      <div class="inv-shortlist__actions" data-shortlist-rail-actions hidden>
+        <a class="btn btn-primary btn-sm" data-shortlist-rail-send href="#">Send to Ed</a>
+        <button type="button" class="btn btn-ghost btn-sm" data-shortlist-rail-clear>Clear</button>
+      </div>
+    </section>
   </div>
 </details>
 
