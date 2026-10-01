@@ -174,7 +174,7 @@
          the DOM -- it never fetches, so browsing inventory does not depend on
          the API or on a function being reachable. */}}
     <aside class="inv-rail">
-      {{ partial "inventory-filters.html" (dict "page" .) }}
+      {{ partial "inventory-filters.html" (dict "page" . "perPage" $perPage) }}
     </aside>
 
     <div class="inv-results">

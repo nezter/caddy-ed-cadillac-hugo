@@ -533,3 +533,44 @@ built page, parses every ld+json block and every `window.*` payload, and
 fails on a string value that begins with an escaped quote. It runs in
 `ci/check-all.js` as the eleventh check. A re-introduction is a red gate
 instead of a silent wrong.
+
+---
+
+## The count that said "0 vehicles", and the two rails that could not agree
+
+Chasing the sidebar count wording turned up three defects stacked on one
+number.
+
+**The home rail read "0 vehicles".** `partials/inventory-filters.html` built
+its facet lists and its count from `$page.RegularPages` -- the pages under the
+caller. On /inventory/ that is the thirty-five cars; on the home page it is
+nothing, because the home page is a section and the cars hang off another
+one. So the home page's filter rail counted zero vehicles and offered no
+model, year or drivetrain options at all -- an accordion that opened onto
+empty selects, through every passing build. The partial now takes `fleet` (what
+the facets are built from), `universe` (what the count reports) and `perPage`
+(how many the caller shows) from its callers, and keeps its old behaviour when
+none are passed.
+
+**Facets that could only dead-end.** Built from all thirty-two Cadillacs, the
+home rail listed eight models; the grid under it holds six cars. Choosing
+most of the eight produced "0 shown" on a page with no next page behind it.
+The home page now passes its six shown cars as the `fleet`: five model options
+and four year options, and every one of them matches at least one car (a
+verification loop clicks all of them). The count still reports the whole set
+("32 vehicles · 6 shown"), so nothing pretends the six are the lot.
+
+**Two surfaces, two sentences.** The rail count under the filters read
+"13 vehicles of 24 on this page (35 in stock)" while the quick strip above the
+grid read "35 vehicles · 13 shown" -- one fact, two readings, which reads
+like two counts. Both are now written by one `summary` string in the script
+and rendered server-side in the same shape ("35 vehicles · 24 shown", home:
+"32 vehicles · 6 shown"), so they cannot drift in wording again. The home
+sync note drops "showing ... in stock" for the mockup's "6 of 32 shown". The
+home grid's `data-total` went from 6 to 32 so the script counts the same set
+the server does. The now-unused `pageSize`/`paginated` variables are gone.
+
+Verified: 11 count checks (initial/after-filter/reset on /inventory/, and on
+the home page the nonzero count, facet options, the no-dead-end loop and the
+reset), the previous 41 mock-gap checks and the 4 home-tray checks all still
+pass, and the eleven-check suite is green.

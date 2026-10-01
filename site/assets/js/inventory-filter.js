@@ -64,13 +64,12 @@
     const searchEl = form.querySelector('#f-search');
     const badgeEl = document.getElementById('inventory-active-filters');
 
-    // The list is paginated at build time (24 per page), so `cards` is this
-    // page only. Filtering narrows within the page; pageTotals is the whole
-    // inventory, so the count can say "4 of 24 shown, 35 in stock" rather than
-    // implying the page is the whole set.
+    // The list is paginated at build time, so `cards` is this page only.
+    // pageTotals is the whole set the page belongs to, so counts read
+    // "35 vehicles · 24 shown" -- one shape, the same one the server renders
+    // into the quick strip and the rail count, so the two surfaces cannot
+    // disagree after the first filter either.
     const pageTotals = parseInt(grid.dataset.total || '0', 10) || 0;
-    const pageSize = parseInt(grid.dataset.pageSize || '0', 10) || 0;
-    const paginated = pageTotals > cards.length;
 
     // Zero inventory is a different situation from zero matches. A filter that
     // matches nothing can be undone; an empty dealership cannot, and the page
@@ -310,26 +309,20 @@
         cards[j].classList.toggle('hidden', visible.indexOf(cards[j]) === -1);
       }
 
-      if (countEl) {
-        let text =
-          visible.length + (visible.length === 1 ? ' vehicle' : ' vehicles');
-        if (visible.length !== cards.length) {
-          text += ' of ' + cards.length + ' on this page';
-        }
-        if (paginated) {
-          text += ' (' + pageTotals + ' in stock)';
-        }
-        countEl.textContent = text;
-      }
+      /* One sentence on both surfaces: the count under the rail's controls
+         and the quick strip above the grid. They used to be worded
+         differently -- "13 vehicles of 24 on this page (35 in stock)"
+         against "35 vehicles · 13 shown" -- which read like two different
+         counts of the same thing. */
+      const summary =
+        pageTotals + (pageTotals === 1 ? ' vehicle' : ' vehicles') +
+        ' \u00b7 ' + visible.length + ' shown';
+      if (countEl) countEl.textContent = summary;
       if (emptyEl) emptyEl.classList.toggle('hidden', visible.length > 0);
       updateActiveFilterCount();
 
       const railCount = document.querySelector('[data-rail-count]');
-      if (railCount) {
-        railCount.textContent =
-          pageTotals + (pageTotals === 1 ? ' vehicle' : ' vehicles') +
-          ' \u00b7 ' + visible.length + ' shown';
-      }
+      if (railCount) railCount.textContent = summary;
       syncMirrors();
     }
 

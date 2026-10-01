@@ -44,9 +44,17 @@
 */ -}}
 {{- $page := .page -}}
 {{- $closed := .closed | default false -}}
-{{- $fleet := where (where $page.RegularPages "Section" "inventory") "Params.available" "!=" false -}}
-{{- $totalAll := len $fleet -}}
-{{- $totalMatched := $totalAll -}}
+{{- /* Two sets, because they answer different questions. `fleet` is what the
+       facets are built from -- the cars this caller actually shows, so no
+       option can dead-end (the home page shows a six-car selection; a model
+       facet built from all thirty-two stock cars was eight options that
+       mostly matched nothing). `universe` is what the count reports, so it
+       can stay honest: "32 vehicles · 6 shown". The home rail read
+       "0 vehicles" before this and offered no facets at all -- it was
+       reading the home page's own RegularPages, which hold no cars. */ -}}
+{{- $fleet := .fleet | default (where (where $page.RegularPages "Section" "inventory") "Params.available" "!=" false) -}}
+{{- $totalAll := .universe | default (len $fleet) -}}
+{{- $perPage := .perPage | default 24 -}}
 {{- $models := slice -}}{{- $years := slice -}}{{- $drivetrains := slice -}}{{- $transmissions := slice -}}
 {{- range $fleet -}}
   {{- with .Params.model }}{{ if not (in $models .) }}{{ $models = $models | append . }}{{ end }}{{ end -}}
@@ -209,12 +217,12 @@
 
       <div class="inventory-filters__actions">
         <p class="inventory-filters__active hidden" id="inventory-active-filters" aria-live="polite"></p>
+{{/* The same shape the quick strip uses on /inventory/ -- "35 vehicles
+           &#183; 24 shown" -- so the two surfaces read alike before any script
+           touches them, and the script keeps them in that shape. */}}
+        {{- $shown := $totalAll -}}{{- if gt $totalAll $perPage -}}{{- $shown = $perPage -}}{{- end -}}
         <p class="inventory-count" id="inventory-count" role="status" aria-live="polite">
-          {{ if eq $totalMatched $totalAll -}}
-            {{ $totalAll }} {{ if eq $totalAll 1 }}vehicle{{ else }}vehicles{{ end }}
-          {{- else -}}
-            {{ $totalMatched }} of {{ $totalAll }} vehicles
-          {{- end }}
+          {{ $totalAll }} {{ if eq $totalAll 1 }}vehicle{{ else }}vehicles{{ end }} &#183; {{ $shown }} shown
         </p>
         <button class="btn btn-ghost btn-sm" type="button" id="f-reset"
                   data-inventory-reset>Clear filters</button>
