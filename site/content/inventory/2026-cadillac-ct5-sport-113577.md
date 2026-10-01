@@ -1,5 +1,5 @@
 ---
-title: 2026 CADILLAC CT5 Sport (#NT0113577)
+title: 2026 CADILLAC CT5 Sport
 status: New
 price: 56022
 subtitle: RWD · Automatic · 3,425 mi

@@ -1,5 +1,5 @@
 ---
-title: 2024 CADILLAC LYRIQ Tech (#BRZ139354)
+title: 2024 CADILLAC LYRIQ Tech
 status: Certified Pre-Owned
 price: 36396
 subtitle: AWD · 19,983 mi

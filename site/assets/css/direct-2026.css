@@ -1994,3 +1994,19 @@ body.home .stay-connected{border-top-color:var(--bronze-line)}
   .inventory-page .container{grid-template-columns:290px minmax(0,1fr)}
   .vehicle-detail > .wrap > div{grid-template-columns:1.618fr .9fr}
 }
+
+/* --- touch targets ---------------------------------------------------
+   A card's Shortlist/Compare pair measured 34px tall, and the price
+   chips 30-34px. Both are below the 44px that a thumb needs, and on a
+   phone they are the two controls a buyer uses most. Raised only at
+   narrow widths, where a finger is the only input device. */
+@media (max-width:48rem){
+  .vehicle-card__actions .btn-xs,
+  .vehicle-card__picks .btn,
+  .inv-results .inv-chip,
+  .inventory-page .price-band,
+  .inventory-page .inv-sort select{
+    min-height:44px;
+  }
+  .vehicle-card__picks{gap:.5rem}
+}
