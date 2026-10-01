@@ -300,3 +300,48 @@ Harness notes for the next session (three false failures, all mine):
 Also: Chrome and Edge both stopped writing screenshots partway through this
 session (rc=0, no file, even for a data: URL). jsdom is the more reliable
 harness here once the three notes above are respected.
+
+---
+
+## The comparison: what it shows, and the phone layout that lied
+
+The compare feature worked and showed nothing but a flat table. Four changes,
+all in `vehicleComparison.js` and `site/assets/css/inventory.scss`:
+
+- **Rows where the cars differ are marked** (a dot on the specification name,
+  plus a visually-hidden "(differs)" for assistive technology). A comparison
+  that gives every row equal weight is a specification sheet with the answer
+  buried in it.
+- **Lowest price and lowest mileage are labelled as such.** The label names the
+  measurement, not a recommendation: on a used car the cheaper one is not
+  automatically the better one.
+- **Each car links to its own page**, and the selection can be cleared at once,
+  with a "Comparing n of 3" count above the table.
+- **On a phone, one card per car.**
+
+That last one was a defect, not a preference. The old `@media (max-width:40rem)`
+block hid `thead` -- the row of car names -- and stacked each specification
+with its values underneath. Two anonymous values under every heading, with
+nothing on screen able to say which car was which. The comment above the block
+described the right intention ("a grid of cars, not a grid of rows") and the CSS
+did the opposite. The table cannot keep its header row at 320px, so the phone
+gets per-car cards instead, rendered from the same data by the same function,
+and CSS shows one or the other.
+
+The stylesheet also carried `.comparison-tray` (17 rules and a comment
+describing a tray that has no markup anywhere), `.comparison-header` and
+`.comparison-row` (class names the script never emits), `.empty-comparison` and
+three `.comparison-container` rules. All removed. `direct-2026.css` now has zero
+`comparison-*` references; the feature is styled in one place.
+
+### Harness note: a double-fired DOMContentLoaded
+
+`ready()` looked like it never ran: clicks reached the document, the handler
+resolved the right button, and nothing happened. The harness was dispatching
+`DOMContentLoaded` by hand *and* letting jsdom fire its own, so `ready()` ran
+twice, two click listeners were registered, and every compare click toggled on
+and immediately off. Injecting the bundles as real `<script>` elements and
+letting jsdom fire its own event fixed it -- 20/20 checks, including the fourth
+car being refused with a message.
+
+In a browser this cannot happen: one script element, one DOMContentLoaded.

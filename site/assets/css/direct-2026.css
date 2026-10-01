@@ -450,7 +450,6 @@ a{color:inherit}
 .foot .addr{color:var(--on-ink-muted);font-size:.88rem;line-height:1.7;margin:1rem 0 0}
 .foot .hl{color:var(--bronze-hi);text-decoration:none;font-family:var(--f-display);font-weight:600;letter-spacing:-.02em;font-size:1.05rem}
 
-
 /* ==========================================================================
    SHELL LAYER — the site header and footer, restyled into the direction.
    Selectors deliberately target the classes ALREADY emitted by
@@ -524,7 +523,6 @@ header.site-header .navbar-end .btn-call:hover{background:var(--brand-red-bright
   color:var(--on-ink-faint);
   margin-top:var(--space-3);
 }
-
 
 /* ==========================================================================
    COMPONENT LAYER — the direction applied to the classes the site already
@@ -661,7 +659,6 @@ body.home .vehicle-card .btn-ghost:hover,body.home .vehicle-card .btn-outline:ho
 .section-subtle#fleet .btn-outline{border-color:var(--bronze-line);color:var(--on-ink)}
 #fleet + .section-subtle{background:var(--ink-1)}
 
-
 /* --- interim portrait grade ---------------------------------------------
    The existing photograph of Ed is a flash-lit snapshot (see IMAGERY.md).
    A bronze duotone makes it read as a deliberate treatment until the
@@ -679,7 +676,6 @@ body.home .vehicle-card .btn-ghost:hover,body.home .vehicle-card .btn-outline:ho
 .stage .prose h2,.stage .prose h3{color:#fff}
 .stage .prose p,.stage .prose li{color:var(--on-ink-muted)}
 .stage .prose a{color:var(--bronze-hi)}
-
 
 /* --- vehicle detail: micro-line, ask module, Ed's note ------------------ */
 .vehicle-meta{
@@ -711,7 +707,6 @@ body.home .vehicle-card .btn-ghost:hover,body.home .vehicle-card .btn-outline:ho
 .ed-note .seal__mark{border-color:rgba(182,159,88,.5);color:#a8862f}
 .ed-note .seal__txt{color:var(--text-muted)}
 @media (min-width:64rem){.vehicle-cta{position:sticky;top:96px}}
-
 
 /* --- inventory list ----------------------------------------------------- */
 .inventory-head h1{
@@ -746,7 +741,6 @@ body.home .vehicle-card .btn-ghost:hover,body.home .vehicle-card .btn-outline:ho
 .inventory-pagination__summary{
   font-family:var(--f-mono);font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--text-faint);
 }
-
 
 /* ==========================================================================
    COHERENCE PASS. Two pages were left half-converted, which is worse than
@@ -900,7 +894,6 @@ body.home .prose a{color:var(--bronze-hi)}
 }
 .vehicle-detail .vehicle-booking__note,.vehicle-detail .vehicle-booking__noscript{color:var(--on-ink-faint)}
 
-
 /* --- inventory: the rail beside the results ----------------------------
    The mockup puts the filters in a persistent column next to the cars, and
    the cars two across, rather than a full-width accordion above a three-across
@@ -940,9 +933,7 @@ body.home .prose a{color:var(--bronze-hi)}
      its own instructions. The mockup puts the equivalent surface at the
      bottom of the page as a tray, so this places it there. order handles it
      because the item is auto-placed onto the grid. */
-  .inventory-page .comparison-container{grid-column:1 / -1;order:9}
 }
-
 
 /* --- inventory: light cards on the browsing surface ---------------------
    The card treatment above is the dark showroom plate, and it belongs on the
@@ -1027,8 +1018,6 @@ body.home .prose a{color:var(--bronze-hi)}
 .inventory-page .inventory-content{max-width:none;margin-top:clamp(1.6rem,3vw,2.4rem)}
 .inventory-page .inventory-content h2{font-size:1.05rem;margin:0 0 .4rem}
 .inventory-page .inventory-content p{font-size:.88rem;color:var(--text-muted);max-width:62ch}
-.inventory-page .comparison-container{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;margin-top:.9rem}
-
 
 /* ==========================================================================
    TYPOGRAPHY, SITE-WIDE.
@@ -1094,7 +1083,6 @@ input,select,textarea,button,.btn{font-family:var(--f-ui)}
    surface is untouched. */
 .admin-header h1{font-size:clamp(2.05rem,1.3rem + 2.7vw,3.4rem);line-height:.98;letter-spacing:-.036em}
 
-
 /* --- home: the ask panel's inputs, and Ed's portrait frame --------------
    Two things the rendered page showed that structure checks cannot: the
    quick-ask form's inputs stayed on the browser default white inside the now
@@ -1142,7 +1130,6 @@ body.home .ed-portrait::before{
 }
 body.home .ed-portrait__overlay{z-index:2}
 
-
 /* --- three defects the rendered page showed -----------------------------
    1. A stray bronze sliver sat just left of "See what's in stock". It was a
       decorative bar I hung off ::before on the hero copy column; at this size
@@ -1172,7 +1159,6 @@ body.home .dock .panel__title{min-width:0}
 body.home .dock .social-body,
 body.home .dock .social-body iframe,
 body.home .dock .social-body > div{max-width:100%}
-
 
 /* ==========================================================================
    BUTTONS, MAPPED ONTO THE SITE'S EXISTING CLASSES.
@@ -1244,7 +1230,6 @@ body.home .dock .social-body > div{max-width:100%}
 }
 .vehicle-detail .vehicle-cta .card__title{margin-top:1.1rem}
 
-
 /* --- the buttons inventory.css paints Bootstrap blue ---------------------
    inventory.css carries .inventory-page .btn.btn-primary{background:#007bff},
    three classes deep, so the one-class mapping above loses to it whatever the
@@ -1264,7 +1249,6 @@ body.home .dock .social-body > div{max-width:100%}
 .inventory-page .btn.vehicle-card__compare[aria-pressed="true"]{
   background-color:rgba(182,159,88,.14);border-color:var(--bronze-hi);color:var(--ink-1);
 }
-
 
 /* --- the vehicle spec table: readable, not "tiny and low-contrast" -------
    Two causes, both mine to answer for. inventory.css sizes the value cell at
@@ -1287,7 +1271,6 @@ body.home .dock .social-body > div{max-width:100%}
 .vehicle-detail .vehicle-cta__actions{display:grid;gap:.5rem}
 .vehicle-detail .vehicle-cta__actions .btn{width:100%;justify-content:center}
 
-
 /* --- the fleet is the light band in the middle of a dark page -----------
    The mockup puts the cars on white with dark cards on top, and that contrast
    is the point: the page is a dark room with one lit wall, and the inventory
@@ -1309,7 +1292,6 @@ body.home #fleet .btn-outline:hover{border-color:var(--brand-red);color:var(--br
 body.home #fleet .vehicle-card{
   box-shadow:0 10px 30px rgba(11,13,16,.10);
 }
-
 
 /* ==========================================================================
    THE PAGE HEAD, FOR EVERY PAGE THAT WAS NEVER PORTED.
@@ -1354,7 +1336,6 @@ body.home #fleet .vehicle-card{
 .vehicle-breadcrumb a:hover{color:var(--brand-bronze)}
 .vehicle-breadcrumb span[aria-current]{color:var(--brand-bronze)}
 
-
 /* --- the reviews band, while there are no reviews -----------------------
    A rendered pass called this band "broken/empty: dashed placeholder, no real
    reviews", and it was worse than that: the empty state was printing an
@@ -1369,7 +1350,6 @@ body.home #fleet .vehicle-card{
 section.section:has(> .container > .comments > .comments-empty),
 section.section:has(.comments-empty),
 .stage:has(.comments-empty){display:none}
-
 
 /* ==========================================================================
    THE ED BAND AND THE CLAIMS TILES — the two bands a full-page render called
@@ -1437,7 +1417,6 @@ body.home .bento--4 .tile__idx,
   font-size:.74rem;margin-bottom:.35rem;
 }
 
-
 /* --- a picture that overflows its plate ---------------------------------
    Measured on the rendered page: in the Ed's pick band the .plate is 869px
    tall and the PICTURE inside it is 1170px -- 300px of photograph hanging out
@@ -1458,7 +1437,6 @@ body.home .bento--4 .tile__idx,
 .plate > figure > picture,
 .plate > figure > img{display:block;width:100%;height:100%;object-fit:cover}
 
-
 /* --- the specification, two columns -------------------------------------
    Measured on the rendered car page: .vehicle-specs__list is 893px tall,
    because every field gets a full-width row. Ten fields stacked is a long
@@ -1478,7 +1456,6 @@ body.home .bento--4 .tile__idx,
   /* the last row of each column should not trail a rule into empty space */
   .vehicle-detail .vehicle-specs__row:last-child{border-bottom:0}
 }
-
 
 /* ==========================================================================
    THE CARD ACTIONS AND THE FILTER RAIL — both reported from the live page.
@@ -1562,7 +1539,6 @@ body.home .vehicle-card__actions .btn-ghost:hover{
   display:flex;flex-wrap:wrap;gap:.4rem;padding-top:.2rem;
 }
 
-
 /* --- the line above the cars -------------------------------------------- */
 .inv-results .inv-topline{
   display:flex;align-items:baseline;justify-content:space-between;gap:1rem;
@@ -1572,7 +1548,6 @@ body.home .vehicle-card__actions .btn-ghost:hover{
 }
 .inv-results .inv-topline .mono-label{color:var(--text-faint)}
 .inv-results .inv-topline .mono-label:first-child{color:var(--ink-1);letter-spacing:.12em}
-
 
 /* ==========================================================================
    THE READING SURFACES — one pass, eleven pages.
@@ -1645,7 +1620,6 @@ body.home .vehicle-card__actions .btn-ghost:hover{
   font-size:clamp(1.06rem,1rem + .35vw,1.2rem);color:#3a4049;
 }
 
-
 /* --- the financing calculator, deliberately off ------------------------
    The calculator is hidden behind a toggle because the rate endpoints it
    would depend on do not exist yet, and the page says so in as many words.
@@ -1674,7 +1648,6 @@ body.home .vehicle-card__actions .btn-ghost:hover{
   font-variant-numeric:tabular-nums;
 }
 
-
 /* --- the quick-filter chips above the cars ------------------------------
    Real links, not decoration: inventory-filter.js reads the query string on
    load, so /inventory/?status=New arrives already filtered. The values come
@@ -1689,7 +1662,6 @@ body.home .vehicle-card__actions .btn-ghost:hover{
 }
 .inv-results .inv-chip:hover{border-color:var(--ink-1);color:var(--ink-1)}
 .inv-results .inv-chip[aria-current="page"]{background:var(--ink-1);border-color:var(--ink-1);color:#fff}
-
 
 /* --- the car list, matched to the mockup's proportions ------------------
    Measured against the mockup: its cards are larger with the photograph
@@ -1723,7 +1695,6 @@ body.home .vehicle-card__actions .btn-ghost:hover{
 }
 .inv-rail .inv-shortlist__body{margin:0;font-size:.84rem;color:#515863;line-height:1.5}
 
-
 /* --- the toolbar above the cars ----------------------------------------- */
 .inv-results .inv-toolbar{
   display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;
@@ -1741,7 +1712,6 @@ body.home .vehicle-card__actions .btn-ghost:hover{
   width:auto;padding:.42rem .7rem;font-size:.86rem;
   border:1px solid #dde0e6;border-radius:999px;background:#fff;color:var(--ink-1);
 }
-
 
 /* --- the inventory head, composed rather than stacked -------------------- */
 .inventory-head{
@@ -1778,84 +1748,6 @@ body.home .vehicle-card__actions .btn-ghost:hover{
 .inv-rail input[type="range"]:focus-visible{outline:2px solid var(--bronze-hi);outline-offset:4px}
 
 
-/* ==========================================================================
-   THE COMPARISON TRAY — the new UI.
-   #comparison-tray has existed in the markup since the start and has never had
-   a single line of CSS. vehicleComparison.js fills it as cars are shortlisted
-   (max three), and until now it appeared as unstyled text at the bottom of the
-   page. This is the tray the mockup carries: a dark bar, the chosen cars as
-   swatches, what you have selected, and the two things worth doing with it.
-
-   The [hidden] guard is not decoration. The tray ships hidden and the script
-   unhides it; a display rule without that guard would override the attribute
-   and leave an empty bar stuck to the bottom of every page.
-   ========================================================================== */
-.comparison-tray{
-  position:fixed;inset:auto 0 0 0;z-index:70;
-  display:flex;align-items:center;gap:.65rem;flex-wrap:wrap;
-  padding:.75rem clamp(1rem,4vw,2.5rem);
-  background:rgba(7,9,11,.95);
-  -webkit-backdrop-filter:blur(14px) saturate(140%);
-  backdrop-filter:blur(14px) saturate(140%);
-  border-top:1px solid var(--bronze-line);
-  color:var(--on-ink);
-  box-shadow:0 -18px 40px rgba(0,0,0,.4);
-}
-.comparison-tray[hidden]{display:none}
-
-/* the chosen cars, as swatches */
-.comparison-tray img{
-  width:56px;height:38px;object-fit:cover;display:block;
-  border-radius:7px;border:1px solid rgba(255,255,255,.22);
-}
-.comparison-tray .comparison-item,
-.comparison-tray .tray-item{display:flex;align-items:center;gap:.5rem}
-
-/* the label, in the same voice as every other micro-label on the site */
-.comparison-tray h2,.comparison-tray h3,.comparison-tray strong,.comparison-tray .label{
-  font-family:var(--f-mono);font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;
-  color:var(--bronze);margin:0;font-weight:400;
-}
-.comparison-tray p,.comparison-tray span{color:var(--on-ink-muted);font-size:.86rem;margin:0}
-.comparison-tray .btn{
-  padding:.5rem .95rem;font-size:.84rem;border-radius:999px;
-}
-.comparison-tray .btn-primary{background:var(--brand-red);border-color:transparent;color:#fff}
-.comparison-tray .btn-primary:hover{background:var(--brand-red-bright)}
-.comparison-tray .btn-secondary,.comparison-tray .btn-outline,.comparison-tray .btn-ghost{
-  background:transparent;border:1px solid rgba(255,255,255,.22);color:var(--on-ink);
-}
-.comparison-tray .btn-secondary:hover,.comparison-tray .btn-outline:hover,.comparison-tray .btn-ghost:hover{
-  border-color:var(--bronze-hi);color:#fff;
-}
-.comparison-tray button[aria-label*="emove"],
-.comparison-tray .remove-item{
-  background:transparent;border:0;color:var(--on-ink-faint);cursor:pointer;
-  font-size:1rem;line-height:1;padding:.2rem .35rem;
-}
-.comparison-tray button[aria-label*="emove"]:hover,
-.comparison-tray .remove-item:hover{color:var(--brand-red-bright)}
-
-/* keep the tray from covering the last of the footer */
-body:has(.comparison-tray:not([hidden])){padding-bottom:84px}
-
-/* --- the comparison itself, when it is opened --------------------------- */
-.comparison-table{width:100%;border-collapse:collapse;margin-top:1.4rem}
-.comparison-table th,.comparison-table td{
-  padding:.8rem .7rem;border-bottom:1px solid var(--border);text-align:left;vertical-align:top;
-}
-.comparison-header th{
-  font-family:var(--f-display);font-weight:620;letter-spacing:-.018em;font-size:.98rem;color:var(--ink-1);
-}
-.comparison-row th{
-  font-family:var(--f-mono);font-size:.64rem;letter-spacing:.12em;text-transform:uppercase;
-  color:#6f7683;font-weight:400;white-space:nowrap;
-}
-.comparison-row td{font-variant-numeric:tabular-nums;color:#3a4049}
-.empty-comparison{
-  padding:1.2rem;border:1px dashed var(--border);border-radius:var(--r-card);
-  color:#6f7683;font-size:.9rem;
-}
 
 /* --- the slider reads out its value ------------------------------------- */
 .inv-rail .range-readout{
@@ -1881,8 +1773,6 @@ body:has(.comparison-tray:not([hidden])){padding-bottom:84px}
   font-size:.92rem;color:#515863;max-width:70ch;margin:0 0 .55rem;line-height:1.6;
 }
 .inventory-page .inventory-content p:last-child{margin-bottom:0}
-.inventory-page .inventory-content .comparison-container{margin-top:.9rem}
-
 
 /* ==========================================================================
    THE INVENTORY HEAD, FULL WIDTH.
@@ -1934,7 +1824,6 @@ body:has(.comparison-tray:not([hidden])){padding-bottom:84px}
   font-family:var(--f-mono);font-size:.62rem;letter-spacing:.12em;
   text-transform:uppercase;color:#8a919c;
 }
-
 
 /* ==========================================================================
    BUILD PRESET DNA — applied to the existing brand, not over it.

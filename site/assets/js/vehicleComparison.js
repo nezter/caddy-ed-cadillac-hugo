@@ -49,6 +49,19 @@
  * to see the cards, the prices and the specs in one view, and to be able to
  * reach the one they did not pick.
  *
+ * WHAT THE TABLE SHOWS THAT IT DID NOT BEFORE
+ * -------------------------------------------
+ * Rows where the cars differ are marked, because those are the rows a
+ * shopper came for; the lowest price and the lowest mileage carry a label
+ * naming what they are the lowest of. Each car links to its own page, and
+ * the whole selection can be cleared at once.
+ *
+ * On a phone the table is replaced by one card per car. A table cannot keep
+ * its header row at 320px, and the header row is the only thing that says
+ * which column belongs to which car -- so the phone got a layout where the
+ * values were stacked under each specification name with nothing to
+ * identify them. Both layouts are rendered from the same data.
+ *
  * NOTHING HAPPENS SILENTLY
  * -------------------------
  * Comparing a car you already have, or going past the maximum, says so in the
@@ -137,6 +150,70 @@
   var list = [];
   var cards = {};
 
+  /** Where a value came from, formatted, with a missing value said so. */
+  function cellText(d, row) {
+    var raw = d[row.key];
+    if (raw === undefined || raw === null || raw === '') return '—';
+    return row.format ? row.format(raw) : raw;
+  }
+
+  /**
+   * The rows a reader came for: the ones where the cars are not the same.
+   *
+   * A comparison table that renders every row with equal weight is a
+   * specification sheet with the differences buried in it. The whole reason to
+   * put two cars side by side is the handful of rows where they diverge, so
+   * those rows are marked, in both layouts.
+   */
+  function differingRows(chosen) {
+    var differ = {};
+    ROWS.forEach(function (row) {
+      if (chosen.length < 2) { differ[row.key] = false; return; }
+      var values = chosen.map(function (d) { return cellText(d, row); });
+      differ[row.key] = values.some(function (v) { return v !== values[0]; });
+    });
+    return differ;
+  }
+
+  /**
+   * The lowest price and the lowest mileage among the cars being compared.
+   *
+   * These are facts about the numbers on screen, not a recommendation: on a
+   * used car the cheaper one is not automatically the better one. So the
+   * label names the measurement ("Lowest price") rather than advising anyone
+   * to buy it.
+   */
+  function lowestValues(chosen) {
+    var out = {};
+    ['price', 'mileage'].forEach(function (key) {
+      var nums = chosen
+        .map(function (d) { return parseFloat(d[key]); })
+        .filter(function (n) { return isFinite(n) && n > 0; });
+      var distinct = nums.filter(function (n, i) { return nums.indexOf(n) === i; });
+      // Only meaningful when the cars actually differ on it.
+      out[key] = distinct.length > 1 ? Math.min.apply(null, distinct) : null;
+    });
+    return out;
+  }
+
+  function markFor(key, d, lowest) {
+    if (lowest[key] === null) return '';
+    if (parseFloat(d[key]) !== lowest[key]) return '';
+    var label = key === 'price' ? 'Lowest price' : 'Lowest mileage';
+    return '<span class="comparison-mark">' + label + '</span>';
+  }
+
+  /**
+   * Draw the comparison.
+   *
+   * Two layouts from one set of data. The table is the right shape on a
+   * desktop: specifications down the side, cars across the top. On a phone
+   * the table cannot keep its own header row while staying readable, and the
+   * header row is the only thing that says which column belongs to which car
+   * -- so the phone gets one card per car instead, with the specification
+   * names inside it. Both are rendered and CSS shows one, so they cannot
+   * disagree, and neither is a fallback for the other.
+   */
   function render() {
     var t = table();
     if (!t) return;
@@ -144,41 +221,69 @@
     if (!list.length) {
       t.classList.add('hidden');
       t.innerHTML = '';
-      document.querySelectorAll('[data-compare-toggle]').forEach(function (btn) {
-        btn.setAttribute('aria-pressed', 'false');
-        var label = btn.querySelector('[data-compare-label]');
-        if (label) label.textContent = 'Compare';
-      });
+      reflectButtons();
       return;
     }
 
     var chosen = list.map(function (slug) { return cards[slug]; }).filter(Boolean);
+    var differ = differingRows(chosen);
+    var lowest = lowestValues(chosen);
 
-    var html = '<table class="comparison-table__grid"><caption class="visually-hidden">'
-      + 'Side-by-side comparison of the cars you selected</caption><thead><tr><th scope="col">'
-      + '<span class="visually-hidden">Specification</span></th>';
+    var html = '<div class="comparison-tools">' +
+      '<span class="comparison-tools__count">Comparing ' + chosen.length + ' of ' + MAX + '</span>' +
+      '<button type="button" class="comparison-tools__clear" data-compare-clear>Clear all</button>' +
+      '</div>';
+
+    /* ---- the table (desktop) ---- */
+    html += '<div class="comparison-scroll"><table class="comparison-table__grid">'
+      + '<caption class="visually-hidden">Side-by-side comparison of the cars you selected</caption>'
+      + '<thead><tr><th scope="col"><span class="visually-hidden">Specification</span></th>';
     chosen.forEach(function (d) {
-      html += '<th scope="col"><span class="comparison-table__name">' + esc(d.title || d.slug) + '</span>'
+      var slug = encodeURIComponent(d.slug);
+      html += '<th scope="col"><a class="comparison-table__name" href="/inventory/' + slug + '/">'
+        + esc(d.title || d.slug) + '</a>'
         + '<button type="button" class="comparison-table__remove" data-compare-remove="' + esc(d.slug)
-        + '">Remove<span class="visually-hidden"> ' + esc(d.title || d.slug) + ' from the comparison</span></button>'
-        + '</th>';
+        + '">Remove<span class="visually-hidden"> ' + esc(d.title || d.slug)
+        + ' from the comparison</span></button></th>';
     });
     html += '</tr></thead><tbody>';
-
     ROWS.forEach(function (row) {
-      html += '<tr><th scope="row">' + esc(row.label) + '</th>';
+      var isDiff = differ[row.key];
+      html += '<tr' + (isDiff ? ' class="is-different"' : '') + '><th scope="row">' + esc(row.label)
+        + (isDiff ? '<span class="visually-hidden"> (differs)</span>' : '') + '</th>';
       chosen.forEach(function (d) {
-        var raw = d[row.key];
-        var text = raw === undefined || raw === null || raw === '' ? '—' : (row.format ? row.format(raw) : raw);
-        html += '<td class="feature-value">' + esc(text) + '</td>';
+        html += '<td class="feature-value">' + esc(cellText(d, row)) + markFor(row.key, d, lowest) + '</td>';
       });
       html += '</tr>';
     });
-    html += '</tbody></table>';
+    html += '</tbody></table></div>';
+
+    /* ---- one card per car (phone) ---- */
+    html += '<div class="comparison-cards">';
+    chosen.forEach(function (d) {
+      var slug = encodeURIComponent(d.slug);
+      html += '<article class="comparison-card">'
+        + '<h3 class="comparison-card__name"><a href="/inventory/' + slug + '/">'
+        + esc(d.title || d.slug) + '</a></h3>'
+        + '<button type="button" class="comparison-card__remove" data-compare-remove="' + esc(d.slug)
+        + '">Remove<span class="visually-hidden"> ' + esc(d.title || d.slug)
+        + ' from the comparison</span></button>'
+        + '<dl class="comparison-card__specs">';
+      ROWS.forEach(function (row) {
+        html += '<div class="comparison-card__spec' + (differ[row.key] ? ' is-different' : '') + '">'
+          + '<dt>' + esc(row.label) + '</dt><dd>' + esc(cellText(d, row)) + markFor(row.key, d, lowest) + '</dd></div>';
+      });
+      html += '</dl></article>';
+    });
+    html += '</div>';
 
     t.innerHTML = html;
     t.classList.remove('hidden');
+    reflectButtons();
+  }
 
+  /** Say, on every button, whether its car is in the comparison. */
+  function reflectButtons() {
     document.querySelectorAll('[data-compare-toggle]').forEach(function (btn) {
       var on = list.indexOf(btn.dataset.compareToggle) !== -1;
       btn.setAttribute('aria-pressed', on ? 'true' : 'false');
@@ -222,7 +327,13 @@
       var add = e.target.closest('[data-compare-toggle]');
       if (add) { toggle(add.dataset.compareToggle); return; }
       var remove = e.target.closest('[data-compare-remove]');
-      if (remove) { toggle(remove.dataset.compareRemove); }
+      if (remove) { toggle(remove.dataset.compareRemove); return; }
+      if (e.target.closest('[data-compare-clear]')) {
+        list = [];
+        status('');
+        render();
+        writeUrl(list);
+      }
     });
 
     if (list.length) {

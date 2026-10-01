@@ -861,27 +861,133 @@
    an empty cell reads as "not specified" and not as "something broke". */
 .comparison-table__grid .feature-value { color: var(--text); }
 
-/* On a phone the table is a grid of cars, not a grid of rows: the specification
-   name goes above its value so a column stays readable at 320px. */
+/* The tools line: how much is selected, and the one way out. */
+.comparison-tools {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin-top: var(--space-4);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--border);
+}
+.comparison-tools__count {
+  font-family: var(--f-mono, ui-monospace, Consolas, monospace);
+  font-size: var(--text-xs);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted, #6f7683);
+}
+.comparison-tools__clear {
+  font: inherit;
+  font-size: var(--text-xs);
+  color: var(--brand-red);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.comparison-tools__clear:hover { color: var(--brand-ink); }
+
+/* Three cars plus their specification names is wider than a small laptop, so
+   the table scrolls sideways rather than crushing its columns. */
+.comparison-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.comparison-table__grid { min-width: 34rem; }
+
+/* The rows a shopper came for: the ones where the cars are not the same.
+   Marked on the specification name, which is the only cell wide enough to
+   carry a mark without pushing the numbers around. */
+.comparison-table__grid tbody tr.is-different th[scope="row"] { color: var(--text); }
+.comparison-table__grid tbody tr.is-different th[scope="row"]::before {
+  content: "";
+  display: inline-block;
+  width: 0.42rem;
+  height: 0.42rem;
+  margin-right: 0.45rem;
+  border-radius: 50%;
+  background: var(--brand-bronze, #b69f58);
+  vertical-align: middle;
+}
+
+/* "Lowest price" is the name of a measurement, not a recommendation. */
+.comparison-mark {
+  display: block;
+  margin-top: 0.25rem;
+  font-family: var(--f-mono, ui-monospace, Consolas, monospace);
+  font-size: 0.58rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #8a7420;
+}
+
+/* The phone layout is one card per car. Hidden until the width needs it. */
+.comparison-cards { display: none; }
+.comparison-card__name { margin: 0 0 var(--space-1); }
+.comparison-card__name a { color: inherit; text-decoration: none; }
+.comparison-card__name a:hover { text-decoration: underline; }
+.comparison-card__remove {
+  font: inherit;
+  font-size: var(--text-xs);
+  color: var(--brand-red);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.comparison-card__remove:hover { color: var(--brand-ink); }
+.comparison-card__specs { margin: var(--space-2) 0 0; }
+.comparison-card__spec {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 0.3rem 0;
+  border-top: 1px solid var(--border);
+}
+.comparison-card__spec dt {
+  font-family: var(--f-mono, ui-monospace, Consolas, monospace);
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted, #6f7683);
+}
+.comparison-card__spec dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.comparison-card__spec.is-different dd { font-weight: 600; }
+
+/* The line under the compare block. It explains the control the reader has
+   just met, so it stays quiet rather than competing with the table. */
+.comparison-hint {
+  margin-top: var(--space-3);
+  color: var(--text-muted, #6f7683);
+  font-size: var(--text-sm);
+}
+
+/* On a phone the table cannot keep its header row and stay readable, and the
+   header row is the only thing that says which column belongs to which car.
+   Stacking the rows under each specification name -- which is what this did
+   -- therefore left two values under every heading with nothing to identify
+   them. So at this width the table is replaced outright by one card per car,
+   rendered from the same data by vehicleComparison.js. */
 @media (max-width: 40rem) {
-  .comparison-table__grid,
-  .comparison-table__grid tbody,
-  .comparison-table__grid tr,
-  .comparison-table__grid th,
-  .comparison-table__grid td { display: block; width: 100%; }
-
-  .comparison-table__grid thead { display: none; }
-
-  .comparison-table__grid tbody tr {
+  .comparison-scroll { display: none; }
+  .comparison-cards {
+    display: grid;
+    gap: var(--space-3);
+  }
+  .comparison-card {
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    margin-bottom: var(--space-3);
-    padding: var(--space-2) 0;
+    padding: var(--space-3);
+    background: var(--surface, #fff);
   }
-  .comparison-table__grid tbody th {
-    border: 0;
-    white-space: normal;
-    padding-bottom: var(--space-1);
-  }
-  .comparison-table__grid td { border: 0; padding-top: 0; }
 }

@@ -31,6 +31,10 @@ share one button, and the compare feature had none.
 
 <p class="comparison-hint">Use the <strong>Compare</strong> button on any card to
 add it here. The table shows year, make, model, trim, body, exterior and interior
-colour, price, mileage, drivetrain, transmission and stock number.</p>
+colour, price, mileage, drivetrain, transmission and stock number. Rows where the
+cars differ are marked, and the lowest price and the lowest mileage are labelled
+as exactly that &mdash; facts about the numbers on screen, not advice about which
+car to buy. Each car&rsquo;s name links to its own page, and on a phone the
+comparison becomes one card per car.</p>
 
 
