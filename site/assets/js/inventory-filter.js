@@ -506,6 +506,25 @@
     } catch (e) { /* a readout must never break the filter */ }
   })();
 
+  /* --- quick-filter chips: mark the one in force ----------------------
+     .inv-chip[aria-current="page"] is already styled as the active pill,
+     but nothing ever set the attribute, so no chip ever looked selected.
+     Additive and guarded: it only reads the URL and sets an attribute. */
+  (function () {
+    try {
+      var chips = document.querySelectorAll(".inv-chip");
+      if (!chips.length) return;
+      var q = window.location.search || "";
+      if (q === "?") q = "";
+      Array.prototype.forEach.call(chips, function (a) {
+        var href = a.getAttribute("href") || "";
+        var i = href.indexOf("?");
+        var qs = i === -1 ? "" : href.slice(i);
+        if (qs === q) a.setAttribute("aria-current", "page");
+      });
+    } catch (e) { /* a chip highlight must never break the filter */ }
+  })();
+
   if (document.readyState !== 'loading') init();
   else document.addEventListener('DOMContentLoaded', init);
 })();

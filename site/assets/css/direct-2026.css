@@ -991,6 +991,22 @@ body.home .prose a{color:var(--bronze-hi)}
   font-family:var(--f-display);font-weight:680;letter-spacing:-.022em;
   font-variant-numeric:tabular-nums;color:#a8862f;font-size:1.15rem;margin:0;
 }
+
+/* --- the picks row on a vehicle card --------------------------------
+   Shortlist and Compare are .btn-xs and always appear together, but had
+   no rule of their own: they fell through to the base .btn sizing and
+   sat wherever the flex line put them, so the gap between them differed
+   from card to card depending on how long the title above was. Pushed
+   to the end of the action row and spaced as a pair. */
+.vehicle-card__picks{
+  display:flex;align-items:center;gap:.4rem;margin-left:auto;
+}
+.vehicle-card__actions .btn-xs{
+  min-height:2.15rem;padding:.4rem .7rem;font-size:.78rem;
+}
+@media (max-width:26rem){
+  .vehicle-card__picks{margin-left:0;width:100%;justify-content:flex-start}
+}
 .inventory-page .vehicle-card__actions{margin-top:auto;display:flex;gap:.5rem;flex-wrap:wrap;padding-top:.5rem}
 
 /* --- inventory: a dark head band --------------------------------------- */
