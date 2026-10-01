@@ -1750,11 +1750,11 @@ body.home .vehicle-card__actions .btn-ghost:hover{
 
 
 /* --- the slider reads out its value ------------------------------------- */
-.inv-rail .range-readout{
+.range-readout{
   display:flex;align-items:baseline;justify-content:space-between;gap:.6rem;
   margin:.4rem 0 0;
 }
-.inv-rail .range-readout__value{
+.range-readout__value{
   font-family:var(--f-display);font-weight:620;letter-spacing:-.02em;
   font-variant-numeric:tabular-nums;color:var(--ink-1);font-size:.95rem;
 }
@@ -1814,7 +1814,7 @@ body.home .vehicle-card__actions .btn-ghost:hover{
 .inventory-page .inventory-head .inventory-head__count{margin-top:1.2rem}
 
 /* --- the rail, tidied ---------------------------------------------------- */
-.inv-rail .range-readout{justify-content:flex-start}
+.range-readout{justify-content:flex-start}
 .inv-rail .inventory-filters__actions{
   display:flex;align-items:center;justify-content:space-between;
   gap:.5rem;flex-wrap:wrap;
@@ -1898,7 +1898,7 @@ body.home .stay-connected{border-top-color:var(--bronze-line)}
 
 /* The two ends of the price track, so the slider states its own range
    instead of leaving the reader to guess from the thumb position. */
-.inv-rail .range-readout__ends{
+.range-readout__ends{
   display:flex;justify-content:space-between;margin:.15rem 0 0;
   font-family:var(--f-mono);font-size:.62rem;letter-spacing:.08em;color:#8a919c;
 }
@@ -1918,13 +1918,13 @@ body.home .stay-connected{border-top-color:var(--bronze-line)}
   .inventory-page .container{display:block}
   .inventory-page .inventory-head{margin-inline:0}
 }
-.inv-rail .range-readout{
+.range-readout{
   display:block;margin:.5rem 0 0;
 }
-.inv-rail .range-readout__value{
+.range-readout__value{
   display:block;font-size:1.05rem;line-height:1.2;
 }
-.inv-rail .range-readout__ends{
+.range-readout__ends{
   display:flex;justify-content:space-between;gap:1rem;
   margin-top:.3rem;
 }
@@ -1989,4 +1989,42 @@ body.home .stay-connected{border-top-color:var(--bronze-line)}
    would otherwise be about 16px across. */
 @media (max-width:48rem){
   .inv-rail .inv-shortlist__remove{min-width:44px;min-height:44px;padding:0}
+}
+
+/* The home fleet is a light section holding dark showroom cards. The
+   section-level rule paints outline buttons in near-black ink, which is right
+   for the section and invisible inside a near-black card -- the Details button
+   rendered as an empty pill. The card gets the last word on the controls that
+   sit inside it, which is why this carries the id as well as the classes. */
+body.home #fleet .vehicle-card .btn-outline{
+  border-color:rgba(255,255,255,.22);color:var(--on-ink);
+}
+body.home #fleet .vehicle-card .btn-outline:hover{
+  border-color:var(--bronze-hi);color:#fff;background:transparent;
+}
+
+/* --- the social panel ---------------------------------------------------
+
+   What sits in the box before a feed is loaded: what loading costs, the button
+   that does it, and a way out that loads nothing. The buttons need the same
+   treatment the rest of the dark panel gets, or they inherit the light-surface
+   colours and disappear. */
+.social-load__note{
+  margin:0 0 .7rem;font-size:.86rem;line-height:1.5;color:#6f7683;
+}
+.social-load__actions{
+  display:flex;gap:.5rem;flex-wrap:wrap;margin:0;
+}
+body.home .social-load__note{color:var(--on-ink-muted)}
+body.home .social-body .btn-outline{
+  border-color:rgba(255,255,255,.18);color:var(--on-ink);
+}
+body.home .social-body .btn-outline:hover{
+  border-color:var(--bronze-hi);color:#fff;
+}
+body.home .social-body .btn-ghost{
+  border-color:rgba(255,255,255,.14);color:var(--on-ink-muted);
+}
+body.home .social-body .btn-ghost:hover{
+  border-color:var(--bronze-hi);color:#fff;
 }

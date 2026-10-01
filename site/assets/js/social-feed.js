@@ -1,5 +1,27 @@
 /**
- * social-feed.js -- load the Facebook and X embeds only when asked.
+ * social-feed.js -- load a social feed only when the visitor asks for it.
+ *
+ * WHAT THE FIRST FIX LEFT BROKEN
+ * ------------------------------
+ *
+ * The version above loaded nothing until a tab was chosen and showed a
+ * paragraph of explanation in the meantime. That paragraph was then hidden by
+ * this same script on load, so the panel sat empty under the tabs: three
+ * quarters of the way to a working feature and looking exactly like a broken
+ * one.
+ *
+ * Now the panel always holds something. For Facebook and X that is the offer
+ * to load the feed -- what it costs, a button that does it, and a link that
+ * leaves for the network without loading anything. Instagram has no profile
+ * embed to offer, so its panel says so and links to the profile.
+ *
+ * Tabs are rendered by the template only for networks that are configured.
+ * The X tab shipped with no X account behind it, so choosing it produced "No
+ * X account is configured for this site yet" -- a control that exists to
+ * announce it does not work.
+ *
+ * The tablist answers the arrow keys as well, which is what role="tablist"
+ * promises a screen reader and what it did not do.
  *
  * THE PROBLEM
  * -----------
@@ -92,6 +114,30 @@
         }
       },
     },
+
+    /* Instagram has no profile-timeline embed: its own embed script renders a
+       single post and nothing else. So this panel does not pretend to load a
+       feed. It says what Instagram cannot do and links to the profile, which
+       is the part that actually helps. */
+    instagram: {
+      script: null,
+      render: function (host) {
+        var url = (window.CADDY_CONNECT && window.CADDY_CONNECT.instagramUrl) || '';
+        var handle = (window.CADDY_CONNECT && window.CADDY_CONNECT.instagramHandle) || '';
+        if (!url) {
+          host.innerHTML = '<p class="social-load__note">No Instagram profile is ' +
+            'configured for this site yet.</p>';
+          return;
+        }
+        host.innerHTML =
+          '<p class="social-load__note">Instagram does not offer an embed for a ' +
+          'whole profile, so this panel links straight to it &mdash; nothing ' +
+          'third-party loads here.</p>' +
+          '<p class="social-load__actions"><a class="btn btn-outline btn-sm" href="' + esc(url) +
+          '" target="_blank" rel="noopener">Open ' + esc(handle || 'the profile') +
+          ' on Instagram</a></p>';
+      },
+    },
   };
 
   function loadScript(src, done) {
@@ -114,14 +160,76 @@
     document.head.appendChild(s);
   }
 
-  function select(tab) {
-    var kind = tab.getAttribute('data-social') || 'facebook';
+  function esc(v) {
+    return String(v == null ? '' : v)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  /** data-social="facebook" -> #panelFacebook. No hard-coded pairs. */
+  function panelFor(kind) {
+    return document.getElementById('panel' + kind.charAt(0).toUpperCase() + kind.slice(1));
+  }
+
+  function labelFor(kind) {
+    return { facebook: 'Facebook', x: 'X', instagram: 'Instagram' }[kind] || kind;
+  }
+
+  /** Where a network lives, from the config the template printed. */
+  function platformUrl(kind) {
+    var c = window.CADDY_CONNECT || {};
+    if (kind === 'facebook') return c.facebookPageUrl || '';
+    if (kind === 'x') return c.xHandle ? 'https://twitter.com/' + String(c.xHandle).replace(/^@/, '') : '';
+    if (kind === 'instagram') return c.instagramUrl || '';
+    return '';
+  }
+
+  /**
+   * The offer to load a feed.
+   *
+   * The panel used to hide its own explanation the moment the page loaded and
+   * put nothing in its place, so under the tabs sat an empty box -- which is
+   * what a visitor reads as broken, because it was. This is what goes there
+   * instead: what loading costs, a button that does it, and a link that leaves
+   * for the network without loading anything at all.
+   */
+  function offerLoad(kind) {
+    var host = panelFor(kind);
+    if (!host) return;
+    var label = labelFor(kind);
+    var url = platformUrl(kind);
+    host.innerHTML =
+      '<p class="social-load__note">Loading the feed brings ' + esc(label) +
+      '&rsquo;s own script onto this page. It loads only when you ask.</p>' +
+      '<p class="social-load__actions">' +
+        '<button type="button" class="btn btn-outline btn-sm" data-social-load="' + esc(kind) + '">' +
+          'Load the ' + esc(label) + ' feed</button>' +
+        (url ? '<a class="btn btn-ghost btn-sm" href="' + esc(url) + '" target="_blank" rel="noopener">' +
+               'Open ' + esc(label) + ' instead</a>' : '') +
+      '</p>';
+  }
+
+  /** Show one network: tab states, the right panel, and that panel filled. */
+  function activate(kind) {
+    document.querySelectorAll('[data-social]').forEach(function (tab) {
+      var on = tab.getAttribute('data-social') === kind;
+      tab.setAttribute('aria-selected', on ? 'true' : 'false');
+      tab.tabIndex = on ? 0 : -1;
+    });
+    document.querySelectorAll('.social-body .tabpanel').forEach(function (p) {
+      p.hidden = p !== panelFor(kind);
+    });
+    // Instagram has nothing third-party to load, so its panel is its content.
+    if (kind === 'instagram') select(kind);
+    else offerLoad(kind);
+  }
+
+  function select(kind) {
     var platform = PLATFORMS[kind];
     if (!platform) return;
-
-    var host = document.getElementById(kind === 'facebook' ? 'panelFacebook' : 'panelX');
+    var host = panelFor(kind);
     if (!host) return;
-
+    host.hidden = false;
     host.innerHTML = '';
     if (platform.script) loadScript(platform.script);
     platform.render(host);
@@ -131,15 +239,33 @@
     var host = document.getElementById('social-feed-host');
     if (!host) return;
 
-    // The prompt. Hidden the moment a tab is chosen.
-    var prompt = host.querySelector('[data-social-prompt]');
-    if (prompt) prompt.hidden = true;
+    var tabs = Array.prototype.slice.call(document.querySelectorAll('[data-social]'));
 
-    document.querySelectorAll('[data-social]').forEach(function (tab) {
-      tab.addEventListener('click', function () {
-        if (prompt) prompt.hidden = true;
-        select(tab);
+    tabs.forEach(function (tab, i) {
+      tab.addEventListener('click', function () { activate(tab.getAttribute('data-social')); });
+      // A tablist is one stop in the tab order; the arrow keys move inside it,
+      // which is what a screen-reader user will try first.
+      tab.addEventListener('keydown', function (e) {
+        var dir = { ArrowRight: 1, ArrowLeft: -1 }[e.key];
+        if (dir === undefined && e.key !== 'Home' && e.key !== 'End') return;
+        e.preventDefault();
+        var next = e.key === 'Home' ? 0
+          : e.key === 'End' ? tabs.length - 1
+          : (i + dir + tabs.length) % tabs.length;
+        tabs[next].focus();
+        activate(tabs[next].getAttribute('data-social'));
       });
     });
+
+    // The load button inside a panel.
+    document.addEventListener('click', function (e) {
+      var btn = e.target.closest && e.target.closest('[data-social-load]');
+      if (btn) select(btn.getAttribute('data-social-load'));
+    });
+
+    // Never an empty box: fill the panel for the first configured network.
+    var first = host.getAttribute('data-social-default') ||
+      (tabs[0] ? tabs[0].getAttribute('data-social') : '') || '';
+    if (first) activate(first);
   });
 })();

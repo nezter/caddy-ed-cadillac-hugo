@@ -345,3 +345,57 @@ letting jsdom fire its own event fixed it -- 20/20 checks, including the fourth
 car being refused with a message.
 
 In a browser this cannot happen: one script element, one DOMContentLoaded.
+
+---
+
+## The home page: two defects a screenshot found, and the social panel
+
+### The ceiling readout collapsed on the home page
+
+Seven `.range-readout` rules were written as `.inv-rail .range-readout...`,
+and the home page does not have a rail: its filter sits in `.fleet-filters`.
+So the readout fell back to inline flow and printed "Any price
+$10,000$150,000" on one line, with the mileage one just behind it. The rules
+are now scoped to the readout classes themselves, which are used in exactly
+one partial.
+
+### The Details button was invisible on the home fleet
+
+`body.home #fleet{background:#fff}` -- a light section -- and
+`body.home #fleet .btn-outline{color:var(--ink-1)}`, near-black ink. The cards
+inside it are the dark showroom plate, so the button rendered as an empty
+pill. A card-level rule already existed but lost: the section rule carries an
+id. The card now carries one too, and outranks it 10301 to 10201.
+
+Shortlist and Compare were fine, which is the clue: they are `.btn-ghost`, and
+no `#fleet` rule touches ghost buttons. Only the outline button disappeared.
+
+### The social panel was empty by design and looked broken
+
+`social-feed.js` hid its own explanatory prompt on load and put nothing in its
+place, so the panel sat empty under the tabs. Three changes:
+
+- **The panel always holds something.** For Facebook and X that is the offer to
+  load the feed -- what it costs, a button that does it, and a link that leaves
+  for the network without loading anything. A visitor can now see what the
+  panel is and choose.
+- **Tabs come from the configuration.** The X tab shipped with no X account
+  behind it, so choosing it produced "No X account is configured for this site
+  yet" -- a control that exists to announce it does not work. A tab is only
+  rendered when its network has a url or handle. With one network configured
+  there is no tablist at all; with none, the fallback links stand alone.
+- **Instagram is supported.** It has no profile-timeline embed -- its own embed
+  script renders a single post -- so its panel says that and links to the
+  profile rather than pretending to load a feed.
+
+The tablist also answers the arrow keys now, which is what `role="tablist"`
+promises.
+
+To light up X or Instagram: set `handle` (X) or `url` (Instagram) in
+`site/data/social.yaml`. The tab appears on the next build; nothing else needs
+touching.
+
+Verified: 16 static and cascade checks (including the specificity arithmetic
+above), then 15 behavioural checks in jsdom -- both tabs, panel swapping, the
+roving tabindex, ArrowLeft/ArrowRight with wraparound, and the load button
+replacing itself with the embed. All repo gates pass.

@@ -23,6 +23,9 @@
 {{- with $social.facebook }}{{ $fb = .url | default "" }}{{ end -}}
 {{- $xh := "" -}}
 {{- with $social.x }}{{ $xh = .handle | default "" }}{{ end -}}
+{{- $ig := "" -}}
+{{- $igh := "" -}}
+{{- with $social.instagram }}{{ $ig = .url | default "" }}{{ $igh = .handle | default "" }}{{ end -}}
 
 {{- $vehicles := where (where site.RegularPages "Section" "inventory") "Params.available" "!=" false -}}
 
@@ -34,6 +37,8 @@
     socialEndpoint: "",
     facebookPageUrl: {{ $fb | jsonify }},
     xHandle: {{ $xh | jsonify }},
+    instagramUrl: {{ $ig | jsonify }},
+    instagramHandle: {{ $igh | jsonify }},
     askEndpoint: "/.netlify/functions/contact-form",
     alertFormName: "stock-alerts",
     visibleCount: 6,
