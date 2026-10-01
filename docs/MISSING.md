@@ -34,16 +34,73 @@ Every enquiry, booking, pre-approval, portal message and staff-card contact now
 'smtp-not-configured'` — so nothing is lost and nothing lies. But Ed will not
 receive anything, and the admin is currently the only place a lead is visible.
 
-**To fix:** any SMTP provider. Free tiers at Resend, Postmark, or SendGrid. Four
-variables. Then set `EMAIL_TO` (the address that should receive enquiries), or
-sign in through Netlify Identity once so `resolveRecipient()` finds a real rep in
-`sales_reps`.
+**To fix:** any SMTP provider. Free tiers at Resend, Postmark, or SendGrid.
+
+**There is now a page for this: `/admin/email`.** Pick a provider from a
+dropdown and the host, port and username fill themselves in — SendGrid's
+username is literally `apikey` and its host is `smtp.sendgrid.net`, which is
+provider trivia nobody should have to remember. Type the one secret, press
+**Save and send a test**, and it reports what the provider actually said. No
+deploy, no dashboard access.
+
+Two ways to configure it, both live:
+
+| where | how | use when |
+|---|---|---|
+| `/admin/email` | the form, writes to the `mail_config` table | you want to change it yourself during the day |
+| Netlify UI | `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `EMAIL_FROM` / `EMAIL_TO` | you would rather the password never entered the database |
+
+The database row wins when both exist. The env path is fully supported and is
+the better home for a secret — there is no secret store on this deployment, and
+the `/admin/email` page says so rather than pretending otherwise.
+
+Then set `EMAIL_TO` (the address that should receive enquiries), or sign in
+through Netlify Identity once so `resolveRecipient()` finds a real rep in
+`sales_reps`. The `/admin/email` form does not set the To address, because
+`resolveRecipient()` deliberately prefers the staff table over any hardcoded
+value — that ordering is what stopped the customer list once being mailed to a
+stranger's mailbox.
 
 **Do not** set only `SMTP_HOST`. That was the dangerous configuration: with SMTP
 configured but no recipient, the old code would have mailed the customer list to
 a fallback address on an unowned domain.
 
-### 2. `JWT_SECRET` — check this before deploying
+#### What Netlify itself offers, and why it is not the answer here
+
+Netlify has **no email or SMTP API** — checked, all 190 endpoints on this
+account, nothing for mail. Its one mail feature is Forms email notifications,
+which is three problems at once for this site:
+
+1. It is configured **in the dashboard only**. There is no API for it, so it
+   cannot be set from here or by anybody else.
+2. It only fires for forms submitted to **Netlify Forms**, and almost nothing
+   here is. Every customer form posts with `fetch()` to a function, which Netlify
+   Forms never sees.
+3. It cannot see the database, so it cannot know who to notify, cannot honour
+   consent, and cannot tell a delivered enquiry from a failed one.
+
+It is still worth switching on for `stock-alerts`, which *is* a real Netlify Form
+(`data-netlify="true"`) — as a second net for that one thing, not as the site's
+notification system.
+
+For the record, `listSiteForms` shows the `contact` form has **15 submissions**,
+the most recent on 2026-10-01, including real sales enquiries. Those are arriving
+and nobody is being emailed, which is the whole of this section.
+
+### 2. `JWT_SECRET` — RESOLVED 2026-10-01
+
+**It is set**, production context only, 64 characters, since
+`2026-09-28T19:27:42Z`. The site's first `ready` deploy was `17:52:48Z`, so it
+served for roughly 95 minutes with the four `sales-*` functions verifying tokens
+against a published string. **Nothing needs rotating**: the secret was set rather
+than carried over, so anything signed with the literal stopped working the
+moment it went in. Full write-up in `docs/SECURITY.md`.
+
+The original note is kept for history:
+
+`netlify.toml` declares no `[context.production.environment]`, so whether
+`JWT_SECRET` exists at all depends on the Netlify UI. Before today's audit, four
+functions would have accepted tokens signed with a string published in this
 
 `netlify.toml` declares no `[context.production.environment]`, so whether
 `JWT_SECRET` exists at all depends on the Netlify UI. Before today's audit, four

@@ -105,24 +105,43 @@ async function notify(inquiry, recipient) {
   if (!recipient.email) {
     return { notified: false, reason: 'no-recipient-configured' };
   }
-  // No SMTP configured is a configuration state, not an error, and it is
-  // reported as itself so nobody goes looking for a broken mail server.
-  if (!process.env.SMTP_HOST) {
-    return { notified: false, reason: 'smtp-not-configured' };
+
+  // Where the transport comes from.
+  //
+  // This read four environment variables directly, which meant the ONLY way to
+  // make this site send mail was somebody opening the Netlify dashboard. The
+  // configuration now lives in `mail_config` as well, editable at /admin/email,
+  // and resolves through utils/mail-config.js -- which still falls back to the
+  // environment, so nothing that worked before stops working.
+  const MailConfig = require('./mail-config');
+  const resolved = await MailConfig.resolve(DatabaseService);
+  if (!resolved.config) {
+    // A configuration state, not an error, and reported as itself so nobody goes
+    // looking for a broken mail server.
+    return { notified: false, reason: resolved.reason };
   }
+
+  const from = MailConfig.fromAddress(resolved.config);
+  if (!from) {
+    // Refused rather than defaulted. The old fallback built a From out of the
+    // site URL's hostname, which is an address nobody has verified anywhere --
+    // it either bounces or fails SPF, and the enquiry lands in spam. Silent,
+    // and worse than not sending, because it looks sent.
+    console.error(
+      '[inquiry] no From address configured. Refusing to send rather than invent one. ' +
+        'Set it at /admin/email.'
+    );
+    return { notified: false, reason: 'from-not-configured' };
+  }
+
+  const { transport, error } = MailConfig.createTransport(resolved.config);
+  if (!transport) {
+    return { notified: false, reason: error };
+  }
+
   try {
-    // Required here, not at module load: a form function must load on a
-    // deployment with no mail configured, or the whole endpoint 500s before it
-    // can record anything -- which is the bug this file exists to fix.
-    const nodemailer = require('nodemailer');
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT || 587),
-      secure: process.env.SMTP_SECURE === 'true',
-      auth: process.env.SMTP_USER ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS } : undefined,
-    });
-    await transporter.sendMail({
-      from: process.env.EMAIL_FROM || process.env.SMTP_USER || `website@${new URL(inquiry.sourceUrl || 'https://caddyed.com').host}`,
+    await transport.sendMail({
+      from,
       to: recipient.email,
       replyTo: inquiry.email || undefined,
       subject: inquiry.subject,
@@ -134,7 +153,7 @@ async function notify(inquiry, recipient) {
       html: inquiry.html || undefined,
       text: inquiry.text || undefined,
     });
-    return { notified: true, to: recipient.email, via: recipient.source };
+    return { notified: true, to: recipient.email, via: resolved.config.source };
   } catch (err) {
     console.error('[inquiry] notification failed:', err.message);
     return { notified: false, reason: 'send-failed', detail: err.message };

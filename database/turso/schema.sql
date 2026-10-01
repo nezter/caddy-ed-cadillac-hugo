@@ -754,6 +754,35 @@ CREATE TABLE IF NOT EXISTS vehicle_favourites (
   updated_at   TEXT DEFAULT (datetime('now'))
 );
 
+-- How this site sends mail. One row (id = 1), edited at /admin/email.
+--
+-- NOT site_settings. That table's GET publishes every `is_public = 1` row to
+-- ANONYMOUS callers, on purpose, because the front end has no session. An SMTP
+-- password stored there would be served to the internet by a query the schema
+-- itself describes as safe. There is no public read path to this table at all.
+--
+-- `smtp_pass` NULL means "the secret lives in the Netlify UI instead", which is
+-- a real state rather than an empty password. utils/mail-config.js falls back
+-- to process.env in that case, so either place works.
+--
+-- `enabled = 0` stops every send without deleting the credentials, so a
+-- half-entered provider cannot start sending by being finished by accident.
+CREATE TABLE IF NOT EXISTS mail_config (
+  id           INTEGER PRIMARY KEY CHECK (id = 1),
+  provider     TEXT NOT NULL DEFAULT 'custom'
+               CHECK (provider IN ('sendgrid','mailgun','resend','postmark','custom')),
+  smtp_host    TEXT,
+  smtp_port    INTEGER NOT NULL DEFAULT 587,
+  smtp_secure  INTEGER NOT NULL DEFAULT 0 CHECK (smtp_secure IN (0, 1)),
+  smtp_user    TEXT,
+  smtp_pass    TEXT,
+  email_from   TEXT,
+  enabled      INTEGER NOT NULL DEFAULT 0 CHECK (enabled IN (0, 1)),
+  updated_by   TEXT,
+  updated_at   TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (updated_by) REFERENCES sales_reps (id) ON DELETE SET NULL
+);
+
 -- Indexes
 
 -- Foreign keys

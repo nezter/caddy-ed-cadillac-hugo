@@ -75,6 +75,24 @@ load:
 - **Follow-up campaigns** — `/admin/followup-campaigns`.
 - **Google Calendar** — per person, one row each in `google_calendar_tokens`.
   Needs `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`, which do not exist yet.
+- **Email** (`/admin/email`) — added 2026-10-01. Pick SendGrid / Mailgun /
+  Resend / Postmark / custom, and the host, port and username fill themselves in.
+  Type the one secret, press **Save and send a test**. Writes one row to
+  `mail_config`; `utils/mail-config.js` resolves it and every sender uses it.
+  No deploy and no Netlify dashboard access needed.
+
+  Two things about it worth knowing before using it:
+
+  - **The password is stored in plain text in this database.** There is no
+    secret store on this deployment, and encrypting with a key the sending code
+    can also read would protect nothing. If you would rather it never touched
+    the database, leave the password field blank and set `SMTP_HOST` /
+    `SMTP_USER` / `SMTP_PASS` in the Netlify UI instead — that path takes over
+    automatically and is fully supported.
+  - **`/admin/email` deliberately does not set the To address.** Enquiries go to
+    the first active rep in `sales_reps`, and only fall back to `EMAIL_TO` if
+    there is nobody there. Hardcoding a recipient is how the customer list once
+    got mailed to a stranger's mailbox.
 
 ---
 
@@ -202,13 +220,17 @@ all. See `docs/SECURITY.md` for what they were and what now protects the data.
 
 ## The admin is currently the entire notification system
 
-**No SMTP is configured, so nothing is emailed.** Enquiries, bookings,
+**No mail provider is configured, so nothing is emailed.** Enquiries, bookings,
 pre-approvals, portal messages and staff-card contacts all **record to the
 database first** and report `notified: false` with a reason, so nothing is lost
 and nothing claims to have been sent.
 
-That means until four environment variables are set, this admin is the *only*
-place a lead is visible. See `docs/MISSING.md` § 1.
+Until one is set, this admin is the *only* place a lead is visible.
+
+**This is now one page, not a dashboard trip.** `/admin/email` takes a provider
+and a secret and tests the connection, with no redeploy. It was four environment
+variables and a guess at which host went with which provider; that guess is now a
+dropdown. See `docs/MISSING.md` § 1.
 
 ---
 

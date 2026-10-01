@@ -71,7 +71,7 @@ exports.handler = async (event, context) => {
     }
 
     // Create email transporter
-    const transporter = createTransporter();
+    const transporter = await createTransporter();
 
     // Nothing configured to send with. Say so, loudly and specifically, rather
     // than returning the `{ success: true }` the old mock produced.
@@ -82,7 +82,7 @@ exports.handler = async (event, context) => {
           success: false,
           sent: false,
           reason: 'smtp-not-configured',
-          error: 'No SMTP transport is configured, so nothing was sent. Set SMTP_HOST, SMTP_PORT, SMTP_USER and SMTP_PASS.',
+          error: 'No mail provider is configured, so nothing was sent. Set one at /admin/email, or set SMTP_HOST, SMTP_PORT, SMTP_USER and SMTP_PASS in the Netlify UI.',
         })
       };
     }
@@ -91,8 +91,20 @@ exports.handler = async (event, context) => {
     const emailContent = generateEmailContent(type, data);
 
     // Send email
+    //
+    // The From used to be `process.env.SMTP_USER || 'noreply@caddyed.com'`. For
+    // SendGrid the username is literally `apikey`, so that produced
+    // "from: apikey" on a provider that rejects it; and `noreply@caddyed.com` is
+    // an address nobody has verified with any provider, so it bounces or fails
+    // SPF. Now it comes from the same resolved config the transport was built
+    // from, and is never invented -- the send fails loudly instead of silently.
+    //
+    // `transporter.config` is set by createTransporter(); a mock in development
+    // has none, so the development path keeps its old literal.
+    const MailConfig = require('./utils/mail-config');
     const mailOptions = {
-      from: process.env.SMTP_USER || 'noreply@caddyed.com',
+      from: (transporter.config && MailConfig.fromAddress(transporter.config))
+        || 'noreply@caddyed.com',
       to: recipient,
       subject: emailContent.subject,
       html: emailContent.html,
@@ -146,7 +158,7 @@ exports.handler = async (event, context) => {
   }
 };
 
-function createTransporter() {
+async function createTransporter() {
   // The old version returned a mock whenever SMTP_HOST was missing -- which is
   // how it is deployed -- and the mock returned a plausible messageId. The
   // handler then answered `{ success: true, message: 'Notification sent
@@ -158,8 +170,8 @@ function createTransporter() {
   // over: a notification that reports success when it did nothing is worse than
   // no notification, because it removes the evidence that anything is wrong.
   //
-  // So: SMTP_HOST absent is a REFUSAL with a reason, not a pretend success. The
-  // mock survives only for local development, where pretending is the point.
+  // So: nothing configured is a REFUSAL with a reason, not a pretend success.
+  // The mock survives only for local development, where pretending is the point.
   if (process.env.NODE_ENV === 'development') {
     return {
       isMock: true,
@@ -172,31 +184,45 @@ function createTransporter() {
     };
   }
 
-  if (!process.env.SMTP_HOST) {
+  // The transport now comes from utils/mail-config.js, which reads the
+  // `mail_config` row editable at /admin/email and falls back to these same
+  // environment variables. Without this, a provider configured in the admin
+  // would work for enquiries and silently fail here -- two answers to "how does
+  // this site send mail", which is the shape of bug this project keeps finding.
+  //
+  // Async because mail-config resolves the database row, and the handler already
+  // awaits this.
+  //
+  // nodemailer is required lazily, inside createTransport: a function must load
+  // on a deployment with no mail configured. Requiring it at the top meant this
+  // file could not be imported without nodemailer present, which is the failure
+  // mode utils/inquiry.js exists to prevent.
+  const MailConfig = require('./utils/mail-config');
+  const DatabaseService = require('./utils/database-service');
+
+  const resolved = await MailConfig.resolve(DatabaseService);
+  if (!resolved.config) {
     console.error(
-      '[send-notification] SMTP_HOST is not configured. Nothing can be sent. ' +
-        'Returning a refusal so the caller learns this instead of assuming the ' +
-        'message was delivered.'
+      '[send-notification] no mail provider configured, here or in the Netlify UI. ' +
+        'Nothing can be sent. Returning a refusal so the caller learns this instead ' +
+        'of assuming the message was delivered.'
     );
     return null;
   }
 
-  // Required here, not at module load: a function must load on a deployment with
-  // no mail configured. Requiring it at the top meant this file could not even be
-  // imported without nodemailer present, which is the failure mode utils/inquiry.js
-  // exists to prevent.
-  const nodemailer = require('nodemailer');
+  const { transport, error } = MailConfig.createTransport(resolved.config);
+  if (!transport) {
+    console.error(`[send-notification] mail configuration incomplete: ${error}`);
+    return null;
+  }
+
   return {
     isMock: false,
-    sendMail: (options) => nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: process.env.SMTP_PORT || 587,
-      secure: process.env.SMTP_SECURE === 'true',
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
-      }
-    }).sendMail(options),
+    // The resolved config rides along so the caller can build the From address
+    // from the same source the transport came from, rather than from a second
+    // guess at the environment.
+    config: resolved.config,
+    sendMail: (options) => transport.sendMail(options),
   };
 }
 
