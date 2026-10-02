@@ -158,13 +158,17 @@
       .then(async (response) => {
         const result = await response.json().catch(() => ({}));
 
-        if (!response.ok || result.success === false) {
+        if (!response.ok || result.success !== true) {
           // Try to map field-level errors first
           const fieldErrors = result.validationErrors || result.fieldErrors || {};
+          // A truthful answer from something that is not our function (a
+          // static preview's stub, say) still carries its reason in `error`;
+          // show it rather than a generic line, and never fake a success.
+          const why = result.message || (typeof result.error === 'string' ? result.error : null);
           if (mapServerErrors(form, fieldErrors)) {
-            throw new Error(result.message || 'Please check the fields above.');
+            throw new Error(why || 'Please check the fields above.');
           }
-          throw new Error(result.message || `Submission failed (${response.status}). Please try again.`);
+          throw new Error(why || `Submission failed (${response.status}). Please try again.`);
         }
 
         return result;

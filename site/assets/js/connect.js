@@ -309,11 +309,16 @@
       })
         .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }).catch(function () { return { ok: r.ok, j: {} }; }); })
         .then(function (res) {
-          if (res.ok && res.j && res.j.success !== false) {
+          // Only an EXPLICIT success counts as success. This used to accept
+          // anything that was not an explicit failure, so a static preview's
+          // stub ({"error": "..."}, no success field) produced a thank-you for
+          // a question that was never sent.
+          if (res.ok && res.j && res.j.success === true) {
             done(true, "Thanks, your question is with Ed. He answers the same day.");
           } else {
-            done(false, (res.j && (res.j.message || (res.j.error && res.j.error.message))) ||
-              "Could not send that just now. Call 803-431-6180 or email ed@caddyed.com.");
+            var why = res.j && (res.j.message ||
+              (typeof res.j.error === "string" ? res.j.error : res.j.error && res.j.error.message));
+            done(false, why || "Could not send that just now. Call 803-431-6180 or email ed@caddyed.com.");
           }
         })
         .catch(function () {

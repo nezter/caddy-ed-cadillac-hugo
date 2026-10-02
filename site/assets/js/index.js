@@ -94,19 +94,33 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         const result = await response.json();
-        
+
         if (result.success) {
           // Show success message
           document.querySelector('#form-success').classList.remove('hidden');
           contactForm.reset();
         } else {
-          // Show error message
-          document.querySelector('#form-error').textContent = result.message;
+          // Show the error message.
+          //
+          // Three shapes reach here: our functions ({message}), a static
+          // preview that answers /.netlify/* with a truthful stub
+          // ({error: "..."}), and anything else that forgot a message. The
+          // last one used to be printed verbatim as "undefined"; now every
+          // shape has something a customer can act on.
+          const text = result.message
+            || (typeof result.error === 'string' ? result.error : null)
+            || 'We could not send that just now. Please call 803-431-6180 and we will take it from there.';
+          document.querySelector('#form-error').textContent = text;
           document.querySelector('#form-error').classList.remove('hidden');
         }
       } catch (error) {
+        // No JSON came back at all: the form service is unreachable from this
+        // page (a static preview, functions not deployed, or a dropped
+        // network). The old text -- "An unexpected error occurred. Please try
+        // again." -- read like a bug and gave nobody anything to do.
         console.error('Form submission error:', error);
-        document.querySelector('#form-error').textContent = 'An unexpected error occurred. Please try again.';
+        document.querySelector('#form-error').textContent =
+          'We could not reach the form service from this page. Please try again in a moment, or call 803-431-6180 and we will take it down directly.';
         document.querySelector('#form-error').classList.remove('hidden');
       }
     });

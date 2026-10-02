@@ -959,3 +959,41 @@ Verified: suite 15/15 with the live local database; buttons-live 78/78
 (honeypot in the AJAX body; alert form fully Netlify-gated); buttons-static
 0 issues; built markup confirmed; the old custom sitekey no longer appears
 anywhere in the repository.
+
+---
+
+## Form failures now say what actually happened (and cannot fake success)
+
+User tested the contact form on a preview of the branch and saw "An
+unexpected error occurred. Please try again." -- the legacy catch text,
+which means no JSON ever came back from /.netlify/functions/contact-form.
+
+Diagnosed with live probes: production caddyed.com still serves the OLD
+site; the newest Netlify deploy preview predates today's commits (its
+functions DO answer -- probed, 403 method-check JSON); the k3s static
+preview serves no functions at all, by design (nginx answers /.netlify/*
+with a truthful stub, or 404s depending on config vintage). Forms can only
+work where the functions run: a Netlify deploy, a deploy preview, or
+netlify dev.
+
+Four handlers tightened so every environment explains itself and none can
+lie:
+
+1. index.js (contact / service / trade-in / comm-preferences): unreachable
+   service -> "We could not reach the form service from this page... call
+   803-431-6180"; non-success shows message -> string error (a preview
+   stub's own words) -> actionable fallback; never "undefined".
+2. connect.js quick-ask: only an explicit success:true is a success; a
+   preview stub can no longer produce a thank-you for a message never sent.
+3. leadCapture.js: same strictness, and a plain-string error is surfaced.
+4. financingCalculator pre-approval: a 2xx that does not say received:true
+   never reaches the success panel.
+
+Verified: buttons 82/82 (new C6/C7/H16/F11 guard checks), gate-smoke 13/13,
+form/DB matrix 18/18, full suite 15/15.
+
+To test forms end-to-end: use a Netlify deploy preview (ci/run.sh deploy
+includes functions) or netlify dev. For a preview to RECORD, the Netlify
+site needs TURSO_DATABASE_URL + TURSO_AUTH_TOKEN (with database/turso/
+schema.sql applied) and SMTP_* + EMAIL_TO for notifications; without the
+database the new code answers honestly instead of pretending.

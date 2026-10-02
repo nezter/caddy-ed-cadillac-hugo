@@ -453,10 +453,11 @@ class FinancingCalculator {
       .then(({ ok, status, data }) => {
         const modalBody = modal.querySelector('.modal-body');
 
-        // Anything that is not a 2xx says what went wrong and offers a retry.
-        // A failed submission must never reach the success panel -- that is the
-        // whole bug this function had.
-        if (!ok) {
+        // Anything that is not a 2xx -- or a 2xx that does not actually
+        // report "received" (a stub from a preview environment, say) -- says
+        // what went wrong and offers a retry. A failed submission must never
+        // reach the success panel; that is the whole bug this function had.
+        if (!ok || data.received !== true) {
           const missing = Array.isArray(data.fields) && data.fields.length
             ? ' Still needed: ' + data.fields.join(', ') + '.'
             : '';
