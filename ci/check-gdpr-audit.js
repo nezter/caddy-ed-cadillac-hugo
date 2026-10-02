@@ -51,6 +51,7 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+
 const { execFileSync } = require('child_process');
 
 const ROOT = path.resolve(__dirname, '..');
@@ -248,6 +249,119 @@ check(
     /reason-required/.test(src),
     '"deleted a person" with no stated cause is not a decision anyone can review'
   );
+
+  /* ------------------------- 7. the audit VIEWER, which is the reading half */
+
+  // A trail nobody can read satisfies a checkbox and answers no question.
+  //
+  // This runs the real handler against the same SQLite file, because a stubbed
+  // query that returns rows for anything cannot catch a malformed statement --
+  // and the first version of the summary query WAS malformed (it interpolated
+  // the filter clauses without the WHERE keyword, so every filtered request
+  // 500s). A stub said green. Real SQLite said what was true.
+  const q2 = {
+    isDatabaseConfigured: () => true,
+    query: async (sql, params) => {
+      const stmt = handle.prepare(sql.replace(/\$(\d+)/g, '?'));
+      const rows = params && params.length ? stmt.all(...params) : stmt.all();
+      return { rows };
+    },
+  };
+
+  // actor_id is a foreign key onto sales_reps, and the rep seeded at the top of
+  // this file is 'r1'.
+  handle.prepare(
+    "INSERT INTO audit_log (id,actor_id,actor_email,actor_role,action,entity_type,entity_id,reason,detail,rows_affected,created_at) " +
+    "VALUES ('a1','r1','ed@caddyed.com','admin','lead.merge','leads','l1','same person','{\"duplicateCount\":1}',1,datetime('now'))"
+  ).run();
+  handle.prepare(
+    "INSERT INTO audit_log (id,actor_id,action,entity_type,entity_id,rows_affected,created_at) " +
+    "VALUES ('a2',NULL,'seed.run','seeds','s1',3,datetime('now'))"
+  ).run();
+
+  // Swap the CACHED database-service and auth-middleware modules for the
+  // duration, rather than hooking Module._load. A viewer's `require` runs once
+  // at load time and captures the module object, so patching the loader only
+  // during the `require` leaves the handler holding the real one -- which then
+  // tries to open a Turso socket. Replacing the cache entry covers both.
+  const dbMod = path.join(FN, 'utils', 'database-service.js');
+  const authMod = path.join(FN, 'utils', 'auth-middleware.js');
+  const savedDb = require.cache[dbMod];
+  const savedAuth = require.cache[authMod];
+
+  require.cache[dbMod] = {
+    id: dbMod, filename: dbMod, loaded: true, exports: q2,
+  };
+  require.cache[authMod] = {
+    id: authMod, filename: authMod, loaded: true,
+    exports: {
+      authenticateRequest: async () => ({
+        authenticated: true,
+        user: { id: 'r1', role: 'admin', permissions: ['analytics_read'] },
+      }),
+    },
+  };
+
+  try {
+    let view = require(path.join(FN, 'audit-log-view.js'));
+
+    const viewEvent = (q) => ({
+      headers: { origin: 'https://caddyed.com' },
+      httpMethod: 'GET',
+      queryStringParameters: q || {},
+    });
+
+    let v = JSON.parse((await view.handler(viewEvent())).body);
+    check('the viewer lists the trail', v.entries && v.entries.length >= 2, `${(v.entries || []).length} rows`);
+    check(
+      'the summary query is valid SQL under a filter',
+      Array.isArray(v.summary) && v.summary.length >= 1,
+      'the first version omitted the WHERE keyword, so every filtered read 500s'
+    );
+
+    v = JSON.parse((await view.handler(viewEvent({ action: 'lead.merge' }))).body);
+    check(
+      'the viewer filters by action, summary included',
+      v.entries.length === 1 && v.summary.length === 1,
+      `${v.entries.length} entries, ${v.summary.length} summary rows`
+    );
+
+    v = JSON.parse((await view.handler(viewEvent({ limit: '9999' }))).body);
+    check(
+      'the page size is clamped',
+      v.limit <= 200,
+      'an unbounded read here is a data-dump endpoint'
+    );
+
+    v = JSON.parse((await view.handler(viewEvent({ action: 'nope.nope' }))).body);
+    check(
+      'an unknown action is refused, not silently returns everything',
+      v.error === 'unknown-action' && Array.isArray(v.allowed),
+      'a typo that returned the whole trail would read as "nothing matched"'
+    );
+
+    v = JSON.parse((await view.handler(viewEvent({ entity_type: "leads'; DROP TABLE audit_log; --" }))).body);
+    check(
+      'a SQL-shaped entity_type is refused',
+      v.error === 'bad-entity-type',
+      'filters are bound, never interpolated'
+    );
+
+    v = JSON.parse((await view.handler(viewEvent({}))).body);
+    check(
+      'the response states that a refused action left no row',
+      typeof v.note === 'string' && /not attempted/.test(v.note),
+      'an absent row means "never tried", which reads as "never happened"'
+    );
+  } catch (e) {
+    check('the viewer handler runs without throwing', false, e.message);
+  } finally {
+    delete require.cache[path.join(FN, 'audit-log-view.js')];
+    delete require.cache[dbMod];
+    delete require.cache[authMod];
+    if (savedDb) require.cache[dbMod] = savedDb;
+    if (savedAuth) require.cache[authMod] = savedAuth;
+  }
 
   report();
 })();
