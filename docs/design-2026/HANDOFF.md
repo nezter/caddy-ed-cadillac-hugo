@@ -720,3 +720,47 @@ shows both sections, shared link, shortlist mailto, label flip), 31 inventory
 compare checks, 7 detail-page checks, 42 mock-gap, 11 count, ci/check-
 compare-shortlist 52/52, and the fifteen-check suite (11 pass, 4 skipped,
 none failed).
+
+---
+
+## Compare opens now: the popup, and the styles that were never on this page
+
+The ask: clicking Compare should OPEN the comparison -- popup or page -- and
+"there was something built for this." Both true. The old site (see
+origin/master, src/js/vehicle-comparison.js) navigated to a dedicated
+/compare/?ids=... page; this branch's comparison had become a table at the
+bottom of the page that the Compare button merely pointed at.
+
+THE POPUP
+
+- `partials/comparison-app.html` gains `<dialog id="comparison-dialog">` -- in
+  the markup, not built by script, so it exists with its Close control before
+  anything runs.
+- The strip's "Compare N" button dispatches `caddy:open-compare`;
+  vehicleComparison.js shows the dialog (native `showModal`, with an
+  attribute fallback). It renders the SAME markup into the dialog on every
+  render -- one render pass, two places it can be seen -- so the popup cannot
+  disagree with the inline table. It closes on the button, on a backdrop
+  click, and when the last car leaves the comparison. Escape is the native
+  dialog's job.
+- The inline table stays where it was; the popup is a way TO the comparison,
+  and both pages' journeys assert both.
+
+THE STYLES THAT WERE NEVER THERE
+
+Building this exposed that the home page never loaded inventory.scss, and the
+comparison styles lived there: home rendered the table markup with none of
+its styles. The whole comparison block moved to components/comparison.css,
+and both pages load it (plus pick-tray.css on home, which it was also
+missing -- the strip's section layout). The dialog's styles live in the same
+file.
+
+THE REPO GATE
+
+ci/check-compare-shortlist.js counts `thead th` across the whole document; the
+dialog renders the same table a second time (on purpose), so those counts are
+scoped to #comparison-table now, and four assertions cover the popup: it
+exists, Compare opens it, it carries the same cars, Close closes it. 56/56.
+
+Verified: 36 inventory compare + 19 home + 42 mock-gap + 11 count + 7
+detail-page checks; suite 15 green (4 skipped for the missing database).

@@ -1,4 +1,4 @@
-{{ define "headStyles" }}{{ partial "stylesheet.html" "connect.css" }}{{ partial "stylesheet.html" "components/shortlist.css" }}{{ partial "stylesheet.html" "components/home.css" }}{{ end }}
+{{ define "headStyles" }}{{ partial "stylesheet.html" "connect.css" }}{{ partial "stylesheet.html" "components/shortlist.css" }}{{ partial "stylesheet.html" "components/home.css" }}{{ partial "stylesheet.html" "components/pick-tray.css" }}{{ partial "stylesheet.html" "components/comparison.css" }}{{ end }}
 {{ define "scripts" }}{{ partial "connect-config.html" . }}{{ partial "entry.html" (dict "entry" "connect.js" "page" .) }}{{ partial "entry.html" (dict "entry" "social-feed.js" "page" .) }}{{ partial "entry.html" (dict "entry" "shortlist.js" "page" .) }}{{ partial "entry.html" (dict "entry" "inventory-filter.js" "page" .) }}{{ partial "entry.html" (dict "entry" "ed-picks.js" "page" .) }}{{ partial "entry.html" (dict "entry" "compare-tray.js" "page" .) }}{{ partial "entry.html" (dict "entry" "vehicleComparison.js" "page" .) }}{{ end }}
 
 {{ define "main" }}

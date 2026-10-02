@@ -209,25 +209,25 @@ allCompare.slice(0, 5).forEach((b) => b.click());
 const status = wdoc.getElementById('comparison-status');
 check(
   'comparing more than three says so in the live region',
-  wdoc.querySelectorAll('thead th').length <= 4 && status && !status.hidden,
+  wdoc.querySelectorAll('#comparison-table thead th').length <= 4 && status && !status.hidden,
   status ? `"${status.textContent}"` : 'no status element'
 );
 check(
   'the limit is 3 cars, so 4 header cells is the label plus 3 cars',
-  wdoc.querySelectorAll('thead th').length === 4,
-  `${wdoc.querySelectorAll('thead th').length} cells`
+  wdoc.querySelectorAll('#comparison-table thead th').length === 4,
+  `${wdoc.querySelectorAll('#comparison-table thead th').length} cells`
 );
 
 // --- remove -----------------------------------------------------------------
 const removeBtn = table.querySelector('[data-compare-remove]');
 check('each car in the table has a Remove control', Boolean(removeBtn));
 if (removeBtn) {
-  const beforeRemove = wdoc.querySelectorAll('thead th').length;
+  const beforeRemove = wdoc.querySelectorAll('#comparison-table thead th').length;
   removeBtn.click();
   check(
     'removing a car takes it out of the table',
-    wdoc.querySelectorAll('thead th').length === beforeRemove - 1,
-    `${beforeRemove} -> ${wdoc.querySelectorAll('thead th').length}`
+    wdoc.querySelectorAll('#comparison-table thead th').length === beforeRemove - 1,
+    `${beforeRemove} -> ${wdoc.querySelectorAll('#comparison-table thead th').length}`
   );
 }
 
@@ -441,6 +441,26 @@ check(
   railChipText.trim().length > 4,
   `"${railChipText.trim()}"`
 );
+
+// --- the popup ---------------------------------------------------------------
+// "Compare N" opens the comparison over the page rather than pointing at the
+// table further down it, which is the difference between a Compare button and
+// a bookmark. The dialog renders the same markup as the inline table, so the
+// header-cell counts above are scoped to #comparison-table.
+const popWin = boot(html, 'http://preview.test/inventory/');
+const pdoc = popWin.document;
+Array.from(pdoc.querySelectorAll('[data-compare-toggle]')).slice(0, 2).forEach((b) => b.click());
+const pdlg = pdoc.getElementById('comparison-dialog');
+check('the comparison dialog exists in the markup', Boolean(pdlg));
+pdoc.querySelector('[data-compare-tray-go]').click();
+check('Compare opens the dialog', Boolean(pdlg) && pdlg.open === true);
+check(
+  'the dialog carries the same two cars',
+  Boolean(pdlg) && pdlg.querySelectorAll('#comparison-dialog-body thead th').length === 3,
+  pdlg ? `${pdlg.querySelectorAll('#comparison-dialog-body thead th').length} header cells` : 'no dialog'
+);
+pdoc.querySelector('[data-compare-dialog-close]').click();
+check('Close closes it', Boolean(pdlg) && pdlg.open === false);
 
 console.log('');
 for (const r of results) {

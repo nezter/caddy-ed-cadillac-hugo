@@ -221,6 +221,14 @@
     if (!list.length) {
       t.classList.add('hidden');
       t.innerHTML = '';
+      // The popup closes with the last car, and empties its body: a dialog
+      // left open over an empty comparison shows the shopper nothing.
+      var dlg = document.getElementById('comparison-dialog');
+      if (dlg && dlg.open) {
+        if (typeof dlg.close === 'function') dlg.close(); else dlg.removeAttribute('open');
+      }
+      var dlgBody = document.getElementById('comparison-dialog-body');
+      if (dlgBody) dlgBody.innerHTML = '';
 // The strip's compare section empties too, or it keeps showing cars that
       // are no longer in the comparison. reflectButtons() is upstream's
       // extraction of what used to be an inline copy of this same loop, so
@@ -284,6 +292,12 @@
 
     t.innerHTML = html;
     t.classList.remove('hidden');
+
+    // The same render into the popup's body. One render pass, two places it
+    // can be seen, so the popup cannot disagree with the table.
+    var popupBody = document.getElementById('comparison-dialog-body');
+    if (popupBody) popupBody.innerHTML = html;
+
     reflectButtons();
 
     // The strip. Without it, picking a car produces no visible change until the
@@ -353,6 +367,34 @@
     // The strip's remove and clear. One listener for the whole document, so a
     // re-render of the chips cannot lose it.
     document.addEventListener('caddy:remove-from-compare', function (e) { toggle(e.detail.slug); });
+
+    // "Compare N" asks for the comparison to OPEN, not to be pointed at: a
+    // button that leaves the shopper to go find the table has not finished
+    // its job. An event, so neither module reaches into the other.
+    document.addEventListener('caddy:open-compare', function () {
+      if (!list.length) return;
+      var dlg = document.getElementById('comparison-dialog');
+      if (!dlg) {
+        var t2 = table();
+        if (t2) t2.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+      }
+      if (typeof dlg.showModal === 'function') {
+        if (!dlg.open) dlg.showModal();
+      } else {
+        dlg.setAttribute('open', '');
+      }
+    });
+
+    // Close: the button, and a click on the backdrop (the event's target is
+    // the dialog element itself then). Escape is the native dialog's job.
+    document.addEventListener('click', function (e) {
+      var dlg = document.getElementById('comparison-dialog');
+      if (!dlg || !dlg.open) return;
+      if (e.target.closest('[data-compare-dialog-close]') || e.target === dlg) {
+        if (typeof dlg.close === 'function') dlg.close(); else dlg.removeAttribute('open');
+      }
+    });
     document.addEventListener('caddy:clear-compare', function () {
       list = [];
       render();

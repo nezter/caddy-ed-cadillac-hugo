@@ -16,3 +16,17 @@
 <div id="comparison-status" class="comparison-status" role="status" hidden></div>
 <div id="comparison-table" class="comparison-table" hidden></div>
 </div>
+
+{{/* The popup. The strip's "Compare N" button opens it, and it holds the same
+     render as the table above -- one comparison, two ways to see it. It lives
+     in the markup rather than being built by script so it exists, with its
+     Close control, before anything runs. */}}
+<dialog id="comparison-dialog" class="comparison-dialog" aria-label="The cars you are comparing, side by side">
+  <div class="comparison-dialog__inner">
+    <div class="comparison-dialog__bar">
+      <p class="comparison-dialog__title">Side by side</p>
+      <button type="button" class="btn btn-ghost btn-sm" data-compare-dialog-close>Close</button>
+    </div>
+    <div id="comparison-dialog-body"></div>
+  </div>
+</dialog>

@@ -228,8 +228,10 @@
         }
       }
     } else if (t.closest('[data-compare-tray-go]')) {
-      var table = document.getElementById('comparison-table');
-      if (table) table.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      // Ask vehicleComparison.js for the dialog. Pointing at a table further
+      // down the page asked the shopper to go find the comparison they just
+      // asked for, which is not what a Compare button promises.
+      document.dispatchEvent(new CustomEvent('caddy:open-compare'));
     }
     // [data-shortlist-tray-send] is deliberately NOT handled here. It is an <a>
     // with a real mailto: href, and an event dispatch on top of it would replace
