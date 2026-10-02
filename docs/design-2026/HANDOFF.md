@@ -933,3 +933,29 @@ the calendar is connected.
 Verified: full suite 15/15 (no skips) with a local database; form/DB matrix
 18/18 (every endpoint's row in leads/booking_requests + gates leave no
 rows); calendar pull/push 14/14; button harnesses 78/78 + 0 static issues.
+
+---
+
+## Captcha is now fully Netlify-side on the Netlify form
+
+Per the Netlify docs (manage/forms/spam-filters): the stock-alerts form now
+uses Netlify's PROVIDED reCAPTCHA 2 -- an empty
+<div data-netlify-recaptcha="true"></div>; Netlify renders the widget at
+publish time and validates the response server-side. No Google keys of ours
+are involved. It also carries Netlify's own honeypot
+(netlify-honeypot="website"), and connect.js includes that field in the
+AJAX body, which the docs require for AJAX submissions. The earlier
+custom-sitekey setup was removed: Netlify only validates CUSTOM reCAPTCHA
+when SITE_RECAPTCHA_KEY / SITE_RECAPTCHA_SECRET are configured on the site,
+so the provided challenge is the correct Netlify-based choice.
+
+The function-backed forms cannot use Netlify's captcha -- they do not pass
+through Netlify's form pipeline -- so they keep exactly our existing
+mechanism: the honeypot (the same "website" field the lead form always
+had) plus a minimum-fill-time stamp, with Google verification dormant
+unless RECAPTCHA_SECRET_KEY is set.
+
+Verified: suite 15/15 with the live local database; buttons-live 78/78
+(honeypot in the AJAX body; alert form fully Netlify-gated); buttons-static
+0 issues; built markup confirmed; the old custom sitekey no longer appears
+anywhere in the repository.

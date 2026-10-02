@@ -25,7 +25,7 @@
 {{- $email := .Site.Params.email | default "ed@caddyed.com" -}}
 
 <form class="notify-form" id="stockAlerts" name="{{ $alerts.form_name }}"
-      method="POST" data-netlify="true" data-netlify-recaptcha="true" novalidate>
+      method="POST" data-netlify="true" netlify-honeypot="website" data-netlify-recaptcha="true" novalidate>
   <input type="hidden" name="form-name" value="{{ $alerts.form_name }}">
 
   <label class="notify-form__label" for="alertsEmail" data-setting="signage.alerts_heading">Get an email when stock lands</label>
@@ -34,16 +34,28 @@
            autocomplete="email" placeholder="Your email address" required>
     <button class="btn btn-primary" type="submit">Send me alerts</button>
   </div>
-  {{/* Netlify's own reCAPTCHA. The site key below is the one this domain has
-       used since the original build; Netlify verifies the response server-side
-       on submission, so no secret lives anywhere in this repository. */}}
-  <div class="g-recaptcha" data-sitekey="6LfDp8oUAAAAACzQ4PPl8nuXwmmJMTnpi9mXa-N3"></div>
+  {{/* Both of these are Netlify's own spam gates, checked server-side after
+       submission. No Google keys of ours are involved with either.
+       - netlify-honeypot (set on the form tag): Netlify quietly rejects any
+         submission carrying a value in the hidden "website" field below.
+         Connect.js includes the field in the AJAX body for exactly that check.
+       - Netlify-provided reCAPTCHA 2: this empty div is where Netlify renders
+         its challenge at publish time; Netlify validates the response when the
+         form is submitted. (The only variant that needs site keys is the
+         CUSTOM reCAPTCHA, which wants SITE_RECAPTCHA_KEY and
+         SITE_RECAPTCHA_SECRET on the site -- deliberately not used.) */}}
+  <div class="form-field form-field--honeypot" aria-hidden="true">
+    <label for="alerts-website">Leave this field blank</label>
+    <input type="text" id="alerts-website" name="website" tabindex="-1" autocomplete="off">
+  </div>
+  <div data-netlify-recaptcha="true"></div>
   <p class="notify-form__note" data-setting="signage.alerts_body">Used only for stock alerts from Ed. Nothing else, ever.</p>
   <div class="form-message" id="stockAlertsStatus" role="status" hidden></div>
 </form>
 
-{{/* Loaded here, on the only page with the form, rather than site-wide. */}}
-<script src="https://www.google.com/recaptcha/api.js" async defer></script>
+{{/* No recaptcha script of ours: when Netlify provides the challenge it
+     injects the widget AND its script into the empty div above at publish
+     time. Loading api.js here as well would render two widgets. */}}
 
 <div class="contact-chips stay-connected__chips">
   <a class="btn btn-outline btn-sm" href="tel:{{ partial "phone-href.html" $phone }}">Call {{ $phone }}</a>

@@ -512,8 +512,13 @@
         }
         return;
       }
+      // Netlify's honeypot only works if the field reaches the server inside
+      // the POST body (the docs say so for AJAX submissions). Empty for a
+      // person, filled by a bot -- and Netlify quietly rejects a filled one.
+      var trap = form.querySelector('[name="website"]');
       var body = "form-name=" + encodeURIComponent(CONFIG.alertFormName) +
         "&email=" + encodeURIComponent(email.value) +
+        "&website=" + encodeURIComponent(trap ? trap.value : "") +
         (token ? "&g-recaptcha-response=" + encodeURIComponent(token) : "");
       fetch("/", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: body })
         .then(function (r) {
