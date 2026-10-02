@@ -112,6 +112,13 @@ exports.handler = async function(event, context) {
     }
     data = clean;
 
+    // Bot gate: honeypot, minimum fill time, and reCAPTCHA when a secret is
+    // configured. Shared with every public form endpoint; see utils/bot-gate.js.
+    const gate = await require('./utils/bot-gate').check(data);
+    if (!gate.pass) {
+      return errorHandler.validationError('Submission rejected');
+    }
+
     // Validate required fields
     const missing = {};
     for (const field of REQUIRED_FIELDS) {

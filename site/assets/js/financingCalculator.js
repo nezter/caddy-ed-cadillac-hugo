@@ -383,6 +383,12 @@ class FinancingCalculator {
               </div>
             </div>
             
+            <div class="form-group checkbox" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden" aria-hidden="true">
+              <label for="pa-website">Leave this field blank</label>
+              <input type="text" id="pa-website" name="website" tabindex="-1" autocomplete="off">
+            </div>
+            <input type="hidden" name="_t" value="">
+
             <div class="form-actions">
               <button type="submit" class="submit-button">Submit Application</button>
             </div>
@@ -393,6 +399,11 @@ class FinancingCalculator {
     
     // Add modal to DOM
     document.body.appendChild(modal);
+
+    // The gate's clock starts when the form appears, not when the page loaded:
+    // this form does not exist until the visitor opens it.
+    const gateStamp = modal.querySelector('input[name="_t"]');
+    if (gateStamp) gateStamp.value = String(Date.now());
     
     // Prevent body scrolling
     document.body.classList.add('modal-open');

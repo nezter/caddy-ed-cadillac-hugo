@@ -45,6 +45,7 @@
   const statusEl = document.querySelector('[data-cal-status]');
   const connectEl = document.querySelector('[data-cal-connect]');
   const syncEl = document.querySelector('[data-cal-sync]');
+  const pullEl = document.querySelector('[data-cal-pull]');
   const refreshEl = document.querySelector('[data-refresh], [data-cal-refresh]');
   if (!listEl) return;
 
@@ -84,7 +85,9 @@
     listEl.innerHTML = entries.map((e) => {
       const state = e.status || 'new';
       return '<article class="booking-row is-' + esc(state) + '">' +
-        '<div class="booking-row__when">' + esc(when(e)) + '</div>' +
+        '<div class="booking-row__when">' + esc(when(e)) +
+          (e.movedOnCalendar ? ' <em class="booking-row__moved" title="Moved in Google Calendar">moved on calendar</em>' : '') +
+        '</div>' +
         '<div class="booking-row__who">' +
           '<strong>' + esc(e.fullName || 'no name') + '</strong>' +
           '<a href="mailto:' + esc(e.email || '') + '">' + esc(e.email || 'no email') + '</a>' +
@@ -95,7 +98,11 @@
           (e.comments ? '<p class="booking-row__note">' + esc(e.comments) + '</p>' : '') +
         '</div>' +
         '<div class="booking-row__state">' +
-          (e.googleEventLink
+          (state === 'cancelled-on-calendar'
+            ? '<span title="Cancelled in Google Calendar">cancelled on calendar</span>'
+            : state === 'removed-on-calendar'
+            ? '<span title="Deleted from Google Calendar">removed on calendar</span>'
+            : e.googleEventLink
             ? '<a href="' + esc(e.googleEventLink) + '" target="_blank" rel="noopener">on calendar</a>'
             : '<span>' + esc(state) + '</span>') +
         '</div>' +
@@ -130,6 +137,10 @@
   }
 
   async function loadCalendar() {
+    // Anything that talks to Google stays disabled until the connection says
+    // it is live; each branch below re-enables (or keeps disabled) both
+    // buttons together.
+    if (pullEl) pullEl.disabled = true;
     // The credential matters here even though nothing is being written.
     //
     // google-calendar.js `action=status` uses optionalAuthenticateRequest, so an
@@ -147,6 +158,7 @@
       if (body.connected) {
         say(statusEl, `Calendar connected${body.email ? ' as ' + body.email : ''}`, 'ok');
         if (syncEl) syncEl.disabled = false;
+        if (pullEl) pullEl.disabled = false;
         return;
       }
       if (body.reason === 'not-configured') {
@@ -197,6 +209,45 @@
     }
   }
 
+  async function pullAll() {
+    if (!pullEl) return;
+    pullEl.disabled = true;
+    say(statusEl, 'Checking the calendar for changes…');
+    try {
+      const res = await fetch(CALENDAR, {
+        method: 'POST',
+        headers: Object.assign({ 'Content-Type': 'application/json' }, authHeaders()),
+        body: JSON.stringify({ action: 'pull' }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (res.status === 401 || res.status === 403) {
+        say(statusEl, 'Sign in before checking the calendar', 'warn');
+        return;
+      }
+      if (!res.ok) {
+        say(statusEl, body.message || 'The calendar check failed', 'warn');
+        return;
+      }
+      const moved = (body.moved || []).length;
+      const cancelled = (body.cancelled || []).length;
+      const problems = (body.problems || []).length;
+      say(
+        statusEl,
+        'Checked ' + (body.checked || 0) + ' event(s)' +
+          (moved ? ' · ' + moved + ' moved' : '') +
+          (cancelled ? ' · ' + cancelled + ' cancelled' : '') +
+          (problems ? ' · ' + problems + ' could not be read' : ''),
+        moved || cancelled || problems ? 'warn' : 'ok'
+      );
+      await load();
+    } catch (err) {
+      console.error('calendar pull failed:', err);
+      say(statusEl, 'Check failed. Try again shortly.', 'warn');
+    } finally {
+      pullEl.disabled = false;
+    }
+  }
+
   if (connectEl) {
     connectEl.addEventListener('click', (e) => {
       // Let the browser follow the redirect, but only if we have somewhere to go.
@@ -204,6 +255,7 @@
     });
   }
   if (syncEl) syncEl.addEventListener('click', pushAll);
+  if (pullEl) pullEl.addEventListener('click', pullAll);
   if (refreshEl) refreshEl.addEventListener('click', load);
 
   load();

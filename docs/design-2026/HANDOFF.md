@@ -886,3 +886,50 @@ the close button is never visible); connect.js's stock hub is dormant on the
 rebuilt home (no #stockList container); 6 customer-portal buttons lack `type`
 but sit outside forms; customer/admin interactions verified statically only
 (they need a live database/API).
+
+---
+
+## Captcha gates, every form recorded, and a two-way calendar
+
+Three asks: gate the forms, get everything into the admin inquiries, and
+make the calendar sync both ways.
+
+GATES. New netlify/functions/utils/bot-gate.js, applied to contact-form,
+lead-form, lead-management, schedule-test-drive and pre-approval: honeypot
+('website', left blank by people, filled by bots), minimum fill time (hidden
+_t stamped at load), and reCAPTCHA when RECAPTCHA_SECRET_KEY is set -- the
+option is wired, it needs only the key. Every public form carries the hidden
+fields. The Netlify form (stock-alerts) uses Netlify's own reCAPTCHA
+(data-netlify-recaptcha, their historical site key; Netlify holds the
+secret) with the token passed through connect.js, and the CSP now allows
+Google's recaptcha endpoints. leadCapture.js used to FILTER OUT the honeypot
+before sending, so the server check could never fire; it sends it now.
+
+HONEST FAILURES. contact-form.js and lead-form.js were the only two
+endpoints that did not check inquiry's fatal flag: with no database they
+answered 'thank you' while recording nothing. Both return 503 now, like the
+other five. The lead-form page had TWO handlers on one form (forms.js and
+leadCapture.js) -- two POSTs, two records, one visitor. forms.js now
+excludes .lead-capture-form; verified exactly one submission.
+
+INQUIRIES. The stock-alerts Netlify form previously existed only in
+Netlify's dashboard; a new submission-created event function records it
+into the same leads table /admin reads. Everything else already recorded;
+that was verified for real rather than by reading: a local SQLite copy of
+the schema (database/turso/schema.sql) runs the functions end-to-end, and
+the four suite checks that were ALWAYS SKIPPED for lack of Turso (write
+behaviour, insert columns, select columns, inquiry path) now RUN -- and
+pass, alongside the whole 15-check suite.
+
+CALENDAR. Push now carries timeZone America/New_York with wall-clock
+times (it previously emitted UTC instants, so an event built on a UTC box
+showed at the wrong hour in Ed's calendar). New POST {action:'pull'}: reads
+every tracked event back from Google -- moves are written to the record
+(movedOnCalendar + new date/time), cancellations and deletions become
+cancelled-on-calendar / removed-on-calendar -- and /admin/bookings gets a
+'Pull from calendar' button beside 'Push all to calendar', enabled once
+the calendar is connected.
+
+Verified: full suite 15/15 (no skips) with a local database; form/DB matrix
+18/18 (every endpoint's row in leads/booking_requests + gates leave no
+rows); calendar pull/push 14/14; button harnesses 78/78 + 0 static issues.

@@ -79,6 +79,23 @@ const SCOPES = [
   'email',
 ];
 const CALENDAR_API = 'https://www.googleapis.com/calendar/v3';
+
+// The dealership's timezone. Appointment times are wall-clock times in
+// Charlotte -- "10:00" means ten in the morning THERE, not on whichever
+// machine built the event. Pushed events carry this zone explicitly (the
+// function used to omit it, so an event built on a UTC server landed at the
+// wrong wall-clock hour in Ed's calendar), and the pull side reads times back
+// in the same frame.
+const DEALER_TZ = 'America/New_York';
+
+/** "YYYY-MM-DDTHH:MM:00" from a Date's own local fields -- a wall-clock string. */
+function wallClock(d) {
+  const p = (n) => String(n).padStart(2, '0');
+  return (
+    d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) +
+    'T' + p(d.getHours()) + ':' + p(d.getMinutes()) + ':00'
+  );
+}
 const TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token';
 const USERINFO_ENDPOINT = 'https://www.googleapis.com/oauth2/v2/userinfo';
 
@@ -540,6 +557,108 @@ async function handler(event) {
       return json(400, { error: 'Invalid JSON body' });
     }
 
+    /* ------------------------------------------------------------- PULL
+     *
+     * "Sync back and forth": push puts requests ON the calendar; pull reads
+     * what the calendar says NOW about the events this site created --
+     * cancelled, deleted, or moved by hand -- and records it against the
+     * request, so /admin/bookings never shows a time that no longer exists.
+     */
+    if (body.action === 'pull') {
+      let pullEntries = [];
+      try {
+        pullEntries = (await bookingQueue.list()).entries;
+      } catch (e) {
+        return json(503, { error: 'queue-unavailable', message: String(e.message) });
+      }
+
+      const tracked = pullEntries.filter((e) => e.googleEventId && e.status !== 'cancelled');
+      const moved = [];
+      const cancelled = [];
+      const problems = [];
+
+      for (const req of tracked) {
+        try {
+          const res = await fetch(
+            CALENDAR_API + '/calendars/primary/events/' + encodeURIComponent(req.googleEventId),
+            { headers: { Authorization: 'Bearer ' + token } }
+          );
+          if (res.status === 404 || res.status === 410) {
+            await bookingQueue.update(req.id, {
+              status: 'removed-on-calendar',
+              calendarCheckedAt: new Date().toISOString(),
+            });
+            cancelled.push({ id: req.id, reason: 'removed' });
+            continue;
+          }
+          const ev = await res.json();
+          if (!res.ok) {
+            throw new Error((ev.error && ev.error.message) || 'calendar read failed');
+          }
+          if (ev.status === 'cancelled') {
+            await bookingQueue.update(req.id, {
+              status: 'cancelled-on-calendar',
+              calendarCheckedAt: new Date().toISOString(),
+            });
+            cancelled.push({ id: req.id, reason: 'cancelled' });
+            continue;
+          }
+
+          const start = ev.start || {};
+          let date = null;
+          let time = null;
+          if (start.dateTime) {
+            if (start.timeZone === DEALER_TZ || !/[Zz]|[+-][0-9][0-9]:[0-9][0-9]$/.test(start.dateTime)) {
+              // Already a wall-clock string in the right frame: take it as-is.
+              date = start.dateTime.slice(0, 10);
+              time = start.dateTime.slice(11, 16);
+            } else {
+              // An absolute instant: render it as the wall clock in Charlotte.
+              const parts = new Intl.DateTimeFormat('en-CA', {
+                timeZone: DEALER_TZ, year: 'numeric', month: '2-digit', day: '2-digit',
+                hour: '2-digit', minute: '2-digit', hour12: false,
+              }).formatToParts(new Date(start.dateTime));
+              const get = (t2) => (parts.find((p) => p.type === t2) || {}).value || '';
+              date = get('year') + '-' + get('month') + '-' + get('day');
+              time = get('hour') + ':' + get('minute');
+            }
+          } else if (start.date) {
+            date = start.date;
+            time = req.preferredTime;
+          }
+
+          if (date && time && (date !== req.preferredDate || time !== req.preferredTime)) {
+            await bookingQueue.update(req.id, {
+              preferredDate: date,
+              preferredTime: time,
+              movedOnCalendar: true,
+              movedFrom: ((req.preferredDate || '') + ' ' + (req.preferredTime || '')).trim(),
+              calendarCheckedAt: new Date().toISOString(),
+            });
+            moved.push({
+              id: req.id,
+              from: (req.preferredDate || '') + ' ' + (req.preferredTime || ''),
+              to: date + ' ' + time,
+            });
+            continue;
+          }
+
+          await bookingQueue.update(req.id, { calendarCheckedAt: new Date().toISOString() });
+        } catch (err) {
+          problems.push({ id: req.id, error: err.message });
+        }
+      }
+
+      return json(200, {
+        pulled: true,
+        checked: tracked.length,
+        moved,
+        cancelled,
+        problems,
+        checkedAt: new Date().toISOString(),
+      });
+    }
+
     let entries = [];
     try {
       entries = (await bookingQueue.list()).entries;
@@ -578,8 +697,8 @@ async function handler(event) {
               + (req.comments ? `Note: ${req.comments}\n` : '')
               + `Sent to Caddy Ed via caddyed.com. Reply to ${req.email} to confirm.`,
             location: '10725 Pineville Rd, Pineville, NC 28134',
-            start: { dateTime: start.toISOString() },
-            end: { dateTime: new Date(start.getTime() + 45 * 60_000).toISOString() },
+            start: { dateTime: wallClock(start), timeZone: DEALER_TZ },
+            end: { dateTime: wallClock(new Date(start.getTime() + 45 * 60_000)), timeZone: DEALER_TZ },
           }),
         });
         const created = await res.json();

@@ -119,6 +119,12 @@ const PUBLIC_BY_DESIGN = new Map([
   ['admin-guard', 'IS the guard. Required by other functions, not served itself.'],
   ['booking-queue', 'Mixed: the library half is called in-process; the HTTP half is staff-only.'],
   ['google-calendar', 'Guards per action: status optional, connect/sync required.'],
+  [
+    'submission-created',
+    'Netlify FORM EVENT function -- invoked by the platform with a verified ' +
+      'submission, never served at a URL. Records the signup into the leads ' +
+      'table and returns nothing.',
+  ],
 ]);
 
 /** Tables whose rows are, or contain, customer identity. */

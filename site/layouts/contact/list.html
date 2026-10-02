@@ -86,6 +86,11 @@
 
       <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-top:1rem">
         <p class="mono-label" style="color:#6f7683;margin:0">Used to answer you. Nothing else, ever.</p>
+  <div class="form-field form-field--honeypot" aria-hidden="true">
+    <label for="contact-website">Leave this field blank</label>
+    <input type="text" id="contact-website" name="website" tabindex="-1" autocomplete="off">
+  </div>
+  <input type="hidden" name="_t" value="">
         <button type="submit" class="btn btn--red btn--lg">{{ .Params.form.submit_button | default "Send message" }}</button>
       </div>
 

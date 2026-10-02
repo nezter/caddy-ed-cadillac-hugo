@@ -68,6 +68,11 @@ calendar. Choose a day, pick a slot, and it confirms before you leave.
       <label for="appointment-phone">Phone <span aria-hidden="true">*</span></label>
       <input type="tel" id="appointment-phone" name="phone" required autocomplete="tel">
     </div>
+  <div class="form-field form-field--honeypot" aria-hidden="true">
+    <label for="appt-website">Leave this field blank</label>
+    <input type="text" id="appt-website" name="website" tabindex="-1" autocomplete="off">
+  </div>
+  <input type="hidden" name="_t" value="">
     <button type="submit" class="btn btn-primary">Request this appointment</button>
     <p class="form-message" id="appointment-status" role="status" hidden></p>
   </form>

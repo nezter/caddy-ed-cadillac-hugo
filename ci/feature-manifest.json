@@ -69,6 +69,7 @@
   },
   "notafunc": {},
   "operational": {
-    "health-check": "reachable at /health via a [[redirects]] alias; called by a monitor, not by a page. Verified by curl, not by a bundle."
+    "health-check": "reachable at /health via a [[redirects]] alias; called by a monitor, not by a page. Verified by curl, not by a bundle.",
+    "submission-created": "Netlify EVENT function -- the platform invokes it on every verified Netlify form submission (the stock-alerts signup) and it is never served at a URL. Records the signup into the same leads table /admin/leads reads; always answers 200 so a platform retry cannot duplicate the lead."
   }
 }

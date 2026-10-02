@@ -12,7 +12,8 @@ scripts:
 <p class="lede">
   Every test-drive request sent through this site, newest first. These are kept on
   Netlify's own storage, so they survive even before the customer database exists.
-  Mark one handled, or push the whole list onto your Google Calendar.
+  Push the list onto your Google Calendar, and pull back anything you have
+  moved or cancelled there — both directions, once the calendar is connected.
 </p>
 
 <div class="bookings-bar">
@@ -20,6 +21,7 @@ scripts:
   <div class="bookings-bar__actions">
     <a class="btn btn-outline btn-sm" data-cal-connect href="/?action=start">Connect Google Calendar</a>
     <button class="btn btn-primary btn-sm" type="button" data-cal-sync disabled>Push all to calendar</button>
+    <button class="btn btn-ghost btn-sm" type="button" data-cal-pull disabled>Pull from calendar</button>
     <button class="btn btn-ghost btn-sm" type="button" data-cal-refresh>Refresh</button>
   </div>
 </div>

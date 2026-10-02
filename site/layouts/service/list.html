@@ -96,6 +96,11 @@ What it is doing, or which service it is due:
 Preferred day:
 </textarea>
       </div>
+  <div class="form-field form-field--honeypot" aria-hidden="true">
+    <label for="service-website">Leave this field blank</label>
+    <input type="text" id="service-website" name="website" tabindex="-1" autocomplete="off">
+  </div>
+  <input type="hidden" name="_t" value="">
       <button type="submit" class="btn btn-primary btn-lg" style="width:100%">Request a service slot</button>
       <p class="form-message form-message--success hidden" id="form-success" role="status">
         Thank you — your request is with Ed, and you will get a time back shortly.

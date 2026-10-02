@@ -44,6 +44,17 @@ exports.handler = async function (event) {
     };
   }
 
+  // Bot gate: honeypot, minimum fill time, and reCAPTCHA when a secret is
+  // configured. Shared with every public form endpoint; see utils/bot-gate.js.
+  const gate = await require('./utils/bot-gate').check(body);
+  if (!gate.pass) {
+    return {
+      statusCode: 400,
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+      body: JSON.stringify({ error: 'Submission rejected' })
+    };
+  }
+
   // Validate the minimum required fields.
   const required = ['firstName', 'lastName', 'email', 'phone'];
   const missing = required.filter((f) => !body[f]);

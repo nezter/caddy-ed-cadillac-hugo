@@ -4,7 +4,11 @@
 
 class FormHandler {
   constructor() {
-    this.forms = document.querySelectorAll('form.lead-form');
+    // :not(.lead-capture-form) -- the lead-form PAGE's form carries both
+    // classes, and leadCapture.js owns that one (its own endpoint, field
+    // errors, popup). Without the exclusion BOTH handlers ran on one submit:
+    // two POSTs, two records, one visitor.
+    this.forms = document.querySelectorAll('form.lead-form:not(.lead-capture-form)');
     this.init();
   }
 

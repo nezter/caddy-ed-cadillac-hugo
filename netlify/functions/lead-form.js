@@ -17,8 +17,10 @@ exports.handler = async function(event, context) {
     return errorHandler.validationError('Invalid JSON in request body');
   }
 
-  // Honeypot check: a field bots usually fill but humans never see
-  if (data.website && String(data.website).trim() !== '') {
+  // Bot gate: honeypot, minimum fill time, and reCAPTCHA when a secret is
+  // configured. Shared with every public form endpoint; see utils/bot-gate.js.
+  const gate = await require('./utils/bot-gate').check(data);
+  if (!gate.pass) {
     return errorHandler.validationError('Submission rejected');
   }
 
@@ -82,6 +84,18 @@ exports.handler = async function(event, context) {
       formType,
       source: 'website',
     });
+
+    if (outcome.fatal) {
+      // No database: there is no system of record, so a success would be a lie.
+      return {
+        statusCode: 503,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          success: false,
+          message: 'We could not record that just now. Please call us on the number on this page and we will take it from there.',
+        }),
+      };
+    }
 
     // The customer is told it is received, which is TRUE: the lead is a row in
     // this site's database and /admin/leads lists it.

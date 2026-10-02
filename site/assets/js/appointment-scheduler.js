@@ -190,6 +190,8 @@ class AppointmentScheduler {
           preferredDate: date,
           preferredTime: time,
           comments: 'Appointment type: ' + typeLabel + '. Representative: ' + repLabel + '.',
+          website: (this.appointmentForm.querySelector('[name="website"]') || {}).value || '',
+          _t: (this.appointmentForm.querySelector('[name="_t"]') || {}).value || '',
         };
 
         const idle = this.submitButton ? this.submitButton.textContent : '';

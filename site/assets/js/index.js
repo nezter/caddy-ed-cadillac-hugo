@@ -65,6 +65,13 @@ document.addEventListener("DOMContentLoaded", () => {
   // and the × icon animation following the aria value, not the menu. One
   // handler, one truth.
 
+  // Bot gate timestamps. Every public form carries a hidden _t field; the
+  // shared gate (netlify/functions/utils/bot-gate.js) refuses submissions that
+  // arrive faster than a person can fill the form. Stamp at load, once.
+  document.querySelectorAll('form input[name="_t"]').forEach((el) => {
+    if (!el.value) el.value = String(Date.now());
+  });
+
   // Contact form handling
   const contactForm = document.querySelector('#contact-form');
   if (contactForm) {

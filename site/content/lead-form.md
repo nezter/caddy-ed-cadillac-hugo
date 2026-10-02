@@ -57,6 +57,7 @@ scripts:
       <input type="text" id="lead-website" name="website" tabindex="-1" autocomplete="off">
     </div>
     <div class="form-field">
+  <input type="hidden" name="_t" value="">
       <button type="submit" class="btn btn-primary btn-lg">Send my details</button>
     </div>
     <p class="form-message form-message--success hidden" id="lead-form-success" role="status">

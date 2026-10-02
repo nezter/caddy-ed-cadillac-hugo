@@ -18,6 +18,13 @@ exports.handler = async function(event, context) {
       return errorHandler.validationError('Invalid JSON in request body');
     }
 
+    // Bot gate: honeypot, minimum fill time, and reCAPTCHA when a secret is
+    // configured. Shared with every public form endpoint; see utils/bot-gate.js.
+    const gate = await require('./utils/bot-gate').check(formData);
+    if (!gate.pass) {
+      return errorHandler.validationError('Submission rejected');
+    }
+
     // Validate required fields
     if (!formData.name || !formData.email) {
       return errorHandler.validationError('Name and email are required', {
@@ -55,6 +62,18 @@ exports.handler = async function(event, context) {
       formType: 'contact',
       source: 'contact_form',
     });
+
+    if (outcome.fatal) {
+      // No database: there is no system of record, so a success would be a lie.
+      return {
+        statusCode: 503,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          success: false,
+          message: 'We could not record that just now. Please call us on the number on this page and we will take it from there.',
+        }),
+      };
+    }
 
     // Log the contact form submission as an interaction
     try {

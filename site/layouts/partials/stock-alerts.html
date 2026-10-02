@@ -25,7 +25,7 @@
 {{- $email := .Site.Params.email | default "ed@caddyed.com" -}}
 
 <form class="notify-form" id="stockAlerts" name="{{ $alerts.form_name }}"
-      method="POST" data-netlify="true" novalidate>
+      method="POST" data-netlify="true" data-netlify-recaptcha="true" novalidate>
   <input type="hidden" name="form-name" value="{{ $alerts.form_name }}">
 
   <label class="notify-form__label" for="alertsEmail" data-setting="signage.alerts_heading">Get an email when stock lands</label>
@@ -34,9 +34,16 @@
            autocomplete="email" placeholder="Your email address" required>
     <button class="btn btn-primary" type="submit">Send me alerts</button>
   </div>
+  {{/* Netlify's own reCAPTCHA. The site key below is the one this domain has
+       used since the original build; Netlify verifies the response server-side
+       on submission, so no secret lives anywhere in this repository. */}}
+  <div class="g-recaptcha" data-sitekey="6LfDp8oUAAAAACzQ4PPl8nuXwmmJMTnpi9mXa-N3"></div>
   <p class="notify-form__note" data-setting="signage.alerts_body">Used only for stock alerts from Ed. Nothing else, ever.</p>
   <div class="form-message" id="stockAlertsStatus" role="status" hidden></div>
 </form>
+
+{{/* Loaded here, on the only page with the form, rather than site-wide. */}}
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
 
 <div class="contact-chips stay-connected__chips">
   <a class="btn btn-outline btn-sm" href="tel:{{ partial "phone-href.html" $phone }}">Call {{ $phone }}</a>

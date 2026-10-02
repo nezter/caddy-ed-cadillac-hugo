@@ -281,6 +281,8 @@
         email: email,
         phone: val("phone"),
         vehicle: vehicle,
+        website: val("website"),
+        _t: val("_t"),
         subject: vehicle ? "Vehicle question: " + vehicle : "Vehicle question from the website",
         message: message
       };
@@ -490,9 +492,29 @@
         if (email) email.focus();
         return;
       }
-      var body = "form-name=" + encodeURIComponent(CONFIG.alertFormName) +
-        "&email=" + encodeURIComponent(email.value);
       if (!window.fetch) return;
+      // Netlify's reCAPTCHA (data-netlify-recaptcha on the form) verifies the
+      // token server-side. If the widget is still loading -- blocked network,
+      // slow connection -- submission proceeds and Netlify answers for itself
+      // rather than this code inventing a failure; if it HAS loaded and is
+      // unticked, say so instead of posting something Netlify will reject.
+      var token = "";
+      try {
+        if (window.grecaptcha && typeof window.grecaptcha.getResponse === "function") {
+          token = window.grecaptcha.getResponse() || "";
+        }
+      } catch (e) { token = ""; }
+      if (!token && window.grecaptcha) {
+        if (status) {
+          status.className = "form-message form-message--error";
+          status.textContent = "Please tick the \u201CI\u2019m not a robot\u201D box, then send again.";
+          status.hidden = false;
+        }
+        return;
+      }
+      var body = "form-name=" + encodeURIComponent(CONFIG.alertFormName) +
+        "&email=" + encodeURIComponent(email.value) +
+        (token ? "&g-recaptcha-response=" + encodeURIComponent(token) : "");
       fetch("/", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: body })
         .then(function (r) {
           if (!r.ok) throw new Error("bad");

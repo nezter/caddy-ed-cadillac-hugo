@@ -143,8 +143,11 @@
       startedAt: form.dataset.startedAt || new Date().toISOString(),
       submittedAt: new Date().toISOString()
     };
+    // The honeypot is INCLUDED, not dropped: the server re-checks it (a filled
+    // one is refused in utils/bot-gate.js). It was filtered out here, so the
+    // server-side half of the same check could never fire.
     formData.forEach((value, key) => {
-      if (key !== 'website') payload[key] = value;
+      payload[key] = value;
     });
 
     fetch(ENDPOINT, {
