@@ -357,6 +357,87 @@ if (clearBtn) {
   );
 }
 
+// THE RAIL: a second surface for the same store
+// --------------------------------------------------
+// The shortlist appears in two places -- the bottom strip, and the filter rail.
+// The strip does not exist until something is saved, so it can never tell
+// anybody the feature is there; the rail is where a visitor is already reading
+// controls.
+//
+// Both are rendered from one store, so they cannot disagree -- in principle.
+// That is precisely the thing worth asserting, because two renderers reading
+// one store is exactly how two surfaces start disagreeing: one gets a change
+// and the other does not, and it looks right until the second click.
+const railWin = boot(html, 'http://preview.test/inventory/');
+const rdoc = railWin.document;
+const railItems = rdoc.querySelector('[data-shortlist-rail-items]');
+check('the filter rail has a shortlist region', Boolean(railItems));
+check(
+  '...and it starts empty, with an explanation rather than a blank box',
+  railItems && railItems.hidden === true &&
+    Boolean(rdoc.querySelector('[data-shortlist-rail-empty]'))
+);
+
+Array.from(rdoc.querySelectorAll('[data-shortlist-toggle]')).slice(0, 2).forEach((b) => b.click());
+
+check(
+  'shortlisting a car shows it in the rail',
+  rdoc.querySelectorAll('[data-shortlist-rail-items] li').length === 2,
+  `${rdoc.querySelectorAll('[data-shortlist-rail-items] li').length} rail chips`
+);
+check(
+  '...and the rail empties its own placeholder',
+  rdoc.querySelector('[data-shortlist-rail-empty]').hidden === true
+);
+check(
+  '...and offers its Send control once there is something to send',
+  rdoc.querySelector('[data-shortlist-rail-actions]').hidden === false
+);
+
+// THE ONE THAT MATTERS: the two surfaces agree.
+check(
+  'the rail and the strip show the SAME number of cars',
+  rdoc.querySelectorAll('[data-shortlist-rail-items] li').length ===
+    rdoc.querySelectorAll('[data-shortlist-tray-items] .shortlist__item').length,
+  `rail ${rdoc.querySelectorAll('[data-shortlist-rail-items] li').length} vs ` +
+    `strip ${rdoc.querySelectorAll('[data-shortlist-tray-items] .shortlist__item').length}`
+);
+
+// ...and they stay in step when the store changes, in BOTH directions.
+const railRemove = rdoc.querySelector('[data-rail-remove]');
+check('a rail chip has its own remove control', Boolean(railRemove));
+if (railRemove) {
+  railRemove.click();
+  check(
+    'removing from the RAIL takes the car out of the STRIP too',
+    rdoc.querySelectorAll('[data-shortlist-rail-items] li').length === 1 &&
+      rdoc.querySelectorAll('[data-shortlist-tray-items] .shortlist__item').length === 1,
+    `rail ${rdoc.querySelectorAll('[data-shortlist-rail-items] li').length}, ` +
+      `strip ${rdoc.querySelectorAll('[data-shortlist-tray-items] .shortlist__item').length}`
+  );
+}
+
+// Back the other way: a strip remove must empty the rail.
+const backWin = boot(html, 'http://preview.test/inventory/');
+Array.from(backWin.document.querySelectorAll('[data-shortlist-toggle]')).slice(0, 2).forEach((b) => b.click());
+const backStripRemove = backWin.document.querySelector('[data-shortlist-tray-remove]');
+check('a strip chip has a remove control of its own', Boolean(backStripRemove));
+if (backStripRemove) {
+  backStripRemove.click();
+  check(
+    'removing from the STRIP takes the car out of the RAIL too',
+    backWin.document.querySelectorAll('[data-shortlist-rail-items] li').length === 1,
+    `${backWin.document.querySelectorAll('[data-shortlist-rail-items] li').length} rail chips left`
+  );
+}
+
+const railChipText = (rdoc.querySelector('[data-shortlist-rail-items] li') || {}).textContent || '';
+check(
+  'a rail chip names the car rather than showing a slug',
+  railChipText.trim().length > 4,
+  `"${railChipText.trim()}"`
+);
+
 console.log('');
 for (const r of results) {
   const mark = r.pass ? 'ok  ' : 'FAIL';
