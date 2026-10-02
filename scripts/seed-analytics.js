@@ -3,11 +3,21 @@
 /**
  * Seed Analytics Data
  * Populates the database with sample sales performance and analytics data
+ *
+ * GUARDED. This is the most dangerous of the four, because its numbers are
+ * aggregates: seeded revenue and conversion figures look exactly like real ones
+ * on a dashboard, and nobody checks the arithmetic on a page they believe.
  */
 
 require('dotenv').config();
 
 const DatabaseService = require('../netlify/functions/utils/database-service');
+const { requireSeedAcknowledgement } = require('./require-seed-acknowledgement');
+
+requireSeedAcknowledgement({
+  what: 'sample sales analytics, performance metrics and revenue figures',
+  undo: "DELETE FROM analytics_data WHERE is_sample = true;  // or drop by date range",
+});
 
 async function seedAnalyticsData() {
   console.log('📊 Seeding analytics and performance data...');

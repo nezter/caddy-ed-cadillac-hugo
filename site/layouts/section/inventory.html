@@ -2,7 +2,7 @@
      partials/assets.html on EVERY page, which put the weight of one
      section on all 56 -- and, for customer-portal.css, let a
      component sheet win the cascade over main.css site-wide. */ -}}
-{{ define "headStyles" }}{{ partial "stylesheet.html" "inventory.scss" }}{{ partial "stylesheet.html" "components/shortlist.css" }}{{ end }}
+{{ define "headStyles" }}{{ partial "stylesheet.html" "inventory.scss" }}{{ partial "stylesheet.html" "components/shortlist.css" }}{{ partial "stylesheet.html" "components/pick-tray.css" }}{{ end }}
 
 {{ define "main" }}
 {{- /* ---------------------------------------------------------------------

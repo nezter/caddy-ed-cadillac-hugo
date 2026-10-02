@@ -51,6 +51,7 @@ try {
 
 const ROOT = path.resolve(__dirname, '..');
 const PAGE = path.join(ROOT, 'site', 'public', 'inventory', 'index.html');
+const TRAY = path.join(ROOT, 'site', 'assets', 'js', 'compare-tray.js');
 const SHORTLIST = path.join(ROOT, 'site', 'assets', 'js', 'shortlist.js');
 const COMPARE = path.join(ROOT, 'site', 'assets', 'js', 'vehicleComparison.js');
 
@@ -83,6 +84,11 @@ function boot(html, url = 'http://preview.test/inventory/') {
   if (!window.URL.createObjectURL) window.URL.createObjectURL = () => 'blob:x';
 
   const run = (code) => window.eval(code);
+  // The shared strip FIRST. It publishes window.CaddyPickTray, and both feature
+  // scripts look for it while they render -- so loading it after them would
+  // quietly exercise only their standalone fallbacks and every strip assertion
+  // below would pass against a bar that no real page ever builds.
+  run(fs.readFileSync(TRAY, 'utf8'));
   run(fs.readFileSync(SHORTLIST, 'utf8'));
   run(fs.readFileSync(COMPARE, 'utf8'));
   // Both scripts register on DOMContentLoaded; jsdom has already fired by the
@@ -235,6 +241,204 @@ check(
   'a link carrying ?compare= opens with that car already in the table',
   Boolean(sharedWin.document.querySelector('#comparison-table table')),
   sharedWin.document.getElementById('comparison-table').className
+);
+
+// --- the strip: what the shopper can SEE they have chosen --------------------
+// The complaint this answers: you can tick Compare on a car, and nothing at all
+// happens. The table is at the bottom of the page, so a shopper with two cars
+// chosen cannot see that, cannot see WHICH, and cannot take one back without
+// finding the card again. Compare had no equivalent of the shortlist's bar.
+//
+// A fresh window, so the state here is three chosen cars and an empty
+// shortlist, and the assertions do not inherit the clicking above.
+const trayWin = boot(html, 'http://preview.test/inventory/');
+const tdoc = trayWin.document;
+const pickThree = Array.from(tdoc.querySelectorAll('[data-compare-toggle]')).slice(0, 3);
+pickThree.forEach((b) => b.click());
+
+const tray = tdoc.getElementById('pick-tray');
+check('the strip exists once a car is chosen', Boolean(tray), tray ? tray.id : 'no #pick-tray');
+check('...and it is visible', Boolean(tray) && !tray.hidden);
+
+const compareChips = tdoc.querySelectorAll('[data-compare-tray-items] .shortlist__item');
+check(
+  'each chosen car is shown as a chip',
+  compareChips.length === 3,
+  `${compareChips.length} chips`
+);
+check(
+  'the chip names the car, not just its slug',
+  Array.from(compareChips).some((c) => c.textContent.trim().length > 4),
+  compareChips[0] ? `"${compareChips[0].textContent.trim()}"` : 'none'
+);
+check(
+  'the compare count reads 3',
+  (tdoc.querySelector('[data-compare-tray-count]') || {}).textContent === '3',
+  (tdoc.querySelector('[data-compare-tray-count]') || {}).textContent
+);
+
+// The master button, styled as the shortlist's own. One car is not a comparison,
+// and the button says so rather than being silently inert.
+const go = tdoc.querySelector('[data-compare-tray-go]');
+check('the compare section has its own master button', Boolean(go));
+check('...enabled once two cars are chosen', Boolean(go) && !go.disabled);
+check(
+  '...saying how many are going into the table',
+  Boolean(go) && /3/.test(go.textContent),
+  go ? `"${go.textContent}"` : 'none'
+);
+
+const oneWin = boot(html, 'http://preview.test/inventory/');
+oneWin.document.querySelector('[data-compare-toggle]').click();
+const goOne = oneWin.document.querySelector('[data-compare-tray-go]');
+check(
+  'with ONE car the button is disabled and says so',
+  Boolean(goOne) && goOne.disabled && /one more/i.test(goOne.textContent),
+  goOne ? `disabled=${goOne.disabled} "${goOne.textContent}"` : 'no button'
+);
+
+// A chip is a control, not decoration.
+const chipRemove = tdoc.querySelector('[data-compare-tray-remove]');
+check('each chip has its own remove control', Boolean(chipRemove));
+if (chipRemove) {
+  const before = tdoc.querySelectorAll('[data-compare-tray-items] .shortlist__item').length;
+  chipRemove.click();
+  const after = tdoc.querySelectorAll('[data-compare-tray-items] .shortlist__item').length;
+  check('removing a chip takes that car out of the strip', after === before - 1, `${before} -> ${after}`);
+  check(
+    '...and out of the table too, not just the chips',
+    tdoc.querySelectorAll('#comparison-table thead th').length === after + 1,
+    `${tdoc.querySelectorAll('#comparison-table thead th').length} header cells`
+  );
+}
+
+// ONE bar, not two. This is the whole reason the strip is shared: two fixed
+// bottom strips sit on top of each other, and the top one takes every click.
+const bothWin = boot(html, 'http://preview.test/inventory/');
+bothWin.document.querySelector('[data-compare-toggle]').click();
+// Array.from, not .slice() on the NodeList. A NodeList has no slice method, so
+// this threw before any assertion below ran -- which is why "39 assertions"
+// could have been 39 assertions that never executed.
+Array.from(bothWin.document.querySelectorAll('[data-shortlist-toggle]')).slice(0, 2).forEach((b) => b.click());
+const bdoc = bothWin.document;
+check(
+  'compare AND shortlist share ONE strip, not two overlapping bars',
+  bdoc.querySelectorAll('.shortlist[id]').length === 1,
+  `${bdoc.querySelectorAll('.shortlist[id]').length} strips`
+);
+check(
+  '...with both sections shown, each with its own chips',
+  bdoc.querySelectorAll('[data-compare-tray-items] .shortlist__item').length === 1 &&
+    bdoc.querySelectorAll('[data-shortlist-tray-items] .shortlist__item').length === 2,
+  `${bdoc.querySelectorAll('[data-compare-tray-items] .shortlist__item').length} compare / ` +
+    `${bdoc.querySelectorAll('[data-shortlist-tray-items] .shortlist__item').length} shortlist`
+);
+check(
+  '...and each section has its own master button',
+  Boolean(bdoc.querySelector('[data-compare-tray-go]')) &&
+    Boolean(bdoc.querySelector('[data-shortlist-tray-send]'))
+);
+check(
+  'the body reserves room for the strip, so the last row of cards stays clickable',
+  bdoc.body.classList.contains('has-shortlist'),
+  bdoc.body.className || '(no class)'
+);
+
+// Clear empties the compare section and the strip goes with it.
+// Clear empties the compare section, and the strip goes with it. Nothing is
+// shortlisted in this window, so there is nothing left to show -- a bar sitting
+// there saying "0 cars" is noise, and it also sits over the bottom row of cards.
+const clearBtn = tdoc.querySelector('[data-compare-tray-clear]');
+check('the compare section has a Clear control', Boolean(clearBtn));
+if (clearBtn) {
+  clearBtn.click();
+  const strip = tdoc.getElementById('pick-tray');
+  check(
+    'clearing with nothing else chosen takes the strip away entirely',
+    strip.hidden && !tdoc.body.classList.contains('has-shortlist'),
+    `hidden=${strip.hidden} body="${tdoc.body.className}"`
+  );
+}
+
+// THE RAIL: a second surface for the same store
+// --------------------------------------------------
+// The shortlist appears in two places -- the bottom strip, and the filter rail.
+// The strip does not exist until something is saved, so it can never tell
+// anybody the feature is there; the rail is where a visitor is already reading
+// controls.
+//
+// Both are rendered from one store, so they cannot disagree -- in principle.
+// That is precisely the thing worth asserting, because two renderers reading
+// one store is exactly how two surfaces start disagreeing: one gets a change
+// and the other does not, and it looks right until the second click.
+const railWin = boot(html, 'http://preview.test/inventory/');
+const rdoc = railWin.document;
+const railItems = rdoc.querySelector('[data-shortlist-rail-items]');
+check('the filter rail has a shortlist region', Boolean(railItems));
+check(
+  '...and it starts empty, with an explanation rather than a blank box',
+  railItems && railItems.hidden === true &&
+    Boolean(rdoc.querySelector('[data-shortlist-rail-empty]'))
+);
+
+Array.from(rdoc.querySelectorAll('[data-shortlist-toggle]')).slice(0, 2).forEach((b) => b.click());
+
+check(
+  'shortlisting a car shows it in the rail',
+  rdoc.querySelectorAll('[data-shortlist-rail-items] li').length === 2,
+  `${rdoc.querySelectorAll('[data-shortlist-rail-items] li').length} rail chips`
+);
+check(
+  '...and the rail empties its own placeholder',
+  rdoc.querySelector('[data-shortlist-rail-empty]').hidden === true
+);
+check(
+  '...and offers its Send control once there is something to send',
+  rdoc.querySelector('[data-shortlist-rail-actions]').hidden === false
+);
+
+// THE ONE THAT MATTERS: the two surfaces agree.
+check(
+  'the rail and the strip show the SAME number of cars',
+  rdoc.querySelectorAll('[data-shortlist-rail-items] li').length ===
+    rdoc.querySelectorAll('[data-shortlist-tray-items] .shortlist__item').length,
+  `rail ${rdoc.querySelectorAll('[data-shortlist-rail-items] li').length} vs ` +
+    `strip ${rdoc.querySelectorAll('[data-shortlist-tray-items] .shortlist__item').length}`
+);
+
+// ...and they stay in step when the store changes, in BOTH directions.
+const railRemove = rdoc.querySelector('[data-rail-remove]');
+check('a rail chip has its own remove control', Boolean(railRemove));
+if (railRemove) {
+  railRemove.click();
+  check(
+    'removing from the RAIL takes the car out of the STRIP too',
+    rdoc.querySelectorAll('[data-shortlist-rail-items] li').length === 1 &&
+      rdoc.querySelectorAll('[data-shortlist-tray-items] .shortlist__item').length === 1,
+    `rail ${rdoc.querySelectorAll('[data-shortlist-rail-items] li').length}, ` +
+      `strip ${rdoc.querySelectorAll('[data-shortlist-tray-items] .shortlist__item').length}`
+  );
+}
+
+// Back the other way: a strip remove must empty the rail.
+const backWin = boot(html, 'http://preview.test/inventory/');
+Array.from(backWin.document.querySelectorAll('[data-shortlist-toggle]')).slice(0, 2).forEach((b) => b.click());
+const backStripRemove = backWin.document.querySelector('[data-shortlist-tray-remove]');
+check('a strip chip has a remove control of its own', Boolean(backStripRemove));
+if (backStripRemove) {
+  backStripRemove.click();
+  check(
+    'removing from the STRIP takes the car out of the RAIL too',
+    backWin.document.querySelectorAll('[data-shortlist-rail-items] li').length === 1,
+    `${backWin.document.querySelectorAll('[data-shortlist-rail-items] li').length} rail chips left`
+  );
+}
+
+const railChipText = (rdoc.querySelector('[data-shortlist-rail-items] li') || {}).textContent || '';
+check(
+  'a rail chip names the car rather than showing a slug',
+  railChipText.trim().length > 4,
+  `"${railChipText.trim()}"`
 );
 
 console.log('');

@@ -17,6 +17,30 @@
   const QUEUE = '/.netlify/functions/booking-queue';
   const CALENDAR = '/.netlify/functions/google-calendar';
 
+  /**
+   * The admin session token, read from the same place every other admin script
+   * reads it.
+   *
+   * booking-queue.js is staff-only, and it has to be: it returns full name,
+   * email address and phone number for every booking request. It used to be open
+   * to anyone, with `Access-Control-Allow-Origin: *`, so the customer list was
+   * readable from any web page on the internet.
+   *
+   * This call sent no credential at all -- a bare `fetch(QUEUE)` -- so adding the
+   * guard is only half the fix. Without this header the admin page would simply
+   * have stopped working, and "the admin bookings page is empty" is not a
+   * description of a security fix.
+   */
+  function authHeaders() {
+    let token = '';
+    try {
+      token = window.localStorage.getItem('caddyed_admin_token') || '';
+    } catch (e) {
+      token = '';
+    }
+    return token ? { Authorization: 'Bearer ' + token } : {};
+  }
+
   const listEl = document.querySelector('[data-bookings-list]');
   const statusEl = document.querySelector('[data-cal-status]');
   const connectEl = document.querySelector('[data-cal-connect]');
@@ -81,7 +105,17 @@
 
   async function load() {
     try {
-      const res = await fetch(QUEUE);
+      const res = await fetch(QUEUE, { headers: authHeaders() });
+      if (res.status === 401 || res.status === 403) {
+        // Distinguished from "the queue is broken" on purpose. These used to
+        // share one failure path that rendered an empty list, so a 401 looked
+        // exactly like a dealership with no bookings -- which is the message you
+        // would most want someone to believe.
+        render([], false);
+        say(statusEl, 'Sign in to see booking requests', 'warn');
+        listEl.innerHTML = '<p class="bookings-empty">Sign in to see booking requests.</p>';
+        return;
+      }
       const body = await res.json();
       if (body.error) {
         render([], false);
@@ -96,8 +130,19 @@
   }
 
   async function loadCalendar() {
+    // The credential matters here even though nothing is being written.
+    //
+    // google-calendar.js `action=status` uses optionalAuthenticateRequest, so an
+    // anonymous caller gets `{connected: false, reason: 'not-signed-in'}` rather
+    // than an error. That is the right server behaviour -- a signed-out visitor
+    // should not see a 401 in their console -- but it meant this page asked the
+    // question without the token and was always told "not signed in".
+    //
+    // So the calendar panel reported "Calendar not connected yet" on a site where
+    // the calendar was connected, and offered the Connect link again, which would
+    // have started a second OAuth grant against the same account.
     try {
-      const res = await fetch(`${CALENDAR}?action=status`);
+      const res = await fetch(`${CALENDAR}?action=status`, { headers: authHeaders() });
       const body = await res.json();
       if (body.connected) {
         say(statusEl, `Calendar connected${body.email ? ' as ' + body.email : ''}`, 'ok');
@@ -129,8 +174,12 @@
     syncEl.disabled = true;
     say(statusEl, 'Pushing to Google Calendar…');
     try {
-      const res = await fetch(CALENDAR, { method: 'POST' });
+      const res = await fetch(CALENDAR, { method: 'POST', headers: authHeaders() });
       const body = await res.json();
+      if (res.status === 401 || res.status === 403) {
+        say(statusEl, 'Sign in before pushing to the calendar', 'warn');
+        return;
+      }
       if (!res.ok) {
         say(statusEl, body.message || 'The calendar push failed', 'warn');
         return;

@@ -25,6 +25,15 @@ const DatabaseService = require('./utils/database-service');
 // is the same mistake as inlining an endpoint literal to satisfy the endpoint
 // gate. The client was never used, so it is gone rather than guarded.
 const { authenticateRequest } = require('./utils/auth-middleware');
+// Was `Access-Control-Allow-Origin: '*'`, on an endpoint whose responses are
+// customer email addresses, SMS numbers and consent flags read straight out of
+// the `customers` table. The wildcard is the whole problem: authentication
+// decides who may ASK, and the wildcard decides who may READ the answer. Any
+// page on the internet could fire a request and read the response.
+//
+// The origin is now reflected only when it is ours. utils/cors-middleware.js
+// explains the rule, including why a missing Origin header is allowed.
+const { originHeaders } = require('./utils/cors-middleware');
 const errorHandler = require('./utils/error-handler');
 
 
@@ -40,13 +49,7 @@ exports.handler = async (event, context) => {
     return auth.error;
   }
 
-  // Enable CORS
-  const headers = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Content-Type': 'application/json'
-  };
+  const headers = originHeaders(event);
 
   // Handle preflight requests
   if (event.httpMethod === 'OPTIONS') {

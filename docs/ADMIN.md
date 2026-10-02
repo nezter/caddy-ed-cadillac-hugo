@@ -75,6 +75,24 @@ load:
 - **Follow-up campaigns** — `/admin/followup-campaigns`.
 - **Google Calendar** — per person, one row each in `google_calendar_tokens`.
   Needs `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`, which do not exist yet.
+- **Email** (`/admin/email`) — added 2026-10-01. Pick SendGrid / Mailgun /
+  Resend / Postmark / custom, and the host, port and username fill themselves in.
+  Type the one secret, press **Save and send a test**. Writes one row to
+  `mail_config`; `utils/mail-config.js` resolves it and every sender uses it.
+  No deploy and no Netlify dashboard access needed.
+
+  Two things about it worth knowing before using it:
+
+  - **The password is stored in plain text in this database.** There is no
+    secret store on this deployment, and encrypting with a key the sending code
+    can also read would protect nothing. If you would rather it never touched
+    the database, leave the password field blank and set `SMTP_HOST` /
+    `SMTP_USER` / `SMTP_PASS` in the Netlify UI instead — that path takes over
+    automatically and is fully supported.
+  - **`/admin/email` deliberately does not set the To address.** Enquiries go to
+    the first active rep in `sales_reps`, and only fall back to `EMAIL_TO` if
+    there is nobody there. Hardcoding a recipient is how the customer list once
+    got mailed to a stranger's mailbox.
 
 ---
 
@@ -91,20 +109,25 @@ cd <repo> && ./ci/run.sh build deploy
 
 on the CI host. That is a manual step, and it is the honest state of things.
 
-### The "Ed's pick" badge
+### The "Ed's pick" badge — CORRECTED, this now works
 
-`partials/vehicle-card.html` renders it from **front matter**:
+**This section used to say the admin toggle re-ordered the fleet but did not
+badge it. That was wrong**, and it was wrong in the direction of claiming a
+defect that did not exist. `ed-picks.js` badges on every page that renders a
+fleet, not only on the home page.
 
-```gotemplate
-{{ if $v.Params.featured }}
-  <span class="vehicle-card__badge vehicle-card__badge--pick">Ed's pick</span>
-{{ end }}
-```
+It is now unambiguous:
 
-So pinning a vehicle in the admin **re-orders the fleet but does not badge it**.
-Two sources of truth for one idea, and they disagree. The front-matter flag is
-still useful for a seasonal pin in the repository; the database toggle is
-runtime. They should both show the badge.
+- **Database** (`/admin/favourites` → `vehicle_favourites`) — runtime, and
+  **now staff-only**. `vehicle-features.js` GET stays public because
+  `ed-picks.js` reads it for every visitor; POST did not, so anyone could have
+  rewritten the dealership's own editorial list. Fixed 2026-09-30.
+- **Front matter** (`featured: true`) — a seasonal pin in the repository. Still
+  supported, still useful, and deliberately kept as a separate mechanism.
+
+Both sources show the badge and both reorder. They are not required to agree,
+because they are not the same control: one is a repository decision, one is a
+runtime one.
 
 ### The signage copy
 
@@ -172,27 +195,59 @@ the right split.
 ## Gates that keep this honest
 
 ```bash
-node ci/check-front-end.js               # entry points resolve; no new dead files
-node ci/check-no-placeholder-contact.js  # 555 numbers, example.com, wrong address
-node ci/check-permissions.js             # required-permission vocabulary
-node ci/check-writes-work.js             # an UPDATE actually updates
+node ci/check-all.js                      # all of the below, one table
+node ci/check-front-end.js                # entry points resolve; no new dead files
+node ci/check-no-placeholder-contact.js   # 555 numbers, example.com, wrong address
+node ci/check-permissions.js              # required-permission vocabulary
+node ci/check-writes-work.js              # an UPDATE actually updates
+node ci/check-function-auth.js            # no customer data behind an open door
+node ci/check-inquiry-path.js             # an enquiry survives its notification failing
 ```
 
 `check-no-placeholder-contact.js` is the one that matters most for this page.
-It reads the **built** HTML, because a template default, a page's own front
-matter, a string in a JS file and a data file are four separate mechanisms that
-can each be wrong — and the site shipped `(704) 555-1234` in the header of all
-67 pages while the correct number sat in `config.toml`. See `docs/BUILD.md`.
+It reads the **built** HTML **and** the function source. Both halves were needed:
+a template default, a page's own front matter, a string in a JS file and a data
+file are four separate mechanisms that can each be wrong — and the site shipped
+`(704) 555-1234` in the header of all 67 pages while the correct number sat in
+`config.toml`. Reading HTML alone was then not enough either, because
+`contact-salesperson.js` returned `(704) 555-7890` **at runtime** and the HTML
+could not see it. See `docs/BUILD.md` and `docs/SECURITY.md`.
+
+`check-function-auth.js` matters because six endpoints had no authentication at
+all. See `docs/SECURITY.md` for what they were and what now protects the data.
+
+---
+
+## The admin is currently the entire notification system
+
+**No mail provider is configured, so nothing is emailed.** Enquiries, bookings,
+pre-approvals, portal messages and staff-card contacts all **record to the
+database first** and report `notified: false` with a reason, so nothing is lost
+and nothing claims to have been sent.
+
+Until one is set, this admin is the *only* place a lead is visible.
+
+**This is now one page, not a dashboard trip.** `/admin/email` takes a provider
+and a secret and tests the connection, with no redeploy. It was four environment
+variables and a guess at which host went with which provider; that guess is now a
+dropdown. See `docs/MISSING.md` § 1.
 
 ---
 
 ## Still open
 
-- Google OAuth credentials, so the per-user calendar can actually connect.
+Full list in **`docs/MISSING.md`**. The short version:
+
+- **SMTP is unset**, so nothing is emailed anywhere. The largest gap on the site,
+  and it is a credential rather than code.
+- **Google OAuth credentials**, so the per-user calendar can actually connect.
+- **Check `JWT_SECRET` is set in the Netlify UI** before deploying — see
+  `docs/SECURITY.md` § S1.
 - `refactored/` — the name says abandoned; the code is live. It is the test-drive
   scheduling calendar. See `docs/FRONTEND.md`.
 - `components/notification.js` — a written, styled notification system no page
   mounts. This is the natural first home for the stock alerts.
-- 18 failing tests, mostly the calendar suite's ESM/DOM setup and integration
-  fixtures.
+- Sign-out does not revoke: each Netlify bundle gets its own in-memory `Set`.
+- About 11 failing tests, mostly the calendar suite's ESM/DOM setup and
+  integration fixtures.
 - No production deploy yet.

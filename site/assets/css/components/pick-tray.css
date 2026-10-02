@@ -1,0 +1,96 @@
+/* pick-tray.css -- the one bottom strip that shows what has been chosen.
+ *
+ * There are two things a visitor can choose: cars to COMPARE, and cars to
+ * SHORTLIST. Both need to tell the shopper what they have picked so far, and
+ * both want the bottom of the screen for it.
+ *
+ * Two fixed bottom bars cannot both exist -- they sit on top of each other, and
+ * the top one wins every click. So there is ONE strip, built by compare-tray.js,
+ * carrying a section for each. It is marked up with the shortlist's own classes
+ * (.shortlist, .shortlist__inner, .shortlist__items, .shortlist__item,
+ * .shortlist__remove, .shortlist__count, .shortlist__actions) so it inherits the
+ * entire existing treatment rather than restating it: position, the red top
+ * border, the type scale, the mobile breakpoints, and -- the part that matters --
+ * the .has-shortlist body padding which stops the strip covering the bottom row
+ * of vehicle cards.
+ *
+ * That padding bug was found by clicking three cars in a browser and watching
+ * the count stay at 1. It is not being reintroduced by a second, separate bar.
+ *
+ * This file therefore only contains what is genuinely new:
+ *   - the two sections and the gap between them
+ *   - the chips WRAPPING, so three cars cannot push the strip off a phone
+ *   - the compare strip's master button matching the shortlist's, because they
+ *     are the same control doing the same job
+ */
+
+.pick-tray__section {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-2) var(--space-4);
+  min-width: 0;
+}
+
+.pick-tray__section[hidden] { display: none; }
+
+/* Two sections at once: the shortlist above the compare strip, separated by a
+ * hairline so it is obvious they are two different lists sharing one bar. A
+ * visitor who has done both at once can tell which chips belong to which. */
+.pick-tray__section + .pick-tray__section {
+  border-top: 1px solid rgb(255 255 255 / 0.16);
+  padding-top: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+/* The chips STACK.
+ *
+ * shortlist.css gives .shortlist__items `overflow-x: auto` and `flex: 1 1 240px`,
+ * which scrolls a long list sideways. That is fine for one list, but with three
+ * cars in each section the strip becomes a horizontal scrollbar with a hidden
+ * payload: the shopper cannot see the third car without discovering that there
+ * is a scroll.
+ *
+ * Wrapping instead means every chosen car is visible at once, which is the whole
+ * point of a strip that exists to show you what you have chosen. `overflow` is
+ * turned off so the wrap is real rather than a scroller that happens to wrap.
+ */
+.pick-tray__section .shortlist__items {
+  flex: 1 1 260px;
+  flex-wrap: wrap;
+  overflow-x: visible;
+  row-gap: var(--space-1);
+}
+
+/* The master button, in both sections, is the same size and weight. "Compare 3"
+ * and "Send to Ed" act on what you have chosen, and a shopper should not have to
+ * work out that one of them is the important one. */
+.pick-tray__section .shortlist__actions {
+  display: flex;
+  gap: var(--space-2);
+  flex: 0 0 auto;
+}
+
+/* One car is not a comparison. The button says so in words rather than being
+ * silently inert, so the visitor is not left tapping a dead control. */
+.pick-tray__section .shortlist__actions .btn[disabled] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* On a phone the strip is a good deal taller with two sections, so the body
+ * padding that reserves room for it has to grow with it. shortlist.css reserves
+ * a fixed amount for a one-section strip; this is the two-section case, and
+ * without it the bottom row of vehicle cards ends up under the compare chips
+ * again -- which is the exact bug the reserve-space rule exists to prevent. */
+@media (max-width: 640px) {
+  .pick-tray__section {
+    align-items: stretch;
+  }
+  .pick-tray__section .shortlist__actions {
+    width: 100%;
+  }
+  .pick-tray__section .shortlist__actions .btn {
+    flex: 1 1 0;
+  }
+}

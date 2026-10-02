@@ -2,13 +2,47 @@
 
 /**
  * Seed Test Data
- * Populates Supabase with representative customers, leads, and appointments
+ * Populates the database with representative customers, leads, and appointments.
+ *
+ * (The header used to say "Supabase". It does not, and had not for a while --
+ * Supabase is not configured on this deployment and the Netlify plan blocks the
+ * alternatives. A comment naming the wrong store is how the next person ends up
+ * looking for a service that was never there.)
+ *
+ * ---------------------------------------------------------------------------
+ * THIS WRITES FICTION INTO A REAL DATABASE. READ THIS BEFORE RUNNING IT.
+ * ---------------------------------------------------------------------------
+ * It inserts roughly 100 customers, 200 leads, plus interactions, appointments
+ * and analytics rows, all on `@example.com` addresses. None of it is real.
+ *
+ * There was NO GUARD at all -- no confirmation, no environment check, no
+ * warning. It would write into whatever TURSO_DATABASE_URL pointed at, and the
+ * live Turso database is not a scratch space: it is the dealership's actual
+ * customer store, read by /admin/leads, /admin/bookings and /admin/customers.
+ *
+ * So the failure mode was: someone runs the seed script to look at a populated
+ * dashboard, and the dealership's real dashboard now shows 100 customers who
+ * do not exist and 200 leads who were never in contact. Every metric on that
+ * page becomes fiction, and nobody can tell from the page which rows are real.
+ * On a site whose hardest rule is never fabricating a customer, testimonial or
+ * review, a script that silently manufactures 300 of them is the worst thing in
+ * this repository.
+ *
+ * The guard lives in ./require-seed-acknowledgement.js and all four seed scripts
+ * use it. It was inline here first, which is exactly the shape that goes wrong:
+ * a fifth script appears, nobody copies the check, and it runs unguarded.
  */
 
 require('dotenv').config();
 
 const DatabaseService = require('../netlify/functions/utils/database-service');
 const seedSalesReps = require('./seed-sales-reps');
+const { requireSeedAcknowledgement } = require('./require-seed-acknowledgement');
+
+requireSeedAcknowledgement({
+  what: '~100 customers, ~200 leads, and their interactions and appointments',
+  undo: "DELETE FROM customers WHERE email LIKE '%@example.com';",
+});
 
 async function ensureSalesReps() {
   await seedSalesReps();

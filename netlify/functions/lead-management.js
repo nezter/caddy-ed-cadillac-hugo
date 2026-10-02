@@ -1,7 +1,12 @@
-const nodemailer = require('nodemailer');
 const errorHandler = require('./utils/error-handler');
 const crmService = require('./utils/crm-service');
 const DeduplicationService = require('./utils/deduplication-service');
+const inquiry = require('./utils/inquiry');
+
+// nodemailer was required here for a mail path that no longer exists. Notification
+// is utils/inquiry.js's job, and it requires nodemailer lazily on purpose: a
+// function has to load on a deployment with no SMTP configured, or it 500s before
+// it can record the lead.
 
 exports.handler = async function(event, context) {
   // Only allow POST requests for lead submission
@@ -27,77 +32,112 @@ exports.handler = async function(event, context) {
       });
     }
 
-    // Check for duplicates
+    // RECORD FIRST, THEN NOTIFY -- into THIS site's database.
+    //
+    // What used to be here, in order:
+    //
+    //   1. checkForDuplicates(), and on a match return
+    //        { leadId: duplicateCheck.duplicates[0].lead.id }
+    //   2. a CRM submission, to a CRM with no API key configured
+    //   3. fetch('/.netlify/functions/submission-created', ...)
+    //   4. return { leadId: Date.now().toString() }
+    //
+    // None of those write to this site's database. There is no DatabaseService in
+    // this file. Step 2 returns `{success: false, reason: 'CRM not configured'}`
+    // rather than throwing, so it was logged and shrugged at. Step 3 is a
+    // RELATIVE URL inside a serverless function, which has no origin to resolve
+    // against -- it throws "Failed to parse URL" and is caught, so the "backup"
+    // never happened and looked like it had. Step 4 then returned a made-up id
+    // built from the clock.
+    //
+    // So this endpoint answered "Thank you for your interest. A member of our
+    // sales team will contact you shortly." with a plausible leadId, and the lead
+    // existed nowhere. site/assets/js/forms.js posts here. This is the same
+    // defect as lead-form.js -- fixed there, never fixed here, in the sibling
+    // endpoint that does the identical job.
+    //
+    // It also leaked. Step 1 returned the real internal lead id for an existing
+    // customer's match, so submitting any name, email and phone told you whether
+    // that person was on file and handed you their record id. A customer-
+    // enumeration oracle, on a live dealership, one POST per guess.
+    //
+    // The duplicate check itself is kept -- it is useful -- but it now only
+    // decides the WORDING. It no longer returns an identifier, and it no longer
+    // skips the write: a person who is already on file still gets a row, so the
+    // enquiry is never the thing that gets lost.
     const deduplicationService = new DeduplicationService();
-    const duplicateCheck = await deduplicationService.checkForDuplicates(leadData, {
-      confidenceThreshold: 0.8,
-      maxResults: 5
+    let isDuplicate = false;
+    try {
+      const duplicateCheck = await deduplicationService.checkForDuplicates(leadData, {
+        confidenceThreshold: 0.8,
+        maxResults: 5
+      });
+      isDuplicate = Boolean(duplicateCheck.isDuplicate);
+    } catch (duplicateError) {
+      // A failed duplicate check must not cost the lead. Record it anyway.
+      console.error('Duplicate check failed, recording the lead anyway:', duplicateError);
+    }
+
+    const outcome = await inquiry.submit('lead', {
+      name: leadData.name,
+      email: leadData.email,
+      phone: leadData.phone,
+      message: leadData.message || '',
+      vehicleTitle: leadData.vehicleId || leadData.vehicleModel || null,
+      formType: leadData.formType || 'general',
+      source: leadData.source || 'Website',
+      subject: 'New website enquiry',
     });
 
-    if (duplicateCheck.isDuplicate) {
-      console.log(`Duplicate lead detected. Confidence: ${duplicateCheck.confidence}`);
-      console.log('Duplicate details:', duplicateCheck.duplicates[0]);
-
-      // Return success but mark as duplicate
-      return errorHandler.createSuccessResponse(
-        {
-          leadId: duplicateCheck.duplicates[0].lead.id,
-          status: 'duplicate',
-          confidence: duplicateCheck.confidence
-        },
-        'Thank you for your interest. We already have your information on file and will be in touch soon.'
-      );
-    }
-    
-    // Format data for CRM integration
-    const crmData = {
-      lead: {
-        firstName: leadData.name.split(' ')[0],
-        lastName: leadData.name.split(' ').slice(1).join(' '),
-        email: leadData.email,
-        phone: leadData.phone,
-        message: leadData.message || '',
-        source: leadData.source || 'Website',
-        vehicleInterest: leadData.vehicleId || leadData.vehicleModel || '',
-        utm: {
-          source: leadData.utm_source || '',
-          medium: leadData.utm_medium || '',
-          campaign: leadData.utm_campaign || '',
-          term: leadData.utm_term || '',
-          content: leadData.utm_content || ''
-        }
-      }
-    };
-    
-    // Submit to Netlify forms for backup
-    try {
-      await fetch('/.netlify/functions/submission-created', {
-        method: 'POST',
+    if (outcome.fatal) {
+      // No database, so no system of record, so a success would be a lie.
+      console.error('[lead-management] could not record: ' + outcome.reason);
+      return {
+        statusCode: 503,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          form_name: 'lead',
-          form_data: leadData
-        })
-      });
-    } catch (netlifyError) {
-      console.error('Error sending to Netlify forms:', netlifyError);
-      // Continue execution even if Netlify form submission fails
+        body: JSON.stringify({
+          success: false,
+          message: 'We could not record that just now. Please call us and we will take the details.',
+        }),
+      };
     }
-    
-    // Integration with dealer CRM system
-    const crmResult = await crmService.submitLead(crmData.lead);
 
-    if (crmResult.success) {
-      console.log(`Lead successfully submitted to ${crmResult.crmType} CRM with ID: ${crmResult.leadId}`);
-    } else {
-      console.error('CRM submission failed:', crmResult.error);
-      // Log the error but don't return an error response to the user
-      // as we've already saved the lead to Netlify forms as backup
+    // The CRM is now genuinely optional: the record exists before this runs, so
+    // a missing CRM key cannot lose the lead. It is a second copy, not the
+    // system of record.
+    if (crmService.apiKey && crmService.apiUrl) {
+      try {
+        const crmResult = await crmService.submitLead({
+          firstName: leadData.name.split(' ')[0],
+          lastName: leadData.name.split(' ').slice(1).join(' '),
+          email: leadData.email,
+          phone: leadData.phone,
+          message: leadData.message || '',
+          source: leadData.source || 'Website',
+        });
+        if (!crmResult.success) {
+          console.warn(
+            `[lead-management] CRM copy failed (${crmResult.reason || crmResult.error}). ` +
+              'The lead is recorded in the database and visible in /admin/leads.'
+          );
+        }
+      } catch (crmError) {
+        console.warn('[lead-management] CRM copy threw. The lead is recorded.', crmError);
+      }
     }
-    
+
     return errorHandler.createSuccessResponse(
-      { leadId: Date.now().toString() },
-      'Thank you for your interest. A member of our sales team will contact you shortly.'
+      {
+        // A real id, from the row that was actually written.
+        leadId: outcome.id,
+        // The duplicate signal stays internal. It shapes the sentence we say to
+        // the customer; it is not something the submitter gets to read back.
+        notified: outcome.notified,
+        notifyReason: outcome.notifyReason || null,
+      },
+      isDuplicate
+        ? 'Thank you for your interest. We already have your information on file and will be in touch soon.'
+        : 'Thank you for your interest. A member of our sales team will contact you shortly.'
     );
   } catch (error) {
     return errorHandler.serverError('Error processing lead submission', error);

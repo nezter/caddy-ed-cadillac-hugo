@@ -1,5 +1,26 @@
 # Task Master AI - Agent Integration Guide
 
+> ## DO NOT USE TASK MASTER ON THIS PROJECT
+>
+> The owner's standing instruction is: **"Don't use taskmaster."** It was given
+> directly, after this file and `AGENT.md` were added.
+>
+> Use instead:
+>
+> - `rg -n` / `ast-grep` for searching — **never `grep`**
+> - the gates in `ci/`, which are the project's real task tracker:
+>   `npm run check`
+> - `docs/OPEN-QUESTIONS.md` for outstanding decisions
+> - `docs/feature-inventory.md` for what exists and what is not wired
+>
+> Everything below is retained for reference only. Following it contradicts the
+> owner's instructions, and the owner's instructions win over a checked-in file.
+>
+> This file and `docs/AGENT.md` are also near-duplicates of each other, which is
+> its own problem: two documents claiming to instruct agents, both stale, both
+> disagreeing with the person who owns the repository. They should probably be
+> deleted rather than corrected. See `docs/OPEN-QUESTIONS.md`.
+
 ## Essential Commands
 
 ### Core Workflow Commands

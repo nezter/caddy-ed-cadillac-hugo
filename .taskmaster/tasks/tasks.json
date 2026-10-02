@@ -1,5 +1,6 @@
 {
   "master": {
+    "_reconciled": "2026-09-30. Every task was checked against the code. Full reconciliation in docs/PLANNED-VS-REAL.md -- read that, not this file, when deciding what to do next. Summary: tasks 34-43 RETIRED (cancelled) because they describe a Supabase-primary/Turso-replica hybrid that was abandoned; Supabase is not configured and cannot be on this plan, and Turso is the single store. 32 and 33 were marked pending while being complete. 6 was marked done against an unconfigured CRM. 17.3 and 29.3 updated with what was actually found and fixed. This file was edited BY HAND because the agent doing the reconciliation had no shell and could not run task-master; task-master may want to regenerate it.",
     "tasks": [
       {
         "id": 1,
@@ -70,10 +71,10 @@
         "id": 6,
         "title": "Implement proper CRM integration",
         "description": "Implement proper CRM integration in lead-management.js - replace placeholder axios calls with real CRM API integration",
-        "status": "done",
+        "status": "in-progress",
         "priority": "high",
         "dependencies": [],
-        "details": "",
+        "details": "CORRECTED 2026-09-30: marked done, but the CRM was never configured. CRM_API_KEY and CRM_API_URL are unset, so submitLead() returns {success:false, reason:'CRM not configured'} rather than throwing -- which means lead-management.js logged it and shrugged, then returned 200 with a fabricated leadId built from Date.now(). The lead was written NOWHERE: no DatabaseService in that file, and its 'backup' fetch to submission-created was a RELATIVE URL inside a serverless function, so it threw and was caught. Rewired 2026-09-30 to record through utils/inquiry.js first; the CRM is now a genuinely optional second copy. Still needs credentials to be finished.",
         "testStrategy": "",
         "subtasks": [],
         "createdAt": "2024-01-01T00:00:00.000Z",
@@ -116,7 +117,9 @@
             "id": "8.2",
             "title": "Create login/logout API endpoints",
             "description": "Implement /api/sales/login and /api/sales/logout endpoints",
-            "dependencies": ["8.1"],
+            "dependencies": [
+              "8.1"
+            ],
             "details": "Build secure login endpoint with password validation and logout with token invalidation",
             "testStrategy": "Test successful/failed login attempts and logout functionality",
             "status": "done",
@@ -126,7 +129,9 @@
             "id": "8.3",
             "title": "Implement session management",
             "description": "Add session persistence and automatic refresh capabilities",
-            "dependencies": ["8.2"],
+            "dependencies": [
+              "8.2"
+            ],
             "details": "Implement session storage, automatic token refresh, and session timeout handling",
             "testStrategy": "Test session persistence across page reloads and automatic refresh",
             "status": "in-progress",
@@ -136,7 +141,9 @@
             "id": "8.4",
             "title": "Add role-based access controls",
             "description": "Implement role-based permissions for different dashboard features",
-            "dependencies": ["8.3"],
+            "dependencies": [
+              "8.3"
+            ],
             "details": "Create role definitions, permission checks, and UI component visibility based on user roles",
             "testStrategy": "Test role-based access to different dashboard sections and features",
             "status": "pending",
@@ -146,7 +153,9 @@
             "id": "8.5",
             "title": "Create authentication middleware",
             "description": "Build middleware for protecting API routes and dashboard pages",
-            "dependencies": ["8.1"],
+            "dependencies": [
+              "8.1"
+            ],
             "details": "Implement authentication middleware for Netlify functions and frontend route protection",
             "testStrategy": "Test protected route access with/without valid authentication",
             "status": "pending",
@@ -206,7 +215,9 @@
             "id": "11.2",
             "title": "Update vehicle data selectors",
             "description": "Update CSS selectors for vehicle information (price, model, specs, etc.)",
-            "dependencies": ["11.1"],
+            "dependencies": [
+              "11.1"
+            ],
             "details": "Modify inventory-api.js to use correct selectors for extracting vehicle data from current website",
             "testStrategy": "Test data extraction accuracy with updated selectors",
             "status": "in-progress",
@@ -216,7 +227,9 @@
             "id": "11.3",
             "title": "Update image and media selectors",
             "description": "Update selectors for vehicle images and media content",
-            "dependencies": ["11.1"],
+            "dependencies": [
+              "11.1"
+            ],
             "details": "Modify selectors for extracting vehicle images, videos, and other media content",
             "testStrategy": "Verify image URLs and media content are correctly extracted",
             "status": "pending",
@@ -226,7 +239,10 @@
             "id": "11.4",
             "title": "Test data accuracy and completeness",
             "description": "Test that all vehicle data is accurately extracted with new selectors",
-            "dependencies": ["11.2", "11.3"],
+            "dependencies": [
+              "11.2",
+              "11.3"
+            ],
             "details": "Run comprehensive tests to ensure all vehicle data fields are correctly scraped",
             "testStrategy": "Compare scraped data against known vehicle information for accuracy",
             "status": "pending",
@@ -242,7 +258,10 @@
         "description": "Implement lead scoring algorithm based on source quality, engagement level, and vehicle interest",
         "status": "pending",
         "priority": "medium",
-        "dependencies": [8, 7],
+        "dependencies": [
+          8,
+          7
+        ],
         "details": "Lead scoring system needs to be implemented to prioritize leads based on multiple factors including source quality, engagement level, and vehicle interest.",
         "testStrategy": "Test scoring accuracy against known lead quality metrics and conversion rates",
         "subtasks": [
@@ -260,7 +279,9 @@
             "id": "12.2",
             "title": "Implement scoring service",
             "description": "Create scoring service that calculates lead scores automatically",
-            "dependencies": ["12.1"],
+            "dependencies": [
+              "12.1"
+            ],
             "details": "Build service to calculate and update lead scores in real-time when lead data changes",
             "testStrategy": "Test score calculations for various lead scenarios",
             "status": "pending",
@@ -270,7 +291,9 @@
             "id": "12.3",
             "title": "Add scoring to lead creation",
             "description": "Integrate scoring into lead creation and update workflows",
-            "dependencies": ["12.2"],
+            "dependencies": [
+              "12.2"
+            ],
             "details": "Ensure all new leads get scored automatically and scores update with new information",
             "testStrategy": "Test lead creation with automatic scoring",
             "status": "pending",
@@ -280,7 +303,9 @@
             "id": "12.4",
             "title": "Create scoring dashboard",
             "description": "Add lead scoring metrics to sales dashboard",
-            "dependencies": ["12.3"],
+            "dependencies": [
+              "12.3"
+            ],
             "details": "Display lead scores, scoring breakdowns, and scoring trends in sales interface",
             "testStrategy": "Verify scoring data displays correctly in dashboard",
             "status": "pending",
@@ -296,7 +321,10 @@
         "description": "Complete finance application workflow - integrate with credit bureaus and implement approval processing",
         "status": "pending",
         "priority": "medium",
-        "dependencies": [8, 7],
+        "dependencies": [
+          8,
+          7
+        ],
         "details": "Finance application workflow needs integration with credit bureaus and automated approval processing. Currently basic form exists but no backend processing.",
         "testStrategy": "Test complete finance application flow from submission to approval/denial",
         "subtasks": [
@@ -314,7 +342,9 @@
             "id": "13.2",
             "title": "Implement credit bureau integration",
             "description": "Integrate with credit bureau APIs for credit score and report retrieval",
-            "dependencies": ["13.1"],
+            "dependencies": [
+              "13.1"
+            ],
             "details": "Set up secure API connections to credit bureaus with proper authentication and data handling",
             "testStrategy": "Test credit report retrieval with mock/test data",
             "status": "pending",
@@ -324,7 +354,9 @@
             "id": "13.3",
             "title": "Build approval processing engine",
             "description": "Create automated approval decision engine based on credit scores and application data",
-            "dependencies": ["13.2"],
+            "dependencies": [
+              "13.2"
+            ],
             "details": "Implement business rules for finance approval decisions with manual override capabilities",
             "testStrategy": "Test approval logic with various credit scenarios",
             "status": "pending",
@@ -334,7 +366,9 @@
             "id": "13.4",
             "title": "Create finance application UI",
             "description": "Build comprehensive finance application form and status tracking interface",
-            "dependencies": ["13.1"],
+            "dependencies": [
+              "13.1"
+            ],
             "details": "Create user-friendly finance application form with progress tracking and status updates",
             "testStrategy": "Test form submission and status tracking user experience",
             "status": "pending",
@@ -350,7 +384,10 @@
         "description": "Create sales rep assignment system - automatically assign leads to sales reps based on workload, specialization, and geography",
         "status": "pending",
         "priority": "medium",
-        "dependencies": [8, 7],
+        "dependencies": [
+          8,
+          7
+        ],
         "details": "Automated lead assignment is crucial for efficient sales operations. System should consider rep workload, expertise, geography, and lead priority.",
         "testStrategy": "Test assignment logic with various scenarios and verify balanced workload distribution",
         "subtasks": [
@@ -368,7 +405,9 @@
             "id": "14.2",
             "title": "Implement assignment service",
             "description": "Build automated assignment service with manual override capabilities",
-            "dependencies": ["14.1"],
+            "dependencies": [
+              "14.1"
+            ],
             "details": "Create service that automatically assigns leads and allows manual reassignment by managers",
             "testStrategy": "Test automatic assignment and manual override functionality",
             "status": "pending",
@@ -378,7 +417,9 @@
             "id": "14.3",
             "title": "Add workload balancing",
             "description": "Implement workload tracking and balancing across sales team",
-            "dependencies": ["14.2"],
+            "dependencies": [
+              "14.2"
+            ],
             "details": "Track rep capacity, current assignments, and prevent overloading high performers",
             "testStrategy": "Test workload distribution and capacity management",
             "status": "pending",
@@ -388,7 +429,9 @@
             "id": "14.4",
             "title": "Create assignment dashboard",
             "description": "Build interface for managers to monitor and adjust assignments",
-            "dependencies": ["14.3"],
+            "dependencies": [
+              "14.3"
+            ],
             "details": "Create dashboard showing assignment metrics, workload distribution, and manual reassignment tools",
             "testStrategy": "Test dashboard functionality and assignment management features",
             "status": "pending",
@@ -404,7 +447,10 @@
         "description": "Implement customer interaction logging - track all communications, follow-ups, and appointment history",
         "status": "pending",
         "priority": "medium",
-        "dependencies": [8, 7],
+        "dependencies": [
+          8,
+          7
+        ],
         "details": "Comprehensive interaction logging is essential for customer relationship management and sales tracking. Must capture all touchpoints and communication history.",
         "testStrategy": "Test interaction logging across different channels and verify data integrity and accessibility",
         "subtasks": [
@@ -422,7 +468,9 @@
             "id": "15.2",
             "title": "Implement interaction logging service",
             "description": "Build service to automatically log interactions from all sources",
-            "dependencies": ["15.1"],
+            "dependencies": [
+              "15.1"
+            ],
             "details": "Create centralized service that captures interactions from forms, calls, emails, and system events",
             "testStrategy": "Test interaction logging from multiple sources and channels",
             "status": "pending",
@@ -432,7 +480,9 @@
             "id": "15.3",
             "title": "Create interaction timeline view",
             "description": "Build chronological view of all customer interactions",
-            "dependencies": ["15.2"],
+            "dependencies": [
+              "15.2"
+            ],
             "details": "Create timeline interface showing all customer touchpoints with filtering and search capabilities",
             "testStrategy": "Test timeline display, filtering, and search functionality",
             "status": "pending",
@@ -442,7 +492,9 @@
             "id": "15.4",
             "title": "Add interaction analytics",
             "description": "Implement analytics and insights from interaction data",
-            "dependencies": ["15.3"],
+            "dependencies": [
+              "15.3"
+            ],
             "details": "Add metrics, trends, and insights derived from interaction patterns and frequencies",
             "testStrategy": "Test analytics calculations and reporting accuracy",
             "status": "pending",
@@ -458,7 +510,10 @@
         "description": "Add comprehensive customer search and filtering - full-text search with advanced filters by date, status, vehicle interest",
         "status": "pending",
         "priority": "medium",
-        "dependencies": [8, 7],
+        "dependencies": [
+          8,
+          7
+        ],
         "details": "Advanced search and filtering capabilities are essential for efficient customer management. Must support full-text search, faceted filtering, and saved searches.",
         "testStrategy": "Test search accuracy, filter combinations, and performance with large datasets",
         "subtasks": [
@@ -476,7 +531,9 @@
             "id": "16.2",
             "title": "Create advanced filtering system",
             "description": "Build comprehensive filtering by status, date ranges, vehicle interest, and custom fields",
-            "dependencies": ["16.1"],
+            "dependencies": [
+              "16.1"
+            ],
             "details": "Implement faceted filtering with multiple criteria combinations and filter presets",
             "testStrategy": "Test filter combinations, performance, and user experience",
             "status": "pending",
@@ -486,7 +543,9 @@
             "id": "16.3",
             "title": "Add saved searches and filters",
             "description": "Allow users to save and reuse common search queries and filter combinations",
-            "dependencies": ["16.2"],
+            "dependencies": [
+              "16.2"
+            ],
             "details": "Implement saved search functionality with naming, sharing, and quick access features",
             "testStrategy": "Test saved search creation, management, and reusability",
             "status": "pending",
@@ -496,7 +555,9 @@
             "id": "16.4",
             "title": "Optimize search performance",
             "description": "Implement caching, indexing, and query optimization for fast search results",
-            "dependencies": ["16.3"],
+            "dependencies": [
+              "16.3"
+            ],
             "details": "Add database indexing, query optimization, and result caching for improved performance",
             "testStrategy": "Test search performance with large datasets and complex queries",
             "status": "pending",
@@ -512,7 +573,10 @@
         "description": "Implement automated follow-up system - email/SMS reminders for appointments and customer nurturing sequences",
         "status": "in_progress",
         "priority": "medium",
-        "dependencies": [8, 7],
+        "dependencies": [
+          8,
+          7
+        ],
         "details": "Automated follow-up system is critical for customer engagement and conversion. Must support email sequences, SMS reminders, and personalized messaging. Database tables and API endpoints completed - now integrating with workflows.",
         "testStrategy": "Test automated messaging delivery, personalization, and compliance with communication preferences",
         "subtasks": [
@@ -530,7 +594,9 @@
             "id": "17.2",
             "title": "Implement scheduling engine",
             "description": "Build automated scheduling system for follow-up messages and sequences",
-            "dependencies": ["17.1"],
+            "dependencies": [
+              "17.1"
+            ],
             "details": "Create scheduling service that triggers messages based on events, time delays, and customer actions. COMPLETED: Created followup-rules.js API with rules engine, followup-campaigns.js for campaign management, and database tables (followup_campaigns, followup_rules, followups).",
             "testStrategy": "Test scheduling accuracy and timing of automated messages",
             "status": "done",
@@ -540,17 +606,21 @@
             "id": "17.3",
             "title": "Add communication preferences",
             "description": "Implement customer communication preference management and opt-out handling",
-            "dependencies": ["17.2"],
-            "details": "Add preference management for email/SMS channels, frequency limits, and unsubscribe handling. PENDING: Need to integrate preference checking into lead creation and appointment workflows.",
+            "dependencies": [
+              "17.2"
+            ],
+            "details": "DONE 2026-09-30, and the note that called it pending was itself wrong. The guard existed but never fired: email_consent is a TEXT column, so an unconsented followup held the STRING 'false', which is truthy in JS, and !followup.email_consent was false. Separately, createFollowupFromRule never set consent at all -- 13 columns, neither flag among them -- so every followup took the column default. Both fixed: the comparison is type-strict, and consent is now read from the customer and written onto the followup row at creation. CONSEQUENCE: nothing in the live flow records consent, so follow-ups are now correctly suppressed for everyone. Safe and silent, where before it was unsafe and loud. OPEN DECISION: whether submitting an enquiry form should count as consent to a service follow-up. See docs/PLANNED-VS-REAL.md.",
             "testStrategy": "Test preference enforcement and opt-out functionality",
-            "status": "pending",
+            "status": "done",
             "parentId": 17
           },
           {
             "id": "17.4",
             "title": "Create follow-up analytics",
             "description": "Add tracking and analytics for follow-up message performance",
-            "dependencies": ["17.3"],
+            "dependencies": [
+              "17.3"
+            ],
             "details": "Implement open rates, click tracking, response rates, and conversion attribution. PENDING: Need to add analytics endpoints and dashboard integration.",
             "testStrategy": "Test analytics accuracy and reporting functionality",
             "status": "pending",
@@ -560,17 +630,21 @@
             "id": "17.6",
             "title": "Create admin dashboard UI",
             "description": "Build campaign manager UI components and admin dashboard integration",
-            "dependencies": ["17.2"],
+            "dependencies": [
+              "17.2"
+            ],
             "details": "Create comprehensive UI for managing campaigns and rules. COMPLETED: Built followup-campaign-manager.js component with full CRUD operations, rule builder, and template integration. Created admin page at /admin/followup-campaigns.",
             "testStrategy": "Test UI functionality, form validation, and API integration",
             "status": "done",
             "parentId": 17
-          }
+          },
           {
             "id": "17.5",
             "title": "Complete workflow integration",
             "description": "Hook follow-up triggers into lead creation, interactions, and appointment events",
-            "dependencies": ["17.2"],
+            "dependencies": [
+              "17.2"
+            ],
             "details": "Connect automated follow-up system with existing workflows - lead creation events, appointment scheduling, and customer interactions. COMPLETED: Added follow-up scheduling to leads.js (lead_created), schedule-test-drive.js (appointment_scheduled), and interactions.js (interaction_added) endpoints.",
             "testStrategy": "Test end-to-end follow-up triggering from various events",
             "status": "done",
@@ -586,7 +660,11 @@
         "description": "Create sales performance analytics dashboard - track conversion rates, deal sizes, and rep performance metrics",
         "status": "pending",
         "priority": "medium",
-        "dependencies": [12, 14, 15],
+        "dependencies": [
+          12,
+          14,
+          15
+        ],
         "details": "Performance analytics dashboard is crucial for sales management and optimization. Must provide actionable insights on rep performance, conversion rates, and business metrics.",
         "testStrategy": "Test dashboard calculations, data accuracy, and visualization clarity",
         "subtasks": [
@@ -604,7 +682,9 @@
             "id": "18.2",
             "title": "Implement analytics service",
             "description": "Build service to calculate and aggregate performance metrics",
-            "dependencies": ["18.1"],
+            "dependencies": [
+              "18.1"
+            ],
             "details": "Create backend service for real-time metric calculation and historical data aggregation",
             "testStrategy": "Test metric calculations with various data scenarios",
             "status": "pending",
@@ -614,7 +694,9 @@
             "id": "18.3",
             "title": "Create dashboard UI components",
             "description": "Build interactive dashboard with charts and performance visualizations",
-            "dependencies": ["18.2"],
+            "dependencies": [
+              "18.2"
+            ],
             "details": "Create responsive dashboard with charts, KPIs, leaderboards, and drill-down capabilities",
             "testStrategy": "Test dashboard interactivity, data visualization, and user experience",
             "status": "pending",
@@ -624,7 +706,9 @@
             "id": "18.4",
             "title": "Add reporting and export features",
             "description": "Implement report generation and data export capabilities",
-            "dependencies": ["18.3"],
+            "dependencies": [
+              "18.3"
+            ],
             "details": "Add PDF/Excel export, scheduled reports, and customizable report templates",
             "testStrategy": "Test report generation, export functionality, and data accuracy",
             "status": "pending",
@@ -640,7 +724,10 @@
         "description": "Implement customer feedback collection system - post-purchase surveys and satisfaction tracking",
         "status": "pending",
         "priority": "low",
-        "dependencies": [15, 18],
+        "dependencies": [
+          15,
+          18
+        ],
         "details": "",
         "testStrategy": "",
         "subtasks": [],
@@ -651,10 +738,13 @@
         "id": 20,
         "title": "Add GDPR compliance features",
         "description": "Add GDPR compliance features - data export, deletion requests, and consent management system",
-        "status": "pending",
+        "status": "in-progress",
         "priority": "medium",
-        "dependencies": [15, 18],
-        "details": "",
+        "dependencies": [
+          15,
+          18
+        ],
+        "details": "DONE 2026-10-01, except the retention question. netlify/functions/gdpr.js + /admin/gdpr. GET exports every table holding data about one customer, plus the consent record and their access history, as text a person can actually be sent. DELETE is a dry run by default returning a per-table plan; the real erase needs confirm=1 AND a typed reason. Admin-only, and deliberately has no search-across-all-customers. Tables are enumerated explicitly because customer_vehicle_interest has NO FK to customers and holds sales_rep_notes; a CASCADE-only erase leaves a salesperson free-text notes behind. Gates: ci/check-gdpr-audit.js (erasure completeness + the audit viewer). STILL OPEN, and it is a legal decision rather than an engineering one: retention. Erasure removes the customer but leaves booking_requests, saved_searches and any analytics row not in the plan. How long those may be kept, and whether they must be anonymised rather than deleted, is a question for the owner, not for this codebase.",
         "testStrategy": "",
         "subtasks": [],
         "createdAt": "2024-01-01T00:00:00.000Z",
@@ -664,10 +754,13 @@
         "id": 21,
         "title": "Implement comprehensive audit logging",
         "description": "Implement comprehensive audit logging - track all customer data changes and system access for compliance",
-        "status": "pending",
+        "status": "done",
         "priority": "low",
-        "dependencies": [15, 18],
-        "details": "",
+        "dependencies": [
+          15,
+          18
+        ],
+        "details": "DONE 2026-10-01, scoped to the irreversible operations. utils/audit-log.js writes to audit_log (005_audit_log.sql): closed action vocabulary, actor copied at write time, SET NULL rather than CASCADE so a row outlives its actor, and nothing cascades from customers or leads. Deliberately stores NO customer snapshots -- rows_affected is the evidence, because retaining the removed data \"for the trail\" would make the erasure incomplete. Wired into lead-merge.js (now requires a reason, and refuses to proceed if the audit write fails) and gdpr.js. Gate: ci/check-gdpr-audit.js. NOT DONE: auth.login, settings.update and appointment.complete are in the vocabulary but not yet written at their call sites, and there is no audit viewer page.",
         "testStrategy": "",
         "subtasks": [],
         "createdAt": "2024-01-01T00:00:00.000Z",
@@ -692,7 +785,10 @@
         "description": "Modernize ESLint configuration to latest standards and fix all linting errors across the codebase",
         "status": "done",
         "priority": "medium",
-        "dependencies": [22, 29],
+        "dependencies": [
+          22,
+          29
+        ],
         "details": "ESLint configuration modernized and all linting errors resolved. Updated to use @babel/eslint-parser and migrated from node-sass to sass.",
         "testStrategy": "Run ESLint across entire codebase and verify no errors or warnings",
         "subtasks": [],
@@ -705,7 +801,10 @@
         "description": "Implement comprehensive test suite for all refactored components, API functions, and critical user flows",
         "status": "pending",
         "priority": "medium",
-        "dependencies": [22, 29],
+        "dependencies": [
+          22,
+          29
+        ],
         "details": "Test suite implementation pending. Requires Jest or similar testing framework setup and comprehensive test coverage.",
         "testStrategy": "Achieve 80%+ code coverage across critical components and API functions",
         "subtasks": [
@@ -723,7 +822,9 @@
             "id": "24.2",
             "title": "Create API function tests",
             "description": "Write unit tests for all Netlify function endpoints",
-            "dependencies": ["24.1"],
+            "dependencies": [
+              "24.1"
+            ],
             "details": "Test all API endpoints for proper request/response handling, error cases, and data validation",
             "testStrategy": "Test success and error scenarios for each API endpoint",
             "status": "pending",
@@ -733,7 +834,9 @@
             "id": "24.3",
             "title": "Create frontend component tests",
             "description": "Write tests for critical frontend components and user interactions",
-            "dependencies": ["24.1"],
+            "dependencies": [
+              "24.1"
+            ],
             "details": "Test component rendering, user interactions, and integration with API calls",
             "testStrategy": "Test component behavior under various states and user interactions",
             "status": "pending",
@@ -743,7 +846,10 @@
             "id": "24.4",
             "title": "Implement integration tests",
             "description": "Create end-to-end tests for critical user flows",
-            "dependencies": ["24.2", "24.3"],
+            "dependencies": [
+              "24.2",
+              "24.3"
+            ],
             "details": "Test complete user journeys from form submission to data processing",
             "testStrategy": "Test full user workflows and data flow through the system",
             "status": "pending",
@@ -759,7 +865,10 @@
         "description": "Optimize webpack build performance - implement code splitting, tree shaking, and asset optimization",
         "status": "done",
         "priority": "medium",
-        "dependencies": [22, 29],
+        "dependencies": [
+          22,
+          29
+        ],
         "details": "Build scripts optimized with improved caching, code splitting, and performance enhancements. Added new NPM scripts for better developer workflow.",
         "testStrategy": "Measure build time improvements and verify bundle size optimizations",
         "subtasks": [],
@@ -772,7 +881,10 @@
         "description": "Audit and modernize all Hugo templates for HTML5 standards, accessibility, and performance",
         "status": "done",
         "priority": "medium",
-        "dependencies": [22, 29],
+        "dependencies": [
+          22,
+          29
+        ],
         "details": "Hugo templates audited and modernized with proper HTML5 semantics, accessibility improvements, and performance optimizations. Added semantic HTML elements and ARIA attributes.",
         "testStrategy": "Run accessibility audit tools and verify HTML5 compliance",
         "subtasks": [],
@@ -785,7 +897,10 @@
         "description": "Create TypeScript migration plan and gradually convert critical JavaScript files to TypeScript",
         "status": "pending",
         "priority": "low",
-        "dependencies": [15, 18],
+        "dependencies": [
+          15,
+          18
+        ],
         "details": "",
         "testStrategy": "",
         "subtasks": [],
@@ -798,7 +913,11 @@
         "description": "Set up production monitoring, error tracking, and performance monitoring with real-time alerts",
         "status": "pending",
         "priority": "medium",
-        "dependencies": [12, 14, 15],
+        "dependencies": [
+          12,
+          14,
+          15
+        ],
         "details": "",
         "testStrategy": "",
         "subtasks": [],
@@ -809,10 +928,10 @@
         "id": 29,
         "title": "Conduct comprehensive security audit",
         "description": "Conduct comprehensive security audit and implement security best practices across all components",
-        "status": "pending",
+        "status": "in-progress",
         "priority": "high",
         "dependencies": [],
-        "details": "Security audit is critical for production readiness. Need to audit authentication, data handling, API security, and infrastructure security.",
+        "details": "IN PROGRESS. 29.1 (auth/authz) and 29.2 (API security) ran on 2026-09-30 across all 44 functions and found SIX ENDPOINTS WITH NO AUTHENTICATION -- booking-queue (the whole customer booking list, name/email/phone, with wildcard CORS), lead-merge, lead-duplicates, send-notification (open mail relay), lead-management (enumeration oracle), vehicle-features (Ed's picks) -- plus FOUR functions verifying staff JWTs against a literal string committed to this public repository. All fixed in code; NONE of it executed or verified. ci/check-function-auth.js written so this class of finding has a gate. 29.3 (data handling/GDPR) is task 20 and still open; 29.4 (infrastructure) not started. See docs/SECURITY.md.",
         "testStrategy": "Use security scanning tools, manual code review, and penetration testing to identify vulnerabilities",
         "subtasks": [
           {
@@ -840,9 +959,9 @@
             "title": "Audit data handling and privacy",
             "description": "Review data storage, transmission, and GDPR compliance",
             "dependencies": [],
-            "details": "Check encryption at rest/transit, data sanitization, GDPR compliance, and privacy controls",
+            "details": "PARTIAL 2026-09-30. Found and fixed: the follow-up consent guard was inert, because email_consent is a TEXT column so the stored value is the STRING 'false', which is truthy in JS and read as consent. Now type-strict, and consent is copied onto the followup row at creation instead of taking the column default. STILL OPEN: there is no data export and no deletion path for a customer, now that real PII (name, email, phone) is stored on bookings and leads. That is task 20.",
             "testStrategy": "Review data flows and privacy compliance requirements",
-            "status": "pending",
+            "status": "in-progress",
             "parentId": 29
           },
           {
@@ -859,7 +978,12 @@
             "id": "29.5",
             "title": "Implement security fixes",
             "description": "Address identified security vulnerabilities and implement fixes",
-            "dependencies": ["29.1", "29.2", "29.3", "29.4"],
+            "dependencies": [
+              "29.1",
+              "29.2",
+              "29.3",
+              "29.4"
+            ],
             "details": "Implement security patches, add security headers, improve error handling, and enhance monitoring",
             "testStrategy": "Retest security fixes and verify vulnerabilities are resolved",
             "status": "pending",
@@ -875,7 +999,10 @@
         "description": "Create detailed deployment procedures and CI/CD pipeline for Netlify with staging/production environments",
         "status": "pending",
         "priority": "medium",
-        "dependencies": [15, 18],
+        "dependencies": [
+          15,
+          18
+        ],
         "details": "",
         "testStrategy": "",
         "subtasks": [],
@@ -888,7 +1015,10 @@
         "description": "Implement Core Web Vitals tracking and performance monitoring with optimization recommendations",
         "status": "pending",
         "priority": "low",
-        "dependencies": [22, 29],
+        "dependencies": [
+          22,
+          29
+        ],
         "details": "",
         "testStrategy": "",
         "subtasks": [],
@@ -899,10 +1029,10 @@
         "id": 32,
         "title": "Set up Turso database for hybrid architecture",
         "description": "Create Turso database instance and configure connection settings for edge database operations",
-        "status": "pending",
+        "status": "done",
         "priority": "high",
         "dependencies": [],
-        "details": "Turso database setup is critical for the hybrid architecture performance improvements. Need to create instance, configure authentication, and set up connection pooling.",
+        "details": "All four subtasks were already done; only the parent status was stale. NOTE 2026-09-30: the 'hybrid architecture' framing is obsolete. Turso is the single store. See docs/PLANNED-VS-REAL.md section A.",
         "testStrategy": "Verify Turso connection, basic queries work, and connection pooling is configured correctly",
         "subtasks": [
           {
@@ -919,7 +1049,9 @@
             "id": "32.2",
             "title": "Configure authentication and security",
             "description": "Set up authentication tokens and security settings for Turso",
-            "dependencies": ["32.1"],
+            "dependencies": [
+              "32.1"
+            ],
             "details": "Generate auth tokens, configure access controls, and set up secure connection settings via setup script",
             "testStrategy": "Test authentication with different permission levels",
             "status": "done",
@@ -929,7 +1061,9 @@
             "id": "32.3",
             "title": "Set up connection configuration",
             "description": "Configure Turso connection settings in environment and application",
-            "dependencies": ["32.2"],
+            "dependencies": [
+              "32.2"
+            ],
             "details": "Add Turso connection strings to environment variables and configure connection pooling in DatabaseService",
             "testStrategy": "Verify connection configuration works in development and production",
             "status": "done",
@@ -939,7 +1073,9 @@
             "id": "32.4",
             "title": "Test Turso connectivity",
             "description": "Verify Turso database connectivity and basic operations",
-            "dependencies": ["32.3"],
+            "dependencies": [
+              "32.3"
+            ],
             "details": "Test basic CRUD operations, connection pooling, and error handling. Run: npm run migrate:turso",
             "testStrategy": "Run comprehensive connectivity tests and performance benchmarks",
             "status": "done",
@@ -953,10 +1089,12 @@
         "id": 33,
         "title": "Create Turso-compatible database schema",
         "description": "Convert PostgreSQL schema to SQLite-compatible format for Turso with FTS5 indexes and edge-optimized tables",
-        "status": "pending",
+        "status": "done",
+        "details": "Done, and marked pending by mistake. database/turso/schema.sql exists, and ci/check-insert-columns.js and ci/check-select-columns.js verify every INSERT and SELECT against the live database. Marked done 2026-09-30.",
         "priority": "high",
-        "dependencies": [32],
-        "details": "",
+        "dependencies": [
+          32
+        ],
         "testStrategy": "",
         "subtasks": [],
         "createdAt": "2024-01-01T00:00:00.000Z",
@@ -964,12 +1102,14 @@
       },
       {
         "id": 34,
-        "title": "Implement hybrid database manager",
+        "title": "RETIRED: Implement hybrid database manager",
         "description": "Create DatabaseManager class that intelligently routes operations between Supabase (writes/complex ops) and Turso (reads/caching)",
-        "status": "done",
+        "status": "cancelled",
         "priority": "high",
-        "dependencies": [32],
-        "details": "",
+        "dependencies": [
+          32
+        ],
+        "details": "RETIRED 2026-09-30. Supabase is not configured and cannot be on this plan; Netlify Database is blocked. Turso is the single store. What this task built is now a HAZARD: netlify/functions/lib/database.js reads five Supabase env vars that are all unset and is required by nothing, and utils/enhanced-database-service.js prefers SUPABASE_DB_URL over Turso -- a second data layer. One driver behaving differently than assumed is what produced the silent-UPDATE defect. Delete both rather than complete this. See docs/PLANNED-VS-REAL.md section A, and docs/MISSING.md item 16.",
         "testStrategy": "",
         "subtasks": [],
         "createdAt": "2024-01-01T00:00:00.000Z",
@@ -979,10 +1119,15 @@
         "id": 35,
         "title": "Migrate customer search operations to Turso",
         "description": "Implement FTS5 full-text search in Turso for fast customer name/email/phone searches with highlighting",
-        "status": "pending",
+        "status": "cancelled",
         "priority": "medium",
-        "dependencies": [34, 10, 8, 18],
-        "details": "",
+        "dependencies": [
+          34,
+          10,
+          8,
+          18
+        ],
+        "details": "RETIRED 2026-09-30. Premised on a Supabase-primary/Turso-replica hybrid that was abandoned: Supabase is not configured and cannot be on this plan. This task would migrate search to a replica that does not exist. Search lives in the search function and is auth-gated. See docs/PLANNED-VS-REAL.md section A.",
         "testStrategy": "",
         "subtasks": [],
         "createdAt": "2024-01-01T00:00:00.000Z",
@@ -992,10 +1137,15 @@
         "id": 36,
         "title": "Implement lead deduplication caching in Turso",
         "description": "Use Turso for fast fuzzy matching cache to accelerate lead deduplication operations and reduce Supabase load",
-        "status": "pending",
+        "status": "cancelled",
         "priority": "medium",
-        "dependencies": [34, 10, 8, 18],
-        "details": "",
+        "dependencies": [
+          34,
+          10,
+          8,
+          18
+        ],
+        "details": "RETIRED 2026-09-30. 'reduce Supabase load' refers to a service that is not configured and cannot be on this plan. Turso IS the primary store, so there is nothing to cache in front of. Deduplication works today against Turso directly.",
         "testStrategy": "",
         "subtasks": [],
         "createdAt": "2024-01-01T00:00:00.000Z",
@@ -1005,10 +1155,13 @@
         "id": 37,
         "title": "Migrate analytics and reporting data to Turso",
         "description": "Store aggregated analytics data, dashboard metrics, and reporting data in Turso for fast edge-based access",
-        "status": "pending",
+        "status": "cancelled",
         "priority": "medium",
-        "dependencies": [18, 34],
-        "details": "",
+        "dependencies": [
+          18,
+          34
+        ],
+        "details": "RETIRED 2026-09-30. Analytics already live in Turso, which is the single store -- there is no separate reporting tier to migrate into it. The real gap behind this task is task 18 (no analytics dashboard built), not data placement.",
         "testStrategy": "",
         "subtasks": [],
         "createdAt": "2024-01-01T00:00:00.000Z",
@@ -1018,10 +1171,13 @@
         "id": 38,
         "title": "Implement user session and preferences caching in Turso",
         "description": "Cache user sessions, preferences, and temporary data in Turso for fast edge access and reduced latency",
-        "status": "pending",
+        "status": "cancelled",
         "priority": "medium",
-        "dependencies": [8, 34],
-        "details": "",
+        "dependencies": [
+          8,
+          34
+        ],
+        "details": "RETIRED 2026-09-30. Premised on Turso being a replica behind a primary. It is the primary. The live concern underneath is different and is NOT retired: sales-logout.js does not actually revoke, because Netlify bundles each function separately and every bundle gets its own inlined in-memory Set. If revocation must be immediate it belongs in a revoked_tokens table. See docs/OPEN-QUESTIONS.md Q3.",
         "testStrategy": "",
         "subtasks": [],
         "createdAt": "2024-01-01T00:00:00.000Z",
@@ -1031,10 +1187,12 @@
         "id": 39,
         "title": "Set up Supabase to Turso synchronization",
         "description": "Implement change data capture and synchronization between Supabase (primary) and Turso (cache/replica) databases",
-        "status": "pending",
+        "status": "cancelled",
         "priority": "medium",
-        "dependencies": [32],
-        "details": "",
+        "dependencies": [
+          32
+        ],
+        "details": "RETIRED 2026-09-30. Synchronising two databases when only one is configured is not work, it is a way to lose data twice. There is no Supabase instance and no plan to have one. Delete rather than complete.",
         "testStrategy": "",
         "subtasks": [],
         "createdAt": "2024-01-01T00:00:00.000Z",
@@ -1044,10 +1202,13 @@
         "id": 40,
         "title": "Optimize inventory search and filtering with Turso",
         "description": "Implement fast inventory search using Turso's edge capabilities for vehicle browsing and filtering operations",
-        "status": "pending",
+        "status": "cancelled",
         "priority": "medium",
-        "dependencies": [10, 34],
-        "details": "",
+        "dependencies": [
+          10,
+          34
+        ],
+        "details": "RETIRED 2026-09-30 as written -- it asks to use Turso for something Turso is already the store for. Inventory filtering is client-side over server-rendered content and is fast; the remote's 49f7e0e added a mileage ceiling to it. The real inventory gap is different and still open: INVENTORY_SOURCE_URL is unset, so there is no live feed at all and prices are only as fresh as the last sync. See docs/MISSING.md item 8.",
         "testStrategy": "",
         "subtasks": [],
         "createdAt": "2024-01-01T00:00:00.000Z",
@@ -1057,10 +1218,12 @@
         "id": 41,
         "title": "Implement comprehensive edge caching layer",
         "description": "Create intelligent caching layer that uses Turso for frequently accessed data and Redis/memory for ultra-fast access",
-        "status": "pending",
+        "status": "cancelled",
         "priority": "medium",
-        "dependencies": [32],
-        "details": "",
+        "dependencies": [
+          32
+        ],
+        "details": "RETIRED 2026-09-30. Needs Redis, which is not configured. ioredis was flagged in docs/OPEN-QUESTIONS.md Q3 for deletion on bundle-size grounds and nothing has been configured since. Do not build a caching layer before measuring a real query that needs one.",
         "testStrategy": "",
         "subtasks": [],
         "createdAt": "2024-01-01T00:00:00.000Z",
@@ -1070,10 +1233,13 @@
         "id": 42,
         "title": "Create database performance monitoring and optimization",
         "description": "Implement monitoring for both Supabase and Turso performance, with automatic query optimization and cache hit rate tracking",
-        "status": "pending",
+        "status": "cancelled",
         "priority": "low",
-        "dependencies": [28, 34],
-        "details": "",
+        "dependencies": [
+          28,
+          34
+        ],
+        "details": "RETIRED 2026-09-30 as written -- 'both Supabase and Turso' is one database and one that does not exist. Monitoring itself is NOT retired and is a real gap: see task 28. Every failure mode found on 2026-09-30 produced a SILENT success rather than an error, which is exactly what monitoring exists to catch, and there is none. That is the highest-value monitoring requirement on this project.",
         "testStrategy": "",
         "subtasks": [],
         "createdAt": "2024-01-01T00:00:00.000Z",
@@ -1083,10 +1249,12 @@
         "id": 43,
         "title": "Update documentation for hybrid Supabase + Turso architecture",
         "description": "Create comprehensive documentation for the hybrid database architecture, migration guides, and operational procedures",
-        "status": "pending",
+        "status": "cancelled",
         "priority": "medium",
-        "dependencies": [34],
-        "details": "",
+        "dependencies": [
+          34
+        ],
+        "details": "RETIRED 2026-09-30. This task would document an architecture that does not exist. Documentation of a system you decided against is worse than none: it reads as current and sends the next person looking for a service that was never there. Docs were written instead for what IS true -- docs/STORAGE.md, docs/DATABASE.md, docs/SECURITY.md.",
         "testStrategy": "",
         "subtasks": [],
         "createdAt": "2024-01-01T00:00:00.000Z",
@@ -1098,7 +1266,9 @@
         "description": "Create data seeding scripts for customers, leads, vehicles, and sample data",
         "status": "done",
         "priority": "high",
-        "dependencies": [9],
+        "dependencies": [
+          9
+        ],
         "details": "Created comprehensive data seeding system with scripts for customers, leads, vehicles, interactions, appointments, and analytics data. Added vehicle methods to DatabaseService and created seeding scripts with realistic sample data.",
         "testStrategy": "Run seeding scripts and verify data integrity, relationships, and realistic distribution",
         "subtasks": [
@@ -1116,7 +1286,9 @@
             "id": 44.2,
             "title": "Create lead data seeding scripts",
             "description": "Generate sample lead data with various sources, statuses, and scoring",
-            "dependencies": [44.1],
+            "dependencies": [
+              44.1
+            ],
             "details": "Create scripts to seed 200+ sample leads with different sources (website, phone, email, referral), statuses, lead scores, and assignment to sales reps.",
             "testStrategy": "Verify lead data relationships, proper assignment, and realistic distribution",
             "status": "done",
@@ -1136,7 +1308,10 @@
             "id": 44.4,
             "title": "Create interaction and appointment seeding scripts",
             "description": "Generate sample customer interactions, appointments, and communication history",
-            "dependencies": [44.1, 44.2],
+            "dependencies": [
+              44.1,
+              44.2
+            ],
             "details": "Create scripts to seed customer interactions, appointments, follow-ups, and communication history. Include different interaction types and outcomes.",
             "testStrategy": "Verify interaction data relationships, realistic timelines, and proper linking",
             "status": "done",
@@ -1146,7 +1321,11 @@
             "id": 44.5,
             "title": "Create sales performance and analytics seeding",
             "description": "Generate sample sales data, performance metrics, and analytics history",
-            "dependencies": [44.1, 44.2, 44.3],
+            "dependencies": [
+              44.1,
+              44.2,
+              44.3
+            ],
             "details": "Create scripts to seed historical sales data, conversion rates, performance metrics, and analytics data for dashboard testing and demonstration.",
             "testStrategy": "Verify sales data accuracy, realistic performance metrics, and proper analytics calculations",
             "status": "done",
@@ -1161,7 +1340,10 @@
         "description": "Create account management features for users, customers, and admin operations",
         "status": "pending",
         "priority": "high",
-        "dependencies": [8, 44],
+        "dependencies": [
+          8,
+          44
+        ],
         "details": "",
         "testStrategy": "",
         "subtasks": [
@@ -1179,7 +1361,9 @@
             "id": 45.2,
             "title": "Implement customer account management",
             "description": "Build customer account creation, management, and relationship features",
-            "dependencies": [44.1],
+            "dependencies": [
+              44.1
+            ],
             "details": "Create customer account management including customer creation, profile editing, relationship management, and account linking. Include customer portal access.",
             "testStrategy": "Test customer account creation, profile management, relationship features, and portal access",
             "status": "pending",
@@ -1189,17 +1373,21 @@
             "id": 45.3,
             "title": "Build admin user management interface",
             "description": "Create admin interface for user management, role assignment, and account administration",
-            "dependencies": [45.1],
-            "details": "Build admin interface for user management including user creation, role assignment, permission management, account suspension/reactivation, and activity monitoring.",
+            "dependencies": [
+              45.1
+            ],
+            "details": "DONE 2026-10-01. netlify/functions/staff-management.js + /admin/staff. Edits an existing sales_reps row: name, role, status, permissions. Admin only. THIS PAGE CANNOT CREATE A SIGN-IN -- Netlify Identity owns that; a new person accepts an invite and signs in once, and ensureStaffProfile() provisions their row on that first sign-in. The page says so on every row, because the reverse order produces an account with no permissions and a 403 with no explanation. Refuses to demote or deactivate the LAST active admin (409 last-admin): that would lock every function in the project and leave no way to undo it short of SQL. Reports on GET when nobody is active, because that is the state in which every enquiry is recorded and emailed to nobody. Gate: ci/check-staff-management.js. 45.1/45.2/45.4/45.5 remain pending.",
             "testStrategy": "Test admin user management features, role assignment, permission enforcement, and activity monitoring",
-            "status": "pending",
+            "status": "done",
             "parentId": 45
           },
           {
             "id": 45.4,
             "title": "Create account security and audit logging",
             "description": "Implement account security features, audit logging, and compliance tracking",
-            "dependencies": [45.1],
+            "dependencies": [
+              45.1
+            ],
             "details": "Create account security features including two-factor authentication, login attempt monitoring, audit logging, and compliance tracking. Include security alerts and reporting.",
             "testStrategy": "Test security features, audit logging, compliance tracking, and alert systems",
             "status": "pending",
@@ -1209,7 +1397,11 @@
             "id": 45.5,
             "title": "Build bulk account operations and imports",
             "description": "Create bulk account creation, import/export, and batch operations",
-            "dependencies": [44.1, 45.1, 45.2],
+            "dependencies": [
+              44.1,
+              45.1,
+              45.2
+            ],
             "details": "Create bulk account operations including CSV import/export, batch user creation, bulk customer account setup, and mass account updates. Include validation and error handling.",
             "testStrategy": "Test bulk operations, import/export functionality, batch processing, and error handling",
             "status": "pending",

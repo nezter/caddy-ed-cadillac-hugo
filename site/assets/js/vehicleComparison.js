@@ -221,6 +221,11 @@
     if (!list.length) {
       t.classList.add('hidden');
       t.innerHTML = '';
+// The strip's compare section empties too, or it keeps showing cars that
+      // are no longer in the comparison. reflectButtons() is upstream's
+      // extraction of what used to be an inline copy of this same loop, so
+      // calling it here is what resets every button.
+      if (window.CaddyPickTray) window.CaddyPickTray.renderCompare([]);
       reflectButtons();
       return;
     }
@@ -280,9 +285,18 @@
     t.innerHTML = html;
     t.classList.remove('hidden');
     reflectButtons();
+
+    // The strip. Without it, picking a car produces no visible change until the
+    // shopper scrolls to a table at the bottom of the page, so they cannot see
+    // what they have picked or take one back.
+    if (window.CaddyPickTray) {
+      window.CaddyPickTray.renderCompare(
+        chosen.map(function (d) { return { slug: d.slug, title: d.title, stock: d.stock }; })
+      );
+    }
   }
 
-  /** Say, on every button, whether its car is in the comparison. */
+/** Say, on every button, whether its car is in the comparison. */
   function reflectButtons() {
     document.querySelectorAll('[data-compare-toggle]').forEach(function (btn) {
       var on = list.indexOf(btn.dataset.compareToggle) !== -1;
@@ -334,6 +348,16 @@
         render();
         writeUrl(list);
       }
+    });
+
+    // The strip's remove and clear. One listener for the whole document, so a
+    // re-render of the chips cannot lose it.
+    document.addEventListener('caddy:remove-from-compare', function (e) { toggle(e.detail.slug); });
+    document.addEventListener('caddy:clear-compare', function () {
+      list = [];
+      render();
+      writeUrl(list);
+      status('');
     });
 
     if (list.length) {

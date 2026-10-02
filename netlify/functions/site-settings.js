@@ -41,6 +41,7 @@
 
 const DatabaseService = require('./utils/database-service');
 const { authenticateRequest, optionalAuthenticateRequest } = require('./utils/auth-middleware');
+const AuditLog = require('./utils/audit-log');
 
 const CORS = {
   'Content-Type': 'application/json',
@@ -265,6 +266,23 @@ exports.handler = async (event) => {
         return json(503, { error: 'database-not-configured' });
       }
 
+      // Read the current values BEFORE the upsert. An audit row that records only
+      // the new value cannot answer "what did it say before?", which is the
+      // question a banner that appeared and vanished actually turns on.
+      const before = {};
+      for (const [key] of entries) {
+        try {
+          const prior = await DatabaseService.query(
+            'SELECT value FROM site_settings WHERE key = $1 LIMIT 1', [key]
+          );
+          before[key] = prior.rows && prior.rows[0] ? prior.rows[0].value : null;
+        } catch {
+          // A read failure must not block a write. The audit row then records
+          // `null`, which says "we do not know", rather than a wrong old value.
+          before[key] = null;
+        }
+      }
+
       const saved = [];
       for (const [key, value] of entries) {
         const def = KEYS[key];
@@ -285,6 +303,28 @@ exports.handler = async (event) => {
         );
         saved.push(key);
       }
+
+      // A setting changes what the public site says. That is worth a record even
+      // though it is reversible -- a banner that appears and nobody remembers
+      // setting it is indistinguishable from a bug.
+      //
+      // Keys and old/new values, no customer data: site_settings holds signage
+      // and contact copy, not people.
+      await AuditLog.record(DatabaseService, {
+        action: AuditLog.ACTIONS.SETTINGS_UPDATE,
+        entityType: 'site_settings',
+        entityId: saved.join(','),
+        actor: auth.user,
+        detail: {
+          keys: saved,
+          before: Object.fromEntries(
+            saved.map((k) => [k, (before[k] && before[k].value) || null])
+          ),
+          after: Object.fromEntries(entries.filter(([k]) => saved.includes(k))),
+        },
+        rowsAffected: saved.length,
+        context: event,
+      });
 
       return json(200, { saved, settings: await readAll() });
     }

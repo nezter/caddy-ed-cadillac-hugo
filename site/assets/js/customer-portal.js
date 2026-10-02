@@ -733,11 +733,12 @@ class CustomerPortal {
     };
 
     try {
-      // NOTE: there is no `schedule-appointment` function in this repo. This
-      // call has always 404'd; it is declared as a known gap in
-      // ci/verify-endpoints.js (KNOWN_MISSING) rather than quietly removed, so
-      // that the form's promise is visible instead of the form just being
-      // absent. It needs a function, not a fix here.
+      // This used to 404 on every submission: there was no
+      // `schedule-appointment` function in the repo, and the gap was declared in
+      // ci/verify-endpoints.js KNOWN_MISSING rather than hidden. That function
+      // now exists (netlify/functions/schedule-appointment.js) and records
+      // through utils/inquiry.js, so the booking lands in booking_requests where
+      // /admin/bookings can see it -- before any notification is attempted.
       const response = await fetch('/.netlify/functions/schedule-appointment', {
         method: 'POST',
         headers: {
@@ -844,14 +845,43 @@ class CustomerPortal {
     };
 
     try {
-      const response = await fetch('/.netlify/functions/send-notification', {
+      // THIS USED TO POST TO send-notification AND RECORD NOTHING.
+      //
+      // It passed a signed-in CUSTOMER token, but send-notification.js had no
+      // auth check at all, so the token was decorative and the message went
+      // nowhere: the function logged it to stdout, answered `{success: true}`,
+      // and no row was written anywhere. The customer was shown "Message sent
+      // successfully!" over a message that existed in a log and nowhere else.
+      //
+      // That endpoint is now staff-only, so this would have become a visible 401
+      // instead of a silent loss -- but a visible 401 is not a fix, it just
+      // moves the failure. A customer's message to the dealership has to be
+      // STORED first and emailed second, which is what every other form on this
+      // site does after the enquiry-path fix.
+      //
+      // lead-form is that path. It records through utils/inquiry.js, so the
+      // message lands in `leads` where /admin/leads can find it, and the
+      // notification happens afterwards and cannot cost the record.
+      const response = await fetch('/.netlify/functions/lead-form', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${this.customerData.token}`
         },
         credentials: 'same-origin',
-        body: JSON.stringify(messageData)
+        body: JSON.stringify({
+          name: messageData.customer_name,
+          email: messageData.customer_email,
+          // lead-form validates a phone because the roadside-facing forms need
+          // one to call back on. A portal message is from someone already signed
+          // in, and an account can legitimately have no phone on file. So it is
+          // sent as empty rather than invented, and lead-form is the place that
+          // decides whether that is acceptable.
+          phone: messageData.customer_phone || '',
+          message: messageData.content,
+          formType: 'portal_message',
+          pageUrl: '/customer-portal/',
+        })
       });
 
       const result = await response.json().catch(() => ({}));
@@ -860,8 +890,16 @@ class CustomerPortal {
         this.showNotification('Message sent successfully!', 'success');
         this.hideMessageModal();
         event.target.reset();
+      } else if (response.status === 400 && (result?.validationErrors || result?.fieldErrors)?.phone) {
+        // Say the real thing rather than "failed", so the customer knows the one
+        // thing that would fix it.
+        //
+        // `validationErrors` is the production key. `fieldErrors` only exists when
+        // NODE_ENV !== 'production' (utils/error-handler.js), so checking only that
+        // one works in dev and silently does nothing on the live site.
+        throw new Error('Please add a phone number to your profile so we can reply.');
       } else {
-        throw new Error(result?.error || 'Failed to send message');
+        throw new Error(result?.message || result?.error || 'Failed to send message');
       }
     } catch (error) {
       console.error('Message sending error:', error);

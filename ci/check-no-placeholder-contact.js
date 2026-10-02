@@ -156,19 +156,17 @@ function htmlFiles(dir, out = []) {
 }
 
 function main() {
-  if (!fs.existsSync(PUBLIC)) {
-    console.error('  SKIPPED: site/public does not exist. Build the site first.');
-    console.error('  This check reads the BUILT html on purpose -- a template, a');
-    console.error('  front-matter override and a JS string are three different files,');
-    console.error('  and the output is the only place they cannot disagree.');
-    process.exit(0);   // a skip is not a failure; ci/check-all.js reads the line above
-  }
-
-  const files = htmlFiles(PUBLIC);
+  const files = fs.existsSync(PUBLIC) ? htmlFiles(PUBLIC) : [];
   const findings = [];
 
   // The address invariant, applied as its own rule so a mismatch reads as a
   // wrong-street-address problem rather than as a generic placeholder.
+  //
+  // Declared up here because BOTH loops below use it -- the function-source scan
+  // runs before the html scan. It was originally declared just above the html
+  // loop, and moving the new scan in ahead of it made that a temporal dead zone
+  // reference: `const` throws, so the whole check died on first run rather than
+  // reporting a finding.
   const street = confirmedStreet();
   const streetRule = [
     `a street address other than the confirmed one ("${street}")`,
@@ -176,8 +174,33 @@ function main() {
     'every street address on this site must be the one in site/config.toml',
   ];
 
-  for (const file of files) {
-    const body = fs.readFileSync(file, 'utf8');
+  /**
+   * Apply every rule to one file, appending to `findings`.
+   *
+   * `stripComments` is on for JavaScript. The source scan would otherwise flag
+   * the very sentences that document these defects: schedule-test-drive.js
+   * carries a comment explaining that its old defaults were
+   * `sales@example.com` and `website@example.com`, and the "example address"
+   * rule would fail the build on a comment describing a bug that was fixed.
+   *
+   * That is the failure mode this whole file exists to prevent -- a check whose
+   * output cannot be trusted -- so a rule that cannot tell a value from a
+   * sentence about a value has to be fixed, not obeyed.
+   *
+   * HTML gets no such treatment: comments do not reach a customer's browser, and
+   * Hugo's own output is already the thing being judged.
+   */
+  const scan = (file, stripComments) => {
+    let body = fs.readFileSync(file, 'utf8');
+    if (stripComments) {
+      body = body
+        // Block comments, then line comments. The second pattern is conservative
+        // about `//` inside a string such as a URL -- worst case it stops a
+        // comment early, which can only cause a false negative, never a false
+        // positive.
+        .replace(/\/\*[\s\S]*?\*\//g, ' ')
+        .replace(/^\s*\/\/.*$/gm, ' ');
+    }
     for (const [label, re, fix] of [...RULES, streetRule]) {
       // A fresh RegExp per file: these carry /g and would otherwise carry
       // lastIndex across files and miss every second match.
@@ -195,13 +218,68 @@ function main() {
         if (m.index === rx.lastIndex) rx.lastIndex += 1;
       }
     }
+  };
+
+  // --- the built html AND the function source ---------------------------------
+  //
+  // Reading the built output was the right call for the first three defects: a
+  // template, a front-matter override and a JS string are three different files
+  // and three different mechanisms, and the output is the only place they cannot
+  // disagree.
+  //
+  // But it has a blind spot, and the 555 exchange found it a third time. Reading
+  // HTML cannot see a value that a function PRODUCES AT RUNTIME:
+  //
+  //     netlify/functions/contact-salesperson.js
+  //       phone: '+17045557890'      <-- (704) 555-7890
+  //
+  // That number was never in the output, so this check passed, while the sales
+  // team card served it to customers -- a number belonging to nobody, on a site
+  // where every other page dialled the real one. The header/footer sweep fixed
+  // 244 tel: links and could not have found it.
+  //
+  // So the same rules are applied to function source as well. They are not
+  // additive noise: every rule here is a value that is wrong in ANY context, in
+  // any file, at any time.
+  const srcFiles = [];
+  const fnDir = path.join(ROOT, 'netlify', 'functions');
+
+  // Recursive, because a shared helper is just as capable of reaching the
+  // customer as a handler is: utils/inquiry.js builds mail bodies and the
+  // fallback host, and utils/error-handler.js decides what a visitor is told.
+  // A non-recursive readdir would have scanned only netlify/functions/*.js and
+  // quietly reported "no findings" about the whole of utils/ -- which is what
+  // this file's first draft did, while claiming otherwise in a comment.
+  const walk = (dir) => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        // node_modules holds thousands of third-party files; a placeholder
+        // contact detail in somebody else's package is not this site's defect.
+        if (entry.name === 'node_modules') continue;
+        walk(full);
+      } else if (entry.name.endsWith('.js')) {
+        srcFiles.push(full);
+      }
+    }
+  };
+  if (fs.existsSync(fnDir)) walk(fnDir);
+
+  for (const file of srcFiles) scan(file, true);
+
+  if (!files.length) {
+    console.error('  SKIP  site/public does not exist, so the built html was not scanned.');
+    console.error('        Function source WAS scanned. Build the site for full coverage.');
   }
 
-  console.log(`  pages scanned: ${files.length}`);
-  console.log(`  rules:         ${RULES.length}`);
+  for (const file of files) scan(file);
+
+  console.log(`  pages scanned:  ${files.length}`);
+  console.log(`  source scanned: ${srcFiles.length} function file(s)`);
+  console.log(`  rules:          ${RULES.length + 1}`);
 
   if (!findings.length) {
-    console.log('\n  OK: no placeholder contact details in the built site.');
+    console.log('\n  OK: no placeholder contact details in the built site or in function source.');
     return;
   }
 

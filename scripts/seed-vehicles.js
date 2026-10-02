@@ -3,11 +3,21 @@
 /**
  * Seed Vehicles
  * Populates the database with sample vehicle inventory
+ *
+ * GUARDED. See require-seed-acknowledgement.js for why: this writes to the same
+ * database the dealership's real admin pages read, and there is nothing on those
+ * pages to distinguish a real car from a seeded one.
  */
 
 require('dotenv').config();
 
 const DatabaseService = require('../netlify/functions/utils/database-service');
+const { requireSeedAcknowledgement } = require('./require-seed-acknowledgement');
+
+requireSeedAcknowledgement({
+  what: 'sample vehicle inventory',
+  undo: "DELETE FROM vehicles WHERE vin LIKE '%' AND year = 2024;  // narrow this first",
+});
 
 async function seedVehicles() {
   console.log('🚗 Seeding vehicle inventory...');

@@ -1,3 +1,5 @@
+const { authenticateRequest } = require('./utils/auth-middleware');
+
 /**
  * booking-queue.js -- durable record of booking requests.
  *
@@ -41,9 +43,21 @@ const DatabaseService = require('./utils/database-service');
 
 const CORS = {
   'Content-Type': 'application/json',
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
+  // NOT a wildcard, and this is not a style preference.
+  //
+  // This endpoint returns the booking_requests table: customer name, email
+  // address, phone number, and the car they asked about. With
+  // Access-Control-Allow-Origin: * any web page on the internet could fetch
+  // this endpoint and read the lot of them -- a script tag on any site at all
+  // would do it, silently, and the browser would hand the data over because the
+  // server said it was fine to.
+  //
+  // The admin page that reads this is served from the same origin
+  // (site/assets/js/bookings-admin.js), so it needs no CORS header at all.
+  // Same-origin requests are always allowed; the header is only ever needed for
+  // cross-origin ones, and there are none here. Omitting it is the fix.
+  'Access-Control-Allow-Methods': 'GET, PATCH, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   'Cache-Control': 'no-store',
 };
 
@@ -233,6 +247,36 @@ async function httpHandler(event) {
   const json = (status, body) => ({ statusCode: status, headers: CORS, body: JSON.stringify(body) });
 
   if (event.httpMethod === 'OPTIONS') return { statusCode: 204, headers: CORS, body: '' };
+
+  // STAFF ONLY. The read path was just as open as the write path, and the write
+  // path is the one that was reasoned about.
+  //
+  // The comment above this function worked through what an unauthenticated
+  // caller could do with POST and concluded it could not write arbitrary
+  // entries, then measured the PATCH blast radius as "mark something cancelled".
+  // Good analysis. It was never applied to GET, which has no rate limit, no
+  // write, and no visible effect -- and which returns every booking request in
+  // the table, including full name, email address and phone number, to anybody
+  // who asks.
+  //
+  // So the list of customers who called about a specific car was one GET away
+  // from being public, on a site that had just been given a working test-drive
+  // form to fill it. Quiet writes get noticed because something breaks. A
+  // successful read that hands over the customer list looks identical to success.
+  //
+  // `record()` below is unaffected: it is called in-process by
+  // schedule-test-drive.js and never passes through here, which is the whole
+  // reason the record-before-notify path keeps working.
+  const auth = await authenticateRequest(event, {
+    requireAuth: true,
+    allowedRoles: ['admin', 'manager', 'sales_rep'],
+  });
+  if (!auth.authenticated) {
+    return json(auth.error?.statusCode || 401, {
+      error: 'Sign in to view booking requests',
+      code: 'unauthenticated',
+    });
+  }
 
   if (event.httpMethod === 'GET') {
     const { entries, available, error } = await list();

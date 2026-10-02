@@ -22,6 +22,29 @@
   const ENDPOINT = '/.netlify/functions/vehicle-features';
   const MAX = 6; // matches the cap the home page applies
 
+  /**
+   * Headers for a write, including the admin session token.
+   *
+   * The POST half of vehicle-features.js is staff-only. This page is the only
+   * legitimate writer, so it has to present the credential -- without this the
+   * guard would simply break the one control that is supposed to work.
+   *
+   * Read from the same place as every other admin script (admin-settings.js,
+   * bookings-admin.js): one answer to "what is the session token", not one per
+   * page.
+   */
+  function authHeaders() {
+    let token = '';
+    try {
+      token = window.localStorage.getItem('caddyed_admin_token') || '';
+    } catch (e) {
+      token = '';
+    }
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers.Authorization = 'Bearer ' + token;
+    return headers;
+  }
+
   const listEl = document.querySelector('[data-fav-list]');
   const statusEl = document.querySelector('[data-fav-status]');
   const filterEl = document.querySelector('[data-fav-filter]');
@@ -132,13 +155,19 @@
 
     fetch(ENDPOINT, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders(),
       body: JSON.stringify({ slug: slug, featured: want }),
     })
       .then(function (r) {
         return r.json().then(function (body) { return { ok: r.ok, body: body }; });
       })
       .then(function (res) {
+        // An unauthenticated write is a different problem from a failed write, and
+        // "Save failed" hides it. The endpoint's POST is staff-only now; this page
+        // is the only legitimate writer, so it must send the session token.
+        if (res.body && res.body.code === 'unauthenticated') {
+          throw new Error('Sign in again before changing the vehicle picks.');
+        }
         if (!res.ok) throw new Error(res.body && res.body.error || 'Save failed');
         favourites = res.body.favourites || [];
         render();
@@ -163,7 +192,7 @@
     Promise.all(favourites.map(function (slug) {
       return fetch(ENDPOINT, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders(),
         body: JSON.stringify({ slug: slug, featured: false }),
       });
     }))

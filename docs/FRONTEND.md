@@ -132,6 +132,57 @@ grouped by what happened:
 | tests | `refactored/tests/*.test.js` | not bundled, run by jest |
 | orphan CSS | `components/notification.css`, `components/lazy-loading.css` | paired with, or alongside, unmounted JS |
 
+> **The counts above are as-recorded and are now stale.** `compare-tray.js` was
+> added on 2026-09-30 and `components/advanced-search.js`,
+> `interaction-timeline.js`, `lead-scoring-dashboard.js` and
+> `lead-assignment-dashboard.js` turned out to be **mounted** through admin page
+> front matter, not dead. `docs/feature-inventory.md` listed the last four as
+> orphans; that was wrong. Re-run `node scripts/front-end-graph.js` before
+> quoting any number from this section.
+
+---
+
+## The one bottom strip (added 2026-09-30)
+
+Compare and shortlist are two separate features with two separate pieces of
+state, and they previously showed the shopper nothing:
+
+- **Shortlist** had a fixed bar at the bottom listing chosen cars.
+- **Compare** filled a table further down the page. Ticking "Compare" produced
+  no visible change at all, so a shopper with two cars chosen could not see it,
+  could not see which, and could not undo a misclick without finding the card.
+
+Two fixed bars at the bottom of the screen cannot both exist — they overlap, and
+the top one takes every click. So there is **one strip, built by
+`compare-tray.js`, with a section for each**.
+
+```
+site/assets/js/compare-tray.js     owns the strip; publishes window.CaddyPickTray
+site/assets/js/shortlist.js        pushes its state in; keeps a standalone fallback
+site/assets/js/vehicleComparison.js  pushes its state in
+site/assets/css/components/pick-tray.css
+```
+
+Rules that matter if you edit any of them:
+
+- The strip reuses the **shortlist's own CSS classes** (`.shortlist`,
+  `.shortlist__inner`, `.shortlist__items`, …) so it inherits the whole existing
+  treatment, including the `.has-shortlist` body padding that stops the bar
+  covering the bottom row of vehicle cards. That bug — tick one car, every other
+  one becomes untickable — is not being reintroduced by a second bar.
+- Chips **wrap** rather than scroll sideways, so three cars are visible at once.
+  `pick-tray.css` overrides `overflow-x: auto` for exactly that reason.
+- Each feature script renders only its own section. Neither rebuilds the other,
+  so neither can lose the other's work.
+- Both scripts fall back to their own standalone behaviour if `CaddyPickTray` is
+  absent, so loading one without the other does not break the feature.
+
+`ci/check-compare-shortlist.js` covers this behaviourally (23 existing
+assertions, **16 more added for the strip and never run**). It loads
+`compare-tray.js` **first**, deliberately: loading it after the feature scripts
+would quietly exercise only their fallbacks, and every strip assertion would pass
+against a bar no real page builds.
+
 **`components/notification.js` (6 KB) plus its stylesheet is a written feature
 that no page mounts.** `partials/stock-alerts.html` is a plain form. If a
 toast/notification system is wanted, that is the implementation and mounting it
@@ -153,11 +204,72 @@ search described below rather than from the graph. Only `refactored/tests/`
 
 ---
 
+## Customer forms: record first, notify second
+
+**The single most important thing to know about the forms on this site.** Added
+2026-09-30, and it was the opposite before.
+
+Every customer-facing form used to do this:
+
+```js
+await transporter.sendMail({ ... });   // 1. tell someone
+await createLead(data);               // 2. keep the lead
+```
+
+and treated a failed send as a failed request. SMTP is not configured, so step
+one threw and step two never ran. Three real submissions produced **zero** rows
+in `leads`, `customers` and `booking_requests`. A customer typed their name,
+email, phone and the car they wanted, and the business had no idea they existed.
+
+`netlify/functions/utils/inquiry.js` is now the single path:
+
+```js
+const outcome = await inquiry.submit('lead' /* or 'booking' */, {
+  name, email, phone, message, vehicleTitle, preferredDate, preferredTime,
+});
+
+// outcome.recorded === true   the row exists
+// outcome.notified === false  and it did NOT email
+// outcome.notifyReason        'smtp-not-configured', and so on
+```
+
+`{recorded: true, notified: false}` is a **success**. The enquiry is in the
+database and visible in the admin; it just did not also send an email. Every
+function that takes an enquiry returns `notified` in its response, so "recorded
+but not emailed" is never confused with "recorded and emailed".
+
+| form | posts to | notes |
+|---|---|---|
+| quick ask, staff card | `lead-form`, `contact-salesperson` | staff card **records now**; it used to return a hardcoded directory for a POST and print "Thank you for contacting Caddy Ed" |
+| contact | `contact-form` | |
+| test drive | `schedule-test-drive` | |
+| pre-approval | `pre-approval` | **records now**; still honestly `processed: false` — there is no lender |
+| service appointment | `schedule-appointment` | **new**; the portal's form 404'd on every submission until now |
+| portal message | `lead-form` | **records now**; it used to post to an endpoint that checked no auth and stored nothing |
+
+The recipient is resolved in one place, `inquiry.resolveRecipient()`: the
+`sales_reps` table first, then the environment. There used to be four
+disagreeing answers, one of them a hardcoded domain this business does not own.
+
+**Client-side rules that exist because of specific bugs:**
+
+- Send **JSON**, not `FormData`, where the function does `JSON.parse`.
+  `financingCalculator.js` posted multipart, the function rejected it, and the
+  client rendered "Application Submitted! Your confirmation number: undefined".
+- **Check the status.** Several forms rendered a success panel on any 200,
+  including from a function that ignored the method and the body entirely.
+- **Always have a `.catch()`.** The pre-approval button used to stay disabled on
+  "Submitting…" forever with no way out.
+- `lead-form` requires a phone, because the roadside-facing forms need a number
+  to call back on. The customer portal may have none on file.
+
+---
+
 ## The gates
 
 ```bash
-npm run check                 # all nine, one table
-npm run check:quick           # skip the slow one
+npm run check                 # all eleven, one table
+npm run check:quick           # skip the slow ones
 node ci/check-front-end.js    # the module graph, on its own
 ```
 
@@ -178,10 +290,26 @@ Two things it does that the individual checks do not:
   *fixed* fake street addresses as failures, on a clean tree.
 
 `ci/check-compare-shortlist.js` is the one to read for behaviour. It loads the
-**built** inventory page into jsdom, runs both real scripts, and clicks the
+**built** inventory page into jsdom, runs the real scripts, and clicks the
 buttons — because the compare feature was inert for three stacked reasons and
 every one of them passed a build and passed every gate. A build checks that files
 exist and that scripts parse; it cannot check that a button does something.
+
+**Its load order is part of the test.** It evaluates `compare-tray.js` *before*
+`shortlist.js` and `vehicleComparison.js`, because that is the order the real page
+uses. Load the strip script afterwards and both feature scripts take their
+standalone fallbacks, the shared strip is never built, and every strip assertion
+passes against a bar that no real page produces.
+
+Two other gates worth reading:
+
+- `ci/check-function-auth.js` — six endpoints had no authentication at all, three
+  of them serving or destroying customer records. See `docs/SECURITY.md`.
+- `ci/check-inquiry-path.js` — submits to the three real functions against the
+  real database **in the configuration they are deployed in**, and asserts the
+  enquiry is there afterwards, including that malformed payloads are still
+  refused. Because "records everything" must not quietly become "accepts
+  everything".
 
 It fails the build when:
 

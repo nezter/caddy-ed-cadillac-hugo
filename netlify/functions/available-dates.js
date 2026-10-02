@@ -16,6 +16,19 @@
  *
  * When a real booking system lands, this is the single file to replace: query
  * it for booked dates and return them in the same shape.
+ *
+ * WARNING FOR WHOEVER DOES THAT
+ * -----------------------------
+ * Returning an empty array is public information and needs no guard. Returning
+ * the REAL booked dates is not: an unauthenticated caller who can enumerate
+ * dates can then read, day by day, exactly when this dealership is expecting a
+ * customer -- which is the clearest possible signal to anyone considering
+ * stealing a car, and it maps the quietest and busiest days of the week.
+ *
+ * The calendar needs "which dates can I not offer", not "who is coming in". When
+ * this stops being an empty array, return availability (a boolean or a count),
+ * never the customer, and put the names behind the booking calendar in
+ * google-calendar.js, which is staff-only. Same for available-times.js.
  */
 
 'use strict';

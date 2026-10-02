@@ -40,14 +40,20 @@
 const STORE = 'vehicle-features';
 
 const DatabaseService = require('./utils/database-service');
+const { authenticateRequest } = require('./utils/auth-middleware');
+// Was a module-level constant with `Access-Control-Allow-Origin: '*'`, shared by
+// both halves of this endpoint. GET is genuinely public -- it returns vehicle
+// slugs, not people -- but POST is staff-only, and one wildcard for both meant
+// the admin half answered any origin too.
+//
+// Built per request from the caller's Origin instead. GET still works for every
+// visitor because site/assets/js/ed-picks.js runs on our own pages.
+const { originHeaders } = require('./utils/cors-middleware');
 
-const CORS = {
-  'Content-Type': 'application/json',
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
+const corsFor = (event) => ({
+  ...originHeaders(event, 'GET, POST, OPTIONS'),
   'Cache-Control': 'no-store',
-};
+});
 
 /**
  * Read the set of favourited slugs.
@@ -78,7 +84,7 @@ async function readFavourites() {
 
 exports.handler = async function (event) {
   if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 204, headers: CORS, body: '' };
+    return { statusCode: 204, headers: corsFor(event), body: '' };
   }
 
   try {
@@ -86,16 +92,45 @@ exports.handler = async function (event) {
       const { slugs, source } = await readFavourites();
       return {
         statusCode: 200,
-        headers: CORS,
+        headers: corsFor(event),
         body: JSON.stringify({ favourites: slugs, source }),
       };
     }
 
     if (event.httpMethod === 'POST') {
+      // STAFF ONLY. GET above deliberately stays public -- site/assets/js/ed-picks.js
+      // reads this on every inventory page for every visitor, and the whole point
+      // of it is to be public.
+      //
+      // But POST is the other half of the same table, and it was open. That
+      // endpoint is the admin's control over what the site calls "Ed's pick":
+      // site/assets/js/favourites-admin.js is the only legitimate writer, and it
+      // sends a staff token. Without the check, anyone could POST a slug and add
+      // or remove cars from the dealership's own editorial list -- badge every car
+      // on the lot as a recommendation, or empty the list.
+      //
+      // The slug regex just below was clearly written with the threat in mind --
+      // "cannot be used as an arbitrary-write store" -- so the author was thinking
+      // about who could write here. What was missed is that it was anyone.
+      const auth = await authenticateRequest(event, {
+        requireAuth: true,
+        allowedRoles: ['admin', 'manager', 'sales_rep'],
+      });
+      if (!auth.authenticated) {
+        return {
+          statusCode: auth.error?.statusCode || 401,
+          headers: corsFor(event),
+          body: JSON.stringify({
+            error: 'Sign in to change the vehicle picks',
+            code: 'unauthenticated',
+          }),
+        };
+      }
+
       if (!DatabaseService.isDatabaseConfigured()) {
         return {
           statusCode: 503,
-          headers: CORS,
+          headers: corsFor(event),
           body: JSON.stringify({
             error: 'Favourites storage is not configured on this site.',
             detail: 'Set TURSO_DATABASE_URL and TURSO_AUTH_TOKEN to enable this.',
@@ -109,7 +144,7 @@ exports.handler = async function (event) {
       } catch (e) {
         return {
           statusCode: 400,
-          headers: CORS,
+          headers: corsFor(event),
           body: JSON.stringify({ error: 'Invalid JSON body' }),
         };
       }
@@ -118,7 +153,7 @@ exports.handler = async function (event) {
       if (!slug) {
         return {
           statusCode: 422,
-          headers: CORS,
+          headers: corsFor(event),
           body: JSON.stringify({ error: 'slug is required' }),
         };
       }
@@ -128,7 +163,7 @@ exports.handler = async function (event) {
       if (!/^[a-z0-9][a-z0-9-]{0,120}$/i.test(slug)) {
         return {
           statusCode: 422,
-          headers: CORS,
+          headers: corsFor(event),
           body: JSON.stringify({ error: 'slug contains characters a vehicle page cannot have' }),
         };
       }
@@ -158,20 +193,20 @@ exports.handler = async function (event) {
 
       return {
         statusCode: 200,
-        headers: CORS,
+        headers: corsFor(event),
         body: JSON.stringify({ slug, featured: on, favourites: next }),
       };
     }
 
     return {
       statusCode: 405,
-      headers: CORS,
+      headers: corsFor(event),
       body: JSON.stringify({ error: 'Method not allowed' }),
     };
   } catch (err) {
     return {
       statusCode: 500,
-      headers: CORS,
+      headers: corsFor(event),
       body: JSON.stringify({ error: 'Favourites store failed', detail: String(err.message) }),
     };
   }
