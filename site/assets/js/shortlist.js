@@ -342,6 +342,12 @@ function render() {
     // comparison area, and a control that scrolls nowhere is a control that lies.
     const compareBtn = tray.querySelector('[data-shortlist-compare]');
     if (compareBtn) compareBtn.hidden = !document.getElementById('comparison-app');
+
+    // The mailto: is this script's job on this page, because this script is
+    // the one that knows which cars are gone (the message names them). With
+    // the shared strip the same href is handed to compare-tray.js instead.
+    const send = tray.querySelector('[data-shortlist-send]');
+    if (send) send.setAttribute('href', composeEmail());
     } // end `if (tray)` -- this script does not own the strip here
 
     // The shared strip. Upstream rebuilt the standalone tray above into the

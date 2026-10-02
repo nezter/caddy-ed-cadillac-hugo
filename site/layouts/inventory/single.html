@@ -442,6 +442,13 @@
 {{/* Progressive enhancement only. Everything above this line is complete markup. */}}
 {{ partial "entry.html" (dict "entry" "vehicle-detail.js" "page" .) }}
 
+{{/* The cards in "More like this" carry a Shortlist toggle. Without this
+     entry the button rendered but nothing bound it -- a control that does
+     nothing, on every vehicle page. Compare is not loaded here: this page
+     has no comparison area, and its cards therefore do not render the
+     Compare toggle at all (see partials/vehicle-card.html). */}}
+{{ partial "entry.html" (dict "entry" "shortlist.js" "page" .) }}
+
 {{/* Structured data. A dealer's inventory page is the single most valuable
      thing on the site to describe for a search engine: it is a product with a
      price, a mileage and an identifier. Every field is guarded, so a vehicle

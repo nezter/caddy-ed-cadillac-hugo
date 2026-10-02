@@ -203,7 +203,7 @@
       <div class="vehicle-grid" id="vehicle-inventory"
            data-total="{{ $totalMatched }}" data-page-size="{{ $perPage }}">
         {{ range $paginator.Pages }}
-          {{ partial "vehicle-card.html" (dict "vehicle" .) }}
+          {{ partial "vehicle-card.html" (dict "vehicle" . "compare" true) }}
         {{ end }}
       </div>
 

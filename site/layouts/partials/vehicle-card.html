@@ -39,12 +39,18 @@
 
   Context (dict):
     vehicle     the Page (required)
-    compare     bool, render both toggles (default true)
-    eager     bool, load the image eagerly -- for above-the-fold cards
+    shortlist   bool, render the Shortlist toggle (default true)
+    compare     bool, render the Compare toggle (default FALSE). Only the
+                inventory page has a comparison area; a Compare button that
+                cannot compare anything is a control that does nothing -- on
+                the home page it sat next to a working Shortlist and died on
+                click. So it is opt-in, not opt-out.
+    eager       bool, load the image eagerly -- for above-the-fold cards
 */ -}}
 
 {{- $v := .vehicle -}}
-{{- $compare := ne .compare false -}}
+{{- $shortlist := .shortlist | default true -}}
+{{- $compare := .compare | default false -}}
 {{- $eager := .eager | default false -}}
 {{- $img := $v.Params.image | default "/img/placeholder-vehicle.jpg" -}}
 
@@ -119,8 +125,9 @@
       <a class="btn btn-outline btn-sm" href="{{ $v.RelPermalink }}">Details</a>
       <a class="btn btn-primary btn-sm"
          href="/contact/?vehicle={{ $v.Title | urlquery }}">Ask about this</a>
-      {{ if $compare }}
-        {{/* Two toggles, not one.
+      {{ if or $shortlist $compare }}
+        {{/* The "I am thinking about this one" toggles, each rendered only
+             where it can actually work.
 
              Both are real buttons with aria-pressed, rather than checkboxes,
              because the label is an ACTION -- "Add to shortlist" -- not a field
@@ -136,22 +143,30 @@
              The attribute names are load-bearing and are NOT interchangeable:
              shortlist.js binds [data-shortlist-toggle] and vehicleComparison.js
              binds [data-compare-toggle]. A card that used one name for both is
-             exactly how the two features ended up sharing a button. */}}
+             exactly how the two features ended up sharing a button.
+
+             Compare is opt-in (see the docblock): it only appears where a
+             comparison area exists. Shortlist is opt-out: it works on every
+             page that loads shortlist.js. */}}
         <div class="vehicle-card__picks">
-          <button type="button"
-                  class="btn btn-ghost btn-xs vehicle-card__shortlist"
-                  data-shortlist-toggle="{{ $v.File.ContentBaseName }}"
-                  aria-pressed="false"
-                  title="Add this car to a shortlist and send it to Ed">
-            <span data-shortlist-label>Shortlist</span>
-          </button>
-          <button type="button"
-                  class="btn btn-ghost btn-xs vehicle-card__compare"
-                  data-compare-toggle="{{ $v.File.ContentBaseName }}"
-                  aria-pressed="false"
-                  title="Compare this car side by side with another">
-            <span data-compare-label>Compare</span>
-          </button>
+          {{ if $shortlist }}
+            <button type="button"
+                    class="btn btn-ghost btn-xs vehicle-card__shortlist"
+                    data-shortlist-toggle="{{ $v.File.ContentBaseName }}"
+                    aria-pressed="false"
+                    title="Add this car to a shortlist and send it to Ed">
+              <span data-shortlist-label>Shortlist</span>
+            </button>
+          {{ end }}
+          {{ if $compare }}
+            <button type="button"
+                    class="btn btn-ghost btn-xs vehicle-card__compare"
+                    data-compare-toggle="{{ $v.File.ContentBaseName }}"
+                    aria-pressed="false"
+                    title="Compare this car side by side with another">
+              <span data-compare-label>Compare</span>
+            </button>
+          {{ end }}
         </div>
       {{ end }}
     </div>

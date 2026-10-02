@@ -642,3 +642,44 @@ Verified after integration: 42 mock-gap checks, 11 count checks, 5 home-tray
 checks, ci/check-compare-shortlist at 52/52 (including the rail-and-strip
 agreement assertions), and the fifteen-check suite: 11 pass, 4 skipped for the
 missing database, none failed.
+
+---
+
+## Compare: the full journey, and the buttons that were lying
+
+The question was whether the compare feature works. It does -- a thirty-one
+check journey drives it against the built page: one car opens the strip
+section and disables the master button ("Pick one more"), two fill a table
+with both cars named and linked, three hit the limit and a fourth is refused
+in words, a chip remove updates the table, Clear empties it and drops the URL
+parameter, both layouts render (table and per-car cards), and a SHARED LINK
+(?compare=a,b) opens with the table already filled and the card buttons
+pressed. Unknown slugs are dropped and the limit holds.
+
+Two real defects came out of asking.
+
+**Dead Compare buttons.** The card's Compare toggle rendered on every page,
+but only /inventory/ has a comparison area and its script. The home page had
+six buttons that did nothing when clicked; every vehicle page had three. The
+toggle is now opt-in (`compare` on the card partial, default false) and the
+inventory grid opts in. On the vehicle pages the Shortlist toggle was dead
+too -- that page never loaded shortlist.js -- so it now does, and a seven
+check harness drives it (tick a related car, the tray opens, the label flips,
+the Send link composes a real mailto with the car, its stock number and its
+price).
+
+**The Send link said Send and sent nothing.** On pages without the shared
+strip (home, vehicle pages), deleting the old standalone renderer during the
+merge integration took the mailto composition with it: the button rendered,
+the tray opened, and the href stayed "#". The standalone path composes the
+href itself now; home's harness asserts the href, not just the label.
+
+A note for whoever runs the harnesses: comparing looked broken at first
+because the harness dispatched DOMContentLoaded by hand WHILE jsdom fired its
+own later -- every click ran toggle() twice and added and removed the same
+car in one go. Letting jsdom fire once, as a browser does, was the fix. The
+feature was never broken; the instrument was.
+
+Verified: 31 compare + 7 detail-shortlist + 6 home-tray + 42 mock-gap + 11
+count checks, ci/check-compare-shortlist at 52/52, and the fifteen-check suite
+(11 pass, 4 skipped for the missing database, none failed).
