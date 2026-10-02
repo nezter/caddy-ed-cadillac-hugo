@@ -17,6 +17,65 @@ Companion documents:
 
 ## A. Blocked on the owner — no engineering can start
 
+### 0. THE LIVE SITE HAS NO FUNCTIONS — enquiries are being lost RIGHT NOW
+
+Found 2026-10-01, and it outranks everything else in this document.
+
+**Every one of `caddyed.com`'s Netlify functions returns 404.** Not "some are
+guarded" — all 47 of them are absent, so the deployed site has no functions at
+all. Consequences, measured against production on 2026-10-01:
+
+| path | live | expected |
+|---|---|---|
+| `/inventory/` | **404** | 200 — the main page of a car dealership |
+| `/admin/leads`, `/admin/sign-in/` | **404** | the guard is a function, so the whole admin is unreachable |
+| `/.netlify/functions/contact-form` | **404** | 400 on an empty body |
+| `/`, `/contact/` | 200 | 200 |
+
+**The database is empty**: 0 customers, 0 leads, 0 bookings, 0 interactions. The
+one row in the whole database is a junk `sales_reps` entry (`ab@c.co`).
+
+So: forms are 404ing, enquiries are going nowhere, and the page that sells cars
+does not load. `listSiteForms` shows the `contact` form has 15 submissions — those
+are real enquiries, including Chuck Shillingford's lease-buyout request, and
+they are sitting in Netlify's form store with nobody notified and nothing in the
+business's own records.
+
+### Why
+
+The live deploy is titled **"timing probe"** (`6abb1f64…`, 2026-09-29T02:16Z) and
+has `build_id: null`. It uploaded **no functions**. `netlify.toml` is correct —
+`[functions] directory = "netlify/functions"` — because this site deploys
+prebuilt with `netlify deploy --dir=… --functions=…`, and that test deploy
+evidently passed only `--dir`.
+
+### What has been done about it
+
+- The two migrations (`004_mail_config`, `005_audit_log`) have been **applied to
+  the live database**, after a full backup.
+- **All 15 gates pass**, including the four database-backed ones that had never
+  run against the real database.
+- A **deploy preview** carrying all 47 functions is live and verified:
+  `/inventory/` 200, every function reachable, auth guards firing.
+
+### What is left, and it is one command
+
+**Nothing is pushed and nothing is deployed to production.** `git push` and
+`netlify deploy --prod` are both owner decisions — the second one replaces a
+live business's website.
+
+```bash
+git push origin modernize/netlify-build-2026
+netlify deploy --dir=site/public --functions=netlify/functions --prod
+```
+
+Note that production env vars (`JWT_SECRET`, `TURSO_*`) are **production-context
+only**, so a `--prod` deploy is the only deploy that can authenticate or record.
+A deploy preview is useful for verifying the bundle and nothing else — which is
+exactly how it was used here.
+
+---
+
 ### 1. Email does not work at all
 
 **This is the single biggest gap on the site.** Nothing is emailed. Not a
