@@ -76,6 +76,55 @@ exactly how it was used here.
 
 ---
 
+### 0b. The 15 enquiries Netlify was holding — BACKFILLED 2026-10-01
+
+The submissions in Netlify's form store are **now in the `leads` table**, with
+their **original timestamps preserved**.
+
+```
+2020-02-12  JeffreyMum            (empty body -- form poked, not an enquiry)
+2020-04-03  Kathy Bumgardner      phone 704-616-3740 -- discussed a black 2019 XT5 in the showroom
+2020-05-21  Kaysha Haney          asked whether a Kia Sportage had a 2nd key
+2020-12-28  John cherep
+2021-09-12  Rikki Dalrymple       phone 980-214-8810
+2021-10-04  Susievox
+2021-12-13  Ashley Rice
+2021-12-28  Steven Brown          phone 803-329-4364
+2022-07-29  edward                [owner's test post]
+2022-11-12  Sherlyn Pither
+2022-12-20  Amninder Bajwa        asked about an Escalade Vs
+2023-04-10  Zach
+2023-08-31  Edward               [owner's test post]
+2025-03-01  Nick                 [owner's test post]
+2025-07-29  Chuck Shillingford    KBB trade-in values, lease buyout, stock S0119038
+```
+
+**Dates are the point.** Written with today's timestamp these would read as a
+queue of fifteen fresh leads. They are six years old, and the age is carried in
+`lead_source` / `utm_source` so nobody chases one as new work.
+
+**No email was sent for any of them.** These are historical records. Mailing
+fifteen people "we have your enquiry" five years late would be worse than not
+mailing them at all.
+
+**The owner's three test posts were imported and flagged, not dropped.**
+Dropping data is a decision and the import script should not make it. To hide
+them:
+
+```sql
+DELETE FROM leads WHERE lead_source = 'netlify-forms-backfill'
+  AND email IN ('eportello@gmail.com','nportello@gmail.com');
+```
+
+Re-running is safe -- the Netlify submission id becomes the lead id, so a second
+run inserts nothing (verified: 15 inserted, then 0 inserted / 15 already
+present). A full backup was taken first
+(`caddyed-backup-pre-import.sql`, 27 tables).
+
+`scripts/import-netlify-forms.js` -- `--dry-run` reports without writing.
+
+---
+
 ### 1. Email does not work at all
 
 **This is the single biggest gap on the site.** Nothing is emailed. Not a
