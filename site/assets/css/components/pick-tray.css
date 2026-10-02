@@ -94,3 +94,63 @@
     flex: 1 1 0;
   }
 }
+
+/* The compare roll-call rows.
+ *
+ * They had NO styles at all. These classes were styled for the old
+ * shortlist bar, and when the shortlist moved to the mockup's swatch form
+ * those rules went with it -- the compare section kept rendering
+ * .shortlist__item and got browser defaults: unstyled text and a raw
+ * default button for the remove. Rows now read like the shortlist's
+ * swatches: the car's own photograph, then the name, then the way out.
+ */
+.pick-tray__section .shortlist__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+.pick-tray__section .shortlist__item-thumb {
+  flex: 0 0 auto;
+  width: 54px;
+  height: 36px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  object-fit: cover;
+  background: rgba(255, 255, 255, 0.06);
+}
+.pick-tray__section .shortlist__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--text-sm);
+  color: #f4f2ee;
+}
+.pick-tray__section .shortlist__name em {
+  font-style: normal;
+  font-family: var(--f-mono, ui-monospace, Consolas, monospace);
+  font-size: var(--text-xs);
+  letter-spacing: 0.06em;
+  color: rgba(244, 242, 238, 0.6);
+}
+.pick-tray__section .shortlist__item.is-stale { opacity: 0.55; }
+.pick-tray__section .shortlist__remove {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  font-size: 1rem;
+  line-height: 1;
+  color: #f4f2ee;
+  background: rgba(255, 255, 255, 0.08);
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.pick-tray__section .shortlist__remove:hover { background: rgba(255, 255, 255, 0.18); }
+.pick-tray__section .shortlist__remove:focus-visible { outline: 2px solid var(--focus, #b69f58); outline-offset: 2px; }
+@media (max-width: 48rem) {
+  .pick-tray__section .shortlist__remove { width: 44px; height: 44px; }
+}

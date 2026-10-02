@@ -121,8 +121,16 @@
     document.body.classList.toggle('has-shortlist', !t.hidden);
   }
 
-  function chip(slug, name, meta, removeAttr, stale) {
+  function chip(slug, name, meta, removeAttr, stale, thumb) {
+    // The car's own photograph, the name it goes by, and the way out --
+    // the shortlist's swatch language, one row at a time. A car whose
+    // photo is missing (or whose page is gone) gets the same dashed
+    // placeholder the shortlist uses, not a broken image.
+    var face = thumb
+      ? '<img class="shortlist__item-thumb" src="' + esc(thumb) + '" alt="" width="54" height="36" loading="lazy">'
+      : '<span class="shortlist__item-thumb shortlist__thumb--unknown" aria-hidden="true"></span>';
     return '<li class="shortlist__item' + (stale ? ' is-stale' : '') + '">' +
+      face +
       '<span class="shortlist__name">' + esc(name) +
         (meta ? ' <em>' + esc(meta) + '</em>' : '') +
       '</span>' +
@@ -151,7 +159,7 @@
     go.textContent = items.length < 2 ? 'Pick one more' : `Compare ${items.length}`;
 
     t.querySelector('[data-compare-tray-items]').innerHTML = items
-      .map((it) => chip(it.slug, it.title || it.slug, it.stock, 'data-compare-tray-remove'))
+      .map((it) => chip(it.slug, it.title || it.slug, it.stock, 'data-compare-tray-remove', false, it.thumb))
       .join('');
     sync();
   }

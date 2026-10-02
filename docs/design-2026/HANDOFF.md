@@ -788,3 +788,32 @@ width goes full-bleed and the per-car cards take over, as before.
 Verified: 38 inventory compare checks (including count-published, reopen at
 the third car"s wider size), 20 home, 42 mock-gap, 11 count, 7 detail-page,
 ci/check-compare-shortlist 56/56, suite green.
+
+---
+
+## The compare rows had no styles at all, and the titles were lowercase
+
+"The bottom bar's compare car list isn't clean like the shortlist -- missing
+images and text not formatted correctly." Two causes, both traceable.
+
+**No styles.** The compare section renders `.shortlist__item`,
+`.shortlist__name` and `.shortlist__remove` -- classes that were styled for
+the OLD shortlist bar. When the shortlist moved to the mockup's swatch form
+those rules were deleted with the old markup, and the compare section kept
+rendering the same classes into nothing: browser-default text and a raw
+default button for the remove. The rows now have their styles in
+pick-tray.css, in the shortlist's own visual language: the car's own
+photograph (54x36, already fetched by the card -- no new request), the name
+with the stock number in muted mono, a circular remove that grows to 44px on
+small screens, and stale rows dimmed.
+
+**Lowercase titles.** The compare feature was displaying `data-title` -- the
+attribute the filter's matching needs lowercased -- so the table headers,
+the popup and the strip all read "2026 cadillac xt5 luxury". readCards() now
+takes the displayed title from the card's own heading and leaves data-title
+alone, so the same feature reads "2026 Cadillac XT5 Luxury" everywhere.
+
+Verified: 40 inventory compare checks (including the two new ones: rows carry
+their photograph; the row reads in the card's own case), 20 home, 42
+mock-gap, 11 count, 7 detail-page, ci/check-compare-shortlist 56/56, suite
+green.

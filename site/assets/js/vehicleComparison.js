@@ -105,11 +105,25 @@
       .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
 
-  /** slug -> the data the card already carries. */
+  /** slug -> the data the card already carries, plus its photograph. */
   function readCards() {
     var byslug = {};
     document.querySelectorAll('.vehicle-card[data-slug]').forEach(function (card) {
-      byslug[card.dataset.slug] = card.dataset;
+      // A copy, not the live DOMStringMap: the strip needs one field
+      // (thumb) that is not a data-* attribute, and the table reads the
+      // rest by the same names it always has.
+      var data = Object.assign({}, card.dataset);
+      var img = card.querySelector('.vehicle-card__media img');
+      data.thumb = img ? (img.currentSrc || img.getAttribute('src') || '') : '';
+      // data-title is lowercased for the filter's matching and must stay
+      // that way -- but a comparison reads like a sentence. The displayed
+      // title comes from the card's own heading, so the table, the popup
+      // and the strip all say '2026 Cadillac XT5 Luxury', not 'cadillac'.
+      var titleEl = card.querySelector('.vehicle-card__title');
+      data.title = titleEl && titleEl.textContent.trim()
+        ? titleEl.textContent.replace(/\s+/g, ' ').trim()
+        : card.dataset.title;
+      byslug[card.dataset.slug] = data;
     });
     return byslug;
   }
@@ -310,7 +324,7 @@
     // what they have picked or take one back.
     if (window.CaddyPickTray) {
       window.CaddyPickTray.renderCompare(
-        chosen.map(function (d) { return { slug: d.slug, title: d.title, stock: d.stock }; })
+        chosen.map(function (d) { return { slug: d.slug, title: d.title, stock: d.stock, thumb: d.thumb }; })
       );
     }
   }
