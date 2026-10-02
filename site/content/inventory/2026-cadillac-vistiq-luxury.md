@@ -1,5 +1,5 @@
 ---
-title: 2026 CADILLAC VISTIQ Luxury
+title: 2026 Cadillac VISTIQ Luxury
 status: New
 price: 82012
 subtitle: AWD · 19 mi

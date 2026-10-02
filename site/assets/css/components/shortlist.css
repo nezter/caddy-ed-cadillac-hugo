@@ -155,8 +155,8 @@ body.has-shortlist { padding-bottom: 78px; }
 /* "Ed's pick" badge. */
 .vehicle-card__badge--pick {
   top: auto;
-  bottom: var(--space-2);
-  left: var(--space-2);
+  bottom: var(--space-3);
+  left: var(--space-3);
   background: var(--brand-bronze);
   color: var(--brand-ink);
 }

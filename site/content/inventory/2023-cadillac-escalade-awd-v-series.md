@@ -1,5 +1,5 @@
 ---
-title: 2023 CADILLAC Escalade AWD V-Series
+title: 2023 Cadillac Escalade AWD V-Series
 status: Certified Pre-Owned
 price: 112899
 subtitle: 4WD · Automatic · 33,112 mi

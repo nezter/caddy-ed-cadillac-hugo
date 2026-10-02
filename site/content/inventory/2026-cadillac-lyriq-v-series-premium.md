@@ -1,5 +1,5 @@
 ---
-title: 2026 CADILLAC LYRIQ V-Series Premium
+title: 2026 Cadillac LYRIQ V-Series Premium
 status: New
 price: 88432
 subtitle: AWD · 4 mi

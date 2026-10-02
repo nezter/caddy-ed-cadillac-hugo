@@ -1,5 +1,5 @@
 ---
-title: 2025 CADILLAC XT4 Premium Luxury
+title: 2025 Cadillac XT4 Premium Luxury
 status: Certified Pre-Owned
 price: 32388
 subtitle: AWD · Automatic · 44,721 mi

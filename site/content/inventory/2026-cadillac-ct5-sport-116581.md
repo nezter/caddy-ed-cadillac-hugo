@@ -1,5 +1,5 @@
 ---
-title: 2026 CADILLAC CT5 Sport
+title: 2026 Cadillac CT5 Sport
 status: New
 price: 55920
 subtitle: RWD · Automatic

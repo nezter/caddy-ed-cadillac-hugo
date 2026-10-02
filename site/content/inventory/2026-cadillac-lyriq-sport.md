@@ -1,5 +1,5 @@
 ---
-title: 2026 CADILLAC LYRIQ Sport
+title: 2026 Cadillac LYRIQ Sport
 status: New
 price: 64693
 subtitle: AWD · 3,428 mi

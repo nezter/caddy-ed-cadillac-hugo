@@ -1,5 +1,5 @@
 ---
-title: 2026 CADILLAC XT5 Premium Luxury
+title: 2026 Cadillac XT5 Premium Luxury
 status: New
 price: 59315
 subtitle: FWD · Automatic · 3,036 mi

@@ -1,5 +1,5 @@
 ---
-title: 2024 CADILLAC CT5 Premium Luxury
+title: 2024 Cadillac CT5 Premium Luxury
 status: Certified Pre-Owned
 price: 36899
 subtitle: AWD · Automatic · 45,218 mi

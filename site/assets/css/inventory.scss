@@ -746,8 +746,11 @@
    change than the feature deserves. */
 .vehicle-card__fav {
   position: absolute;
-  top: var(--space-2);
-  right: var(--space-2);
+  /* Same optical inset as .vehicle-card__badge (top-left) and
+     .vehicle-card__badge--pick (bottom-left): all three corners agree,
+     so nothing reads as nudged off the edge. */
+  top: var(--space-3);
+  right: var(--space-3);
   z-index: 2;
   width: 36px;
   height: 36px;
@@ -764,6 +767,10 @@
 }
 .vehicle-card__fav:hover { background: rgba(0, 0, 0, 0.7); }
 .vehicle-card__fav:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+@media (max-width: 48rem) {
+  /* The one control on the card that was still under the 44px tap minimum. */
+  .vehicle-card__fav { width: 44px; height: 44px; }
+}
 
 /* "Add to your calendar" on the booking confirmation.
    Appears only after a successful request, next to the status line. */

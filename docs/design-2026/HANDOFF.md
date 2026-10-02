@@ -574,3 +574,33 @@ Verified: 11 count checks (initial/after-filter/reset on /inventory/, and on
 the home page the nonzero count, facet options, the no-dead-end loop and the
 reset), the previous 41 mock-gap checks and the 4 home-tray checks all still
 pass, and the eleven-check suite is green.
+
+---
+
+## The card's three corners, and CADILLAC shouting in the titles
+
+Two formatting passes, found while re-checking the card against the mockup.
+
+**Corners.** The card puts three floating things on its photograph: the
+status badge (top-left, .75rem in), Ed's pick badge (bottom-left) and the
+favourite star the script injects (top-right). They were inset at three
+different distances -- .75rem, .5rem, .5rem -- so no two of them agreed on
+where the card edge was, and the star sat visibly closer to its corner than
+the badge opposite it. All three are `var(--space-3)` now. The star also
+grew to 44px below 48rem: it was the last control on a card under the tap
+minimum.
+
+**CADILLAC.** Every title read "2026 CADILLAC XT5 Luxury" -- the data
+import's casing, rendered as-is on cards, headings, the tab title and the
+structured data. The mockup writes "Cadillac". All thirty-two titles are
+re-cased to "2026 Cadillac XT5 Luxury"; the make field stays "CADILLAC"
+wherever it is data (card attributes, the compare table), so nothing that
+compares or filters moved. Checked in the built output: the only remaining
+`CADILLAC` strings on the inventory page are inside `data-make=` attributes
+(21 of them), and the vehicle page heading, title tag and schema all read
+"Cadillac".
+
+Verified: 41 mock-gap checks, 11 count checks, 4 home-tray checks and the
+eleven-check suite all pass; the built stylesheets carry the new inset and
+tap values (the pick rule lives in `css/components/`, which a flat scan had
+missed the first time).

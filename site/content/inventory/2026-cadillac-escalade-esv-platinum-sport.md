@@ -1,5 +1,5 @@
 ---
-title: 2026 CADILLAC Escalade ESV Platinum Sport
+title: 2026 Cadillac Escalade ESV Platinum Sport
 status: New
 price: 136975
 subtitle: 4WD · Automatic · 10 mi

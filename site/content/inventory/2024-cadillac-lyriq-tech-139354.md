@@ -1,5 +1,5 @@
 ---
-title: 2024 CADILLAC LYRIQ Tech
+title: 2024 Cadillac LYRIQ Tech
 status: Certified Pre-Owned
 price: 36396
 subtitle: AWD · 19,983 mi

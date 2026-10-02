@@ -1,5 +1,5 @@
 ---
-title: 2023 CADILLAC XT5 FWD Luxury
+title: 2023 Cadillac XT5 FWD Luxury
 status: Certified Pre-Owned
 price: 29899
 subtitle: FWD · Automatic · 27,160 mi

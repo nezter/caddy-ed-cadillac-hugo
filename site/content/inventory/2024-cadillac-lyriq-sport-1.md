@@ -1,5 +1,5 @@
 ---
-title: 2024 CADILLAC LYRIQ Sport 1
+title: 2024 Cadillac LYRIQ Sport 1
 status: Certified Pre-Owned
 price: 37898
 subtitle: RWD · 32,117 mi

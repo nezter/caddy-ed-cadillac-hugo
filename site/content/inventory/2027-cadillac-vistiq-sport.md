@@ -1,5 +1,5 @@
 ---
-title: 2027 CADILLAC VISTIQ Sport
+title: 2027 Cadillac VISTIQ Sport
 status: New
 price: 82850
 subtitle: AWD · 46 mi

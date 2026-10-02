@@ -1,5 +1,5 @@
 ---
-title: 2026 CADILLAC Escalade ESV 1SA
+title: 2026 Cadillac Escalade ESV 1SA
 status: New
 price: 95889
 subtitle: 4WD · Automatic · 3,113 mi
