@@ -229,6 +229,7 @@
       }
       var dlgBody = document.getElementById('comparison-dialog-body');
       if (dlgBody) dlgBody.innerHTML = '';
+      if (dlg) dlg.removeAttribute('data-cars');
 // The strip's compare section empties too, or it keeps showing cars that
       // are no longer in the comparison. reflectButtons() is upstream's
       // extraction of what used to be an inline copy of this same loop, so
@@ -297,6 +298,10 @@
     // can be seen, so the popup cannot disagree with the table.
     var popupBody = document.getElementById('comparison-dialog-body');
     if (popupBody) popupBody.innerHTML = html;
+    // The popup's width follows the car count (components/comparison.css);
+    // centring is margin-based, so it grows and shrinks both ways equally.
+    var popupEl = document.getElementById('comparison-dialog');
+    if (popupEl) popupEl.dataset.cars = String(chosen.length);
 
     reflectButtons();
 

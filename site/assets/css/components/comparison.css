@@ -214,7 +214,16 @@
    --------------------------------------------------------------------------- */
 
 .comparison-dialog {
+  /* Centred by geometry rather than by trust. This site's reset zeroes
+     margins on everything (main.css: `* { margin: 0 }`), and a dialog's
+     own centring IS `margin: auto` -- so without these four lines it sat
+     wherever the reset left it. Fixed to the viewport, inset all round,
+     margin auto: in the middle of the page however tall that page is. */
+  position: fixed;
+  inset: 0;
+  margin: auto;
   width: min(64rem, calc(100vw - 2rem));
+  height: fit-content;
   max-height: calc(100vh - 3rem);
   max-height: calc(100dvh - 3rem);
   padding: 0;
@@ -222,7 +231,14 @@
   border-radius: var(--radius);
   background: var(--surface, #fff);
   color: var(--text);
+  transition: width 180ms ease;
 }
+/* The width follows how many cars are in the popup. The centring is
+   margin-based, so every change grows or shrinks BOTH sides by the same
+   amount -- the popup stays in the middle and spreads outward to fit. */
+.comparison-dialog[data-cars="1"] { width: min(34rem, calc(100vw - 2rem)); }
+.comparison-dialog[data-cars="2"] { width: min(50rem, calc(100vw - 2rem)); }
+.comparison-dialog[data-cars="3"] { width: min(66rem, calc(100vw - 2rem)); }
 .comparison-dialog::backdrop { background: rgb(11 13 16 / 0.55); }
 .comparison-dialog__inner {
   max-height: calc(100vh - 3rem);
@@ -250,6 +266,9 @@
   text-transform: uppercase;
   color: var(--text-muted, #6f7683);
 }
+@media (prefers-reduced-motion: reduce) {
+  .comparison-dialog { transition: none; }
+}
 @media (max-width: 40rem) {
-  .comparison-dialog { width: calc(100vw - 0.75rem); }
+  .comparison-dialog[data-cars] { width: calc(100vw - 0.75rem); }
 }

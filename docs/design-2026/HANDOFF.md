@@ -764,3 +764,27 @@ exists, Compare opens it, it carries the same cars, Close closes it. 56/56.
 
 Verified: 36 inventory compare + 19 home + 42 mock-gap + 11 count + 7
 detail-page checks; suite 15 green (4 skipped for the missing database).
+
+---
+
+## The popup, centred -- and why it was not
+
+"Just centre the popup, and when more cars get added stay centred but expand
+both ways." The first half had a cause worth writing down: `main.css` has
+`* { margin: 0; }`, and a native dialog's centring IS `margin: auto`. The
+universal reset was winning, so the popup sat wherever the reset left it.
+The dialog now says it out loud -- `position: fixed; inset: 0; margin: auto`
+-- fixed to the viewport, inset all round, centred however tall the page is.
+
+The second half is width that follows the car count. vehicleComparison.js
+publishes `data-cars` on the dialog on every render, and comparison.css sizes
+it in tiers: one car ~34rem, two ~50rem, three ~66rem, each capped at the
+viewport. Because the centring is margin-based, every change grows or shrinks
+BOTH sides by the same amount -- the popup stays in the middle and spreads
+outward to fit. A 180ms width transition makes the change read as growth
+rather than a jump; prefers-reduced-motion turns that off. Below 40rem the
+width goes full-bleed and the per-car cards take over, as before.
+
+Verified: 38 inventory compare checks (including count-published, reopen at
+the third car"s wider size), 20 home, 42 mock-gap, 11 count, 7 detail-page,
+ci/check-compare-shortlist 56/56, suite green.
