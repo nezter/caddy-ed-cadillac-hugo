@@ -169,6 +169,19 @@ function ensureTray() {
     let tray = document.getElementById(TRAY_ID);
     if (tray) return tray;
 
+    // When the SHARED strip is on the page, do not build a second one.
+    //
+    // compare-tray.js owns one fixed strip with a section each for compare and
+    // shortlist, precisely so two bars cannot sit on top of each other and the
+    // top one takes every click. Upstream's mockup tray (36c3771) rebuilt the
+    // standalone bar inside this script, which on a page loading both scripts
+    // means two fixed strips at the bottom of the window -- and the one on top
+    // is whichever was appended last.
+    //
+    // So when the shared strip exists, publish into it (render() already does,
+    // via CaddyPickTray.renderShortlist) and build nothing here.
+    if (window.CaddyPickTray) return null;
+
     tray = document.createElement('aside');
     tray.id = TRAY_ID;
     tray.className = 'shortlist';
@@ -281,15 +294,25 @@ function reserveSpace(visible) {
   }
 
 function render() {
+    // ensureTray() first, so the tray exists before anything reads from it.
+    // This line was lost resolving the rebase conflict with 36c3771, and its
+    // absence is a ReferenceError on the first render -- which is why every
+    // shortlist assertion failed at once while the compare ones passed.
+    const tray = ensureTray();
     const list = read();
     const onPage = visibleVehicles();
 
-tray.hidden = list.length === 0;
-    reserveSpace(!tray.hidden);
+    // Only when this script owns the strip. With the shared strip present the
+    // mockup's swatches/names are not rendered here at all -- compare-tray.js
+    // renders the section, and rendering it twice is how two surfaces end up
+    // showing different things.
+    if (tray) {
+      tray.hidden = list.length === 0;
+      reserveSpace(!tray.hidden);
 
-    tray.querySelector('[data-shortlist-count]').textContent = String(list.length);
+      tray.querySelector('[data-shortlist-count]').textContent = String(list.length);
 
-    /* The mockup's tray: the cars as swatches, their names as one line, and
+      /* The mockup's tray: the cars as swatches, their names as one line, and
        the two things a visitor can do next. A swatch links to its car and
        uses the photograph the page has already fetched, so the strip costs
        no new request. A car this page cannot show -- second page, or sold --
@@ -319,6 +342,7 @@ tray.hidden = list.length === 0;
     // comparison area, and a control that scrolls nowhere is a control that lies.
     const compareBtn = tray.querySelector('[data-shortlist-compare]');
     if (compareBtn) compareBtn.hidden = !document.getElementById('comparison-app');
+    } // end `if (tray)` -- this script does not own the strip here
 
     // The shared strip. Upstream rebuilt the standalone tray above into the
     // mockup's swatch+names form; this is the other half, which the tray needs
