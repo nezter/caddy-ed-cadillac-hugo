@@ -28,7 +28,7 @@ calendar. Choose a day, pick a slot, and it confirms before you leave.
 </div>
 
 <div id="appointment-scheduler">
-  <form id="appointment-form" class="form" method="post" action="/api/appointments">
+  <form id="appointment-form" class="form" method="post" action="/.netlify/functions/schedule-test-drive" data-phone="803-431-6180">
     <div class="form-grid form-grid-2">
       <div class="form-field">
         <label for="appointment-type">Appointment type</label>
@@ -69,6 +69,7 @@ calendar. Choose a day, pick a slot, and it confirms before you leave.
       <input type="tel" id="appointment-phone" name="phone" required autocomplete="tel">
     </div>
     <button type="submit" class="btn btn-primary">Request this appointment</button>
+    <p class="form-message" id="appointment-status" role="status" hidden></p>
   </form>
 </div>
 

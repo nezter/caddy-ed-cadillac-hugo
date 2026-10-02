@@ -844,3 +844,45 @@ Verified: 44 inventory checks (new K block: button offered; shortlist becomes
 the comparison, count=2; popup open with both cars; card buttons agree), 20
 home, 42 mock-gap, 11 count, 7 detail-page, ci/check-compare-shortlist 56/56,
 suite green.
+
+---
+
+## Every button audited; four broken interactions repaired
+
+Asked to check that every button on the site does what it says. Two audits:
+buttons-static.js (all 72 pages, 387 buttons: names, types, aria references,
+hash targets, internal links) and buttons-live.js (boots 13 pages in jsdom
+with their own scripts, clicks every class of button, 76 assertions).
+
+Broken, now fixed:
+
+1. Mobile menu, all 70 pages. index.js still carried a legacy [navbar-burger]
+   click handler alongside chrome.js's. Both toggled the same is-active class,
+   so one tap opened the menu and instantly re-closed it: the menu appeared
+   only on the SECOND tap, aria-expanded read the opposite of the visible
+   state, and the x icon followed the aria value. Removed the legacy block.
+2. Financing pre-approval "Done" button. The success panel replaces the
+   modal body, and close handlers were bound to buttons existing at open
+   time, so Done did nothing. One delegated close listener on the modal now;
+   the top x also gained type=button + aria-label.
+3. Scheduling calendar month arrows (/test-drive/). Bound to the first
+   render's buttons; the header is re-created on every re-render, which
+   happens immediately when availability answers. Delegated now.
+4. "Request this appointment" (/test-drive/). Posted to /api/appointments --
+   no redirect, no function, guaranteed 404 -- and `new AppointmentScheduler()`
+   existed NOWHERE, so even the change listeners never ran; the time select
+   shipped with only its placeholder. The class is instantiated now, times
+   9am-6pm are populated (mirroring the booking forms), and submit maps to
+   schedule-test-drive ('general-enquiry'), with validation, busy state and a
+   status line (#appointment-status added to test-drive.md).
+5. a11y: the social panel referenced a tab that only exists when more than
+   one network is configured; single-network now renders role=region.
+
+Verified: buttons-live 76/76, buttons-static 0 issues, suite green, compare
+44/44, home 20/20, mock-gaps 42/42, counts 11/11, detail 7/7.
+
+Noted, not changed: /lead-form popup markup is unwired (nothing opens it, so
+the close button is never visible); connect.js's stock hub is dormant on the
+rebuilt home (no #stockList container); 6 customer-portal buttons lack `type`
+but sit outside forms; customer/admin interactions verified statically only
+(they need a live database/API).

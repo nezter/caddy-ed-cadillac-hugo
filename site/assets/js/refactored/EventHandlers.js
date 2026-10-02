@@ -48,27 +48,29 @@ class EventHandlers {
   /**
    * Set up month navigation events
    */
+  /**
+   * Month navigation, by DELEGATION.
+   *
+   * The header -- and with it both arrow buttons -- is re-created on every
+   * calendar re-render, and a re-render happens as soon as the availability
+   * request answers, which is immediately. Binding the buttons directly bound
+   * the FIRST pair, which was replaced a tick later: the arrows looked right
+   * and did nothing. A listener on the stable container keeps working across
+   * every re-render.
+   */
   setupMonthNavigation() {
-    const prevButton = this.element.querySelector('.prev-month');
-    const nextButton = this.element.querySelector('.next-month');
-    
-    if (prevButton) {
-      prevButton.addEventListener('click', () => {
-        const state = this.calendar.getState();
-        const newMonth = new Date(state.currentMonth);
-        newMonth.setMonth(newMonth.getMonth() - 1);
-        this.calendar.updateState({ currentMonth: newMonth });
-      });
-    }
-    
-    if (nextButton) {
-      nextButton.addEventListener('click', () => {
-        const state = this.calendar.getState();
-        const newMonth = new Date(state.currentMonth);
-        newMonth.setMonth(newMonth.getMonth() + 1);
-        this.calendar.updateState({ currentMonth: newMonth });
-      });
-    }
+    if (!this.element) return;
+    this.element.addEventListener('click', (event) => {
+      const target = event.target;
+      const step = target.closest && target.closest('.prev-month') ? -1
+        : target.closest && target.closest('.next-month') ? 1
+        : 0;
+      if (!step) return;
+      const state = this.calendar.getState();
+      const newMonth = new Date(state.currentMonth);
+      newMonth.setMonth(newMonth.getMonth() + step);
+      this.calendar.updateState({ currentMonth: newMonth });
+    });
   }
   
   /**

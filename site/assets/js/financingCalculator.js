@@ -254,7 +254,7 @@ class FinancingCalculator {
     
     modal.innerHTML = `
       <div class="modal-content">
-        <button class="close-modal">&times;</button>
+        <button type="button" class="close-modal" aria-label="Close">&times;</button>
         <div class="modal-body">
           <h2>Pre-Approval Application</h2>
           <p>Complete the form below to get pre-approved for financing.</p>
@@ -397,16 +397,13 @@ class FinancingCalculator {
     // Prevent body scrolling
     document.body.classList.add('modal-open');
     
-    // Setup close button
-    const closeButton = modal.querySelector('.close-modal');
-    closeButton.addEventListener('click', () => {
-      document.body.removeChild(modal);
-      document.body.classList.remove('modal-open');
-    });
-    
-    // Close modal on outside click
+    // Close: the top ×, the "Done" button the success panel renders, and a
+    // click on the backdrop. ONE delegated listener on the modal, because the
+    // panel is REPLACED after a successful submission -- binding the buttons
+    // directly bound only the ones that existed at open time, so "Done" on
+    // the success panel was a button that did nothing at all.
     modal.addEventListener('click', (e) => {
-      if (e.target === modal) {
+      if (e.target === modal || e.target.closest('.close-modal')) {
         document.body.removeChild(modal);
         document.body.classList.remove('modal-open');
       }

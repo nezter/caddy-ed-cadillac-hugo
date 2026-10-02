@@ -53,16 +53,17 @@ if ('serviceWorker' in navigator) {
 
 // Custom scripts
 document.addEventListener("DOMContentLoaded", () => {
-  // Mobile menu toggle
-  const mobileMenuToggle = document.querySelector('.navbar-burger');
-  const mobileMenu = document.querySelector('.navbar-menu');
-  
-  if (mobileMenuToggle && mobileMenu) {
-    mobileMenuToggle.addEventListener('click', () => {
-      mobileMenuToggle.classList.toggle('is-active');
-      mobileMenu.classList.toggle('is-active');
-    });
-  }
+  // NOTE: the mobile menu toggle that used to live here was REMOVED.
+  //
+  // chrome.js already owns #navToggle/#navMenu: it sets aria-expanded and
+  // aria-label, toggles the menu's is-active class, closes on Escape, closes
+  // past the desktop breakpoint, and closes after a link is followed. The old
+  // block here toggled the SAME class on the SAME elements with no aria at
+  // all, so every tap ran both handlers: chrome opened the menu and the legacy
+  // handler instantly closed it again. The menu only appeared on the SECOND
+  // tap, with aria-expanded reading the exact opposite of the visible state,
+  // and the × icon animation following the aria value, not the menu. One
+  // handler, one truth.
 
   // Contact form handling
   const contactForm = document.querySelector('#contact-form');

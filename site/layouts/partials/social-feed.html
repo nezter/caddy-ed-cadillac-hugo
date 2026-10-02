@@ -31,6 +31,7 @@
 {{- if $xHandle }}{{ $nets = $nets | append "x" }}{{ end -}}
 {{- if $igUrl }}{{ $nets = $nets | append "instagram" }}{{ end -}}
 {{- $default := "" }}{{ if $nets }}{{ $default = index $nets 0 }}{{ end -}}
+{{- $multi := gt (len $nets) 1 -}}
 
 <div class="panel" aria-label="What Ed is posting">
   <div class="panel__head">
@@ -76,9 +77,12 @@
       <p class="social-load__note">The live feeds need JavaScript. The links
       under this panel go straight to them.</p>
     </noscript>
-    {{ if $fbUrl }}<div class="tabpanel" id="panelFacebook" role="tabpanel" aria-labelledby="tabFacebook"></div>{{ end }}
-    {{ if $xHandle }}<div class="tabpanel" id="panelX" role="tabpanel" aria-labelledby="tabX"></div>{{ end }}
-    {{ if $igUrl }}<div class="tabpanel" id="panelInstagram" role="tabpanel" aria-labelledby="tabInstagram"></div>{{ end }}
+    {{/* Tab semantics only when the tabs above exist. With a single network
+         there is no tablist, so role=tabpanel would point at a tab that is not
+         there -- the panel is simply a region naming what it shows. */}}
+    {{ if $fbUrl }}<div class="tabpanel" id="panelFacebook" {{ if $multi }}role="tabpanel" aria-labelledby="tabFacebook"{{ else }}role="region" aria-label="Facebook feed"{{ end }}></div>{{ end }}
+    {{ if $xHandle }}<div class="tabpanel" id="panelX" {{ if $multi }}role="tabpanel" aria-labelledby="tabX"{{ else }}role="region" aria-label="X feed"{{ end }}></div>{{ end }}
+    {{ if $igUrl }}<div class="tabpanel" id="panelInstagram" {{ if $multi }}role="tabpanel" aria-labelledby="tabInstagram"{{ else }}role="region" aria-label="Instagram feed"{{ end }}></div>{{ end }}
   </div>
   </div>
 
