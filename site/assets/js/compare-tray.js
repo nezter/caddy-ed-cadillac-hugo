@@ -187,6 +187,7 @@
           '</a></li>';
       })
       .join('');
+    lastShortlistItems = items;
     t.querySelector('[data-shortlist-tray-names]').textContent = items
       .map(function (it) { return it.title || it.slug; })
       .join(' \u00b7 ');
@@ -210,6 +211,11 @@
     sync: sync,
   };
 
+  // The last shortlist the tray was given, kept so "Compare side by side"
+  // can turn it into the comparison. Replaced on every render, so it cannot
+  // go stale behind the shopper's back.
+  var lastShortlistItems = [];
+
   // One delegated listener for both sections' remove and clear buttons, so
   // re-rendering the innerHTML does not lose handlers.
   document.addEventListener('click', function (e) {
@@ -222,17 +228,30 @@
     } else if (t.closest('[data-compare-tray-clear]')) {
       document.dispatchEvent(new CustomEvent('caddy:clear-compare'));
     } else if (t.closest('[data-shortlist-tray-compare]')) {
-      // The mockup's "Compare side by side": scrolls to the comparison area.
-      // It never turns the shortlist into the comparison -- they are two lists.
-      var host = document.getElementById('comparison-app');
-      if (host) {
-        var reduce = window.matchMedia &&
-          window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        host.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
-        var status = document.getElementById('comparison-status');
-        if (status) {
-          status.setAttribute('tabindex', '-1');
-          status.focus({ preventScroll: true });
+      // The mockup's "Compare side by side": the shortlist becomes the
+      // comparison, then the popup shows it. The shopper already said which
+      // cars they care about when they shortlisted them; the old version
+      // only pointed at a comparison area that was usually empty, which is
+      // a button that does nothing visible.
+      var api = window.CaddyVehicleComparison;
+      var opened = false;
+      if (api) {
+        lastShortlistItems.forEach(function (it) { api.add(it.slug); });
+        opened = api.open();
+      }
+      if (!opened) {
+        // No comparison module here, or nothing could be compared: point at
+        // the comparison area so the button still leads somewhere honest.
+        var host = document.getElementById('comparison-app');
+        if (host) {
+          var reduce = window.matchMedia &&
+            window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+          host.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+          var status = document.getElementById('comparison-status');
+          if (status) {
+            status.setAttribute('tabindex', '-1');
+            status.focus({ preventScroll: true });
+          }
         }
       }
     } else if (t.closest('[data-compare-tray-go]')) {

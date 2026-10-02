@@ -339,6 +339,27 @@
     });
   }
 
+  /** Turn a car on. Shared by the card's own Compare button, the strip's
+   *  rows and the shortlist's "Compare side by side" -- one set of rules,
+   *  one refusal, one place the state changes. */
+  function addToCompare(slug) {
+    if (list.indexOf(slug) !== -1) return true;
+    if (list.length >= MAX) {
+      // Not alert(). An alert blocks, is unstyled, and is not announced.
+      status('You can compare up to ' + MAX + ' cars. Remove one to add another.');
+      return false;
+    }
+    if (!cards[slug]) {
+      status('That car is no longer on this page.');
+      return false;
+    }
+    list.push(slug);
+    status('');
+    render();
+    writeUrl(list);
+    return true;
+  }
+
   function toggle(slug) {
     var at = list.indexOf(slug);
     if (at !== -1) {
@@ -348,20 +369,32 @@
       writeUrl(list);
       return;
     }
-    if (list.length >= MAX) {
-      // Not alert(). An alert blocks, is unstyled, and is not announced.
-      status('You can compare up to ' + MAX + ' cars. Remove one to add another.');
-      return;
-    }
-    if (!cards[slug]) {
-      status('That car is no longer on this page.');
-      return;
-    }
-    list.push(slug);
-    status('');
-    render();
-    writeUrl(list);
+    addToCompare(slug);
   }
+
+  /** Show the comparison. False when there is nothing to show -- the
+   *  shortlist's "Compare side by side" uses that to fall back to pointing
+   *  at the comparison area rather than promising a popup that never came. */
+  function openDialog() {
+    if (!list.length) return false;
+    var dlg = document.getElementById('comparison-dialog');
+    if (!dlg) {
+      var t2 = table();
+      if (t2) t2.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return false;
+    }
+    if (typeof dlg.showModal === 'function') {
+      if (!dlg.open) dlg.showModal();
+    } else {
+      dlg.setAttribute('open', '');
+    }
+    return true;
+  }
+
+  // The shared strip's "Compare side by side" turns the shortlist into the
+  // comparison; the strip asks through this, so neither script reaches into
+  // the other's state.
+  window.CaddyVehicleComparison = { add: addToCompare, open: openDialog };
 
   function ready() {
     var a = app();
@@ -391,18 +424,7 @@
     // button that leaves the shopper to go find the table has not finished
     // its job. An event, so neither module reaches into the other.
     document.addEventListener('caddy:open-compare', function () {
-      if (!list.length) return;
-      var dlg = document.getElementById('comparison-dialog');
-      if (!dlg) {
-        var t2 = table();
-        if (t2) t2.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        return;
-      }
-      if (typeof dlg.showModal === 'function') {
-        if (!dlg.open) dlg.showModal();
-      } else {
-        dlg.setAttribute('open', '');
-      }
+      openDialog();
     });
 
     // Close: the button, and a click on the backdrop (the event's target is

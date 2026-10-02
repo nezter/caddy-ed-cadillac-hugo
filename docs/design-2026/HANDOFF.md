@@ -817,3 +817,30 @@ Verified: 40 inventory compare checks (including the two new ones: rows carry
 their photograph; the row reads in the card's own case), 20 home, 42
 mock-gap, 11 count, 7 detail-page, ci/check-compare-shortlist 56/56, suite
 green.
+
+---
+
+## "Compare side by side" now actually compares
+
+The strip's shortlist button pointed at the comparison area (scrollIntoView)
+-- but the comparison is usually EMPTY at that moment: the shopper
+shortlisted two cars, never ticked Compare. So the button scrolled to
+nothing and looked broken. Reported exactly that way.
+
+Now it does what it says: the shortlisted cars move into the comparison
+(each through the comparison's own rules -- no duplicates, max 3, the same
+spoken refusal) and the popup opens with them. If nothing can be shown it
+falls back to pointing at the comparison area, so the button still leads
+somewhere honest.
+
+Shape: one new seam -- window.CaddyVehicleComparison = { add, open }.
+addToCompare() is now shared by the card's Compare button, the strip's rows
+and this button (one place the state changes); openDialog() is shared by the
+popup's own event listener and the button. The shortlist is NOT emptied in
+the move -- shortlist and comparison are two lists, says the mockup, and
+stays that way.
+
+Verified: 44 inventory checks (new K block: button offered; shortlist becomes
+the comparison, count=2; popup open with both cars; card buttons agree), 20
+home, 42 mock-gap, 11 count, 7 detail-page, ci/check-compare-shortlist 56/56,
+suite green.
