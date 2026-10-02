@@ -52,6 +52,15 @@ yarn-error.log*
 dev-debug.log
 # Dependency directories
 node_modules/
+
+# Test coverage output
+#
+# jest writes these on every run, so tracking them means every `npm test`
+# produces a diff of ~170 generated HTML files that says nothing about the
+# code. 168 of them were already committed; they describe a run, not a source
+# file, and nobody reads them.
+coverage/
+netlify/functions/coverage/
 # Editor directories and files
 *.suo
 *.ntvs*
