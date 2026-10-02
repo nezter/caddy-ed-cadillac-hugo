@@ -481,6 +481,21 @@ class FollowupService {
     const baseUrl = process.env.URL || 'https://caddyed.com';
     const unsubscribeUrl = `${baseUrl}/api/communication-preferences/unsubscribe/${token}?type=email`;
 
+    // This footer goes into every follow-up email a customer receives, so both
+    // of its contact details were load-bearing.
+    //
+    //   704-555-0123  -- 555 is the range reserved for fiction. A customer who
+    //     dialled it reached nobody, and nothing in the email looked wrong.
+    //   www.cadillacofsouthcharlotte.com -- a domain this business does NOT own.
+    //     It was the address in the deleted sendLeadNotificationEmail fallback,
+    //     and it survived here. Every marketing email pointed customers at
+    //     somebody else's website.
+    //
+    // Both now match site/config.toml, which is the record for the business
+    // details. calendar-invite.js carries the same two values for the same
+    // reason. If the dealership's number or domain changes, change it there
+    // first -- and ci/check-no-placeholder-contact.js is what catches it if
+    // anybody forgets.
     const footer = `
 
 ---
@@ -492,8 +507,8 @@ Unsubscribe from email communications: ${unsubscribeUrl}
 Manage all your communication preferences: ${baseUrl}/communication-preferences
 
 Cadillac of South Charlotte
-704-555-0123
-www.cadillacofsouthcharlotte.com
+803-431-6180
+www.caddyed.com
 
 Confidentiality Notice: This email contains confidential information intended only for the use of the individual or entity named above.
 `;

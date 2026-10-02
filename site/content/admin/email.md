@@ -15,15 +15,12 @@ scripts:
   but nobody is told, so somebody has to remember to look.
 
   <div id="email-status" class="settings-status" role="status" hidden></div>
-
   <div id="email-progress" class="settings-progress">
     <div class="spinner" aria-hidden="true"></div>
     <p>Loading…</p>
   </div>
-
   <form id="email-form" hidden>
     <div id="email-summary"></div>
-
     <fieldset class="settings-group">
       <legend>Provider</legend>
       <div class="settings-field">
@@ -43,7 +40,6 @@ scripts:
         </p>
       </div>
     </fieldset>
-
     <fieldset class="settings-group">
       <legend>Connection</legend>
       <div class="settings-field">
@@ -77,7 +73,6 @@ scripts:
         </p>
       </div>
     </fieldset>
-
     <fieldset class="settings-group">
       <legend>Addresses</legend>
       <div class="settings-field">
@@ -90,7 +85,6 @@ scripts:
         </p>
       </div>
     </fieldset>
-
     <div class="settings-actions">
       <button type="submit" class="btn btn-primary" id="email-save">Save</button>
       <button type="button" class="btn btn-secondary" id="email-test">Save and send a test</button>

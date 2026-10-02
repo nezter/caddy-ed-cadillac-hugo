@@ -316,7 +316,10 @@ if (chipRemove) {
 // bottom strips sit on top of each other, and the top one takes every click.
 const bothWin = boot(html, 'http://preview.test/inventory/');
 bothWin.document.querySelector('[data-compare-toggle]').click();
-bothWin.document.querySelectorAll('[data-shortlist-toggle]').slice(0, 2).forEach((b) => b.click());
+// Array.from, not .slice() on the NodeList. A NodeList has no slice method, so
+// this threw before any assertion below ran -- which is why "39 assertions"
+// could have been 39 assertions that never executed.
+Array.from(bothWin.document.querySelectorAll('[data-shortlist-toggle]')).slice(0, 2).forEach((b) => b.click());
 const bdoc = bothWin.document;
 check(
   'compare AND shortlist share ONE strip, not two overlapping bars',
