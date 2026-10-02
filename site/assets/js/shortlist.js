@@ -357,18 +357,19 @@ function render() {
         slug: slug,
         title: v ? v.title : slug,
         stock: v && v.stock,
+        thumb: v ? v.thumb : undefined,
         stale: !v,
       };
     });
 
     if (window.CaddyPickTray) {
       window.CaddyPickTray.renderShortlist(items, composeEmail());
-    } else {
-      // The strip script is not on this page. Keep the old standalone bar rather
-      // than losing the feature: a script that cannot find its strip must still
-      // function.
-      renderStandaloneTray(items);
     }
+    // When this script owns the strip, the mockup rendering above IS the whole
+    // strip -- there is nothing further to publish. (There used to be a second,
+    // older bar rendered here; it repainted the same element and threw on the
+    // first toggle on any page without the shared strip, which is how the
+    // button states and the rail after it stopped updating.)
 
     // Reflect state on every button so the page is honest about what is ticked,
     // including buttons that are not currently on screen.
@@ -393,60 +394,6 @@ function render() {
     renderRail();
   }
 
-  /**
-   * The fallback strip, for a page that loads this script without the shared
-   * one. Same look, same class, same behaviour, one section instead of two.
-   */
-  function renderStandaloneTray(items) {
-    let tray = document.getElementById(TRAY_ID);
-    if (!tray) {
-      tray = document.createElement('aside');
-      tray.id = TRAY_ID;
-      tray.className = 'shortlist';
-      tray.setAttribute('aria-live', 'polite');
-      tray.innerHTML =
-        '<div class="shortlist__inner">' +
-          '<p class="shortlist__count"><strong data-shortlist-count>0</strong> ' +
-            '<span data-shortlist-noun>cars</span> on your shortlist</p>' +
-          '<ul class="shortlist__items" data-shortlist-items></ul>' +
-          '<div class="shortlist__actions">' +
-            '<a class="btn btn-primary btn-sm" data-shortlist-send href="#">Send to Ed</a>' +
-            '<button type="button" class="btn btn-ghost btn-sm" data-shortlist-clear>Clear</button>' +
-          '</div>' +
-        '</div>';
-      document.body.appendChild(tray);
-      tray.querySelector('[data-shortlist-clear]').addEventListener('click', clear);
-    }
-
-    tray.hidden = items.length === 0;
-    // Reserve room for the strip. It is fixed to the bottom of the viewport, so
-    // without this it covers the bottom row of vehicle cards -- specifically
-    // their Shortlist buttons -- and ticking one car makes every other one
-    // untickable. The class is on <body> rather than an inline height so the
-    // page reserves the space and the last row can be scrolled clear of it.
-    document.body.classList.toggle('has-shortlist', !tray.hidden);
-
-    tray.querySelector('[data-shortlist-count]').textContent = String(items.length);
-    tray.querySelector('[data-shortlist-noun]').textContent =
-      items.length === 1 ? 'car' : 'cars';
-    tray.querySelector('[data-shortlist-items]').innerHTML = items
-      .map(function (it) {
-        return '<li class="shortlist__item' + (it.stale ? ' is-stale' : '') + '">' +
-          '<span class="shortlist__name">' + escapeHtml(it.title) +
-            (it.stock ? ' <em>' + escapeHtml(it.stock) + '</em>' : '') +
-          '</span>' +
-          '<button type="button" class="shortlist__remove" data-remove="' +
-            escapeHtml(it.slug) + '" aria-label="Remove ' + escapeHtml(it.title) +
-            ' from shortlist">&times;</button>' +
-          '</li>';
-      })
-      .join('');
-    tray.querySelectorAll('[data-shortlist-items] [data-remove]').forEach(function (btn) {
-      btn.addEventListener('click', function () { toggle(btn.dataset.remove); });
-    });
-    tray.querySelector('[data-shortlist-send]').setAttribute('href', composeEmail());
-  }
-
   function escapeHtml(value) {
     return String(value)
       .replace(/&/g, '&amp;')
@@ -456,12 +403,9 @@ function render() {
       .replace(/'/g, '&#39;');
   }
 
-  // The shared strip's controls, delegated on the document so re-rendering the
-  // chips cannot lose the handlers.
-  document.addEventListener('caddy:remove-from-shortlist', function (e) {
-    toggle(e.detail.slug);
-  });
-  document.addEventListener('caddy:clear-shortlist', clear);
+  // The shortlist's removal controls are the card toggles, the rail's list and
+  // the rail's Clear -- the tray carries none, so there is nothing to delegate
+  // here. (compare-tray.js delegates the compare section's own controls.)
 
   document.addEventListener('DOMContentLoaded', function () {
     // The rail's own Clear. Bound once, here, rather than inside

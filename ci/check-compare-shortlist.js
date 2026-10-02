@@ -327,11 +327,11 @@ check(
   `${bdoc.querySelectorAll('.shortlist[id]').length} strips`
 );
 check(
-  '...with both sections shown, each with its own chips',
+  '...with both sections shown: compare chips and a shortlist swatch row',
   bdoc.querySelectorAll('[data-compare-tray-items] .shortlist__item').length === 1 &&
-    bdoc.querySelectorAll('[data-shortlist-tray-items] .shortlist__item').length === 2,
-  `${bdoc.querySelectorAll('[data-compare-tray-items] .shortlist__item').length} compare / ` +
-    `${bdoc.querySelectorAll('[data-shortlist-tray-items] .shortlist__item').length} shortlist`
+    bdoc.querySelectorAll('[data-shortlist-tray-thumbs] li').length === 2,
+  `${bdoc.querySelectorAll('[data-compare-tray-items] .shortlist__item').length} compare chips / ` +
+    `${bdoc.querySelectorAll('[data-shortlist-tray-thumbs] li').length} shortlist swatches`
 );
 check(
   '...and each section has its own master button',
@@ -401,9 +401,9 @@ check(
 check(
   'the rail and the strip show the SAME number of cars',
   rdoc.querySelectorAll('[data-shortlist-rail-items] li').length ===
-    rdoc.querySelectorAll('[data-shortlist-tray-items] .shortlist__item').length,
+    Number((rdoc.querySelector('[data-shortlist-tray-count]') || {}).textContent),
   `rail ${rdoc.querySelectorAll('[data-shortlist-rail-items] li').length} vs ` +
-    `strip ${rdoc.querySelectorAll('[data-shortlist-tray-items] .shortlist__item').length}`
+    `strip ${(rdoc.querySelector('[data-shortlist-tray-count]') || {}).textContent}`
 );
 
 // ...and they stay in step when the store changes, in BOTH directions.
@@ -414,25 +414,26 @@ if (railRemove) {
   check(
     'removing from the RAIL takes the car out of the STRIP too',
     rdoc.querySelectorAll('[data-shortlist-rail-items] li').length === 1 &&
-      rdoc.querySelectorAll('[data-shortlist-tray-items] .shortlist__item').length === 1,
+      Number((rdoc.querySelector('[data-shortlist-tray-count]') || {}).textContent) === 1,
     `rail ${rdoc.querySelectorAll('[data-shortlist-rail-items] li').length}, ` +
-      `strip ${rdoc.querySelectorAll('[data-shortlist-tray-items] .shortlist__item').length}`
+      `strip ${(rdoc.querySelector('[data-shortlist-tray-count]') || {}).textContent}`
   );
 }
 
-// Back the other way: a strip remove must empty the rail.
+// The strip's shortlist section carries the mockup's form: swatches, names,
+// and its two actions. No per-car removes and no Clear -- the mockup's tray
+// has neither, and the rail's list and Clear are those controls (the test
+// above just drove one). What it does carry is a swatch per car, each one
+// linking to the car it stands for.
 const backWin = boot(html, 'http://preview.test/inventory/');
 Array.from(backWin.document.querySelectorAll('[data-shortlist-toggle]')).slice(0, 2).forEach((b) => b.click());
-const backStripRemove = backWin.document.querySelector('[data-shortlist-tray-remove]');
-check('a strip chip has a remove control of its own', Boolean(backStripRemove));
-if (backStripRemove) {
-  backStripRemove.click();
-  check(
-    'removing from the STRIP takes the car out of the RAIL too',
-    backWin.document.querySelectorAll('[data-shortlist-rail-items] li').length === 1,
-    `${backWin.document.querySelectorAll('[data-shortlist-rail-items] li').length} rail chips left`
-  );
-}
+check(
+  'the shortlist section carries no per-car removes and no Clear',
+  backWin.document.querySelectorAll('[data-shortlist-tray-section] .shortlist__remove').length === 0 &&
+    backWin.document.querySelectorAll('[data-shortlist-tray-section] [data-shortlist-tray-clear]').length === 0
+);
+const swatchLinks = backWin.document.querySelectorAll('[data-shortlist-tray-thumbs] a[href*="/inventory/"]');
+check('each swatch links to its car', swatchLinks.length === 2, `${swatchLinks.length} swatch links`);
 
 const railChipText = (rdoc.querySelector('[data-shortlist-rail-items] li') || {}).textContent || '';
 check(

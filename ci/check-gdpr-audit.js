@@ -77,9 +77,12 @@ try {
   // Its own try/catch, NOT the outer one -- see the note on the first run below.
   dbFile = path.join(os.tmpdir(), `caddy-gdpr-audit-${process.pid}.db`);
   try { fs.unlinkSync(dbFile); } catch { /* first run */ }
-  execFileSync('sqlite3', [dbFile], {
-    input: fs.readFileSync(path.join(ROOT, 'database', 'turso', 'schema.sql'), 'utf8'),
-  });
+  // node:sqlite applies the schema itself; the sqlite3 CLI was a second,
+  // unevenly-installed dependency whose absence read as a broken schema.
+  const SQL = require('node:sqlite').DatabaseSync;
+  const seed = new SQL(dbFile);
+  seed.exec(fs.readFileSync(path.join(ROOT, 'database', 'turso', 'schema.sql'), 'utf8'));
+  seed.close();
   db = require('node:sqlite').DatabaseSync;
 } catch (e) {
   check('the schema applies to SQLite so the rest can run', false, e.message);

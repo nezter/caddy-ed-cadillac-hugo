@@ -133,11 +133,13 @@ try {
   // schema did not apply". That is a check that fails on a machine that has
   // never run it, and reports the wrong cause when it does.
   try { fs.unlinkSync(dbFile); } catch { /* first run */ }
-  execFileSync('sqlite3', [dbFile], {
-    input: fs.readFileSync(path.join(ROOT, 'database', 'turso', 'schema.sql'), 'utf8'),
-  });
-
+  // The schema is applied with node:sqlite itself, not the sqlite3 CLI. The
+  // CLI is a second, unevenly-installed dependency, and its absence made this
+  // check report a missing tool as if the schema were broken.
   const { DatabaseSync } = require('node:sqlite');
+  const seed = new DatabaseSync(dbFile);
+  seed.exec(fs.readFileSync(path.join(ROOT, 'database', 'turso', 'schema.sql'), 'utf8'));
+  seed.close();
   const db = new DatabaseSync(dbFile);
 
   // `updated_by` is a foreign key onto sales_reps, and in production

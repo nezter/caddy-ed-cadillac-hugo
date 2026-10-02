@@ -604,3 +604,41 @@ Verified: 41 mock-gap checks, 11 count checks, 4 home-tray checks and the
 eleven-check suite all pass; the built stylesheets carry the new inset and
 tap values (the pick rule lives in `css/components/`, which a flat scan had
 missed the first time).
+
+---
+
+## The merge: the shared strip, the mockup form, and the tool that was not there
+
+A parallel agent pushed thirteen commits while this branch was working on the
+card corners; the push was rejected and the merge came in clean (zero
+conflicts). Those commits bring /admin/staff, /admin/gdpr, /admin/audit, the
+mail settings page, a security pass over six unauthenticated endpoints, and a
+SHARED bottom strip (compare-tray.js + pick-tray.css) so compare and shortlist
+stop wanting the same corner of the screen.
+
+The merge had one seam worth describing. Their strip carried the shortlist in
+the old chip form, while this branch's tray had just been rebuilt to the
+mockup's form (label, photo swatches, one line of names, "Compare side by
+side" + "Send shortlist to Ed"). The strip's shortlist section now uses the
+mockup's form -- the shared architecture stays, the styling is the one the
+mockup review asked for. Their rail-vs-strip agreement test still passes; its
+strip-side count now reads the section's own count element instead of chips.
+
+Fixing that seam uncovered a crash the rebase had left behind: on any page
+WITHOUT the shared strip (the home page), render() painted the mockup tray and
+then called an older renderer that repainted the same element -- which threw on
+the first toggle, before the button states and the filter rail were updated.
+The old renderer is gone; the mockup rendering IS the standalone strip now.
+A check asserts the label flips after a toggle, which is exactly the thing the
+crash stopped happening.
+
+One more gate fix: check-mail-config and check-gdpr-audit shelled out to the
+`sqlite3` CLI to load the schema, and on a machine without it they reported a
+missing tool as a broken schema. Both now load database/turso/schema.sql with
+node:sqlite itself -- the same library the rest of each check already uses --
+so the checks run anywhere Node runs.
+
+Verified after integration: 42 mock-gap checks, 11 count checks, 5 home-tray
+checks, ci/check-compare-shortlist at 52/52 (including the rail-and-strip
+agreement assertions), and the fifteen-check suite: 11 pass, 4 skipped for the
+missing database, none failed.

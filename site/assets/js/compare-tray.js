@@ -14,11 +14,13 @@
  * other -- and a shopper comparing three cars and shortlisting eleven is doing
  * two different errands that both want that corner of the screen.
  *
- * So it is ONE strip with two sections, shortlist and compare side by side, each
- * with its own count, its own chips, its own clear and its own master button.
- * The compare section's "Compare" button is styled identically to the
- * shortlist's "Send to Ed", because they are the same control doing the same
- * job: act on what you have chosen.
+ * So it is ONE strip with two sections: the shortlist in the mockup's form
+ * (label, photo swatches, names, then "Compare side by side" and "Send
+ * shortlist to Ed"), and the compare roll-call -- a chip per car, its count
+ * and its master button -- shown underneath when cars are being compared.
+ * The mockup's tray carries no per-car removes and no Clear, and neither
+ * does the shortlist section: the card's own toggle and the rail's list are
+ * those controls.
  *
  * The chosen cars STACK: each is a chip in a horizontally scrollable row, and
  * they wrap onto a second line rather than pushing the strip off the screen.
@@ -64,6 +66,20 @@
     el.hidden = true;
     el.innerHTML =
       '<div class="shortlist__inner">' +
+        // --- shortlist (the mockup's form) ---------------------------------
+        '<section class="pick-tray__section" data-shortlist-tray-section hidden>' +
+          '<p class="shortlist__label">Shortlist &middot; <strong data-shortlist-tray-count>0</strong></p>' +
+          '<ul class="shortlist__thumbs" data-shortlist-tray-thumbs></ul>' +
+          '<p class="shortlist__names" data-shortlist-tray-names></p>' +
+          '<div class="shortlist__actions">' +
+            '<button type="button" class="btn btn-ghost btn-sm" data-shortlist-tray-compare>' +
+              'Compare side by side' +
+            '</button>' +
+            '<a class="btn btn-primary btn-sm" data-shortlist-tray-send href="#">' +
+              'Send shortlist to Ed' +
+            '</a>' +
+          '</div>' +
+        '</section>' +
         // --- compare -------------------------------------------------------
         '<section class="pick-tray__section" data-compare-tray-section hidden>' +
           '<p class="shortlist__count">' +
@@ -76,22 +92,6 @@
               'Compare' +
             '</button>' +
             '<button type="button" class="btn btn-ghost btn-sm" data-compare-tray-clear>' +
-              'Clear' +
-            '</button>' +
-          '</div>' +
-        '</section>' +
-        // --- shortlist -----------------------------------------------------
-        '<section class="pick-tray__section" data-shortlist-tray-section hidden>' +
-          '<p class="shortlist__count">' +
-            '<strong data-shortlist-tray-count>0</strong> ' +
-            '<span data-shortlist-tray-noun>cars</span> on your shortlist' +
-          '</p>' +
-          '<ul class="shortlist__items" data-shortlist-tray-items></ul>' +
-          '<div class="shortlist__actions">' +
-            '<a class="btn btn-primary btn-sm" data-shortlist-tray-send href="#">' +
-              'Send to Ed' +
-            '</a>' +
-            '<button type="button" class="btn btn-ghost btn-sm" data-shortlist-tray-clear>' +
               'Clear' +
             '</button>' +
           '</div>' +
@@ -160,14 +160,36 @@
     sync();
   }
 
+  /**
+   * Redraw the shortlist section: the mockup's form -- a swatch per car (the
+   * photograph its card already fetched, so the strip costs no request), the
+   * names as one line, then the two things a visitor can do next. A car this
+   * page cannot show is still named; it is not called gone, because from here
+   * a second-page car and a sold car look identical.
+   */
   function renderShortlist(items, sendHref) {
     var t = tray();
     t.querySelector('[data-shortlist-tray-count]').textContent = String(items.length);
-    t.querySelector('[data-shortlist-tray-noun]').textContent = items.length === 1 ? 'car' : 'cars';
-    t.querySelector('[data-shortlist-tray-items]').innerHTML = items
-      .map((it) => chip(it.slug, it.title || it.slug, it.stock, 'data-shortlist-tray-remove',
-                        it.stale))
+    t.querySelector('[data-shortlist-tray-thumbs]').innerHTML = items
+      .map(function (it) {
+        var label = esc(it.title || it.slug);
+        if (it.stale || !it.thumb) {
+          return '<li><span class="shortlist__thumb--unknown" title="' + label +
+            '" aria-hidden="true"></span></li>';
+        }
+        return '<li><a href="/inventory/' + encodeURIComponent(it.slug) + '/" title="' + label +
+          '" aria-label="' + label + '">' +
+          '<img src="' + esc(it.thumb) + '" alt="" width="54" height="36" loading="lazy">' +
+          '</a></li>';
+      })
       .join('');
+    t.querySelector('[data-shortlist-tray-names]').textContent = items
+      .map(function (it) { return it.title || it.slug; })
+      .join(' \u00b7 ');
+    // Only where there is something to compare: without a comparison area the
+    // button would scroll nowhere, and a control that scrolls nowhere lies.
+    var cmp = t.querySelector('[data-shortlist-tray-compare]');
+    if (cmp) cmp.hidden = !document.getElementById('comparison-app');
     // The mailto: is composed by shortlist.js, not here: the body lists the cars
     // and also names the ones that have since disappeared from the page, and only
     // that script knows which. It is passed in rather than built twice.
@@ -193,14 +215,22 @@
       document.dispatchEvent(new CustomEvent('caddy:remove-from-compare', {
         detail: { slug: t.closest('[data-compare-tray-remove]').dataset.compareTrayRemove },
       }));
-    } else if (t.closest('[data-shortlist-tray-remove]')) {
-      document.dispatchEvent(new CustomEvent('caddy:remove-from-shortlist', {
-        detail: { slug: t.closest('[data-shortlist-tray-remove]').dataset.shortlistTrayRemove },
-      }));
     } else if (t.closest('[data-compare-tray-clear]')) {
       document.dispatchEvent(new CustomEvent('caddy:clear-compare'));
-    } else if (t.closest('[data-shortlist-tray-clear]')) {
-      document.dispatchEvent(new CustomEvent('caddy:clear-shortlist'));
+    } else if (t.closest('[data-shortlist-tray-compare]')) {
+      // The mockup's "Compare side by side": scrolls to the comparison area.
+      // It never turns the shortlist into the comparison -- they are two lists.
+      var host = document.getElementById('comparison-app');
+      if (host) {
+        var reduce = window.matchMedia &&
+          window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        host.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+        var status = document.getElementById('comparison-status');
+        if (status) {
+          status.setAttribute('tabindex', '-1');
+          status.focus({ preventScroll: true });
+        }
+      }
     } else if (t.closest('[data-compare-tray-go]')) {
       var table = document.getElementById('comparison-table');
       if (table) table.scrollIntoView({ behavior: 'smooth', block: 'start' });
