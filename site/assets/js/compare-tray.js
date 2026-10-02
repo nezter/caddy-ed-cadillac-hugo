@@ -82,10 +82,7 @@
         '</section>' +
         // --- compare -------------------------------------------------------
         '<section class="pick-tray__section" data-compare-tray-section hidden>' +
-          '<p class="shortlist__count">' +
-            '<strong data-compare-tray-count>0</strong> ' +
-            '<span data-compare-tray-noun>cars</span> to compare' +
-          '</p>' +
+          '<p class="shortlist__label">Compare &middot; <strong data-compare-tray-count>0</strong></p>' +
           '<ul class="shortlist__items" data-compare-tray-items></ul>' +
           '<div class="shortlist__actions">' +
             '<button type="button" class="btn btn-primary btn-sm" data-compare-tray-go>' +
@@ -146,7 +143,6 @@
   function renderCompare(items) {
     var t = tray();
     t.querySelector('[data-compare-tray-count]').textContent = String(items.length);
-    t.querySelector('[data-compare-tray-noun]').textContent = items.length === 1 ? 'car' : 'cars';
 
     var go = t.querySelector('[data-compare-tray-go]');
     // One car is not a comparison, and the button says so rather than

@@ -1,0 +1,18 @@
+{{- /*
+  comparison-app.html -- the area the comparison renders into.
+
+  THREE ELEMENTS AND NOTHING ELSE, because they are a CONTRACT with
+  vehicleComparison.js: #comparison-app decides whether the script does
+  anything at all, #comparison-status is the live region it speaks through,
+  and #comparison-table is what it fills. A page that renders two of the
+  three gets a half-dead feature, and a page that renders none gets the one
+  the home page used to have: Compare buttons that did nothing when clicked.
+
+  It is a partial because two pages render it -- the inventory page (from
+  its content, through the matching shortcode) and the home page (from its
+  fleet section). Copies of this markup are how the two would drift.
+*/ -}}
+<div id="comparison-app">
+<div id="comparison-status" class="comparison-status" role="status" hidden></div>
+<div id="comparison-table" class="comparison-table" hidden></div>
+</div>

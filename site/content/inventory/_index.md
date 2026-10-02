@@ -25,10 +25,7 @@ stock numbers, so he knows what you are coming in for.
 Comparing three cars and shortlisting eleven are different errands. They used to
 share one button, and the compare feature had none.
 
-<div id="comparison-app">
-<div id="comparison-status" class="comparison-status" role="status" hidden></div>
-<div id="comparison-table" class="comparison-table" hidden></div>
-</div>
+{{< comparison-app >}}
 
 <p class="comparison-hint">Use the <strong>Compare</strong> button on any card to
 add it here. The table shows year, make, model, trim, body, exterior and interior

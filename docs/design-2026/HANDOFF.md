@@ -683,3 +683,40 @@ feature was never broken; the instrument was.
 Verified: 31 compare + 7 detail-shortlist + 6 home-tray + 42 mock-gap + 11
 count checks, ci/check-compare-shortlist at 52/52, and the fifteen-check suite
 (11 pass, 4 skipped for the missing database, none failed).
+
+---
+
+## Compare on the home page, and the popup that did not appear
+
+The report: compare is missing on home, and clicking it does not show the
+same strip the shortlist shows. Both readings pointed at the same fact -- the
+home page had Compare buttons with nothing behind them, and the last pass
+had (correctly, at the time) removed the buttons instead of building the
+thing they promised.
+
+That was the wrong trade. A comparison area is cheap: three elements the
+inventory page already renders, plus the two scripts it already loads. So:
+
+- `partials/comparison-app.html` is now the one source for #comparison-app,
+  #comparison-status and #comparison-table, rendered by the inventory page
+  (through a matching shortcode, replacing the inline HTML that used to live
+  in its content file) AND by the home fleet section.
+- The home page loads compare-tray.js and vehicleComparison.js, and its cards
+  render the Compare toggle again. Click a Compare on home: the SAME strip
+  the shortlist uses slides up, with the compare section in it, and the table
+  fills below the fleet. The URL carries the selection, so a home comparison
+  is shareable the same way.
+- The compare section's heading now reads "Compare · N" in the shortlist's
+  label style, because the complaint was partly that it did not look like the
+  shortlist's popup. It is one strip, two sections, one visual language.
+
+Vehicle pages stay as they are: no comparison area there, so no Compare
+buttons -- only the Shortlist toggle, which now works (shortlist.js loads on
+those pages; see the previous section).
+
+Verified: 16 home checks (area present, strip appears with the compare
+section, label reads Compare · N, two cars fill the table, one strip
+shows both sections, shared link, shortlist mailto, label flip), 31 inventory
+compare checks, 7 detail-page checks, 42 mock-gap, 11 count, ci/check-
+compare-shortlist 52/52, and the fifteen-check suite (11 pass, 4 skipped,
+none failed).

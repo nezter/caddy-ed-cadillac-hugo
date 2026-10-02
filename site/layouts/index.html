@@ -1,5 +1,5 @@
 {{ define "headStyles" }}{{ partial "stylesheet.html" "connect.css" }}{{ partial "stylesheet.html" "components/shortlist.css" }}{{ partial "stylesheet.html" "components/home.css" }}{{ end }}
-{{ define "scripts" }}{{ partial "connect-config.html" . }}{{ partial "entry.html" (dict "entry" "connect.js" "page" .) }}{{ partial "entry.html" (dict "entry" "social-feed.js" "page" .) }}{{ partial "entry.html" (dict "entry" "shortlist.js" "page" .) }}{{ partial "entry.html" (dict "entry" "inventory-filter.js" "page" .) }}{{ partial "entry.html" (dict "entry" "ed-picks.js" "page" .) }}{{ end }}
+{{ define "scripts" }}{{ partial "connect-config.html" . }}{{ partial "entry.html" (dict "entry" "connect.js" "page" .) }}{{ partial "entry.html" (dict "entry" "social-feed.js" "page" .) }}{{ partial "entry.html" (dict "entry" "shortlist.js" "page" .) }}{{ partial "entry.html" (dict "entry" "inventory-filter.js" "page" .) }}{{ partial "entry.html" (dict "entry" "ed-picks.js" "page" .) }}{{ partial "entry.html" (dict "entry" "compare-tray.js" "page" .) }}{{ partial "entry.html" (dict "entry" "vehicleComparison.js" "page" .) }}{{ end }}
 
 {{ define "main" }}
 {{- $phone := .Site.Params.phone | default "803-431-6180" -}}
@@ -241,7 +241,7 @@
          still works, but with scripting on it expects to filter in place. */}}
     <div class="vehicle-grid" id="vehicle-inventory" data-total="{{ len $cadillacAll }}" data-page-size="{{ len $cadillac }}">
       {{ range $i, $v := $cadillac }}
-        {{ partial "vehicle-card.html" (dict "vehicle" $v "eager" (lt $i 3)) }}
+        {{ partial "vehicle-card.html" (dict "vehicle" $v "eager" (lt $i 3) "compare" true) }}
       {{ end }}
     </div>
 
@@ -253,6 +253,15 @@
       <p data-empty-message>No vehicles match those filters.</p>
       <button class="btn btn-ghost btn-sm" type="button" data-inventory-reset>Clear them</button>
     </div>
+
+    {{/* The comparison lives on the home page too. Without it the cards
+         here offered a Compare button that did nothing: no table, no script.
+         The same three elements the inventory page uses, from the same
+         partial, and the same script -- one comparison, two doors to it. */}}
+    {{ partial "comparison-app.html" . }}
+    <p class="comparison-hint">Use the <strong>Compare</strong> button on any
+    card to see up to three of them side by side right here. The address bar
+    carries your selection, so you can send someone what you are looking at.</p>
 
     <div class="cluster" style="margin-top: var(--space-7)">
       <a class="btn btn-outline" href="/inventory/">Filter by model, year and price</a>
