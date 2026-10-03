@@ -1081,3 +1081,30 @@ Shipped:
   until now pointed at a file that did not exist (broken social card).
 - The interim bronze grade (.duo / .ed-portrait::before) retired with the
   snapshot; plate scrims keep the caption legible.
+
+---
+
+## The header, gone through properly
+
+Owner: the top bar needed TLC -- hover, click, every screen size. The pass
+found one real defect hiding in plain sight: below 64rem the menu panel only
+ever showed the phone button. `.navbar-start` is display:none until desktop
+and nothing re-showed it inside the opened panel, so mobile navigation led
+nowhere. Fixed, plus a full interaction pass:
+
+- Every control carries hover / focus-visible / active / current states. Nav
+  links get a red underline that grows in (scaleX transition); the sticky
+  header deepens; the phone CTA lifts on hover and settles on press; the
+  burger takes hover/press/focus states; utility links transition. The old
+  light `--bg-subtle` hover flash on the dark header is suppressed.
+- Mobile panel: all seven links as 48px touch rows, current page flagged with
+  a red rail, phone CTA full width, dropdown entrance animation (reduced-
+  motion aware), max-height + scroll for short viewports, safe-area padding,
+  outside-click close (new in chrome.js, alongside Escape / link / resize).
+- Deleted `assets/js/navbar.js` and its import: it toggled .sticky /
+  .header-hidden (classes with no CSS rules) on scroll and queried
+  .nav-toggle/.nav-menu markup that no longer exists.
+
+Verified: 17/17 nav state-machine checks in jsdom (open, outside-click,
+Escape, link close; 7 links + CTA present), bundle/CSS assertions on the
+built output, buttons-live 85/85, mock-gaps 42/42, buttons-static 0 issues.

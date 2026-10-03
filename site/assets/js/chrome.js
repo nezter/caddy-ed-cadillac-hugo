@@ -47,6 +47,15 @@
     menu.addEventListener('click', function (e) {
       if (e.target.closest('a')) setOpen(false);
     });
+
+    // Close when a click lands anywhere outside the panel. A dropdown panel
+    // is not a modal: the page below stays visible and tappable, so a tap
+    // on it should dismiss the menu rather than leave it hanging open.
+    document.addEventListener('click', function (e) {
+      if (toggle.getAttribute('aria-expanded') !== 'true') return;
+      if (menu.contains(e.target) || toggle.contains(e.target)) return;
+      setOpen(false);
+    });
   }
 
   function initHeaderShadow() {

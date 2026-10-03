@@ -11,7 +11,10 @@
 
 // Core behaviour
 import './app';
-import './navbar';
+// (the ./navbar import was removed 2026-10: it only toggled .sticky /
+// .header-hidden on scroll -- classes with no CSS rules anywhere -- and
+// queried .nav-toggle/.nav-menu markup that no longer exists. chrome.js
+// owns the header.)
 import './forms';
 import './chrome'; // header/nav behaviour, previously an inline <script> in the header partial
 
