@@ -1129,3 +1129,28 @@ wordmark was flat currentColor text on a dark bar. Now:
 Verified: built logo carries gradient + emboss under a fresh fingerprint;
 built CSS carries keyframes/hairline/glow; nav state machine 17/17;
 buttons-live 85/85; mock-gaps 42/42; buttons-static 0 issues.
+
+---
+
+## Correction: the nav pass had clipped the theme layer
+
+Owner caught it from the contact page: the form had lost its styling. Root
+cause was the nav commit: the CSS replacement anchored on "/* --- header"
+and direct-2026.css has TWO such sections (the legacy theme layer's header
+spacing block and the shell layer's restyle block). Replacing from the first
+one swallowed 321 lines -- the whole .field / .field--light form layer, .btn
+and .plate hover polish, .ribbon labels, .feed, .dock, and more -- before it
+reached the intended block.
+
+Restored exactly from e27204c (the commit before the damage; the first
+restore attempt was redone because piping git show through PowerShell
+mangled the comments' em-dashes -- use node execSync with utf8 instead).
+Line-level diff after the fix: the only missing old lines are the 9 header
+rules the new block intentionally supersedes. Contact form computed styles
+resolve again (label #515863, input #fff / border #dde0e6); built CSS
+carries the field layer; nav state machine 17/17; buttons-live 85/85;
+mock-gaps 42/42; buttons-static 0 issues.
+
+Lesson for this file: section replaces must anchor on a marker that exists
+ONLY once -- grep the file for the marker first and assert the match count
+before replacing.
