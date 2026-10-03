@@ -213,7 +213,10 @@
 
       {{/* Price bands. FilterManager.js:101-124 had these; the values match the
            Max price select, which is kept as the precise control. */}}
-      <div class="inventory-price-bands" id="inventory-price-bands" role="group" aria-label="Price bands"></div>
+      <div class="form-field">
+        <p class="inventory-price-bands-label" id="inventory-price-bands-label">Price</p>
+        <div class="inventory-price-bands" id="inventory-price-bands" role="group" aria-labelledby="inventory-price-bands-label"></div>
+      </div>
 
       <div class="inventory-filters__actions">
         <p class="inventory-filters__active hidden" id="inventory-active-filters" aria-live="polite"></p>

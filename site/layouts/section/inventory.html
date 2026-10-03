@@ -173,6 +173,7 @@
          is fully usable with JS off. This form only narrows what is already in
          the DOM -- it never fetches, so browsing inventory does not depend on
          the API or on a function being reachable. */}}
+    <div class="inv-columns">
     <aside class="inv-rail">
       {{ partial "inventory-filters.html" (dict "page" . "perPage" $perPage) }}
     </aside>
@@ -255,6 +256,7 @@
         {{- if gt $paginator.TotalPages 1 }}, page {{ $paginator.PageNumber }} of {{ $paginator.TotalPages }}{{ end }}.
       </p>
       {{ end }}
+    </div>
     </div>
 
     {{ with .Params.show_cta | default true }}

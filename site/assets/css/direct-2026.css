@@ -283,10 +283,16 @@ a{color:inherit}
 .feed .who{font-family:var(--f-mono);font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;color:var(--bronze);flex:none;width:5.6rem}
 .feed .what{color:var(--on-ink-muted);font-size:.92rem;margin:0}
 .feed .when{color:var(--on-ink-faint);font-size:.78rem;font-family:var(--f-mono);margin-left:auto;flex:none}
-.chip-row{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1.1rem}
-.chip{font-family:var(--f-mono);font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;
+/* Scoped to the home dock ON PURPOSE. Unscoped, and because this file
+   loads last, these light-on-ink pills also matched the inventory rail's
+   price-band chips: an rgba(255,255,255,.16) border is invisible on white
+   and the on-ink colour reads as bare grey text, so the bands rendered as
+   plain words with no pills at all. The rail's own .chip rule
+   (inventory.scss) now wins where it belongs. */
+body.home .chip-row{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1.1rem}
+body.home .chip{font-family:var(--f-mono);font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;
   padding:.42rem .7rem;border:1px solid rgba(255,255,255,.16);border-radius:999px;color:var(--on-ink-muted);text-decoration:none}
-.chip:hover,.chip[aria-pressed="true"]{border-color:var(--bronze-hi);color:#fff;background:rgba(182,159,88,.1)}
+body.home .chip:hover,body.home .chip[aria-pressed="true"]{border-color:var(--bronze-hi);color:#fff;background:rgba(182,159,88,.1)}
 
 /* --- filter rail -------------------------------------------------------- */
 .rail{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center}
@@ -901,7 +907,15 @@ body.home .prose a{color:var(--bronze-hi)}
    section/inventory.html; below 64rem they are display:contents, so the page
    falls back to its plain stacked flow with no extra markup. */
 @media (min-width:64rem){
+  /* The two-column area is its own grid, so the sticky rail's clamp ends
+     where the columns end -- before the full-width CTA band. As one shared
+     grid the rail stayed pinned past the results and painted over the
+     band's left half, so "Not seeing it?" read as cut-off text. */
   .inventory-page .container{
+    display:grid;grid-template-columns:minmax(0,1fr);
+    gap:clamp(1.2rem,2.6vw,2.2rem);align-items:start;
+  }
+  .inventory-page .inv-columns{
     display:grid;grid-template-columns:290px minmax(0,1fr);
     gap:clamp(1.2rem,2.6vw,2.2rem);align-items:start;
   }
@@ -914,7 +928,9 @@ body.home .prose a{color:var(--bronze-hi)}
   .inv-rail .filter-accordion{background:#fff}
 }
 @media (max-width:63.99rem){
-  .inv-rail,.inv-results{display:contents}
+  /* Stacked flow: the wrapper is transparent and the two blocks flow as
+     before. */
+  .inventory-page .inv-columns{display:block}
 }
 /* the rail reads as a card, not as an accordion, once it is a column */
 .inv-rail .filter-accordion{
@@ -922,7 +938,7 @@ body.home .prose a{color:var(--bronze-hi)}
   background:var(--bg-subtle);box-shadow:var(--shadow-sm);
 }
 .inv-rail .filter-accordion__summary{padding:.9rem 1.1rem}
-.inv-rail .filter-accordion__body{padding:0 1.1rem 1.1rem}
+.inv-rail .filter-accordion__body{padding:0 1.1rem .95rem}
 .inv-rail .inventory-filters__grid{grid-template-columns:1fr}
 .inv-rail .inventory-filters__actions{gap:.5rem;flex-wrap:wrap}
 .inv-results .inventory-pagination{margin-top:2rem;padding-top:1.4rem;border-top:1px solid var(--border)}
@@ -1220,7 +1236,17 @@ body.home .dock .social-body > div{max-width:100%}
   border-top:1px solid var(--border);margin-top:.9rem;padding-top:.9rem;
   display:flex;align-items:center;justify-content:space-between;gap:.5rem;
 }
-.inv-rail .inventory-price-bands{display:flex;flex-wrap:wrap;gap:.4rem}
+/* Price bands: two even columns of pills under their own label. They sat
+   unlabelled below the mileage slider -- five ragged pills with a hole in
+   the first row, reading as leftovers. */
+.inv-rail .inventory-price-bands{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.45rem;margin-top:.35rem;
+}
+.inv-rail .inventory-price-bands .chip{padding:.42rem .5rem;text-align:center;}
+.inv-rail .inventory-price-bands-label{
+  font-family:var(--f-mono);font-size:.62rem;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--text-faint);margin:0 0 .15rem;
+}
 
 /* the price, now at the head of the vehicle action rail */
 .vehicle-detail .vehicle-cta__label{color:var(--on-ink-faint);margin:0 0 .2rem}
@@ -1535,9 +1561,7 @@ body.home .vehicle-card__actions .btn-ghost:hover{
 .inv-rail select:focus,
 .inv-rail input:focus{border-color:var(--brand-bronze);outline:none}
 .inv-rail input[type="range"]{width:100%}
-.inv-rail .inventory-price-bands{
-  display:flex;flex-wrap:wrap;gap:.4rem;padding-top:.2rem;
-}
+/* (duplicate of the price-band rule above, now superseded by the grid) */
 
 /* --- the line above the cars -------------------------------------------- */
 .inv-results .inv-topline{
@@ -1686,7 +1710,7 @@ body.home .vehicle-card__actions .btn-ghost:hover{
 
 /* the saved-shortlist panel the mockup carries under the filters */
 .inv-rail .inv-shortlist{
-  margin-top:1rem;padding:1rem 1.15rem;background:#fff;
+  margin-top:.8rem;padding:1rem 1.1rem;background:#fff;
   border:1px solid var(--border);border-radius:var(--r-card);
 }
 .inv-rail .inv-shortlist__label{

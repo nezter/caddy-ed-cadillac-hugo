@@ -278,13 +278,13 @@ function reserveSpace(visible) {
       // statement this page cannot support.
       const name = v
         ? '<a href="/inventory/' + encodeURIComponent(slug) + '/">' + escapeHtml(v.title) + '</a>'
-        : '<span class="is-unknown">' + escapeHtml(slug) + '</span>';
+        : '<span class="is-unknown" title="Not in the current view">' + escapeHtml(prettySlug(slug)) + '</span>';
       return '<li class="inv-shortlist__item">' +
         name +
         (v && v.stock ? ' <em>' + escapeHtml(v.stock) + '</em>' : '') +
         '<button type="button" class="inv-shortlist__remove" data-rail-remove="' +
           escapeHtml(slug) + '" aria-label="Remove ' +
-          escapeHtml(v ? v.title : slug) + ' from shortlist">&times;</button>' +
+          escapeHtml(v ? v.title : prettySlug(slug)) + ' from shortlist">&times;</button>' +
         '</li>';
     }).join('');
 
@@ -398,6 +398,37 @@ function render() {
     });
 
     renderRail();
+  }
+
+  /**
+   * A slug is an address, not a name.
+   *
+   * When a shortlisted car is not in the current view (filtered out, or on
+   * page two) the rail still lists it -- correctly, it is not "gone" -- but
+   * it used to list the SLUG: "2027-cadillac-vistiq-sport" in a saved
+   * shortlist reads like breakage. This says the human name instead:
+   * "2027 Cadillac VISTIQ Sport".
+   */
+  function prettySlug(slug) {
+    var words = String(slug || '').split('-').filter(Boolean);
+    // Drop a trailing stock reference ("-602217", "-dtz081661").
+    if (words.length > 1) {
+      var last = words[words.length - 1];
+      if (/\d{3,}/.test(last) && !/^\d{4}$/.test(last)) words.pop();
+    }
+    var known = {
+      cadillac: 'Cadillac', bmw: 'BMW', volvo: 'Volvo', nissan: 'Nissan',
+      awd: 'AWD', fwd: 'FWD', rwd: 'RWD', esv: 'ESV', sl: 'SL',
+      xt4: 'XT4', xt5: 'XT5', xt6: 'XT6', ct4: 'CT4', ct5: 'CT5',
+      x1: 'X1', xc60: 'XC60', lyriq: 'LYRIQ', vistiq: 'VISTIQ', escalade: 'Escalade'
+    };
+    return words.map(function (w, i) {
+      var lower = w.toLowerCase();
+      if (i === 0 && /^\d{4}$/.test(w)) return w;
+      if (known[lower]) return known[lower];
+      if (/^xdrive/.test(lower)) return 'xDrive' + w.slice(6);
+      return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+    }).join(' ').replace(/\bV Series\b/i, 'V-Series');
   }
 
   function escapeHtml(value) {

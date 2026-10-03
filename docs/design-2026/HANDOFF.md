@@ -997,3 +997,42 @@ includes functions) or netlify dev. For a preview to RECORD, the Netlify
 site needs TURSO_DATABASE_URL + TURSO_AUTH_TOKEN (with database/turso/
 schema.sql applied) and SMTP_* + EMAIL_TO for notifications; without the
 database the new code answers honestly instead of pretending.
+
+---
+
+## The inventory sidebar: five real defects, fixed and verified
+
+User screenshot of /inventory/: "the side bar is badly organized". It was
+right -- five separate defects, all now fixed:
+
+1. THE PRICE CHIPS RENDERED AS BARE TEXT. Root cause: a cascade leak.
+   direct-2026.css loads last and carried an UNSCOPED .chip rule for the
+   home page's connection-dock pills (white-on-ink styling: border
+   rgba(255,255,255,.16) is invisible on white, and the on-ink colour reads
+   as grey). It silently overrode inventory.scss's pill styling. Scoped to
+   body.home; proven with a computed-style probe (the chip now computes from
+   inventory.scss + the rail rules: no mono, no uppercase, min-height 32px).
+2. THE BANDS WERE UNLABELLED AND RAGGED. "Under $40k" sat alone, a hole in
+   the first row, floating under the mileage slider with no heading. Now a
+   "Price" label + a two-column grid of equal pills (90px cells, measured).
+3. THE SHORTLIST SHOWED A RAW SLUG. A saved car not in the current view
+   rendered "2027-cadillac-vistiq-sport" -- a URL in a saved list reads as
+   breakage. prettySlug() now says "2027 Cadillac VISTIQ Sport" (textarea
+   keeps the not-in-view treatment and the remove control).
+4. THE STICKY RAIL PAINTED OVER THE CTA BAND. At the page bottom the full
+   width "Not seeing it?" band scrolled under the pinned filter rail and its
+   left half was hidden -- the heading vanished, the copy read as cut-off
+   mid-word. The page used ONE grid for everything; the two columns now live
+   in their own wrapper (.inv-columns), so the sticky rail's extent ends
+   before the band -- the standard sticky-sidebar structure, correct under
+   either sticky-clamp behaviour.
+5. RHYTHM. Shortlist card spacing/padding aligned with the filters card;
+   the gap between the two cards tightened.
+
+Verified: buttons 85/85 (with three new seeded-storage checks: a saved
+off-view car reads as a name, stock suffixes stay out of the name, the
+not-in-view row keeps its remove control); static sweep 0 issues; compare
+44/44; home 20/20; mock-gaps 42/42; counts 11/11; detail 7/7; full suite
+15/15. Screenshots are unavailable on this box (headless capture has been
+broken all project -- documented), so the pixel check happens on the next
+preview build.
