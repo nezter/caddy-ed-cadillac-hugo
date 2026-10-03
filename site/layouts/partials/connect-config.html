@@ -34,7 +34,9 @@
     /* Empty: the list below is already real, baked at build time.
        Point at a feed URL to pull live instead. */
     stockEndpoint: "",
-    socialEndpoint: "",
+    // The site's own cached copy -- refreshed at most daily; see
+    // netlify/functions/social-feed.js.
+    socialEndpoint: "/.netlify/functions/social-feed",
     facebookPageUrl: {{ $fb | jsonify | safeJS }},
     xHandle: {{ $xh | jsonify | safeJS }},
     instagramUrl: {{ $ig | jsonify | safeJS }},

@@ -16,9 +16,7 @@
     // inventory pages, so there is nothing to fetch and no skeleton flash.
     // Point this at a live feed to switch the panel to pull mode.
     stockEndpoint: cfg.stockEndpoint || "",
-    socialEndpoint: cfg.socialEndpoint || "",
-    facebookPageUrl: cfg.facebookPageUrl || "",
-    xHandle: cfg.xHandle || "",
+    // (social feed config moved to assets/js/social-feed.js)
     // /.netlify/functions/contact-form, not /api/contact. There is no /api/
     // route on this site -- a Gatsby-ism from before the Hugo rewrite -- so the
     // "Ask Ed" form submitted into a 404 and reported a generic failure. The
@@ -327,163 +325,13 @@
     });
   }
 
-  /* ----------------------------------------------------------- tabs ------ */
-
-  function initTabs() {
-    var tablist = $('[role="tablist"]');
-    if (!tablist) return;
-    var tabs = $$('[role="tab"]', tablist);
-    function select(tab) {
-      tabs.forEach(function (t) {
-        var on = t === tab;
-        t.setAttribute("aria-selected", String(on));
-        t.tabIndex = on ? 0 : -1;
-        var panel = document.getElementById(t.getAttribute("aria-controls"));
-        if (panel) panel.hidden = !on;
-      });
-    }
-    tabs.forEach(function (t, i) {
-      t.addEventListener("click", function () { select(t); });
-      t.addEventListener("keydown", function (e) {
-        var next = null;
-        if (e.key === "ArrowRight") next = tabs[(i + 1) % tabs.length];
-        if (e.key === "ArrowLeft") next = tabs[(i - 1 + tabs.length) % tabs.length];
-        if (e.key === "Home") next = tabs[0];
-        if (e.key === "End") next = tabs[tabs.length - 1];
-        if (next) { e.preventDefault(); select(next); next.focus(); }
-      });
-    });
-    select(tabs[0]);
-  }
-
-  /* --------------------------------------------------------- social ------ */
-
-  function demoPost(opts) {
-    return '' +
-      '<article class="social-post">' +
-        '<div class="post-head">' +
-          '<span class="post-avatar" aria-hidden="true">CE</span>' +
-          '<span class="post-id"><span class="post-name">' + esc(opts.name) + '</span>' +
-          '<span class="post-time">' + esc(opts.time) + '</span></span>' +
-        '</div>' +
-        '<p class="post-body">' + esc(opts.body) + '</p>' +
-        (opts.img ? '<div class="post-media"><img src="' + esc(opts.img) + '" alt="" loading="lazy" decoding="async"></div>' : '') +
-        '<div class="post-actions"><span>' + esc(opts.stat1) + '</span><span>' + esc(opts.stat2) + '</span></div>' +
-      '</article>';
-  }
-
-  function renderDemo(kind) {
-    // This used to render two invented Facebook/X posts -- "Sample layout",
-    // "Sample reactions", "Sample comments" -- under the real business's name.
-    //
-    // It rendered 627px of fabricated social content above the fold of a real
-    // dealership's home page, for every visitor whose embed did not load: anyone
-    // logged out of Facebook, anyone with an ad blocker, and everyone on the
-    // static preview. Posts attributed to a named person that the person never
-    // wrote are the same problem as a fabricated testimonial, and the reviews
-    // side of this is a legal exposure under the FTC's rule on fake reviews
-    // (16 CFR 465), not just an aesthetic one.
-    //
-    // So the fallback is the honest one: a link out, and a line of text saying
-    // what would be here. partials/social-feed.html already renders that
-    // server-side, so there is nothing to draw -- the panel is left empty and
-    // the fallback below it is what the visitor reads.
-    var host = document.getElementById(kind === "facebook" ? "panelFacebook" : "panelX");
-    if (host) host.innerHTML = "";
-  }
-
-  function mountFacebook() {
-    var host = document.getElementById("panelFacebook");
-    if (!host) return;
-
-    // The configured value has been arriving with a pair of literal double
-    // quotes wrapped around it, and the page plugin was being asked for
-    //     href=%22https%3A%2F%2Fwww.facebook.com%2Feportello%22
-    // which Facebook cannot resolve -- so the embed silently never worked and
-    // all that was left was a 620px empty box. Strip surrounding quotes and
-    // whitespace before encoding, rather than trusting the source to be clean.
-    var page = String(CONFIG.facebookPageUrl || "").trim().replace(/^["']|["']$/g, "").trim();
-    if (!page) { renderDemo("facebook"); return; }
-
-    var src = "https://www.facebook.com/plugins/page.php?href=" +
-      encodeURIComponent(page) +
-      "&tabs=timeline&width=400&height=620&small_header=true&adapt_container_width=true&hide_cover=false&show_facepile=false";
-    host.innerHTML = '<iframe class="social-frame" src="' + esc(src) + '" width="100%" height="620" ' +
-      'style="height:620px" title="Caddy Ed on Facebook" loading="lazy" ' +
-      'scrolling="no" frameborder="0" allow="encrypted-media"></iframe>';
-  }
-
-  function mountX() {
-    var host = document.getElementById("panelX");
-    if (!host) return;
-    if (!CONFIG.xHandle) { renderDemo("x"); return; }
-    host.innerHTML = '<a class="twitter-timeline" data-height="620" data-dnt="true" ' +
-      'href="https://twitter.com/' + esc(CONFIG.xHandle.replace(/^@/, "")) + '">Posts by ' + esc(CONFIG.xHandle) + '</a>';
-    var s = document.createElement("script");
-    s.src = "https://platform.twitter.com/widgets.js";
-    s.async = true;
-    s.onerror = function () { renderDemo("x"); };
-    document.head.appendChild(s);
-    setTimeout(function () { if (!host.querySelector("iframe")) renderDemo("x"); }, 3500);
-  }
-
-  function serverPost(kind, p) {
-    var stats = p.stats || {};
-    var s1, s2;
-    if (kind === "facebook") { s1 = (stats.likes || 0) + " likes"; s2 = (stats.comments || 0) + " comments"; }
-    else { s1 = (stats.reposts || 0) + " reposts"; s2 = (stats.likes || 0) + " likes"; }
-    var time = p.createdAt ? new Date(p.createdAt).toLocaleDateString() : "";
-    var name = kind === "facebook" ? "Caddy Ed - Cadillac Sales Specialist" : (p.handle || "Caddy Ed");
-    return '<article class="social-post">' +
-      '<div class="post-head">' +
-        '<span class="post-avatar" aria-hidden="true">CE</span>' +
-        '<span class="post-id"><span class="post-name">' + esc(name) + '</span>' +
-        '<span class="post-time">' + esc(time) + '</span></span>' +
-      '</div>' +
-      '<p class="post-body">' + esc(p.text) + '</p>' +
-      (p.image ? '<div class="post-media"><img src="' + esc(p.image) + '" alt="" loading="lazy" decoding="async"></div>' : '') +
-      '<div class="post-actions"><span>' + esc(s1) + '</span><span>' + esc(s2) + '</span>' +
-        (p.url ? '<a href="' + esc(p.url) + '" target="_blank" rel="noopener" style="margin-left:auto">View post</a>' : '') +
-      '</div>' +
-    '</article>';
-  }
-
-  function renderServer(kind, feed) {
-    var host = document.getElementById(kind === "facebook" ? "panelFacebook" : "panelX");
-    if (!host || !feed || !feed.posts || !feed.posts.length) return false;
-    host.innerHTML = feed.posts.map(function (p) { return serverPost(kind, p); }).join("");
-    return true;
-  }
-
-  function loadSocial() {
-    // social-feed returns { facebook:{posts}, x:{posts} } when tokens are set.
-    // Anything missing falls back to the official client embeds, then to the
-    // labelled sample layout.
-    // The platform embeds are NOT loaded here.
-    //
-    // This used to fall back to mountFacebook()/mountX() -- which injects a
-    // Facebook page-plugin iframe and a platform.twitter.com script -- for every
-    // visitor, on every load, to render a feed most of them never see. It was
-    // the only thing on this site that reached a third party, and in Firefox
-    // with no session the widget logged "DataStore.get: namespace is required"
-    // 43 times on one home page load.
-    //
-    // social-feed.js now loads a platform's embed only when its tab is chosen.
-    // If this project's own social endpoint has real posts, those are rendered
-    // here as before -- that is first-party and costs nothing. Only the
-    // third-party fallback waits for a click.
-    if (CONFIG.socialEndpoint && window.fetch) {
-      fetch(CONFIG.socialEndpoint, { headers: { Accept: "application/json" } })
-        .then(function (r) { return r.ok ? r.json() : {}; })
-        .catch(function () { return {}; })
-        .then(function (data) {
-          renderServer("facebook", data && data.facebook);
-          renderServer("x", data && data.x);
-        });
-    }
-  }
-
-  /* --------------------------------------------------------- alerts ------ */
+  /* Social feed and tab behaviour live in assets/js/social-feed.js now --
+   cache-based and first-party. The platform embeds that used to be injected
+   from this file (Facebook page-plugin iframe, Twitter widgets.js) were
+   removed with them: they cost two CSP origins and 43 console errors on a
+   logged-out home page load, to render a feed most visitors never saw.
+   (The bundle filenames are deliberately not named here -- they are gone.) */
+/* --------------------------------------------------------- alerts ------ */
 
   function initAlerts() {
     var form = $("#stockAlerts");
@@ -550,14 +398,9 @@
     var more = $("#stockMore");
     if (more) more.addEventListener("click", function () { state.expanded = true; renderStock(); });
     var fewer = $("#stockFewer");
-    if (fewer) fewer.addEventListener("click", function () { state.expanded = false; renderStock(); });
-
-    initTabs();
-    initQuickAsk();
+    if (fewer) fewer.addEventListener("click", function () { state.expanded = false; renderStock(); });    initQuickAsk();
     initAlerts();
-    loadStock();
-    loadSocial();
-  }
+    loadStock();  }
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", boot);

@@ -1154,3 +1154,40 @@ mock-gaps 42/42; buttons-static 0 issues.
 Lesson for this file: section replaces must anchor on a marker that exists
 ONLY once -- grep the file for the marker first and assert the match count
 before replacing.
+
+---
+
+## The social feed becomes cache-based
+
+Owner: make the Facebook / Instagram / X feed better, less disruptive,
+cached, refreshed daily only. Done by removing the last third party from the
+feature entirely:
+
+- `netlify/functions/social-feed.js` (new): GET, always 200, JSON. The
+  Cache-Control header is the daily gate -- `s-maxage=86400` plus
+  stale-while-revalidate -- so the CDN serves one copy a day and visitors
+  never trigger a platform call. Backed by one cache row in the site's Turso
+  DB via `utils/social-cache.js` (24h TTL; refreshes lazily when stale, and
+  proactively from the scheduled `social-refresh.js`). Platform tokens are
+  optional (FACEBOOK_PAGE_TOKEN / X_BEARER_TOKEN+X_USERNAME /
+  INSTAGRAM_ACCESS_TOKEN); without them the cache stays empty and the panels
+  keep their follow cards. Every failure path returns the last good copy --
+  refresh or no refresh, the panel cannot break.
+- `assets/js/social-feed.js` (rewritten): panels server-render a follow card
+  -- no empty box, no widget button; one fetch of the site's own endpoint
+  swaps to text-only post cards when the cache has posts. No third-party
+  code loads at any point; the Facebook page-plugin iframe and the Twitter
+  widgets bundle are gone, and with them the last two third-party origins
+  (removed from the CSP in netlify.toml AND ci/nginx.preview.conf). Cards
+  are deliberately text-only: platform CDN images would buy back an external
+  origin and weigh more than they add; the card links out instead.
+- `connect.js`: the duplicate tab handler and dead widget mounters deleted;
+  `socialEndpoint` now points at the cached function.
+
+Verified: function smoke 7/7 (no-DB, file-DB via shim, seeded read,
+stale-served), frontend jsdom 12/12 (offline keeps follow cards; posts swap
+in; zero third-party tags), built output audited clean of all third-party
+social references; buttons-live 85/85; mock-gaps 42/42; buttons-static 0;
+nav state machine 17/17. To populate for real: set the platform tokens in
+Netlify env and configure x/instagram in data/social.yaml -- the tabs appear
+when a network is configured, by design.

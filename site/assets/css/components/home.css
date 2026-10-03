@@ -336,12 +336,9 @@
 }
 
 /* The social panels.
-   No reserved height. The Facebook and X widgets inject their own iframes and
-   size themselves, and they only do that with a session -- a visitor who is
-   logged out, has an ad blocker, or is on the static preview gets nothing. A
-   min-height here therefore reserved ~600px of empty grey for most visitors,
-   which is worse than a short panel, so the box collapses to whatever the
-   embed or the fallback actually needs. */
+   The panels hold their follow card from the server, and swap to cached
+   post cards when the site's own endpoint has any. No reserved height:
+   the follow card is the height it is, and the card list caps itself. */
 .ed-and-feed .social-body {
   min-height: 0;
 }

@@ -1,14 +1,18 @@
 {{- /*
-  social-feed.html -- "what Ed is posting", the Facebook and X panels.
+  social-feed.html -- "what Ed is posting", the cached social panel.
 
-  Split out of connect-hub.html so it can sit in its own column on the home page
-  rather than inside a panel that also used to contain the stock list.
+  Cache-based and first-party since 2026-10: the panels arrive already
+  holding a follow card (text + a link), so there is no empty box and no
+  third-party script anywhere in the feature. assets/js/social-feed.js
+  asks the site's own endpoint (netlify/functions/social-feed.js) for the
+  cached posts and swaps panels to post cards when there are any; the
+  endpoint itself refreshes at most once a day, and the CDN caches the
+  answer besides. The Facebook page-plugin iframe and the Twitter widgets
+  script that used to render here are gone -- with them went the last two
+  third-party origins in the site's Content-Security-Policy.
 
-  The panel bodies are filled by connect.js, which embeds the platform widgets.
-  Under the site's Content-Security-Policy those embeds are allowed, but a
-  visitor with no Facebook session, or with an ad blocker, will get an empty
-  box -- so each panel carries a plain-text fallback underneath it that is
-  always readable without JavaScript or a third party.
+  Tabs are rendered by the template only for networks that are configured
+  (data/social.yaml); an unconfigured network is simply not offered.
 */ -}}
 {{- $social := hugo.Data.social | default dict -}}
 {{- $fbUrl := "" }}{{ with $social }}{{ with .facebook }}{{ $fbUrl = .url | default "" }}{{ end }}{{ end -}}
@@ -16,6 +20,7 @@
 {{- $xHandle := "" }}{{ with $social }}{{ with .x }}{{ $xHandle = .handle | default "" }}{{ end }}{{ end -}}
 {{- $igUrl := "" }}{{ with $social }}{{ with .instagram }}{{ $igUrl = .url | default "" }}{{ end }}{{ end -}}
 {{- $igHandle := "" }}{{ with $social }}{{ with .instagram }}{{ $igHandle = .handle | default "" }}{{ end }}{{ end -}}
+{{- $xLink := $xUrl }}{{ if and (not $xLink) $xHandle }}{{ $xLink = printf "https://twitter.com/%s" (strings.TrimPrefix "@" $xHandle) }}{{ end -}}
 
 {{/*
   Which networks can actually be shown.
@@ -67,22 +72,37 @@
   </div>
 
   <div class="social-body" id="social-feed-host" data-social-default="{{ $default }}">
-    {{/* The panel is filled by social-feed.js: first the offer to load a feed,
-         then the feed itself once asked for. It used to hide its own
-         explanation on load and never replace it, so the panel sat there
-         completely empty under the tabs -- which reads as broken, because it
-         was. With JavaScript off, the links in the fallback underneath still
-         go straight to the networks. */}}
-    <noscript>
-      <p class="social-load__note">The live feeds need JavaScript. The links
-      under this panel go straight to them.</p>
-    </noscript>
+    {{/* Each panel arrives holding its follow card: no JavaScript and no
+         network needed for a readable state. social-feed.js swaps a panel
+         to cached post cards only when the site's own endpoint has any. */}}
+
     {{/* Tab semantics only when the tabs above exist. With a single network
          there is no tablist, so role=tabpanel would point at a tab that is not
          there -- the panel is simply a region naming what it shows. */}}
-    {{ if $fbUrl }}<div class="tabpanel" id="panelFacebook" {{ if $multi }}role="tabpanel" aria-labelledby="tabFacebook"{{ else }}role="region" aria-label="Facebook feed"{{ end }}></div>{{ end }}
-    {{ if $xHandle }}<div class="tabpanel" id="panelX" {{ if $multi }}role="tabpanel" aria-labelledby="tabX"{{ else }}role="region" aria-label="X feed"{{ end }}></div>{{ end }}
-    {{ if $igUrl }}<div class="tabpanel" id="panelInstagram" {{ if $multi }}role="tabpanel" aria-labelledby="tabInstagram"{{ else }}role="region" aria-label="Instagram feed"{{ end }}></div>{{ end }}
+    {{ if $fbUrl }}
+<div class="tabpanel" id="panelFacebook" {{ if $multi }}role="tabpanel" aria-labelledby="tabFacebook"{{ else }}role="region" aria-label="Facebook feed"{{ end }}>
+  <div class="social-follow">
+    <p class="social-follow__note">When Ed posts on Facebook, the newest ones land here.</p>
+    <p class="social-follow__cta"><a class="btn btn-outline btn-sm" href="{{ $fbUrl }}" target="_blank" rel="noopener">Open Facebook</a></p>
+  </div>
+</div>
+{{ end }}
+    {{ if $xHandle }}
+<div class="tabpanel" id="panelX" {{ if $multi }}role="tabpanel" aria-labelledby="tabX"{{ else }}role="region" aria-label="X feed"{{ end }}>
+  <div class="social-follow">
+    <p class="social-follow__note">When Ed posts on X, the newest ones land here.</p>
+    <p class="social-follow__cta"><a class="btn btn-outline btn-sm" href="{{ $xLink }}" target="_blank" rel="noopener">Open X</a></p>
+  </div>
+</div>
+{{ end }}
+    {{ if $igUrl }}
+<div class="tabpanel" id="panelInstagram" {{ if $multi }}role="tabpanel" aria-labelledby="tabInstagram"{{ else }}role="region" aria-label="Instagram feed"{{ end }}>
+  <div class="social-follow">
+    <p class="social-follow__note">When Ed posts on Instagram, the newest ones land here.</p>
+    <p class="social-follow__cta"><a class="btn btn-outline btn-sm" href="{{ $igUrl }}" target="_blank" rel="noopener">Open Instagram</a></p>
+  </div>
+</div>
+{{ end }}
   </div>
   </div>
 

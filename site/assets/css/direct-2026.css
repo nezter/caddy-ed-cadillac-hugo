@@ -2128,31 +2128,25 @@ body.home #fleet .vehicle-card .btn-outline:hover{
   border-color:var(--bronze-hi);color:#fff;background:transparent;
 }
 
-/* --- the social panel ---------------------------------------------------
-
-   What sits in the box before a feed is loaded: what loading costs, the button
-   that does it, and a way out that loads nothing. The buttons need the same
-   treatment the rest of the dark panel gets, or they inherit the light-surface
-   colours and disappear. */
-.social-load__note{
-  margin:0 0 .7rem;font-size:.86rem;line-height:1.5;color:#6f7683;
-}
-.social-load__actions{
-  display:flex;gap:.5rem;flex-wrap:wrap;margin:0;
-}
-body.home .social-load__note{color:var(--on-ink-muted)}
-body.home .social-body .btn-outline{
-  border-color:rgba(255,255,255,.18);color:var(--on-ink);
-}
-body.home .social-body .btn-outline:hover{
-  border-color:var(--bronze-hi);color:#fff;
-}
-body.home .social-body .btn-ghost{
-  border-color:rgba(255,255,255,.14);color:var(--on-ink-muted);
-}
-body.home .social-body .btn-ghost:hover{
-  border-color:var(--bronze-hi);color:#fff;
-}
+/* --- the social panel: cached posts + follow cards -----------------------
+   2026-10: the feed is first-party and cache-based (netlify/functions/
+   social-feed.js, refreshed at most daily). Cards are text-only on purpose:
+   platform CDN images would add an external origin back into the CSP and
+   weigh more than they add, so the card links out for the picture. The
+   follow card is what a panel shows until the cache has posts -- there is
+   never an empty box. */
+.social-posts{display:grid;gap:.8rem;max-height:min(620px,68vh);overflow:auto;overscroll-behavior:contain}
+.social-posts .social-post{margin-top:0}
+.social-follow{display:grid;gap:.9rem;padding-block:.4rem}
+.social-follow__note{margin:0;font-size:.92rem;color:var(--text-muted)}
+.social-follow__cta{margin:0}
+body.home .social-follow__note{color:var(--on-ink-muted)}
+body.home .social-post{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.12)}
+body.home .post-name{color:#fff}
+body.home .post-body{color:var(--on-ink-muted)}
+body.home .post-actions{border-top-color:rgba(255,255,255,.08);color:var(--on-ink-faint)}
+body.home .post-actions a{color:var(--bronze-hi)}
+body.home .post-avatar{background:var(--brand-red)}
 
 /* --- the quick strip above the rail -------------------------------------
 
