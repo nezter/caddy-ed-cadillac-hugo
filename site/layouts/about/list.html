@@ -34,7 +34,7 @@
     <figure style="margin:0">
       <div class="plate plate--4x3" style="box-shadow:var(--shadow-stage)">
         {{ partial "picture.html" (dict
-            "src" "img/caddy-ed.jpg"
+            "src" "img/ed-at-table.jpg"
             "alt" "Caddy Ed, Cadillac sales specialist in South Charlotte"
             "width" 1326
             "height" 448
@@ -71,13 +71,13 @@
     <div class="split--wide" style="display:grid;gap:clamp(1.5rem,4vw,3rem)">
       <div class="prose">{{ . }}</div>
       <figure style="margin:0;align-self:start">
-        {{/* The companion shot: Ed between appointments, same 2026 sitting as */}}
-        {{/* the hero portrait. Fills the second column the split was built for; */}}
+        {{/* The second frame of the 2026 sitting: the armchair portrait goes */}}
+        {{/* beside the story while the restaurant frame carries the hero. */}}
         {{/* stacks under the story below 900px. */}}
         <div class="plate plate--4x3" style="box-shadow:var(--shadow-stage)">
           {{ partial "static-picture.html" (dict
-              "src" "img/ed-at-table.jpg"
-              "alt" "Ed Portello seated at a table"
+              "src" "img/caddy-ed.jpg"
+              "alt" "Ed Portello"
               "sizes" "(max-width: 56rem) 92vw, 30vw"
               "widths" (slice 480 720 1080 1440)
               "loading" "lazy") }}
