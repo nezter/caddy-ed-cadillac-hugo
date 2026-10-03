@@ -1900,7 +1900,7 @@ body.home .stay-connected{border-top-color:var(--bronze-line)}
 /* 4. ratio proportions on the two-column bands */
 @media (min-width:64rem){
   .inventory-head{grid-template-columns:1.618fr 1fr}
-  .inventory-page .container{grid-template-columns:290px minmax(0,1fr)}
+  .inventory-page .container{grid-template-columns:minmax(0,1fr)} /* one column: the 290px rail split lives on .inv-columns (sticky rail wrapper) */
   .vehicle-detail > .wrap > div{grid-template-columns:1.618fr .9fr}
 }
 

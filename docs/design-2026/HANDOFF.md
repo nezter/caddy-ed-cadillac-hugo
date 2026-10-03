@@ -1036,3 +1036,27 @@ not-in-view row keeps its remove control); static sweep 0 issues; compare
 15/15. Screenshots are unavailable on this box (headless capture has been
 broken all project -- documented), so the pixel check happens on the next
 preview build.
+
+---
+
+## Follow-up: the wrapper fix crushed the RESULTS column
+
+User screenshot after the sidebar fix: the left rail was right, but the
+center (results) column was squeezed to nothing -- chips stacked vertically
+in a sliver. Root cause: direct-2026.css contains TWO @media(min-width:64rem)
+blocks that set .inventory-page .container's columns. The sidebar fix updated
+the first one to one column and moved the 290px rail split onto .inv-columns,
+but an OLDER, LATER block (the 'ratio proportions' pass from an earlier stage,
+written before the wrapper existed) still declared
+  .inventory-page .container{grid-template-columns:290px minmax(0,1fr)}
+Same specificity, later position -- it won the cascade. The columns wrapper
+then became the FIRST child of a two-column grid, was placed in the 290px
+first column, and its own internal 290px column left ~0px for the results.
+
+Fix: the late declaration now also says minmax(0,1fr) with the same rationale
+comment. Conflict eliminated -- both container rules agree, so order cannot
+flip the outcome; verified in the built bundle (0 stale 290px container rules).
+
+Lesson for this file: it is append-grown, so an edit near the top can lose to
+a later duplicate of the same selector. When changing a shared selector, scan
+the WHOLE file for repeat declarations, not just the matching line.
