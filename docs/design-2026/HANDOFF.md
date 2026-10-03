@@ -1108,3 +1108,24 @@ nowhere. Fixed, plus a full interaction pass:
 Verified: 17/17 nav state-machine checks in jsdom (open, outside-click,
 Escape, link close; 7 links + CTA present), bundle/CSS assertions on the
 built output, buttons-live 85/85, mock-gaps 42/42, buttons-static 0 issues.
+
+---
+
+## The wordmark, gilded
+
+Owner: the top bar still needed a wow pass and the logo lacked luster. The
+wordmark was flat currentColor text on a dark bar. Now:
+
+- `logo.svg` is bronze metal -- a four-stop gold/bronze gradient with an
+  offset dark copy underneath for an engraved emboss. Same geometry, same
+  title/aria. Used by both the header and the footer (both dark), so both
+  gained the material in one move; the fingerprint changes the URL so no
+  cached flat version can hang around.
+- On hover the wordmark catches a skewed light sweep (600ms, once) and a warm
+  drop-shadow glow rises; reduced-motion users get the glow but no sweep.
+- The header now wears the same bronze hairline as the footer's top edge,
+  and the utility-bar separator dots pick up the bronze.
+
+Verified: built logo carries gradient + emboss under a fresh fingerprint;
+built CSS carries keyframes/hairline/glow; nav state machine 17/17;
+buttons-live 85/85; mock-gaps 42/42; buttons-static 0 issues.

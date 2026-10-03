@@ -179,8 +179,21 @@ header.site-header.is-scrolled{
 
 /* wordmark */
 header.site-header .navbar-logo{border-radius:6px}
-header.site-header .navbar-logo img{transition:opacity .18s ease}
-header.site-header .navbar-logo:hover img{opacity:.85}
+header.site-header .navbar-logo img{transition:filter .25s ease}
+/* the wordmark wears its bronze now (see logo.svg); on hover a light sweep
+   crosses it and a warm glow rises -- the "luster" pass */
+header.site-header .navbar-logo{position:relative;overflow:hidden}
+header.site-header .navbar-logo::after{
+  content:"";position:absolute;top:-25%;bottom:-25%;width:44px;left:-64px;
+  background:linear-gradient(105deg,transparent,rgba(255,255,255,.5),transparent);
+  transform:skewX(-18deg);pointer-events:none;
+}
+header.site-header .navbar-logo:hover::after{animation:logoSheen .65s ease}
+header.site-header .navbar-logo:hover img{filter:drop-shadow(0 0 12px rgba(205,176,114,.5))}
+@keyframes logoSheen{from{left:-64px}to{left:220px}}
+@media (prefers-reduced-motion:reduce){
+  header.site-header .navbar-logo:hover::after{animation:none}
+}
 header.site-header .navbar-logo:focus-visible{outline:2px solid var(--bronze-hi);outline-offset:4px}
 
 /* primary links: a red underline that grows in on hover, holds when current */
@@ -218,6 +231,14 @@ header.site-header .navbar-burger:hover{background:rgba(255,255,255,.07)}
 header.site-header .navbar-burger:active{transform:scale(.94)}
 header.site-header .navbar-burger:focus-visible{outline:2px solid var(--bronze-hi);outline-offset:2px}
 header.site-header .navbar-burger span{background:#fff}
+
+/* the bronze hairline the footer wears, now tying the header to it */
+header.site-header::before{
+  content:"";position:absolute;inset-inline:0;top:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--bronze-line) 12%,var(--bronze-line) 88%,transparent);
+  pointer-events:none;
+}
+header.site-header .header-utility .cluster span{color:rgba(182,159,88,.5)}
 
 /* mobile panel: the link list, sized for thumbs */
 @media (max-width:63.99rem){

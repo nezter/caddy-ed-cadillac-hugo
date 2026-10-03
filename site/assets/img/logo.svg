@@ -1,12 +1,21 @@
 <svg viewBox="0 0 268 40" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Caddy Ed">
   <title>Caddy Ed</title>
-  <g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
-    <path d="M12 4.5 L4.5 20 L12 35.5"/>
+  <defs>
+    <linearGradient id="bronze" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f6e9c8"/>
+      <stop offset=".42" stop-color="#d9be82"/>
+      <stop offset=".78" stop-color="#b3924c"/>
+      <stop offset="1" stop-color="#8f7133"/>
+    </linearGradient>
+  </defs>
+  <g fill="#0d0b06" opacity=".6" transform="translate(0 1.2)">
+    <path d="M12 4.5 L4.5 20 L12 35.5" fill="none" stroke="#0d0b06" stroke-width="2.4" stroke-linecap="round"/>
+    <text x="26" y="27" font-family="Noto Sans, Segoe UI, system-ui, sans-serif" font-size="25" font-weight="800" letter-spacing="1.5">CADDY</text>
+    <text x="120" y="27" font-family="Noto Sans, Segoe UI, system-ui, sans-serif" font-size="25" font-weight="300" letter-spacing="7.5">ED</text>
   </g>
-  <g fill="currentColor" font-family="Noto Sans, Segoe UI, system-ui, sans-serif" font-size="25" font-weight="800" letter-spacing="1.5">
-    <text x="26" y="27">CADDY</text>
-  </g>
-  <g fill="currentColor" font-family="Noto Sans, Segoe UI, system-ui, sans-serif" font-size="25" font-weight="300" letter-spacing="7.5">
-    <text x="120" y="27">ED</text>
+  <path d="M12 4.5 L4.5 20 L12 35.5" fill="none" stroke="url(#bronze)" stroke-width="2.4" stroke-linecap="round"/>
+  <g fill="url(#bronze)" font-family="Noto Sans, Segoe UI, system-ui, sans-serif">
+    <text x="26" y="27" font-size="25" font-weight="800" letter-spacing="1.5">CADDY</text>
+    <text x="120" y="27" font-size="25" font-weight="300" letter-spacing="7.5">ED</text>
   </g>
 </svg>
