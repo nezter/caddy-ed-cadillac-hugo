@@ -42,6 +42,9 @@ the "Night Showroom" direction wants. It just needs light.
 This is the page where "display Caddy Ed in a good light" is literally the job, and it is
 currently the weakest asset on the site. It is one reshoot — a single hour.
 
+**Resolved 2026-10:** the reshoot landed as the 2026 sitting -- replaced on the home
+page and About; the interim bronze grade retired with the old frame. See HANDOFF.md.
+
 ### 1.3 Every vehicle photo is a vendor studio shot, and they all show the same seams
 
 All 35 inventory photographs come from the same feed (VIN-named files, e.g.

@@ -1060,3 +1060,24 @@ flip the outcome; verified in the built bundle (0 stale 290px container rules).
 Lesson for this file: it is append-grown, so an edit near the top can lose to
 a later duplicate of the same selector. When changing a shared selector, scan
 the WHOLE file for repeat declarations, not just the matching line.
+
+---
+
+## The reshoot landed: Ed's 2026 portrait
+
+The plan on file was "a single reshoot replaces the flash-lit snapshot"
+(IMAGERY.md sec 1.2 -- raised fists, beige wall, red object clipping the
+frame). The 2026 sitting is that reshoot: three studio-grade frames built
+from Ed's own photograph (image-to-image, face fidelity enforced at zoom
+level, forehead retouched), reviewed and chosen by the owner.
+
+Shipped:
+- `site/assets/img/caddy-ed.jpg` -- the armchair portrait, 1326x896, full
+  colour. Replaces the snapshot on the home page and the About hero; both
+  ladders widened to 1326 so retina screens get real pixels.
+- `site/assets/img/ed-at-table.jpg` -- companion frame on the About story
+  section (the empty second column of `.split--wide`).
+- `site/static/img/contact-hero.jpg` -- the contact page's og:image, which
+  until now pointed at a file that did not exist (broken social card).
+- The interim bronze grade (.duo / .ed-portrait::before) retired with the
+  snapshot; plate scrims keep the caption legible.

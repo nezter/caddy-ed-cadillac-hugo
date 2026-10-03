@@ -665,18 +665,11 @@ body.home .vehicle-card .btn-ghost:hover,body.home .vehicle-card .btn-outline:ho
 .section-subtle#fleet .btn-outline{border-color:var(--bronze-line);color:var(--on-ink)}
 #fleet + .section-subtle{background:var(--ink-1)}
 
-/* --- interim portrait grade ---------------------------------------------
-   The existing photograph of Ed is a flash-lit snapshot (see IMAGERY.md).
-   A bronze duotone makes it read as a deliberate treatment until the
-   single reshoot replaces it. Apply to the .plate that wraps the portrait.
-   ---------------------------------------------------------------------- */
-.duo{position:relative}
-.duo img{filter:grayscale(1) contrast(1.1) brightness(.92)}
-.duo::before{
-  content:"";position:absolute;inset:0;z-index:1;mix-blend-mode:color;
-  background:linear-gradient(155deg,#cdb072,#6d5a2c 60%,#241f10);
-}
-.duo::after{background:linear-gradient(180deg,rgba(7,9,11,.05),rgba(7,9,11,.82))}
+/* --- interim portrait grade: retired 2026-10 -----------------------------
+   The bronze duotone existed only to make the flash-lit snapshot read as
+   intent (see IMAGERY.md sec 1.2, now resolved). The 2026 portrait replaced
+   the snapshot and the grade was removed with it. The plate's own scrim
+   (.plate::after) still carries the "Ed Portello" caption. */
 
 /* --- prose inside a section, with the site's own .prose intact ---------- */
 .stage .prose h2,.stage .prose h3{color:#fff}
@@ -1127,22 +1120,17 @@ body.home .hero__ask .form-field label{
 body.home .hero__ask .text-muted{color:var(--on-ink-faint)}
 body.home .hero__ask .form-message--error{color:#ffc4cd}
 
-/* the portrait: no frame, and it sits in the plate like every other image */
+/* the portrait: no frame, and it sits in the plate like every other image.
+   The interim bronze grade retired in 2026-10 when the reshoot photograph
+   replaced the flash-lit snapshot; the portrait runs in full colour, and the
+   overlay keeps its own scrim for the tagline. */
 body.home .ed-portrait{
   border:0;background:none;box-shadow:none;padding:0;
-  border-radius:var(--r-plate);overflow:hidden;
+  border-radius:var(--r-plate);overflow:hidden;position:relative;
 }
 body.home .ed-portrait img{
   display:block;width:100%;height:auto;
   border:0;border-radius:var(--r-plate);
-  filter:grayscale(1) contrast(1.08) brightness(.92);
-}
-/* the interim bronze grade, matching .duo on the About page */
-body.home .ed-portrait{position:relative}
-body.home .ed-portrait::before{
-  content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
-  mix-blend-mode:color;
-  background:linear-gradient(155deg,#cdb072,#6d5a2c 60%,#241f10);
 }
 body.home .ed-portrait__overlay{z-index:2}
 

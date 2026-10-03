@@ -9,11 +9,11 @@
      1. HERO. The person is the product on this page, so the photograph
      and the claim sit side by side rather than under a banner.
 
-     The portrait carries the interim bronze grade (.duo). It is a
-     deliberate treatment, not a filter for its own sake: see
-     docs/design-2026/IMAGERY.md -- the existing photograph is a flash-lit
-     snapshot, and a single reshoot replaces it. Until then the grade makes
-     it read as intent instead of as an accident.
+     The portrait is the 2026 sitting: the reshoot docs/design-2026/IMAGERY.md
+     section 1.2 called for, replacing the flash-lit snapshot (raised fists,
+     beige wall, red object in frame). With a real photograph in place the
+     interim bronze grade (.duo) retired with it -- the portrait now runs in
+     full colour, like every other photograph on the site.
      ------------------------------------------------------------------ */}}
 <section class="stage stage--deep grain">
   <div class="wrap pad" style="display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(1.5rem,4vw,3.5rem);align-items:center">
@@ -32,13 +32,13 @@
     </div>
 
     <figure style="margin:0">
-      <div class="plate plate--4x3 duo" style="box-shadow:var(--shadow-stage)">
+      <div class="plate plate--4x3" style="box-shadow:var(--shadow-stage)">
         {{ partial "picture.html" (dict
             "src" "img/caddy-ed.jpg"
             "alt" "Caddy Ed, Cadillac sales specialist in South Charlotte"
-            "width" 662
+            "width" 1326
             "height" 448
-            "widths" (slice 320 480 662)
+            "widths" (slice 320 480 662 996 1326)
             "sizes" "(max-width: 64rem) 92vw, 40vw"
             "loading" "eager") }}
         <div class="plate__meta"><span class="t">Ed Portello</span><span class="p">{{ .Site.Params.years_selling | default "1999" }}</span></div>
@@ -70,6 +70,19 @@
   <div class="wrap">
     <div class="split--wide" style="display:grid;gap:clamp(1.5rem,4vw,3rem)">
       <div class="prose">{{ . }}</div>
+      <figure style="margin:0;align-self:start">
+        {{/* The companion shot: Ed between appointments, same 2026 sitting as */}}
+        {{/* the hero portrait. Fills the second column the split was built for; */}}
+        {{/* stacks under the story below 900px. */}}
+        <div class="plate plate--4x3" style="box-shadow:var(--shadow-stage)">
+          {{ partial "static-picture.html" (dict
+              "src" "img/ed-at-table.jpg"
+              "alt" "Ed Portello seated at a table"
+              "sizes" "(max-width: 56rem) 92vw, 30vw"
+              "widths" (slice 480 720 1080 1440)
+              "loading" "lazy") }}
+        </div>
+      </figure>
     </div>
   </div>
 </section>
