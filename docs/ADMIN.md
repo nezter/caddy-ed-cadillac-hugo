@@ -251,3 +251,14 @@ Full list in **`docs/MISSING.md`**. The short version:
 - About 11 failing tests, mostly the calendar suite's ESM/DOM setup and
   integration fixtures.
 - No production deploy yet.
+
+## The social feed
+
+`/admin/social` connects the Facebook page, X handle and Instagram account
+behind the home page's "What Ed is posting" panel. Values are stored in the
+`social_config` table; the environment variables (FACEBOOK_PAGE_TOKEN,
+X_BEARER_TOKEN + X_USERNAME, INSTAGRAM_ACCESS_TOKEN) still work as fallbacks
+for deployments configured the old way. The feed itself is cached in
+`social_cache` and refreshes at most once a day; each card has Test
+connection and Refresh cache now. Once a network is connected there, its
+tab appears on the site without a rebuild.

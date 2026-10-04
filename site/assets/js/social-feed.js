@@ -25,6 +25,7 @@
   'use strict';
 
   var NETWORKS = ['facebook', 'x', 'instagram'];
+  var activeKind = '';
 
   function esc(v) {
     return String(v == null ? '' : v)
@@ -40,6 +41,7 @@
   /** Show one network: tab states and the right panel. Content is already
       there (follow card or cards); this only toggles visibility. */
   function activate(kind) {
+    activeKind = kind;
     document.querySelectorAll('[data-social]').forEach(function (tab) {
       var on = tab.getAttribute('data-social') === kind;
       tab.setAttribute('aria-selected', on ? 'true' : 'false');
@@ -50,6 +52,28 @@
     });
   }
 
+
+  /** Hide tabs for networks the site is not connected to (the endpoint knows;
+      the admin page is where accounts get connected). A lone network is not a
+      choice, so the tablist retires when only one remains. */
+  function adaptTabs(config) {
+    if (!config) return;
+    var visible = [];
+    NETWORKS.forEach(function (kind) {
+      var conf = config[kind];
+      var tab = document.querySelector('[data-social="' + kind + '"]');
+      var panel = panelFor(kind);
+      if (conf && conf.configured === false) {
+        if (tab) tab.hidden = true;
+        if (panel) panel.hidden = true;
+      } else if (tab) {
+        visible.push(kind);
+      }
+    });
+    var list = document.querySelector('.tabs[role="tablist"]');
+    if (list && visible.length <= 1) list.hidden = true;
+    if (visible.length && visible.indexOf(activeKind) === -1) activate(visible[0]);
+  }
   /* ------------------------------------------------- cached posts -------- */
 
   function postCard(kind, p) {
@@ -94,6 +118,7 @@
       .catch(function () { return null; })
       .then(function (data) {
         if (!data || data.ok === false) return;
+        adaptTabs(data.config || null);
         NETWORKS.forEach(function (kind) {
           if (data[kind] && data[kind].posts && data[kind].posts.length) {
             renderPosts(kind, data[kind].posts);

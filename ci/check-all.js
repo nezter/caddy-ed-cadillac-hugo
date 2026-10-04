@@ -119,6 +119,11 @@ const CHECKS = [
     why: 'the staff list cannot be used to lock every administrator out',
   },
   {
+    name: 'social admin',
+    file: 'check-social-admin.js',
+    why: 'connecting social accounts from the admin cannot mis-save or leak a token',
+  },
+  {
     name: 'inquiry path',
     file: 'check-inquiry-path.js',
     needsDatabase: true,

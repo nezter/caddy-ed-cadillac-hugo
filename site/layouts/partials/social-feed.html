@@ -11,8 +11,11 @@
   script that used to render here are gone -- with them went the last two
   third-party origins in the site's Content-Security-Policy.
 
-  Tabs are rendered by the template only for networks that are configured
-  (data/social.yaml); an unconfigured network is simply not offered.
+  All three networks render server-side. The endpoint reports each network's
+  state (configured in /admin/social or by environment) and social-feed.js
+  hides the networks that are not connected -- so connecting an account in
+  the admin appears on the site without a rebuild. The follow card remains
+  the no-JavaScript state.
 */ -}}
 {{- $social := hugo.Data.social | default dict -}}
 {{- $fbUrl := "" }}{{ with $social }}{{ with .facebook }}{{ $fbUrl = .url | default "" }}{{ end }}{{ end -}}
@@ -23,87 +26,71 @@
 {{- $xLink := $xUrl }}{{ if and (not $xLink) $xHandle }}{{ $xLink = printf "https://twitter.com/%s" (strings.TrimPrefix "@" $xHandle) }}{{ end -}}
 
 {{/*
-  Which networks can actually be shown.
-
-  A tab is only rendered for a network that has somewhere to go. The X tab
-  shipped with no X account configured, so choosing it produced "No X
-  account is configured for this site yet" -- a control that exists to
-  announce it does not work. Set `handle` (or `url`) in data/social.yaml and
-  the tab appears; leave it blank and the network is simply not offered.
+  All three networks are offered; social-feed.js retires the tabs of the
+  ones the site is not connected to (the endpoint reports their state), and
+  a lone remaining network reads as one panel rather than a false choice.
 */}}
-{{- $nets := slice -}}
-{{- if $fbUrl }}{{ $nets = $nets | append "facebook" }}{{ end -}}
-{{- if $xHandle }}{{ $nets = $nets | append "x" }}{{ end -}}
-{{- if $igUrl }}{{ $nets = $nets | append "instagram" }}{{ end -}}
-{{- $default := "" }}{{ if $nets }}{{ $default = index $nets 0 }}{{ end -}}
-{{- $multi := gt (len $nets) 1 -}}
+{{- $default := "facebook" -}}
 
 <div class="panel" aria-label="What Ed is posting">
   <div class="panel__head">
     <h2 class="panel__title">What Ed is posting</h2>
-    {{/* A single network needs no tablist: one pill to press that loads the one
-         feed you have is not a choice, it is a button. The tabs appear when
-         there is more than one network configured. */}}
-    {{ if gt (len $nets) 1 }}
+    {{/* The tablist serves the multi-network case; social-feed.js hides it
+         when only one network remains connected. */}}
     <div class="tabs" role="tablist" aria-label="Choose a feed">
-      {{ if $fbUrl }}
       <button class="tab tab--fb" type="button" role="tab" data-social="facebook" id="tabFacebook"
               aria-controls="panelFacebook" aria-selected="true">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
         Facebook
       </button>
-      {{ end }}
-      {{ if $xHandle }}
       <button class="tab tab--x" type="button" role="tab" data-social="x" id="tabX"
               aria-controls="panelX" aria-selected="false" tabindex="-1">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932zM17.61 20.644h2.039L6.486 3.24H4.298z"/></svg>
         X
       </button>
-      {{ end }}
-      {{ if $igUrl }}
       <button class="tab tab--ig" type="button" role="tab" data-social="instagram" id="tabInstagram"
               aria-controls="panelInstagram" aria-selected="false" tabindex="-1">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.2c3.2 0 3.6 0 4.9.1 1.2.1 1.8.2 2.2.4.6.2 1 .5 1.4.9.4.4.7.8.9 1.4.2.4.4 1 .4 2.2.1 1.3.1 1.7.1 4.9s0 3.6-.1 4.9c-.1 1.2-.2 1.8-.4 2.2-.2.6-.5 1-.9 1.4-.4.4-.8.7-1.4.9-.4.2-1 .4-2.2.4-1.3.1-1.7.1-4.9.1s-3.6 0-4.9-.1c-1.2-.1-1.8-.2-2.2-.4-.6-.2-1-.5-1.4-.9-.4-.4-.7-.8-.9-1.4-.2-.4-.4-1-.4-2.2C2.2 15.6 2.2 15.2 2.2 12s0-3.6.1-4.9c.1-1.2.2-1.8.4-2.2.2-.6.5-1 .9-1.4.4-.4.8-.7 1.4-.9.4-.2 1-.4 2.2-.4C8.4 2.2 8.8 2.2 12 2.2zm0 1.8c-3.1 0-3.5 0-4.7.1-1.1.1-1.5.2-1.8.3-.5.2-.8.4-1.1.7-.3.3-.5.6-.7 1.1-.1.3-.3.8-.3 1.8-.1 1.2-.1 1.6-.1 4.7s0 3.5.1 4.7c.1 1.1.2 1.5.3 1.8.2.5.4.8.7 1.1.3.3.6.5 1.1.7.3.1.8.3 1.8.3 1.2.1 1.6.1 4.7.1s3.5 0 4.7-.1c1.1-.1 1.5-.2 1.8-.3.5-.2.8-.4 1.1-.7.3-.3.5-.6.7-1.1.1-.3.3-.8.3-1.8.1-1.2.1-1.6.1-4.7s0-3.5-.1-4.7c-.1-1.1-.2-1.5-.3-1.8-.2-.5-.4-.8-.7-1.1-.3-.3-.6-.5-1.1-.7-.3-.1-.8-.3-1.8-.3-1.2-.1-1.6-.1-4.7-.1zm0 3.1a5 5 0 110 10 5 5 0 010-10zm0 8.2a3.2 3.2 0 100-6.4 3.2 3.2 0 000 6.4zm6.4-8.4a1.2 1.2 0 11-2.4 0 1.2 1.2 0 012.4 0z"/></svg>
         Instagram
       </button>
-      {{ end }}
     </div>
-    {{ end }}
   </div>
 
   <div class="social-body" id="social-feed-host" data-social-default="{{ $default }}">
-    {{/* Each panel arrives holding its follow card: no JavaScript and no
-         network needed for a readable state. social-feed.js swaps a panel
-         to cached post cards only when the site's own endpoint has any. */}}
-
-    {{/* Tab semantics only when the tabs above exist. With a single network
-         there is no tablist, so role=tabpanel would point at a tab that is not
-         there -- the panel is simply a region naming what it shows. */}}
+    {{/* Each panel holds a readable state from the server: a follow card when
+         the network has a destination, otherwise a plain line. social-feed.js
+         swaps panels to cached post cards and hides tabs for networks that
+         are not connected. */}}
+<div class="tabpanel" id="panelFacebook" role="tabpanel" aria-labelledby="tabFacebook">
+  <div class="social-follow{{ if not $fbUrl }} social-follow--off{{ end }}">
     {{ if $fbUrl }}
-<div class="tabpanel" id="panelFacebook" {{ if $multi }}role="tabpanel" aria-labelledby="tabFacebook"{{ else }}role="region" aria-label="Facebook feed"{{ end }}>
-  <div class="social-follow">
     <p class="social-follow__note">When Ed posts on Facebook, the newest ones land here.</p>
     <p class="social-follow__cta"><a class="btn btn-outline btn-sm" href="{{ $fbUrl }}" target="_blank" rel="noopener">Open Facebook</a></p>
+    {{ else }}
+    <p class="social-follow__note">This account is not connected yet.</p>
+    {{ end }}
   </div>
 </div>
-{{ end }}
-    {{ if $xHandle }}
-<div class="tabpanel" id="panelX" {{ if $multi }}role="tabpanel" aria-labelledby="tabX"{{ else }}role="region" aria-label="X feed"{{ end }}>
-  <div class="social-follow">
+<div class="tabpanel" id="panelX" role="tabpanel" aria-labelledby="tabX">
+  <div class="social-follow{{ if not $xLink }} social-follow--off{{ end }}">
+    {{ if $xLink }}
     <p class="social-follow__note">When Ed posts on X, the newest ones land here.</p>
     <p class="social-follow__cta"><a class="btn btn-outline btn-sm" href="{{ $xLink }}" target="_blank" rel="noopener">Open X</a></p>
+    {{ else }}
+    <p class="social-follow__note">This account is not connected yet.</p>
+    {{ end }}
   </div>
 </div>
-{{ end }}
+<div class="tabpanel" id="panelInstagram" role="tabpanel" aria-labelledby="tabInstagram">
+  <div class="social-follow{{ if not $igUrl }} social-follow--off{{ end }}">
     {{ if $igUrl }}
-<div class="tabpanel" id="panelInstagram" {{ if $multi }}role="tabpanel" aria-labelledby="tabInstagram"{{ else }}role="region" aria-label="Instagram feed"{{ end }}>
-  <div class="social-follow">
     <p class="social-follow__note">When Ed posts on Instagram, the newest ones land here.</p>
     <p class="social-follow__cta"><a class="btn btn-outline btn-sm" href="{{ $igUrl }}" target="_blank" rel="noopener">Open Instagram</a></p>
+    {{ else }}
+    <p class="social-follow__note">This account is not connected yet.</p>
+    {{ end }}
   </div>
 </div>
-{{ end }}
-  </div>
   </div>
 
   {{/* Always-readable fallback. connect.js replaces the panels above with the

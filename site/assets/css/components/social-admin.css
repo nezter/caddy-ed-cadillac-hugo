@@ -1,0 +1,62 @@
+/* social-admin.css -- /admin/social network cards.
+   Built on the settings page's classes (settings-status, settings-note,
+   settings-field, settings-actions); this file only adds the card layout,
+   the status pills and the inline test results. */
+
+.social-card {
+  border: 1px solid #e7e9ee;
+  border-radius: 10px;
+  background: #fff;
+  padding: 1.1rem 1.2rem;
+  margin-bottom: 1rem;
+}
+
+.social-card:last-child { margin-bottom: 0; }
+
+.social-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.social-card__head h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.social-pill {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.social-pill--ok  { background: #e6f4ea; color: #1a7f37; }
+.social-pill--off { background: #f1f2f4; color: #6f7683; }
+
+.social-card__meta {
+  font-size: 0.8rem;
+  color: #777;
+  margin: 0.35rem 0 0.9rem;
+}
+
+.social-card .settings-field { margin-bottom: 0.8rem; }
+.social-card input.input { width: 100%; }
+
+.social-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-top: 0.6rem;
+}
+
+.social-result {
+  font-size: 0.85rem;
+  color: #6f7683;
+}
+
+.social-result--ok    { color: #1a7f37; }
+.social-result--error { color: #8a1c1c; }

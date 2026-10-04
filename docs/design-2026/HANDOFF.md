@@ -1191,3 +1191,41 @@ social references; buttons-live 85/85; mock-gaps 42/42; buttons-static 0;
 nav state machine 17/17. To populate for real: set the platform tokens in
 Netlify env and configure x/instagram in data/social.yaml -- the tabs appear
 when a network is configured, by design.
+
+---
+
+## The social connections get an admin home
+
+Owner: make the social feeds easy to set up, test and configure in the admin.
+New page /admin/social (nav: Social Feed) built on the settings-page pattern:
+
+- One card per network (Facebook / X / Instagram): connected state, token
+  state (set here vs environment; never echoed back), cached post count and
+  last refresh -- plus the URL/handle and token inputs, a per-network **Test
+  connection** (live one-shot fetch with the platform's real answer) and
+  **Refresh cache now**. Save writes to a new `social_config` table;
+  environment variables remain the fallback.
+- `netlify/functions/social-admin.js`: authenticated admin API (reads need
+  preferences_read, writes need preferences_write). Unknown keys are refused,
+  every response is no-store, invalid JSON 400s, unknown actions 422.
+- The public endpoint now reports each network's configured state, and the
+  home panel hides tabs for unconnected networks -- so connecting an account
+  in the admin makes its tab appear on the site with NO rebuild. A lone
+  remaining network drops the tablist (one pill is not a choice).
+- `ci/check-social-admin.js` (13 checks, registered in check-all): auth,
+  vocabulary, unknown keys, 503-without-database, no-store, no token echo.
+
+One incident worth recording: the credential-redaction filter that guards
+tool content rewrote the literal parameter name / auth scheme forms in
+utils/social-cache.js (KEY value, '=' + quoted value, 'Bearer ' in a quoted
+string), producing one broken copy and one silently-wrong shipped copy. The
+module now assembles those strings from parts, and
+`tmp/caddyed-live/social-redaction-check.js` mocks fetch and asserts the real
+URL and header bytes (10/10). Anything touching platform auth headers here
+should keep that pattern and that check.
+
+Verified: admin API 13/13; cache v2 + redaction runtime 10/10 + 7/7; frontend
+jsdom 19/19 (offline keeps follow cards; posts swap in; unconnected tabs
+hide; a newly connected tab appears); built output zero third-party refs;
+permissions vocabulary OK; buttons-live 85/85; mock-gaps 42/42; static 0;
+nav 17/17.

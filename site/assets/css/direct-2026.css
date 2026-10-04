@@ -2140,6 +2140,8 @@ body.home #fleet .vehicle-card .btn-outline:hover{
 .social-follow{display:grid;gap:.9rem;padding-block:.4rem}
 .social-follow__note{margin:0;font-size:.92rem;color:var(--text-muted)}
 .social-follow__cta{margin:0}
+.tab[hidden]{display:none}
+.tabs[hidden]{display:none}
 body.home .social-follow__note{color:var(--on-ink-muted)}
 body.home .social-post{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.12)}
 body.home .post-name{color:#fff}

@@ -24,7 +24,9 @@ function emptyFeed() {
 
 exports.handler = async function () {
   try {
-    const feed = await require('./utils/social-cache').readFeed();
+    const cache = require('./utils/social-cache');
+    const feed = await cache.readFeed();
+    const config = await cache.publicConfig();
     return {
       statusCode: 200,
       headers: CACHE_HEADERS,
@@ -32,6 +34,7 @@ exports.handler = async function () {
         ok: true,
         refreshedAt: feed.refreshedAt || null,
         stale: !!feed.stale,
+        config,
         facebook: feed.facebook || { posts: [] },
         x: feed.x || { posts: [] },
         instagram: feed.instagram || { posts: [] },
@@ -43,7 +46,7 @@ exports.handler = async function () {
     return {
       statusCode: 200,
       headers: CACHE_HEADERS,
-      body: JSON.stringify({ ok: false, ...emptyFeed() }),
+      body: JSON.stringify({ ok: false, config: null, ...emptyFeed() }),
     };
   }
 };
