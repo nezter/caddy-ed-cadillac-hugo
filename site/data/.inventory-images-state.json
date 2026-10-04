@@ -349,8 +349,1208 @@
       "lastModified": "Fri, 18 Sep 2026 23:07:32 GMT",
       "mime": "image/jpeg",
       "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0171/819124e58bba46d6e972442c5886af88x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1072/fd2a764ef91821813fcdbec801c0cd25x.jpg": {
+      "file": "1gyknar41tz106005-458499462d.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 145150,
+      "etag": "\"fd2a764ef91821813fcdbec801c0cd25\"",
+      "lastModified": "Tue, 29 Sep 2026 14:55:46 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1072/fd2a764ef91821813fcdbec801c0cd25x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1074/b5e2be179382ae3fc8f8a24198ebe41bx.jpg": {
+      "file": "1gykncr40tz109974-b574ba3410.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 145653,
+      "etag": "\"b5e2be179382ae3fc8f8a24198ebe41b\"",
+      "lastModified": "Wed, 30 Sep 2026 08:28:32 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1074/b5e2be179382ae3fc8f8a24198ebe41bx.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1027/6e94520f067065b8882d7fc0b9615706x.jpg": {
+      "file": "1gys9kkl6tr377718-c7ff047e18.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 162205,
+      "etag": "\"6e94520f067065b8882d7fc0b9615706\"",
+      "lastModified": "Wed, 01 Jul 2026 23:55:44 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1027/6e94520f067065b8882d7fc0b9615706x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0212/fccaa35bd65584c710fe441ee457b568x.jpg": {
+      "file": "1gyc3nml3vz700520-33798a7aee.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 150663,
+      "etag": "\"fccaa35bd65584c710fe441ee457b568\"",
+      "lastModified": "Tue, 14 Jul 2026 01:22:19 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0212/fccaa35bd65584c710fe441ee457b568x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1270/7326e980dfcd329a0c258f6708b6c78cx.jpg": {
+      "file": "1gykncrs5tz114621-b574ba3410.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 139087,
+      "etag": "\"7326e980dfcd329a0c258f6708b6c78c\"",
+      "lastModified": "Sat, 22 Aug 2026 20:24:43 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1270/7326e980dfcd329a0c258f6708b6c78cx.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0587/c97f4bf3330e9bb0c953cb2e789c0aabx.jpg": {
+      "file": "1gykpurlxtz311213-ce3106bf8e.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 135571,
+      "etag": "\"c97f4bf3330e9bb0c953cb2e789c0aab\"",
+      "lastModified": "Wed, 24 Jun 2026 13:52:47 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0587/c97f4bf3330e9bb0c953cb2e789c0aabx.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0798/d8447cd20216f33d0d9edf3d2fcc04bax.jpg": {
+      "file": "1gykpurl3tz311182-ce3106bf8e.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 130051,
+      "etag": "\"d8447cd20216f33d0d9edf3d2fcc04ba\"",
+      "lastModified": "Tue, 23 Jun 2026 21:41:02 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0798/d8447cd20216f33d0d9edf3d2fcc04bax.jpg"
+    },
+    "https://images.dealer.com/ddc/vehicles/2026/CADILLAC/CT5/Sedan/trim_Premium_Luxury_a4a53c/color/Summit%20White-GAZ-239%2C238%2C235-640-en_US.jpg": {
+      "file": "1g6dn5rk1t0119574-b4ed0c992b.jpg",
+      "width": 640,
+      "height": 480,
+      "bytes": 23551,
+      "etag": "\"f401f928a6d7ad191db0b53c172f5c5d\"",
+      "lastModified": "Mon, 13 Jul 2026 00:06:35 GMT",
+      "mime": "image/jpeg",
+      "source": "https://images.dealer.com/ddc/vehicles/2026/CADILLAC/CT5/Sedan/trim_Premium_Luxury_a4a53c/color/Summit%20White-GAZ-239%2C238%2C235-640-en_US.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1512/f8acae6565c6341a3cd077515dda5b7ax.jpg": {
+      "file": "1gytefkl8tu107880-ecbb30c60b.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 133921,
+      "etag": "\"f8acae6565c6341a3cd077515dda5b7a\"",
+      "lastModified": "Tue, 14 Jul 2026 00:03:36 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1512/f8acae6565c6341a3cd077515dda5b7ax.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1085/8333ae1a676ac25c234d54a2927ed4f4x.jpg": {
+      "file": "1gys9kkl4tr398101-c7ff047e18.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 143660,
+      "etag": "\"8333ae1a676ac25c234d54a2927ed4f4\"",
+      "lastModified": "Wed, 08 Jul 2026 04:45:11 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1085/8333ae1a676ac25c234d54a2927ed4f4x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1724/a7dac47b9ffd9569883e006071503772x.jpg": {
+      "file": "1gykncrs2tz116228-b574ba3410.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 144833,
+      "etag": "\"a7dac47b9ffd9569883e006071503772\"",
+      "lastModified": "Mon, 14 Sep 2026 18:52:02 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1724/a7dac47b9ffd9569883e006071503772x.jpg"
+    },
+    "https://images.dealer.com/ddc/vehicles/2026/CADILLAC/XT5/SUV/trim_Luxury_1d3d9b/color/Stellar%20Black%20Metallic-GB8-5%2C5%2C7-640-en_US.jpg": {
+      "file": "1gyknar47tz116537-458499462d.jpg",
+      "width": 640,
+      "height": 480,
+      "bytes": 23007,
+      "etag": "\"fc60b306b7ecf4edae72878c5e22b1b3\"",
+      "lastModified": "Mon, 28 Sep 2026 12:26:16 GMT",
+      "mime": "image/jpeg",
+      "source": "https://images.dealer.com/ddc/vehicles/2026/CADILLAC/XT5/SUV/trim_Luxury_1d3d9b/color/Stellar%20Black%20Metallic-GB8-5%2C5%2C7-640-en_US.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0932/9be1c68a040b12d3e7f102f7de98f9d5x.jpg": {
+      "file": "3gyk3em54vs101930-5681862997.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 138323,
+      "etag": "\"9be1c68a040b12d3e7f102f7de98f9d5\"",
+      "lastModified": "Wed, 16 Sep 2026 06:59:05 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0932/9be1c68a040b12d3e7f102f7de98f9d5x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0733/c19b5b2df455e1e31b48aa2bfab9bdd1x.jpg": {
+      "file": "1gykpurl9tz312322-ce3106bf8e.jpg",
+      "width": 1024,
+      "height": 768,
+      "bytes": 100360,
+      "etag": "\"c19b5b2df455e1e31b48aa2bfab9bdd1\"",
+      "lastModified": "Tue, 29 Sep 2026 14:55:47 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0733/c19b5b2df455e1e31b48aa2bfab9bdd1x.jpg"
+    },
+    "https://images.dealer.com/ddc/vehicles/2026/CADILLAC/CT5/Sedan/trim_Sport_566deb/color/Radiant%20Red%20Tintcoat-GNT-151%2C8%2C12-640-en_US.jpg": {
+      "file": "1g6dp5rk3t0120400-f37b5873cf.jpg",
+      "width": 640,
+      "height": 480,
+      "bytes": 22835,
+      "etag": "\"910166f20846b9f30f981d3b5826a595\"",
+      "lastModified": "Sat, 20 Jun 2026 02:53:14 GMT",
+      "mime": "image/jpeg",
+      "source": "https://images.dealer.com/ddc/vehicles/2026/CADILLAC/CT5/Sedan/trim_Sport_566deb/color/Radiant%20Red%20Tintcoat-GNT-151%2C8%2C12-640-en_US.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0911/a1065aa20d01725471dc06a8e86495e4x.jpg": {
+      "file": "1gykncrs9tz117098-b574ba3410.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 134331,
+      "etag": "\"a1065aa20d01725471dc06a8e86495e4\"",
+      "lastModified": "Fri, 10 Jul 2026 21:20:37 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0911/a1065aa20d01725471dc06a8e86495e4x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0524/a558e1446d78cd2cdd6dd80e43999f80x.jpg": {
+      "file": "1gyc3rml7vz701452-24a511c7fe.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 137387,
+      "etag": "\"a558e1446d78cd2cdd6dd80e43999f80\"",
+      "lastModified": "Mon, 17 Aug 2026 15:55:18 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0524/a558e1446d78cd2cdd6dd80e43999f80x.jpg"
+    },
+    "https://images.dealer.com/ddc/vehicles/2026/CADILLAC/CT5/Sedan/trim_Sport_566deb/color/Black%20Raven-GBA-5%2C5%2C7-640-en_US.jpg": {
+      "file": "1g6dp5rk5t0120530-f37b5873cf.jpg",
+      "width": 640,
+      "height": 480,
+      "bytes": 22370,
+      "etag": "\"fe10f09c85ccdfe8fa858f936d81f5b3\"",
+      "lastModified": "Wed, 22 Jul 2026 20:39:00 GMT",
+      "mime": "image/jpeg",
+      "source": "https://images.dealer.com/ddc/vehicles/2026/CADILLAC/CT5/Sedan/trim_Sport_566deb/color/Black%20Raven-GBA-5%2C5%2C7-640-en_US.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0497/b67b6fc139f117f89cba74ba87638f9bx.jpg": {
+      "file": "1g6dp5rk7t0120948-f37b5873cf.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 120725,
+      "etag": "\"b67b6fc139f117f89cba74ba87638f9b\"",
+      "lastModified": "Sat, 01 Aug 2026 20:21:50 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0497/b67b6fc139f117f89cba74ba87638f9bx.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1134/9386c44de17bc38ab8169648d2691d86x.jpg": {
+      "file": "1gys9fkl5tr421604-b9ef870906.jpg",
+      "width": 1024,
+      "height": 768,
+      "bytes": 104699,
+      "etag": "\"9386c44de17bc38ab8169648d2691d86\"",
+      "lastModified": "Tue, 29 Sep 2026 06:02:18 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1134/9386c44de17bc38ab8169648d2691d86x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0489/ef1a915e88805283fb02d1a2e5ac1108x.jpg": {
+      "file": "1gys9fkl6tr421630-b9ef870906.jpg",
+      "width": 1024,
+      "height": 768,
+      "bytes": 112208,
+      "etag": "\"ef1a915e88805283fb02d1a2e5ac1108\"",
+      "lastModified": "Thu, 01 Oct 2026 08:30:35 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0489/ef1a915e88805283fb02d1a2e5ac1108x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0427/c88c048614b536b42c7cb1ee2813f78ax.jpg": {
+      "file": "1gykpurk9tz312554-ce3106bf8e.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 124115,
+      "etag": "\"c88c048614b536b42c7cb1ee2813f78a\"",
+      "lastModified": "Fri, 24 Jul 2026 04:35:41 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0427/c88c048614b536b42c7cb1ee2813f78ax.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1643/076119d2f83c1a8788c71bd9146fb88bx.jpg": {
+      "file": "1gykpurk0tz312538-ce3106bf8e.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 132994,
+      "etag": "\"076119d2f83c1a8788c71bd9146fb88b\"",
+      "lastModified": "Fri, 24 Jul 2026 03:55:08 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1643/076119d2f83c1a8788c71bd9146fb88bx.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0164/769b482cab5fcdec2f4ab744548bf858x.jpg": {
+      "file": "1gykpurk6tz312558-ce3106bf8e.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 151505,
+      "etag": "\"769b482cab5fcdec2f4ab744548bf858\"",
+      "lastModified": "Fri, 24 Jul 2026 04:35:42 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0164/769b482cab5fcdec2f4ab744548bf858x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0577/78abd12ccd3e7b3722e6ee24ecb97cc9x.jpg": {
+      "file": "1gykpurl5tz312611-ce3106bf8e.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 174871,
+      "etag": "\"78abd12ccd3e7b3722e6ee24ecb97cc9\"",
+      "lastModified": "Fri, 24 Jul 2026 03:44:12 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0577/78abd12ccd3e7b3722e6ee24ecb97cc9x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0954/b1a62c5ae3fa4adbf812efe6e0ae08b1x.jpg": {
+      "file": "1gykpurl4tz312633-ce3106bf8e.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 129340,
+      "etag": "\"b1a62c5ae3fa4adbf812efe6e0ae08b1\"",
+      "lastModified": "Tue, 15 Sep 2026 13:59:38 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0954/b1a62c5ae3fa4adbf812efe6e0ae08b1x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0477/7cbf781b8ab350f0522d70b1eb2226adx.jpg": {
+      "file": "1gys9gkl4tr422460-b69ede8755.jpg",
+      "width": 1024,
+      "height": 768,
+      "bytes": 104799,
+      "etag": "\"7cbf781b8ab350f0522d70b1eb2226ad\"",
+      "lastModified": "Wed, 30 Sep 2026 16:14:10 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0477/7cbf781b8ab350f0522d70b1eb2226adx.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1608/9704f8ca688e4ca752cba12bf80d7a8bx.jpg": {
+      "file": "1gys9hk91tr421762-d2a21e0f44.jpg",
+      "width": 1024,
+      "height": 768,
+      "bytes": 104128,
+      "etag": "\"9704f8ca688e4ca752cba12bf80d7a8b\"",
+      "lastModified": "Fri, 02 Oct 2026 19:53:21 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1608/9704f8ca688e4ca752cba12bf80d7a8bx.jpg"
+    },
+    "https://images.dealer.com/ddc/vehicles/2026/CADILLAC/Escalade%20ESV/SUV/trim_Platinum_Sport_5de925/color/Vibrant%20White%20Tricoat-G4J-237%2C236%2C233-640-en_US.jpg": {
+      "file": "1gys9rkl0tr422578-91009f63b5.jpg",
+      "width": 640,
+      "height": 480,
+      "bytes": 34100,
+      "etag": "\"cbe1d5811778190138aa30243853e9e5\"",
+      "lastModified": "Mon, 15 Jun 2026 08:42:23 GMT",
+      "mime": "image/jpeg",
+      "source": "https://images.dealer.com/ddc/vehicles/2026/CADILLAC/Escalade%20ESV/SUV/trim_Platinum_Sport_5de925/color/Vibrant%20White%20Tricoat-G4J-237%2C236%2C233-640-en_US.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0556/8501f74d9def8b6c442a16742211fb38x.jpg": {
+      "file": "1gys9rkl1tr422587-91009f63b5.jpg",
+      "width": 1024,
+      "height": 768,
+      "bytes": 97468,
+      "etag": "\"8501f74d9def8b6c442a16742211fb38\"",
+      "lastModified": "Sat, 03 Oct 2026 06:28:55 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0556/8501f74d9def8b6c442a16742211fb38x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0164/25547cb0ccccfef348287739c30c5cf9x.jpg": {
+      "file": "1gys9rkl3tr422557-91009f63b5.jpg",
+      "width": 1024,
+      "height": 768,
+      "bytes": 97049,
+      "etag": "\"25547cb0ccccfef348287739c30c5cf9\"",
+      "lastModified": "Fri, 02 Oct 2026 23:13:06 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0164/25547cb0ccccfef348287739c30c5cf9x.jpg"
+    },
+    "https://images.dealer.com/autodata/us/color/2026/USD60CAS032F0/GBA.jpg": {
+      "file": "1gys9sk97tr421732-ee8b4309f0.jpg",
+      "width": 2100,
+      "height": 1575,
+      "bytes": 421684,
+      "etag": "\"e7877562717e65369a2bc7388d92f5e4\"",
+      "lastModified": "Sat, 29 Aug 2026 19:33:29 GMT",
+      "mime": "image/jpeg",
+      "source": "https://images.dealer.com/autodata/us/color/2026/USD60CAS032F0/GBA.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0810/c64dd74b4d1f855f6d86744caf9dd250x.jpg": {
+      "file": "1gykpurl9tz312773-ce3106bf8e.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 126404,
+      "etag": "\"c64dd74b4d1f855f6d86744caf9dd250\"",
+      "lastModified": "Sat, 01 Aug 2026 15:45:32 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0810/c64dd74b4d1f855f6d86744caf9dd250x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0470/055b21faa0e963920d6459c006ff6c7ex.jpg": {
+      "file": "1gykpurk5tz312678-ce3106bf8e.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 139681,
+      "etag": "\"055b21faa0e963920d6459c006ff6c7e\"",
+      "lastModified": "Fri, 21 Aug 2026 17:23:44 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0470/055b21faa0e963920d6459c006ff6c7ex.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0081/6880243530526e0bb48a248058b3d5aex.jpg": {
+      "file": "1gykpurk2tz312671-ce3106bf8e.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 129529,
+      "etag": "\"6880243530526e0bb48a248058b3d5ae\"",
+      "lastModified": "Sat, 08 Aug 2026 11:49:43 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0081/6880243530526e0bb48a248058b3d5aex.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0149/15877fbddacb7a0f9ec7a58b37c4f99bx.jpg": {
+      "file": "1gykpurl0tz312774-ce3106bf8e.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 125305,
+      "etag": "\"15877fbddacb7a0f9ec7a58b37c4f99b\"",
+      "lastModified": "Sat, 29 Aug 2026 23:19:58 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0149/15877fbddacb7a0f9ec7a58b37c4f99bx.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1312/e904b05d9c8e5dcced5fdf5334ea0c12x.jpg": {
+      "file": "1gys9gkl6tr423271-b69ede8755.jpg",
+      "width": 1024,
+      "height": 768,
+      "bytes": 116195,
+      "etag": "\"e904b05d9c8e5dcced5fdf5334ea0c12\"",
+      "lastModified": "Thu, 01 Oct 2026 00:45:48 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1312/e904b05d9c8e5dcced5fdf5334ea0c12x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0913/92a24ccd858d264d62a67f350fd98434x.jpg": {
+      "file": "1gys9gkl7tr423165-b69ede8755.jpg",
+      "width": 1024,
+      "height": 768,
+      "bytes": 96046,
+      "etag": "\"92a24ccd858d264d62a67f350fd98434\"",
+      "lastModified": "Sat, 03 Oct 2026 06:28:35 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0913/92a24ccd858d264d62a67f350fd98434x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1376/dc2e72ec7f321d6b5e8ac33b20cb9a89x.jpg": {
+      "file": "1gys9gkl8tr423448-b69ede8755.jpg",
+      "width": 1024,
+      "height": 768,
+      "bytes": 109437,
+      "etag": "\"dc2e72ec7f321d6b5e8ac33b20cb9a89\"",
+      "lastModified": "Wed, 30 Sep 2026 22:46:20 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1376/dc2e72ec7f321d6b5e8ac33b20cb9a89x.jpg"
+    },
+    "https://images.dealer.com/ddc/vehicles/2026/CADILLAC/Escalade/SUV/trim_Platinum_Sport_b3aada/color/Black%20Raven-GBA-5%2C5%2C7-640-en_US.jpg": {
+      "file": "1gys9gkl3tr424846-b69ede8755.jpg",
+      "width": 640,
+      "height": 480,
+      "bytes": 31058,
+      "etag": "\"445dfa19cb437699cfcc366fe5bb1166\"",
+      "lastModified": "Thu, 06 Aug 2026 09:22:54 GMT",
+      "mime": "image/jpeg",
+      "source": "https://images.dealer.com/ddc/vehicles/2026/CADILLAC/Escalade/SUV/trim_Platinum_Sport_b3aada/color/Black%20Raven-GBA-5%2C5%2C7-640-en_US.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1636/1722e0a6d7ab824a9e2496a84a74c967x.jpg": {
+      "file": "1gys9rkl7tr425476-91009f63b5.jpg",
+      "width": 1024,
+      "height": 768,
+      "bytes": 100998,
+      "etag": "\"1722e0a6d7ab824a9e2496a84a74c967\"",
+      "lastModified": "Sat, 03 Oct 2026 11:33:20 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1636/1722e0a6d7ab824a9e2496a84a74c967x.jpg"
+    },
+    "https://images.dealer.com/ddc/vehicles/2026/CADILLAC/Escalade%20ESV/SUV/trim_Platinum_Sport_5de925/color/Black%20Raven-GBA-5%2C5%2C7-640-en_US.jpg": {
+      "file": "1gys9rkl7tr425333-91009f63b5.jpg",
+      "width": 640,
+      "height": 480,
+      "bytes": 34318,
+      "etag": "\"134fbbed411edcd83175bbe8c7d589d8\"",
+      "lastModified": "Mon, 21 Sep 2026 20:32:12 GMT",
+      "mime": "image/jpeg",
+      "source": "https://images.dealer.com/ddc/vehicles/2026/CADILLAC/Escalade%20ESV/SUV/trim_Platinum_Sport_5de925/color/Black%20Raven-GBA-5%2C5%2C7-640-en_US.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1492/53ad9f71d4ae973e1ce43a3d3a313102x.jpg": {
+      "file": "1gys9fkl8tr426294-b9ef870906.jpg",
+      "width": 1024,
+      "height": 768,
+      "bytes": 112574,
+      "etag": "\"53ad9f71d4ae973e1ce43a3d3a313102\"",
+      "lastModified": "Thu, 01 Oct 2026 07:49:14 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1492/53ad9f71d4ae973e1ce43a3d3a313102x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0422/02374e827f1567d9e2892ad684a3ed0ex.jpg": {
+      "file": "1gys9fkl6tr425709-b9ef870906.jpg",
+      "width": 1024,
+      "height": 768,
+      "bytes": 104932,
+      "etag": "\"02374e827f1567d9e2892ad684a3ed0e\"",
+      "lastModified": "Sat, 03 Oct 2026 06:28:15 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0422/02374e827f1567d9e2892ad684a3ed0ex.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0903/fcf0824169ca11b33deb82f687c3142bx.jpg": {
+      "file": "1gys9fkl7tr425704-b9ef870906.jpg",
+      "width": 1024,
+      "height": 768,
+      "bytes": 111028,
+      "etag": "\"fcf0824169ca11b33deb82f687c3142b\"",
+      "lastModified": "Sat, 03 Oct 2026 06:28:43 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0903/fcf0824169ca11b33deb82f687c3142bx.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0940/d69cbe9f82a99ae957b3b2722ab58debx.jpg": {
+      "file": "1gys9fkl5tr425684-b9ef870906.jpg",
+      "width": 1024,
+      "height": 768,
+      "bytes": 106745,
+      "etag": "\"d69cbe9f82a99ae957b3b2722ab58deb\"",
+      "lastModified": "Fri, 02 Oct 2026 20:02:49 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0940/d69cbe9f82a99ae957b3b2722ab58debx.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1153/c82bea57b9690d4504ebeb84483f8df2x.jpg": {
+      "file": "1gys9rkl7tr426045-91009f63b5.jpg",
+      "width": 1024,
+      "height": 768,
+      "bytes": 107288,
+      "etag": "\"c82bea57b9690d4504ebeb84483f8df2\"",
+      "lastModified": "Thu, 01 Oct 2026 08:32:51 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1153/c82bea57b9690d4504ebeb84483f8df2x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1190/07b537f5804e245ca72d96f2f33b38e7x.jpg": {
+      "file": "3gyk3em54vs104004-5681862997.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 128151,
+      "etag": "\"07b537f5804e245ca72d96f2f33b38e7\"",
+      "lastModified": "Tue, 22 Sep 2026 20:11:49 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1190/07b537f5804e245ca72d96f2f33b38e7x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1831/ff6d53494384863e5133115a9eded2a7x.jpg": {
+      "file": "3gyk3em50vs104002-5681862997.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 163980,
+      "etag": "\"ff6d53494384863e5133115a9eded2a7\"",
+      "lastModified": "Fri, 04 Sep 2026 00:41:38 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1831/ff6d53494384863e5133115a9eded2a7x.jpg"
+    },
+    "https://images.dealer.com/ddc/vehicles/2026/CADILLAC/Escalade/SUV/trim_Sport_f3208d/color/Vibrant%20White%20Tricoat-G4J-237%2C236%2C233-640-en_US.jpg": {
+      "file": "1gys9fkl6tr428786-b9ef870906.jpg",
+      "width": 640,
+      "height": 480,
+      "bytes": 34726,
+      "etag": "\"8c5c32bc88856564e7a38ba6027befb3\"",
+      "lastModified": "Thu, 06 Aug 2026 14:21:17 GMT",
+      "mime": "image/jpeg",
+      "source": "https://images.dealer.com/ddc/vehicles/2026/CADILLAC/Escalade/SUV/trim_Sport_f3208d/color/Vibrant%20White%20Tricoat-G4J-237%2C236%2C233-640-en_US.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0477/15d6296d06378dd308bd9579716d0b60x.jpg": {
+      "file": "3gyk3em51vs104011-5681862997.jpg",
+      "width": 1024,
+      "height": 768,
+      "bytes": 124483,
+      "etag": "\"15d6296d06378dd308bd9579716d0b60\"",
+      "lastModified": "Sat, 03 Oct 2026 06:28:11 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0477/15d6296d06378dd308bd9579716d0b60x.jpg"
+    },
+    "https://images.dealer.com/ddc/vehicles/2027/CADILLAC/VISTIQ/SUV/trim_Luxury_c6579a/color/Emerald%20Lake%20Metallic-G6I-15%2C34%2C35-640-en_US.jpg": {
+      "file": "1gyc3kml2vz701687-f1c7ac966b.jpg",
+      "width": 640,
+      "height": 480,
+      "bytes": 34520,
+      "etag": "\"b7c012d03510ae75fc40ef52c175b3b3\"",
+      "lastModified": "Tue, 15 Sep 2026 01:26:06 GMT",
+      "mime": "image/jpeg",
+      "source": "https://images.dealer.com/ddc/vehicles/2027/CADILLAC/VISTIQ/SUV/trim_Luxury_c6579a/color/Emerald%20Lake%20Metallic-G6I-15%2C34%2C35-640-en_US.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0216/95037474476ee773d5d347775e214472x.jpg": {
+      "file": "1gykpyrk2vz300109-d3f519601b.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 148677,
+      "etag": "\"95037474476ee773d5d347775e214472\"",
+      "lastModified": "Fri, 21 Aug 2026 22:16:52 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0216/95037474476ee773d5d347775e214472x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0068/7fca4a8b3468651be797ad1b37abf4e3x.jpg": {
+      "file": "3gyk3em54vs104231-5681862997.jpg",
+      "width": 1024,
+      "height": 768,
+      "bytes": 99431,
+      "etag": "\"7fca4a8b3468651be797ad1b37abf4e3\"",
+      "lastModified": "Sat, 19 Sep 2026 23:09:07 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0068/7fca4a8b3468651be797ad1b37abf4e3x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0852/58c0b4387c8029e7dc8b718edc965689x.jpg": {
+      "file": "3gyk3em56vs104232-5681862997.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 137867,
+      "etag": "\"58c0b4387c8029e7dc8b718edc965689\"",
+      "lastModified": "Fri, 04 Sep 2026 09:51:26 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0852/58c0b4387c8029e7dc8b718edc965689x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0989/6f77a348ee96dd845bf890e4fb5f7acbx.jpg": {
+      "file": "1gykpurkxvz300660-1b8756171f.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 125821,
+      "etag": "\"6f77a348ee96dd845bf890e4fb5f7acb\"",
+      "lastModified": "Fri, 21 Aug 2026 23:59:57 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0989/6f77a348ee96dd845bf890e4fb5f7acbx.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1074/68ef54c88681227c0b3ec11b6a8c7246x.jpg": {
+      "file": "1gyc3nml0vz702077-33798a7aee.jpg",
+      "width": 1024,
+      "height": 768,
+      "bytes": 105512,
+      "etag": "\"68ef54c88681227c0b3ec11b6a8c7246\"",
+      "lastModified": "Wed, 30 Sep 2026 13:31:01 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1074/68ef54c88681227c0b3ec11b6a8c7246x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1944/cbe60559dc3d3d7103b232604e10d0c7x.jpg": {
+      "file": "3gyk3em53vs105791-5681862997.jpg",
+      "width": 1024,
+      "height": 768,
+      "bytes": 98766,
+      "etag": "\"cbe60559dc3d3d7103b232604e10d0c7\"",
+      "lastModified": "Sat, 19 Sep 2026 23:59:52 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1944/cbe60559dc3d3d7103b232604e10d0c7x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0676/978d0648d81147e45b598b3ebd516583x.jpg": {
+      "file": "1gyknar41tz119241-458499462d.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 144118,
+      "etag": "\"978d0648d81147e45b598b3ebd516583\"",
+      "lastModified": "Sat, 03 Oct 2026 06:28:21 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0676/978d0648d81147e45b598b3ebd516583x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0721/fa68ef040fef1e7c238de5e0b5e23465x.jpg": {
+      "file": "1gyc3nml3vz702400-33798a7aee.jpg",
+      "width": 1024,
+      "height": 768,
+      "bytes": 121151,
+      "etag": "\"fa68ef040fef1e7c238de5e0b5e23465\"",
+      "lastModified": "Sat, 19 Sep 2026 19:04:42 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0721/fa68ef040fef1e7c238de5e0b5e23465x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1026/51e697af2ff0aa4a869a4a87057c231cx.jpg": {
+      "file": "1gyc3nml7vz702447-33798a7aee.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 151264,
+      "etag": "\"51e697af2ff0aa4a869a4a87057c231c\"",
+      "lastModified": "Tue, 25 Aug 2026 17:04:09 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1026/51e697af2ff0aa4a869a4a87057c231cx.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0139/458a0083f766a50088b0dceda62cd284x.jpg": {
+      "file": "1gykncrs7tz119528-b574ba3410.jpg",
+      "width": 2160,
+      "height": 1620,
+      "bytes": 404966,
+      "etag": "\"458a0083f766a50088b0dceda62cd284\"",
+      "lastModified": "Sat, 19 Sep 2026 19:08:07 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0139/458a0083f766a50088b0dceda62cd284x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1726/26167e7cd05b747248db2810f02dee23x.jpg": {
+      "file": "1gys9gkl4tr453692-b69ede8755.jpg",
+      "width": 1024,
+      "height": 768,
+      "bytes": 116089,
+      "etag": "\"26167e7cd05b747248db2810f02dee23\"",
+      "lastModified": "Sun, 20 Sep 2026 00:10:58 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1726/26167e7cd05b747248db2810f02dee23x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0953/30635f04679effe338c25430846fae43x.jpg": {
+      "file": "1gykpwrl7vz301768-00b310b95b.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 138334,
+      "etag": "\"30635f04679effe338c25430846fae43\"",
+      "lastModified": "Fri, 04 Sep 2026 14:29:21 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0953/30635f04679effe338c25430846fae43x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1012/50b42f5864227bf6dbdfa70a06648ec0x.jpg": {
+      "file": "1gykpnrk3vz301915-dc6e053b70.jpg",
+      "width": 1024,
+      "height": 768,
+      "bytes": 128910,
+      "etag": "\"50b42f5864227bf6dbdfa70a06648ec0\"",
+      "lastModified": "Sun, 20 Sep 2026 01:57:57 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1012/50b42f5864227bf6dbdfa70a06648ec0x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1529/fd71359ff556dd43efca78f3eba7de23x.jpg": {
+      "file": "1gyc3kml6vz703071-f1c7ac966b.jpg",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 154770,
+      "etag": "\"fd71359ff556dd43efca78f3eba7de23\"",
+      "lastModified": "Fri, 04 Sep 2026 03:57:34 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1529/fd71359ff556dd43efca78f3eba7de23x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0981/1fe570d544b6552584ce8abd4da4f065x.jpg": {
+      "file": "1gys9fkl8tr464205-b9ef870906.jpg",
+      "width": 1024,
+      "height": 768,
+      "bytes": 98944,
+      "etag": "\"1fe570d544b6552584ce8abd4da4f065\"",
+      "lastModified": "Mon, 21 Sep 2026 19:38:08 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0981/1fe570d544b6552584ce8abd4da4f065x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1219/6d067042354b2bc17600375eb765026bx.jpg": {
+      "file": "1gyknar47tz121057-458499462d.jpg",
+      "width": 2160,
+      "height": 1620,
+      "bytes": 458918,
+      "etag": "\"6d067042354b2bc17600375eb765026b\"",
+      "lastModified": "Sun, 20 Sep 2026 20:18:58 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1219/6d067042354b2bc17600375eb765026bx.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1405/0d01306fe69c53719739e30225e27ae1x.jpg": {
+      "file": "1gys9fkl9tr467341-b9ef870906.jpg",
+      "width": 1024,
+      "height": 768,
+      "bytes": 103175,
+      "etag": "\"0d01306fe69c53719739e30225e27ae1\"",
+      "lastModified": "Sun, 20 Sep 2026 00:09:51 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1405/0d01306fe69c53719739e30225e27ae1x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0714/fadfeb583abc49cbbdfc2ac7120c3f39x.jpg": {
+      "file": "1g6dn5rkxt0124658-b4ed0c992b.jpg",
+      "width": 1024,
+      "height": 768,
+      "bytes": 102555,
+      "etag": "\"fadfeb583abc49cbbdfc2ac7120c3f39\"",
+      "lastModified": "Sat, 19 Sep 2026 19:22:25 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0714/fadfeb583abc49cbbdfc2ac7120c3f39x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1311/458915dff9140931dc38dee4f114386dx.jpg": {
+      "file": "1g6dn5rkxt0124708-b4ed0c992b.jpg",
+      "width": 1024,
+      "height": 768,
+      "bytes": 122887,
+      "etag": "\"458915dff9140931dc38dee4f114386d\"",
+      "lastModified": "Wed, 30 Sep 2026 04:36:13 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1311/458915dff9140931dc38dee4f114386dx.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1395/f8c833f9d0a6abeeac45244de602f11dx.jpg": {
+      "file": "1gykncrs6tz121500-b574ba3410.jpg",
+      "width": 1024,
+      "height": 768,
+      "bytes": 104935,
+      "etag": "\"f8c833f9d0a6abeeac45244de602f11d\"",
+      "lastModified": "Sat, 19 Sep 2026 19:08:14 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1395/f8c833f9d0a6abeeac45244de602f11dx.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1333/0931112b3aef33a236649f5a0ba018d4x.jpg": {
+      "file": "1gyc3kml4vz703716-f1c7ac966b.jpg",
+      "width": 1024,
+      "height": 768,
+      "bytes": 101596,
+      "etag": "\"0931112b3aef33a236649f5a0ba018d4\"",
+      "lastModified": "Sat, 19 Sep 2026 19:04:41 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1333/0931112b3aef33a236649f5a0ba018d4x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0027/0243045459dd004cffd9ed25ed971197x.jpg": {
+      "file": "1g6dn5rk2t0124928-b4ed0c992b.jpg",
+      "width": 1024,
+      "height": 768,
+      "bytes": 98777,
+      "etag": "\"0243045459dd004cffd9ed25ed971197\"",
+      "lastModified": "Tue, 29 Sep 2026 19:57:44 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0027/0243045459dd004cffd9ed25ed971197x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1846/37168efb08dada76a626a43280f18b6ex.jpg": {
+      "file": "1gyc3nml9vz703924-33798a7aee.jpg",
+      "width": 1024,
+      "height": 768,
+      "bytes": 88701,
+      "etag": "\"37168efb08dada76a626a43280f18b6e\"",
+      "lastModified": "Sat, 19 Sep 2026 19:04:44 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1846/37168efb08dada76a626a43280f18b6ex.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0065/4a228a6a1d4bd4676b9b23ffbe11ee37x.jpg": {
+      "file": "1g6dp5rkxt0125061-f37b5873cf.jpg",
+      "width": 1024,
+      "height": 768,
+      "bytes": 102722,
+      "etag": "\"4a228a6a1d4bd4676b9b23ffbe11ee37\"",
+      "lastModified": "Mon, 21 Sep 2026 18:44:30 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0065/4a228a6a1d4bd4676b9b23ffbe11ee37x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0007/93d6e328363748f7d513986ac5f0b609x.jpg": {
+      "file": "1gylejkl6tu109114-f9aeade4bd.jpg",
+      "width": 1024,
+      "height": 768,
+      "bytes": 105880,
+      "etag": "\"93d6e328363748f7d513986ac5f0b609\"",
+      "lastModified": "Sat, 03 Oct 2026 05:04:31 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0007/93d6e328363748f7d513986ac5f0b609x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1545/589ef38a138e47b9ffb2773fcd519598x.jpg": {
+      "file": "1gykncrs5tz122573-b574ba3410.jpg",
+      "width": 1024,
+      "height": 768,
+      "bytes": 110501,
+      "etag": "\"589ef38a138e47b9ffb2773fcd519598\"",
+      "lastModified": "Sat, 19 Sep 2026 19:08:06 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1545/589ef38a138e47b9ffb2773fcd519598x.jpg"
+    },
+    "https://images.dealer.com/ddc/vehicles/2026/CADILLAC/Escalade%20IQ/SUV/trim_Sport_357ffd/still/front-left/front-left-640-en_US.jpg": {
+      "file": "1gyteekl8tu109221-8e39f59b8d.jpg",
+      "width": 640,
+      "height": 480,
+      "bytes": 41240,
+      "etag": "\"25058289fb3e469b260ac1c112ec2e4d\"",
+      "lastModified": "Mon, 10 Aug 2026 18:08:47 GMT",
+      "mime": "image/jpeg",
+      "source": "https://images.dealer.com/ddc/vehicles/2026/CADILLAC/Escalade%20IQ/SUV/trim_Sport_357ffd/still/front-left/front-left-640-en_US.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1206/6df30b146923a57b3a8dc9ffb0ec3a87x.jpg": {
+      "file": "1gykncrs2tz122708-b574ba3410.jpg",
+      "width": 1024,
+      "height": 768,
+      "bytes": 104616,
+      "etag": "\"6df30b146923a57b3a8dc9ffb0ec3a87\"",
+      "lastModified": "Sat, 19 Sep 2026 19:08:04 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1206/6df30b146923a57b3a8dc9ffb0ec3a87x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0716/d0fccc9df6561aa5b5f969581135c0c5x.jpg": {
+      "file": "1gykncr41tz122698-b574ba3410.jpg",
+      "width": 1024,
+      "height": 768,
+      "bytes": 101602,
+      "etag": "\"d0fccc9df6561aa5b5f969581135c0c5\"",
+      "lastModified": "Sat, 19 Sep 2026 19:08:00 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0716/d0fccc9df6561aa5b5f969581135c0c5x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0572/adb7833b9a1fe432af53ec5bfecd8f00x.jpg": {
+      "file": "1gykncrs9tz122737-b574ba3410.jpg",
+      "width": 1024,
+      "height": 768,
+      "bytes": 111768,
+      "etag": "\"adb7833b9a1fe432af53ec5bfecd8f00\"",
+      "lastModified": "Mon, 21 Sep 2026 20:05:01 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0572/adb7833b9a1fe432af53ec5bfecd8f00x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1131/cea418aecb85fa285abeed70e85c362cx.jpg": {
+      "file": "1gykncrs6tz122775-b574ba3410.jpg",
+      "width": 1024,
+      "height": 768,
+      "bytes": 94798,
+      "etag": "\"cea418aecb85fa285abeed70e85c362c\"",
+      "lastModified": "Sun, 20 Sep 2026 01:34:12 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1131/cea418aecb85fa285abeed70e85c362cx.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0833/a5f366fb82730f5adc9fcade445a8c80x.jpg": {
+      "file": "1gykpnrl5vz303867-dc6e053b70.jpg",
+      "width": 1024,
+      "height": 768,
+      "bytes": 100754,
+      "etag": "\"a5f366fb82730f5adc9fcade445a8c80\"",
+      "lastModified": "Sun, 20 Sep 2026 02:14:17 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0833/a5f366fb82730f5adc9fcade445a8c80x.jpg"
+    },
+    "https://images.dealer.com/ddc/vehicles/2026/CADILLAC/Escalade%20IQ/SUV/trim_Sport_357ffd/color/Monarch%20Orange-GAG-194%2C58%2C40-640-en_US.jpg": {
+      "file": "1gyteekl9tu108403-8e39f59b8d.jpg",
+      "width": 640,
+      "height": 480,
+      "bytes": 47348,
+      "etag": "\"e8d52288a416815bdadfb7a19172e1d3\"",
+      "lastModified": "Mon, 14 Sep 2026 18:07:31 GMT",
+      "mime": "image/jpeg",
+      "source": "https://images.dealer.com/ddc/vehicles/2026/CADILLAC/Escalade%20IQ/SUV/trim_Sport_357ffd/color/Monarch%20Orange-GAG-194%2C58%2C40-640-en_US.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1857/168bcbe37e605e3be52e0280e5a6f8a0x.jpg": {
+      "file": "1gyc3nml4vz704351-33798a7aee.jpg",
+      "width": 1024,
+      "height": 768,
+      "bytes": 104575,
+      "etag": "\"168bcbe37e605e3be52e0280e5a6f8a0\"",
+      "lastModified": "Wed, 30 Sep 2026 04:37:22 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1857/168bcbe37e605e3be52e0280e5a6f8a0x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1994/018cb4121e0da29e63998946864dcd75x.jpg": {
+      "file": "1gyc3kml0vz704491-f1c7ac966b.jpg",
+      "width": 1024,
+      "height": 768,
+      "bytes": 99995,
+      "etag": "\"018cb4121e0da29e63998946864dcd75\"",
+      "lastModified": "Wed, 30 Sep 2026 04:36:13 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1994/018cb4121e0da29e63998946864dcd75x.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0079/a763347a5f4479a24de8ed828f284b42x.jpg": {
+      "file": "1gyc3nmlxvz704676-33798a7aee.jpg",
+      "width": 1024,
+      "height": 768,
+      "bytes": 102992,
+      "etag": "\"a763347a5f4479a24de8ed828f284b42\"",
+      "lastModified": "Wed, 30 Sep 2026 08:19:35 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0079/a763347a5f4479a24de8ed828f284b42x.jpg"
+    },
+    "https://images.dealer.com/ddc/vehicles/2027/CADILLAC/LYRIQ/SUV/trim_Luxury_f34511/color/Blue%20Graphite%20Tricoat-GXC-38%2C46%2C64-640-en_US.jpg": {
+      "file": "1gykpnrk6vz304839-dc6e053b70.jpg",
+      "width": 640,
+      "height": 480,
+      "bytes": 33419,
+      "etag": "\"37d9adc7e3c5ea204dec3540acd13b1a\"",
+      "lastModified": "Sun, 06 Sep 2026 14:41:04 GMT",
+      "mime": "image/jpeg",
+      "source": "https://images.dealer.com/ddc/vehicles/2027/CADILLAC/LYRIQ/SUV/trim_Luxury_f34511/color/Blue%20Graphite%20Tricoat-GXC-38%2C46%2C64-640-en_US.jpg"
+    },
+    "https://images.dealer.com/ddc/vehicles/2027/CADILLAC/LYRIQ/SUV/trim_Sport_6083e5/color/Vibrant%20White%20Tricoat-G4J-237%2C236%2C233-640-en_US.jpg": {
+      "file": "1gykpurl7vz304805-1b8756171f.jpg",
+      "width": 640,
+      "height": 480,
+      "bytes": 30110,
+      "etag": "\"994257eb00b088a3b8177248af8932f7\"",
+      "lastModified": "Thu, 30 Jul 2026 19:45:38 GMT",
+      "mime": "image/jpeg",
+      "source": "https://images.dealer.com/ddc/vehicles/2027/CADILLAC/LYRIQ/SUV/trim_Sport_6083e5/color/Vibrant%20White%20Tricoat-G4J-237%2C236%2C233-640-en_US.jpg"
+    },
+    "https://images.dealer.com/ddc/vehicles/2027/CADILLAC/LYRIQ/SUV/trim_Sport_6083e5/color/Stellar%20Black%20Metallic-GB8-30%2C32%2C36-640-en_US.jpg": {
+      "file": "1gykpurk3vz304890-1b8756171f.jpg",
+      "width": 640,
+      "height": 480,
+      "bytes": 29529,
+      "etag": "\"60f6ee0efe00c57e2398430d0159f032\"",
+      "lastModified": "Fri, 18 Sep 2026 10:15:28 GMT",
+      "mime": "image/jpeg",
+      "source": "https://images.dealer.com/ddc/vehicles/2027/CADILLAC/LYRIQ/SUV/trim_Sport_6083e5/color/Stellar%20Black%20Metallic-GB8-30%2C32%2C36-640-en_US.jpg"
+    },
+    "https://images.dealer.com/ddc/vehicles/2026/CADILLAC/XT5/SUV/trim_Premium_Luxury_69a571/color/Crystal%20White%20Tricoat-G1W-229%2C227%2C223-640-en_US.jpg": {
+      "file": "1gykncr48tz124285-b574ba3410.jpg",
+      "width": 640,
+      "height": 480,
+      "bytes": 29653,
+      "etag": "\"56862ef1919c0e9136fbabc75c1fc17c\"",
+      "lastModified": "Fri, 28 Aug 2026 04:24:23 GMT",
+      "mime": "image/jpeg",
+      "source": "https://images.dealer.com/ddc/vehicles/2026/CADILLAC/XT5/SUV/trim_Premium_Luxury_69a571/color/Crystal%20White%20Tricoat-G1W-229%2C227%2C223-640-en_US.jpg"
+    },
+    "https://images.dealer.com/ddc/vehicles/2026/CADILLAC/XT5/SUV/trim_Luxury_0420d6/color/Argent%20Silver%20Metallic-GXD-150%2C150%2C155-640-en_US.jpg": {
+      "file": "1gyknbr45tz124528-458499462d.jpg",
+      "width": 640,
+      "height": 480,
+      "bytes": 26353,
+      "etag": "\"273a8051cee812f2e1521a2ceecabdf9\"",
+      "lastModified": "Thu, 24 Sep 2026 00:42:28 GMT",
+      "mime": "image/jpeg",
+      "source": "https://images.dealer.com/ddc/vehicles/2026/CADILLAC/XT5/SUV/trim_Luxury_0420d6/color/Argent%20Silver%20Metallic-GXD-150%2C150%2C155-640-en_US.jpg"
+    },
+    "https://images.dealer.com/ddc/vehicles/2026/CADILLAC/XT5/SUV/trim_Premium_Luxury_69a571/color/Emerald%20Lake%20Metallic-G6I-15%2C34%2C35-640-en_US.jpg": {
+      "file": "1gykncr41tz124581-b574ba3410.jpg",
+      "width": 640,
+      "height": 480,
+      "bytes": 26733,
+      "etag": "\"3f1982514b1f0575b7a7ffbfd82d1ada\"",
+      "lastModified": "Tue, 18 Aug 2026 18:48:35 GMT",
+      "mime": "image/jpeg",
+      "source": "https://images.dealer.com/ddc/vehicles/2026/CADILLAC/XT5/SUV/trim_Premium_Luxury_69a571/color/Emerald%20Lake%20Metallic-G6I-15%2C34%2C35-640-en_US.jpg"
+    },
+    "https://images.dealer.com/ddc/vehicles/2027/CADILLAC/LYRIQ/SUV/trim_Luxury_f34511/color/Emerald%20Lake%20Metallic-G6I-15%2C34%2C35-640-en_US.jpg": {
+      "file": "1gykpnrk7vz305191-dc6e053b70.jpg",
+      "width": 640,
+      "height": 480,
+      "bytes": 31424,
+      "etag": "\"c30de8199c6a09a527b132027287f641\"",
+      "lastModified": "Fri, 31 Jul 2026 14:26:02 GMT",
+      "mime": "image/jpeg",
+      "source": "https://images.dealer.com/ddc/vehicles/2027/CADILLAC/LYRIQ/SUV/trim_Luxury_f34511/color/Emerald%20Lake%20Metallic-G6I-15%2C34%2C35-640-en_US.jpg"
+    },
+    "https://images.dealer.com/ddc/vehicles/2027/CADILLAC/LYRIQ/SUV/trim_Sport_6083e5/color/Radiant%20Red%20Tintcoat-GNT-151%2C8%2C12-640-en_US.jpg": {
+      "file": "1gykpurk8vz305226-1b8756171f.jpg",
+      "width": 640,
+      "height": 480,
+      "bytes": 32694,
+      "etag": "\"f3455cbb71da04b3fd66a4f608b1d6e0\"",
+      "lastModified": "Thu, 30 Jul 2026 17:25:46 GMT",
+      "mime": "image/jpeg",
+      "source": "https://images.dealer.com/ddc/vehicles/2027/CADILLAC/LYRIQ/SUV/trim_Sport_6083e5/color/Radiant%20Red%20Tintcoat-GNT-151%2C8%2C12-640-en_US.jpg"
+    },
+    "https://images.dealer.com/ddc/vehicles/2027/CADILLAC/LYRIQ/SUV/trim_V_8abd2a/color/Midnight%20Stone%20Frost-GNW-41%2C41%2C47-640-en_US.jpg": {
+      "file": "1gyxpzrlxvz600226-d69328ef5a.jpg",
+      "width": 640,
+      "height": 480,
+      "bytes": 29313,
+      "etag": "\"c038b9c82babe8cb230156cef92c59df\"",
+      "lastModified": "Wed, 23 Sep 2026 12:41:19 GMT",
+      "mime": "image/jpeg",
+      "source": "https://images.dealer.com/ddc/vehicles/2027/CADILLAC/LYRIQ/SUV/trim_V_8abd2a/color/Midnight%20Stone%20Frost-GNW-41%2C41%2C47-640-en_US.jpg"
+    },
+    "https://images.dealer.com/ddc/vehicles/2026/CADILLAC/XT5/SUV/trim_Premium_Luxury_69a571/color/Argent%20Silver%20Metallic-GXD-150%2C150%2C155-640-en_US.jpg": {
+      "file": "1gykncr48tz124626-b574ba3410.jpg",
+      "width": 640,
+      "height": 480,
+      "bytes": 23836,
+      "etag": "\"e9f5151e1f850961498f326c467b3826\"",
+      "lastModified": "Sat, 05 Sep 2026 07:39:16 GMT",
+      "mime": "image/jpeg",
+      "source": "https://images.dealer.com/ddc/vehicles/2026/CADILLAC/XT5/SUV/trim_Premium_Luxury_69a571/color/Argent%20Silver%20Metallic-GXD-150%2C150%2C155-640-en_US.jpg"
+    },
+    "https://images.dealer.com/ddc/vehicles/2027/CADILLAC/VISTIQ/SUV/trim_Sport_69d29b/color/Argent%20Silver%20Metallic-GXD-150%2C150%2C155-640-en_US.jpg": {
+      "file": "1gyc3nml4vz705273-33798a7aee.jpg",
+      "width": 640,
+      "height": 480,
+      "bytes": 32767,
+      "etag": "\"7b0b9065268525b19d385ff0c3af5c96\"",
+      "lastModified": "Wed, 22 Jul 2026 01:29:06 GMT",
+      "mime": "image/jpeg",
+      "source": "https://images.dealer.com/ddc/vehicles/2027/CADILLAC/VISTIQ/SUV/trim_Sport_69d29b/color/Argent%20Silver%20Metallic-GXD-150%2C150%2C155-640-en_US.jpg"
+    },
+    "https://images.dealer.com/ddc/vehicles/2026/CADILLAC/CT5/Sedan/trim_Sport_566deb/color/Summit%20White-GAZ-239%2C238%2C235-640-en_US.jpg": {
+      "file": "1g6dp5rk1t0127362-f37b5873cf.jpg",
+      "width": 640,
+      "height": 480,
+      "bytes": 24619,
+      "etag": "\"569cbf65939885718da9b73f08535a75\"",
+      "lastModified": "Sat, 08 Aug 2026 12:49:46 GMT",
+      "mime": "image/jpeg",
+      "source": "https://images.dealer.com/ddc/vehicles/2026/CADILLAC/CT5/Sedan/trim_Sport_566deb/color/Summit%20White-GAZ-239%2C238%2C235-640-en_US.jpg"
+    },
+    "https://images.dealer.com/ddc/vehicles/2027/CADILLAC/OPTIQ/SUV/trim_Sport_eb4990/color/Vibrant%20White%20Tricoat-G4J-237%2C236%2C233-640-en_US.jpg": {
+      "file": "3gyk3em56vs107180-5681862997.jpg",
+      "width": 640,
+      "height": 480,
+      "bytes": 30191,
+      "etag": "\"4d417fd59e69b8a74822e1dd846d422b\"",
+      "lastModified": "Tue, 15 Sep 2026 20:07:29 GMT",
+      "mime": "image/jpeg",
+      "source": "https://images.dealer.com/ddc/vehicles/2027/CADILLAC/OPTIQ/SUV/trim_Sport_eb4990/color/Vibrant%20White%20Tricoat-G4J-237%2C236%2C233-640-en_US.jpg"
+    },
+    "https://pictures.web.dealer.com/gm-cgi-images/0228d449b02143c5ee4dd146f470f31d.jpg": {
+      "file": "3gyk3hm45vs104120-c0530ef62b.jpg",
+      "width": 1920,
+      "height": 1080,
+      "bytes": 53515,
+      "etag": "\"0228d449b02143c5ee4dd146f470f31d\"",
+      "lastModified": "Sat, 08 Aug 2026 04:38:13 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/gm-cgi-images/0228d449b02143c5ee4dd146f470f31d.jpg"
+    },
+    "https://images.dealer.com/ddc/vehicles/2027/CADILLAC/OPTIQ/SUV/trim_Sport_eb4990/color/Black%20Raven-GBA-5%2C5%2C7-640-en_US.jpg": {
+      "file": "3gyk3em46vs108529-5681862997.jpg",
+      "width": 640,
+      "height": 480,
+      "bytes": 30495,
+      "etag": "\"add950e7e31261649ae95d8b2c043be3\"",
+      "lastModified": "Mon, 21 Sep 2026 05:35:35 GMT",
+      "mime": "image/jpeg",
+      "source": "https://images.dealer.com/ddc/vehicles/2027/CADILLAC/OPTIQ/SUV/trim_Sport_eb4990/color/Black%20Raven-GBA-5%2C5%2C7-640-en_US.jpg"
+    },
+    "https://images.dealer.com/ddc/vehicles/2027/CADILLAC/OPTIQ/SUV/trim_Sport_eb4990/color/Radiant%20Red%20Tintcoat-GNT-151%2C8%2C12-640-en_US.jpg": {
+      "file": "3gyk3em46vs108353-5681862997.jpg",
+      "width": 640,
+      "height": 480,
+      "bytes": 33090,
+      "etag": "\"3479aa09e6a017423c777e571b7b9bae\"",
+      "lastModified": "Tue, 22 Sep 2026 23:26:11 GMT",
+      "mime": "image/jpeg",
+      "source": "https://images.dealer.com/ddc/vehicles/2027/CADILLAC/OPTIQ/SUV/trim_Sport_eb4990/color/Radiant%20Red%20Tintcoat-GNT-151%2C8%2C12-640-en_US.jpg"
+    },
+    "https://images.dealer.com/ddc/vehicles/2027/CADILLAC/OPTIQ/SUV/trim_Sport_eb4990/color/Argent%20Silver%20Metallic-GXD-150%2C150%2C155-640-en_US.jpg": {
+      "file": "3gyk3em49vs108363-5681862997.jpg",
+      "width": 640,
+      "height": 480,
+      "bytes": 30036,
+      "etag": "\"6d3ba4e9e44ec74e30e921d7b6dedeb7\"",
+      "lastModified": "Wed, 02 Sep 2026 21:59:00 GMT",
+      "mime": "image/jpeg",
+      "source": "https://images.dealer.com/ddc/vehicles/2027/CADILLAC/OPTIQ/SUV/trim_Sport_eb4990/color/Argent%20Silver%20Metallic-GXD-150%2C150%2C155-640-en_US.jpg"
+    },
+    "https://images.dealer.com/ddc/vehicles/2027/CADILLAC/OPTIQ/SUV/trim_Luxury_510faa/color/Vibrant%20White%20Tricoat-G4J-237%2C236%2C233-640-en_US.jpg": {
+      "file": "3gyk3bm44vs108527-b92232cd54.jpg",
+      "width": 640,
+      "height": 480,
+      "bytes": 30184,
+      "etag": "\"33a59a2f86810ea362105335791bf921\"",
+      "lastModified": "Fri, 04 Sep 2026 21:18:00 GMT",
+      "mime": "image/jpeg",
+      "source": "https://images.dealer.com/ddc/vehicles/2027/CADILLAC/OPTIQ/SUV/trim_Luxury_510faa/color/Vibrant%20White%20Tricoat-G4J-237%2C236%2C233-640-en_US.jpg"
+    },
+    "https://images.dealer.com/ddc/vehicles/2026/CADILLAC/CT5/Sedan/trim_Premium_Luxury_a4a53c/color/Deep%20Space%20Metallic-GAI-6%2C6%2C6-640-en_US.jpg": {
+      "file": "1g6dn5rk6t0125628-b4ed0c992b.jpg",
+      "width": 640,
+      "height": 480,
+      "bytes": 23316,
+      "etag": "\"31dba49371c61e97c9f80cd07a9db4f7\"",
+      "lastModified": "Thu, 03 Sep 2026 16:05:05 GMT",
+      "mime": "image/jpeg",
+      "source": "https://images.dealer.com/ddc/vehicles/2026/CADILLAC/CT5/Sedan/trim_Premium_Luxury_a4a53c/color/Deep%20Space%20Metallic-GAI-6%2C6%2C6-640-en_US.jpg"
+    },
+    "https://images.dealer.com/ddc/vehicles/2026/CADILLAC/Escalade%20IQL/SUV/trim_Sport_ba0457/color/Black%20Raven-GBA-5%2C5%2C7-640-en_US.jpg": {
+      "file": "1gylelkl2tu109526-5af47ea0ec.jpg",
+      "width": 640,
+      "height": 480,
+      "bytes": 38843,
+      "etag": "\"af0f4b17ea42c30a27403c454535a3c3\"",
+      "lastModified": "Thu, 10 Sep 2026 20:00:20 GMT",
+      "mime": "image/jpeg",
+      "source": "https://images.dealer.com/ddc/vehicles/2026/CADILLAC/Escalade%20IQL/SUV/trim_Sport_ba0457/color/Black%20Raven-GBA-5%2C5%2C7-640-en_US.jpg"
+    },
+    "https://images.dealer.com/ddc/vehicles/2027/CADILLAC/Escalade%20ESV/SUV/trim_Platinum_Sport_6d7faa/color/Vibrant%20White%20Tricoat-G4J-237%2C236%2C233-640-en_US.jpg": {
+      "file": "1gys9rkl2vr111530-9a8b6069b3.jpg",
+      "width": 640,
+      "height": 480,
+      "bytes": 29745,
+      "etag": "\"f98222d85075e63c36ee8f1b99e0ef1b\"",
+      "lastModified": "Tue, 22 Sep 2026 20:37:23 GMT",
+      "mime": "image/jpeg",
+      "source": "https://images.dealer.com/ddc/vehicles/2027/CADILLAC/Escalade%20ESV/SUV/trim_Platinum_Sport_6d7faa/color/Vibrant%20White%20Tricoat-G4J-237%2C236%2C233-640-en_US.jpg"
+    },
+    "https://images.dealer.com/ddc/vehicles/2027/CADILLAC/Escalade%20ESV/SUV/trim_Sport_284635/color/Vibrant%20White%20Tricoat-G4J-237%2C236%2C233-640-en_US.jpg": {
+      "file": "1gys9pkl1vr113953-97d7e03acd.jpg",
+      "width": 640,
+      "height": 480,
+      "bytes": 32085,
+      "etag": "\"071a712576629ec50c77566df3ab9e39\"",
+      "lastModified": "Tue, 22 Sep 2026 23:15:09 GMT",
+      "mime": "image/jpeg",
+      "source": "https://images.dealer.com/ddc/vehicles/2027/CADILLAC/Escalade%20ESV/SUV/trim_Sport_284635/color/Vibrant%20White%20Tricoat-G4J-237%2C236%2C233-640-en_US.jpg"
+    },
+    "https://images.dealer.com/ddc/vehicles/2027/CADILLAC/LYRIQ/SUV/trim_Sport_6083e5/color/Argent%20Silver%20Metallic-GXD-150%2C150%2C155-640-en_US.jpg": {
+      "file": "1gykpurl5vz304723-1b8756171f.jpg",
+      "width": 640,
+      "height": 480,
+      "bytes": 30092,
+      "etag": "\"09df4d18f452d5555a255e583d5f6f22\"",
+      "lastModified": "Mon, 07 Sep 2026 16:30:12 GMT",
+      "mime": "image/jpeg",
+      "source": "https://images.dealer.com/ddc/vehicles/2027/CADILLAC/LYRIQ/SUV/trim_Sport_6083e5/color/Argent%20Silver%20Metallic-GXD-150%2C150%2C155-640-en_US.jpg"
+    },
+    "https://images.dealer.com/ddc/vehicles/2027/CADILLAC/VISTIQ/SUV/trim_Sport_69d29b/color/Vibrant%20White%20Tricoat-G4J-237%2C236%2C233-640-en_US.jpg": {
+      "file": "1gyc3nmlxvz704886-33798a7aee.jpg",
+      "width": 640,
+      "height": 480,
+      "bytes": 32733,
+      "etag": "\"7c4163558b87382ba5791aa509ab2e72\"",
+      "lastModified": "Fri, 03 Jul 2026 14:34:22 GMT",
+      "mime": "image/jpeg",
+      "source": "https://images.dealer.com/ddc/vehicles/2027/CADILLAC/VISTIQ/SUV/trim_Sport_69d29b/color/Vibrant%20White%20Tricoat-G4J-237%2C236%2C233-640-en_US.jpg"
+    },
+    "https://images.dealer.com/ddc/vehicles/2027/CADILLAC/Escalade%20ESV/SUV/trim_Platinum_Sport_6d7faa/color/Black%20Raven-GBA-5%2C5%2C7-640-en_US.jpg": {
+      "file": "1gys9rkl5vr122215-9a8b6069b3.jpg",
+      "width": 640,
+      "height": 480,
+      "bytes": 28771,
+      "etag": "\"e48db66bc728ec4909aec05ef0aa6c8d\"",
+      "lastModified": "Tue, 22 Sep 2026 19:35:38 GMT",
+      "mime": "image/jpeg",
+      "source": "https://images.dealer.com/ddc/vehicles/2027/CADILLAC/Escalade%20ESV/SUV/trim_Platinum_Sport_6d7faa/color/Black%20Raven-GBA-5%2C5%2C7-640-en_US.jpg"
+    },
+    "https://images.dealer.com/ddc/vehicles/2026/CADILLAC/CT5/Sedan/trim_Sport_566deb/color/Argent%20Silver%20Metallic-GXD-150%2C150%2C155-640-en_US.jpg": {
+      "file": "1g6dp5rk5t0126991-f37b5873cf.jpg",
+      "width": 640,
+      "height": 480,
+      "bytes": 21440,
+      "etag": "\"cacae3b15ca8f05b9a36780a91db1aea\"",
+      "lastModified": "Mon, 28 Sep 2026 05:10:48 GMT",
+      "mime": "image/jpeg",
+      "source": "https://images.dealer.com/ddc/vehicles/2026/CADILLAC/CT5/Sedan/trim_Sport_566deb/color/Argent%20Silver%20Metallic-GXD-150%2C150%2C155-640-en_US.jpg"
+    },
+    "https://images.dealer.com/ddc/vehicles/2026/CADILLAC/CT5/Sedan/trim_Sport_566deb/color/Deep%20Space%20Metallic-GAI-6%2C6%2C6-640-en_US.jpg": {
+      "file": "1g6dp5rk7t0127043-f37b5873cf.jpg",
+      "width": 640,
+      "height": 480,
+      "bytes": 23233,
+      "etag": "\"7a846af865676a9dd44d67b511933512\"",
+      "lastModified": "Fri, 04 Sep 2026 13:08:29 GMT",
+      "mime": "image/jpeg",
+      "source": "https://images.dealer.com/ddc/vehicles/2026/CADILLAC/CT5/Sedan/trim_Sport_566deb/color/Deep%20Space%20Metallic-GAI-6%2C6%2C6-640-en_US.jpg"
+    },
+    "https://images.dealer.com/ddc/vehicles/2027/CADILLAC/VISTIQ/SUV/trim_Sport_69d29b/color/Stellar%20Black%20Metallic-GB8-30%2C32%2C36-640-en_US.jpg": {
+      "file": "1gyc3nml7vz705400-33798a7aee.jpg",
+      "width": 640,
+      "height": 480,
+      "bytes": 32873,
+      "etag": "\"e2a01a68a93c61b96df91dd8a294ed2d\"",
+      "lastModified": "Fri, 03 Jul 2026 12:48:37 GMT",
+      "mime": "image/jpeg",
+      "source": "https://images.dealer.com/ddc/vehicles/2027/CADILLAC/VISTIQ/SUV/trim_Sport_69d29b/color/Stellar%20Black%20Metallic-GB8-30%2C32%2C36-640-en_US.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0957/011eb5d0638f838b1b8519520e96cecdx.jpg": {
+      "file": "1gykprrl1rz118759-721038f179.jpg",
+      "width": 1024,
+      "height": 768,
+      "bytes": 107112,
+      "etag": "\"011eb5d0638f838b1b8519520e96cecd\"",
+      "lastModified": "Wed, 30 Sep 2026 00:53:02 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/0957/011eb5d0638f838b1b8519520e96cecdx.jpg"
+    },
+    "https://images.dealer.com/autodata/us/large_stockphoto/2024/USD40CAS082A0.jpg": {
+      "file": "1gykpbr48rz713589-c99bcd8590.jpg",
+      "width": 640,
+      "height": 480,
+      "bytes": 35896,
+      "etag": "\"5ed71cc01f3c01452c5dd0ee94dad5c8\"",
+      "lastModified": "Sat, 12 Sep 2026 19:09:05 GMT",
+      "mime": "image/jpeg",
+      "source": "https://images.dealer.com/autodata/us/large_stockphoto/2024/USD40CAS082A0.jpg"
+    },
+    "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1349/1feca3c680dc44dfd67302fb69bb1117x.jpg": {
+      "file": "1gys4hk90pr258221-2dd473ea4b.jpg",
+      "width": 1024,
+      "height": 768,
+      "bytes": 108845,
+      "etag": "\"1feca3c680dc44dfd67302fb69bb1117\"",
+      "lastModified": "Wed, 30 Sep 2026 15:13:24 GMT",
+      "mime": "image/jpeg",
+      "source": "https://pictures.web.dealer.com/c/cadillacofsouthcharlottecadillac/1349/1feca3c680dc44dfd67302fb69bb1117x.jpg"
+    },
+    "https://images.dealer.com/autodata/us/large_stockphoto-color/2015/USC50HYS022C1/TCM.jpg": {
+      "file": "km8jucagxfu103980-aba75f3715.jpg",
+      "width": 640,
+      "height": 480,
+      "bytes": 27436,
+      "etag": "\"26b6a7e393369adff67228287e0ec95c\"",
+      "lastModified": "Thu, 10 Sep 2026 18:48:09 GMT",
+      "mime": "image/jpeg",
+      "source": "https://images.dealer.com/autodata/us/large_stockphoto-color/2015/USC50HYS022C1/TCM.jpg"
     }
   },
-  "fetched": 35,
+  "fetched": 155,
   "failures": 0
 }
