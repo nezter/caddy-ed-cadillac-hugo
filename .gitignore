@@ -88,6 +88,7 @@ site/data/.inventory-sync-state.json
 site/data/.inventory-cache.json
 site/data/.inventory-robots.json
 site/data/.inventory-audit.log
+site/data/inventory-sync-state.json
 
 # webpack CMS bundle sidecar
 site/static/cms.js.LICENSE.txt

@@ -68,7 +68,12 @@ What the site *does* publish, server-side on every inventory page, is
 Three small requests, no JavaScript execution, no headless browser, complete
 records including real photographs. `scripts/inventory/structured.js` handles it.
 
-Pages read: `/new-inventory/`, `/certified-inventory/`, `/bargain-inventory/`.
+Pages read: `/new-inventory/`, `/certified-inventory/`, `/bargain-inventory/`,
+plus each family's `?start=` pagination. The site publishes 24 vehicles per
+page and links the next offset in its own JSON-LD (`relatedLink`), so a
+complete pull walks exactly the pages the site points at, in small batches
+with a pause between them. October 2026: 157 new + 8 certified + 4
+pre-owned = 169 vehicles across 10 requests, no rate limiting.
 
 **Trade-off:** it reflects what the site chooses to publish, so a vehicle the
 site omits will not appear. A direct DMS feed stays more authoritative if one
@@ -84,8 +89,10 @@ the caller.
 |---|---|---|
 | Minimum interval between pulls | **24 h** | `INVENTORY_CRAWL_MIN_HOURS` |
 | Permitted window | **01:00–05:00** server local | `INVENTORY_CRAWL_WINDOW_START` / `_END` |
-| Delay between requests | **3000 ms** | `INVENTORY_CRAWL_DELAY_MS` |
-| Requests per run | **3** (one per page) | — |
+| Delay between requests | **3000 ms** (+ up to 1200 ms jitter) | `INVENTORY_CRAWL_DELAY_MS` / `_JITTER_MS` |
+| Batch size, then a pause | **4 requests, then 30 s** (the slow dribble) | `INVENTORY_CRAWL_BATCH` / `_BATCH_PAUSE_MS` |
+| Requests per run | **up to 30** (pagination; 10 today) | — |
+| Pages per family | guard at **12** | `INVENTORY_CRAWL_MAX_PAGES` |
 | Consecutive failures before abort | **2** | — |
 | Per-request timeout | 30 s | — |
 

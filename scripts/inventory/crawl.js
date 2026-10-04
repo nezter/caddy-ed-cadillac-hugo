@@ -50,22 +50,23 @@ const DEFAULTS = {
   // Self-identifying. Overridable so you can put a real contact address in it.
   userAgent:
     'caddy-ed-inventory-sync/2.0 (+https://caddyed.com; contact: ed@caddyed.com) inventory sync; once daily, off-peak',
-  // The dealer's legacy JSON inventory endpoints are deprecated and return
-  // {"message":"Legacy inventory endpoints are deprecated…","inventory":[]},
-  // and the listing is a client-side React widget whose server-rendered cards
-  // are skeleton placeholders. What the site does publish, server-side, is
-  // schema.org JSON-LD on each inventory page -- complete, machine-readable,
-  // and needing no JavaScript execution.
-  //
-  // So we request the inventory pages themselves, three small documents, once
-  // a day, off-peak. See scripts/inventory/structured.js.
-  paths: [
-    '/new-inventory/index.htm',
-    '/certified-inventory/index.htm',
-    '/bargain-inventory/index.htm',
+  // The inventory lives on three listing "families" (new / certified /
+  // bargain). Each family is PAGINATED by offset -- 24 vehicles per page,
+  // with the next offset advertised in the page's JSON-LD `relatedLink`
+  // (e.g. ?start=24). March 2026 the New family alone read 157 vehicles,
+  // so a complete pull follows those links: page by page, small batches,
+  // a longer pause between batches, never a burst. See crawl() below.
+  families: [
+    { path: '/new-inventory/index.htm', condition: 'New' },
+    { path: '/certified-inventory/index.htm', condition: 'Certified Pre-Owned' },
+    { path: '/bargain-inventory/index.htm', condition: 'Pre-Owned' },
   ],
-  minDelayMs: 3000,
-  maxRequestsPerRun: 3,
+  minDelayMs: 3000, // floor between ANY two requests
+  batchSize: 4, // requests per batch, then...
+  batchPauseMs: 30000, // ...this long a pause: the slow dribble
+  jitterMs: 1200, // random extra on the floor, so it is not metronomic
+  maxPagesPerFamily: 12, // pagination guard; New needs ~7 at 24/page
+  maxRequestsPerRun: 30, // hard cap across all families
   minIntervalHours: 24,
   windowStartHour: 1, // 01:00 local
   windowEndHour: 5, // 05:00 local
@@ -73,7 +74,9 @@ const DEFAULTS = {
   maxConsecutiveFailures: 2,
 };
 
-const STATE_DIR = path.join(__dirname, '..', '..', 'site', 'data');
+const STATE_DIR = process.env.INVENTORY_CRAWL_STATE_DIR
+  ? path.resolve(process.env.INVENTORY_CRAWL_STATE_DIR)
+  : path.join(__dirname, '..', '..', 'site', 'data');
 const STATE_FILE = path.join(STATE_DIR, '.inventory-sync-state.json');
 const CACHE_FILE = path.join(STATE_DIR, '.inventory-cache.json');
 const ROBOTS_FILE = path.join(STATE_DIR, '.inventory-robots.json');
@@ -86,6 +89,10 @@ function config(overrides = {}) {
     origin: env.INVENTORY_CRAWL_ORIGIN || DEFAULTS.origin,
     userAgent: env.INVENTORY_CRAWL_UA || DEFAULTS.userAgent,
     minDelayMs: Number(env.INVENTORY_CRAWL_DELAY_MS || DEFAULTS.minDelayMs),
+    batchSize: Number(env.INVENTORY_CRAWL_BATCH || DEFAULTS.batchSize),
+    batchPauseMs: Number(env.INVENTORY_CRAWL_BATCH_PAUSE_MS || DEFAULTS.batchPauseMs),
+    jitterMs: Number(env.INVENTORY_CRAWL_JITTER_MS !== undefined ? env.INVENTORY_CRAWL_JITTER_MS : DEFAULTS.jitterMs),
+    maxPagesPerFamily: Number(env.INVENTORY_CRAWL_MAX_PAGES || DEFAULTS.maxPagesPerFamily),
     minIntervalHours: Number(env.INVENTORY_CRAWL_MIN_HOURS || DEFAULTS.minIntervalHours),
     windowStartHour: env.INVENTORY_CRAWL_WINDOW_START !== undefined
       ? Number(env.INVENTORY_CRAWL_WINDOW_START) : DEFAULTS.windowStartHour,
@@ -317,109 +324,165 @@ async function crawl(cfg, { force = false, fetchImpl = fetch, log = () => {} } =
     log('  robots: no rules addressed to this user-agent');
   }
   // Honour a server-declared crawl-delay if it is stricter than ours.
-  const delay = Math.max(cfg.minDelayMs, (robots && robots.crawlDelay ? robots.crawlDelay * 1000 : 0));
-  if (delay > cfg.minDelayMs) log(`  crawl-delay raised to ${delay}ms by robots.txt`);
+  const baseDelay = Math.max(cfg.minDelayMs, (robots && robots.crawlDelay ? robots.crawlDelay * 1000 : 0));
+  if (baseDelay > cfg.minDelayMs) log(`  crawl-delay raised to ${baseDelay}ms by robots.txt`);
+
+  const { nextPageFrom } = require('./structured');
 
   const breaker = new CircuitBreaker(cfg.maxConsecutiveFailures);
   const results = [];
+  const seen = new Set();
+  const completedFamilies = new Set();
   let changed = false;
   let anySuccess = false;
+  let requests = 0;
+  let requestsInBatch = 0;
 
-  for (const p of cfg.paths.slice(0, cfg.maxRequestsPerRun)) {
-    const url = `${cfg.origin}${p}`;
-
-    if (!isAllowed(robots, p)) {
-      log(`  SKIP   ${p} — disallowed by robots.txt`);
-      audit({ event: 'robots-disallow', path: p });
-      continue;
+  /** The slow dribble: a floor between requests, a little jitter so the
+      pattern is not metronomic, and a longer pause every batch of pages --
+      all so a paginated sweep reads as a polite visitor, not a scrape. */
+  async function pace() {
+    if (requests > 0) {
+      const jitter = Math.floor(Math.random() * (cfg.jitterMs || 0));
+      await sleep(baseDelay + jitter);
     }
+    if (requestsInBatch >= cfg.batchSize && requests < cfg.maxRequestsPerRun) {
+      log(`  ${'…'.padEnd(6)} batch of ${cfg.batchSize} done; pausing ${Math.round(cfg.batchPauseMs / 1000)}s`);
+      audit({ event: 'batch-pause', requests });
+      await sleep(cfg.batchPauseMs);
+      requestsInBatch = 0;
+    }
+  }
 
-    if (results.length) await sleep(delay); // never burst
+  const short = (u) => String(u).replace(cfg.origin, '');
 
-    let attempt = 0;
-    for (;;) {
-      try {
-        const headers = { 'user-agent': cfg.userAgent, accept: 'application/json' };
-        // Conditional request: an unchanged site costs one cheap 304.
-        const cachedEntry = state.etags && state.etags[p];
-        if (cachedEntry) {
-          if (cachedEntry.etag) headers['if-none-match'] = cachedEntry.etag;
-          if (cachedEntry.lastModified) headers['if-modified-since'] = cachedEntry.lastModified;
-        }
+  for (const family of cfg.families) {
+    let url = `${cfg.origin}${family.path}`;
+    let page = 0;
+    let familyComplete = false;
 
-        const res = await fetchImpl(url, {
-          headers,
-          signal: AbortSignal.timeout(cfg.requestTimeoutMs),
-          redirect: 'follow',
-        });
+    while (url && page < cfg.maxPagesPerFamily && requests < cfg.maxRequestsPerRun) {
+      const pathname = url.startsWith(cfg.origin) ? url.slice(cfg.origin.length).split('?')[0] : url;
+      if (!isAllowed(robots, pathname)) {
+        log(`  SKIP   ${pathname} — disallowed by robots.txt`);
+        audit({ event: 'robots-disallow', path: pathname });
+        break;
+      }
+      if (seen.has(url)) {
+        log(`  STOP   ${short(url)} — pagination looped back to a page already fetched`);
+        audit({ event: 'pagination-loop', url });
+        familyComplete = true; // nothing more to discover on this branch
+        break;
+      }
+      seen.add(url);
 
-        if (res.status === 304) {
-          log(`  304    ${p} — unchanged since last run`);
-          audit({ event: 'not-modified', path: p });
+      await pace();
+      requests += 1;
+      requestsInBatch += 1;
+      page += 1;
+
+      const entry = { family: family.condition, path: family.path, url };
+      let attempt = 0;
+      let stopFamily = false;
+
+      for (;;) {
+        try {
+          const headers = { 'user-agent': cfg.userAgent, accept: 'text/html' };
+          const cachedEntry = state.etags && state.etags[url];
+          if (cachedEntry) {
+            if (cachedEntry.etag) headers['if-none-match'] = cachedEntry.etag;
+            if (cachedEntry.lastModified) headers['if-modified-since'] = cachedEntry.lastModified;
+          }
+
+          const res = await fetchImpl(url, {
+            headers,
+            signal: AbortSignal.timeout(cfg.requestTimeoutMs),
+            redirect: 'follow',
+          });
+
+          if (res.status === 304) {
+            log(`  304    ${short(url)} — unchanged since last run`);
+            audit({ event: 'not-modified', url });
+            anySuccess = true;
+            breaker.recordSuccess();
+            results.push({ ...entry, notModified: true });
+            // An unchanged page still has to answer "what came next" -- the
+            // stored pointer does.
+            url = cachedEntry && cachedEntry.next ? cachedEntry.next : null;
+            if (!url) familyComplete = true;
+            break;
+          }
+
+          if (res.status === 429 || res.status >= 500) {
+            breaker.recordFailure();
+            state.failures = (state.failures || 0) + 1;
+            saveState(state);
+            const retryAfter = Number(res.headers.get('retry-after')) * 1000 || 0;
+            const backoff = Math.min(120000, baseDelay * 2 ** attempt);
+            const waitMs = Math.max(retryAfter, backoff);
+            if (breaker.tripped) {
+              log(`  BREAK  ${short(url)} — ${res.status} and ${breaker.consecutive} consecutive failures; aborting run`);
+              audit({ event: 'circuit-open', url, status: res.status, consecutive: breaker.consecutive });
+              saveState(state);
+              return { results, changed, aborted: true, completedFamilies };
+            }
+            log(`  ${res.status}   ${short(url)} — backing off ${waitMs}ms (attempt ${attempt + 1})`);
+            await sleep(waitMs);
+            attempt += 1;
+            continue;
+          }
+
+          if (!res.ok) {
+            breaker.recordFailure();
+            log(`  ${res.status}   ${short(url)} — giving up on this page`);
+            audit({ event: 'http-error', url, status: res.status });
+            results.push({ ...entry, error: `HTTP ${res.status}` });
+            stopFamily = true;
+            break;
+          }
+
+          const body = await res.text();
+          const next = nextPageFrom(body, url);
+          state.etags = state.etags || {};
+          state.etags[url] = {
+            etag: res.headers.get('etag') || null,
+            lastModified: res.headers.get('last-modified') || null,
+            next: next && next.startsWith(cfg.origin) ? next : null,
+          };
+          saveState(state);
+          changed = true;
           anySuccess = true;
           breaker.recordSuccess();
-          results.push({ path: p, notModified: true });
+          results.push({ ...entry, body });
+          log(`  ok     ${short(url)} — ${body.length} bytes, next: ` +
+              (state.etags[url].next ? short(state.etags[url].next) : '— last page'));
+          audit({ event: 'fetched', url, status: res.status, bytes: body.length });
+          url = next;
+          if (!url) familyComplete = true;
           break;
-        }
-
-        if (res.status === 429 || res.status >= 500) {
+        } catch (err) {
           breaker.recordFailure();
           state.failures = (state.failures || 0) + 1;
           saveState(state);
-          const retryAfter = Number(res.headers.get('retry-after')) * 1000 || 0;
-          const backoff = Math.min(30000, cfg.minDelayMs * 2 ** attempt);
-          const waitMs = Math.max(retryAfter, backoff);
           if (breaker.tripped) {
-            log(`  BREAK  ${p} — ${res.status} and ${breaker.consecutive} consecutive failures; aborting run`);
-            audit({ event: 'circuit-open', path: p, status: res.status, consecutive: breaker.consecutive });
-            saveState(state);
-            return { results, changed, aborted: true };
+            log(`  BREAK  ${short(url)} — ${err.message}; aborting run`);
+            audit({ event: 'network-error', url, error: err.message });
+            return { results, changed, aborted: true, completedFamilies };
           }
-          log(`  ${res.status}   ${p} — backing off ${waitMs}ms (attempt ${attempt + 1})`);
-          await sleep(waitMs);
+          const backoff = Math.min(60000, baseDelay * 2 ** attempt);
+          log(`  ERR    ${short(url)} — ${err.message}; retrying in ${backoff}ms`);
+          await sleep(backoff);
           attempt += 1;
-          continue;
         }
-
-        if (!res.ok) {
-          breaker.recordFailure();
-          log(`  ${res.status}   ${p} — giving up on this path`);
-          audit({ event: 'http-error', path: p, status: res.status });
-          results.push({ path: p, error: `HTTP ${res.status}` });
-          break;
-        }
-
-        // Inventory pages are HTML, not JSON. Text is stored verbatim and parsed
-        // by scripts/inventory/structured.js, so a malformed page does not throw
-        // inside the rate-limited fetch loop.
-        const body = await res.text();
-        state.etags = state.etags || {};
-        state.etags[p] = {
-          etag: res.headers.get('etag') || null,
-          lastModified: res.headers.get('last-modified') || null,
-        };
-        saveState(state);
-        changed = true;
-        anySuccess = true;
-        breaker.recordSuccess();
-        results.push({ path: p, body });
-        log(`  ok     ${p} — ${res.headers.get('content-length') || '?'} bytes`);
-        audit({ event: 'fetched', path: p, status: res.status });
-        break;
-      } catch (err) {
-        breaker.recordFailure();
-        state.failures = (state.failures || 0) + 1;
-        saveState(state);
-        if (breaker.tripped) {
-          log(`  BREAK  ${p} — ${err.message}; aborting run`);
-          audit({ event: 'network-error', path: p, error: err.message });
-          return { results, changed, aborted: true };
-        }
-        const backoff = Math.min(30000, cfg.minDelayMs * 2 ** attempt);
-        log(`  ERR    ${p} — ${err.message}; retrying in ${backoff}ms`);
-        await sleep(backoff);
-        attempt += 1;
       }
+      if (stopFamily) break;
+    }
+
+    if (familyComplete) {
+      completedFamilies.add(family.condition);
+    } else if (url) {
+      log(`  STOP   ${family.condition}: stopped early (page cap or request cap) — next run continues from the top`);
+      audit({ event: 'family-incomplete', family: family.condition, url });
     }
   }
 
@@ -427,19 +490,29 @@ async function crawl(cfg, { force = false, fetchImpl = fetch, log = () => {} } =
     state.lastSuccessAt = new Date().toISOString();
     saveState(state);
   }
-  return { results, changed, aborted: false };
+  return { results, changed, aborted: false, completedFamilies };
 }
-
 /* ---------------------------------------------------------------- cache -- */
 
 function readCache() {
   return readJson(CACHE_FILE, null);
 }
 
-function writeCache(results) {
+function writeCache(results, { completedFamilies } = {}) {
   const usable = results.filter((r) => r.body);
   if (!usable.length) return false;
-  writeJson(CACHE_FILE, { at: new Date().toISOString(), results: usable });
+  const prev = readCache();
+  const done = completedFamilies || new Set();
+  const merged = new Map();
+  for (const r of (prev && prev.results) || []) {
+    // A family that completed this run is authoritative: pages of it that
+    // are NOT in this run's results are gone from the site (inventory shrank)
+    // and must not linger in the cache and keep sold cars alive.
+    if (r.family && done.has(r.family)) continue;
+    merged.set(r.url || r.path, r);
+  }
+  for (const r of usable) merged.set(r.url || r.path, r);
+  writeJson(CACHE_FILE, { at: new Date().toISOString(), results: [...merged.values()] });
   return true;
 }
 

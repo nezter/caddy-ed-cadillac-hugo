@@ -111,6 +111,9 @@ Source (in order of preference):
   The default source is rate-limited to one pull per 24h inside an off-peak
   window, honours robots.txt, sends conditional requests, identifies itself
   honestly, and aborts rather than retrying a failing endpoint repeatedly.
+  Each family (new / certified / bargain) is PAGINATED -- the crawler follows
+  the site's own ?start= links, 24 vehicles at a time, in small batches with
+  a pause between batches, so a full sweep is a slow dribble, never a burst.
 
 Env:
   INVENTORY_SOURCE_URL    feed for --source http
@@ -121,6 +124,10 @@ Env:
   INVENTORY_CRAWL_WINDOW_START   off-peak window start hour (default 1)
   INVENTORY_CRAWL_WINDOW_END     off-peak window end hour   (default 5)
   INVENTORY_CRAWL_DELAY_MS        min delay between requests (default 3000)
+  INVENTORY_CRAWL_BATCH           requests per batch (default 4)
+  INVENTORY_CRAWL_BATCH_PAUSE_MS  pause between batches (default 30000)
+  INVENTORY_CRAWL_JITTER_MS       random extra per-request delay (default 1200)
+  INVENTORY_CRAWL_MAX_PAGES       pagination guard per family (default 12)
 `);
 }
 
@@ -132,7 +139,7 @@ Env:
  */
 async function loadFromCrawl(args) {
   const cfg = crawler.config();
-  const { results, changed, aborted } = await crawler.crawl(cfg, {
+  const { results, changed, aborted, completedFamilies } = await crawler.crawl(cfg, {
     force: args.force,
     log: (m) => log(m),
   });
@@ -149,18 +156,21 @@ async function loadFromCrawl(args) {
     throw new Error('no inventory data returned and no cache exists yet');
   }
 
-  if (changed) crawler.writeCache(results);
+  if (changed) crawler.writeCache(results, { completedFamilies });
   return shape(usable, 'crawl', cfg.origin);
 }
 
 function shape(results, source, location) {
   // The dealer's inventory pages carry schema.org JSON-LD, which is the only
   // complete server-rendered representation (the JSON API is deprecated and the
-  // React widget ships skeleton placeholders).
-  const { parseInventoryPage } = require('./structured');
-  const { DEFAULT_PAGES } = require('./structured');
-  const vehicles = results.flatMap((r, i) => {
-    const meta = DEFAULT_PAGES.find((p) => p.path === r.path) || {};
+  // React widget ships skeleton placeholders). A family may arrive as several
+  // pages now -- crawl.js follows the site's own ?start= pagination -- so every
+  // result is parsed and the family rides along to carry the condition.
+  const { parseInventoryPage, DEFAULT_PAGES } = require('./structured');
+  const vehicles = results.flatMap((r) => {
+    const meta = r.family
+      ? { condition: r.family }
+      : DEFAULT_PAGES.find((p) => p.path === r.path) || {};
     return parseInventoryPage(r.body, { condition: meta.condition }).records;
   });
   if (!vehicles.length) {

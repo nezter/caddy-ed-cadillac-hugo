@@ -143,6 +143,32 @@ function toRecord(v, { condition } = {}) {
 }
 
 /**
+ * The "next page" a CollectionPage advertises.
+ *
+ * The dealer paginates by offset: 24 vehicles per page, and the current
+ * page's JSON-LD carries `relatedLink: ["…?start=24"]` when there is more
+ * to read. That link -- not a guessed URL -- is how a complete pull walks
+ * the family without ever touching a page the site did not point at.
+ */
+function nextPageFrom(html, pageUrl) {
+  let cp = null;
+  for (const block of extractJsonLd(html)) {
+    if (block && block['@type'] === 'CollectionPage') cp = block;
+  }
+  if (!cp || !cp.relatedLink) return null;
+  const links = Array.isArray(cp.relatedLink) ? cp.relatedLink : [cp.relatedLink];
+  for (const l of links) {
+    const href = typeof l === 'string' ? l : (l && (l['@id'] || l.url)) || '';
+    if (!href || !/[?&]start=\d+/.test(href)) continue;
+    try {
+      return new URL(href, pageUrl || undefined).toString();
+    } catch {
+      return href;
+    }
+  }
+  return null;
+}
+/**
  * Parse one inventory page.
  * @returns {{records: Array, stats: object}}
  */
@@ -171,4 +197,4 @@ function parseInventoryPage(html, { condition } = {}) {
   };
 }
 
-module.exports = { DEFAULT_PAGES, conditionFromName, collectVehicles, extractJsonLd, parseInventoryPage, toRecord };
+module.exports = { DEFAULT_PAGES, conditionFromName, collectVehicles, extractJsonLd, nextPageFrom, parseInventoryPage, toRecord };

@@ -1229,3 +1229,25 @@ jsdom 19/19 (offline keeps follow cards; posts swap in; unconnected tabs
 hide; a newly connected tab appears); built output zero third-party refs;
 permissions vocabulary OK; buttons-live 85/85; mock-gaps 42/42; static 0;
 nav 17/17.
+
+---
+
+## The inventory scrape gets the full list -- politely
+
+Recon: the old fixed-three-pages crawl could only see page one of each
+family. The site paginates by offset (24/page) and publishes the next
+offset in its own JSON-LD relatedLink -- New alone reads 157 vehicles.
+Shipped (scripts/inventory): crawl.js family-aware pagination (follows the
+site's own ?start= links, batches of 4, 30 s pause between batches, 3 s
+floor + jitter, per-URL conditionals with the next-pointer persisted, loop
+guard (the last page points BACK to start=120 -- caught), 12-page/30
+request guards, completion-aware cache merge, state-dir override for
+tests); structured.js nextPageFrom(); index.js family-aware parsing.
+
+Verified: mock-dealer suite 23/23 (batch pauses measured, transient and
+persistent 429, 304 walk, merge semantics). Real dry-run + real sync:
+169 records (157+8+4) across 10 paced requests, no rate limiting, 137 new
+vehicle pages, 0 failures. Build-caught defect fixed: unresolved remote
+image URLs no longer reach front matter (images.js apply() drops them,
+content.js refuses them, favourites-data.html ignores them); 172/173
+pages have mirrored photos; the rest arrive on later daily runs (60/run).

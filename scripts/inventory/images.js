@@ -259,12 +259,25 @@ async function mirror(vehicles, opts = {}) {
      */
     apply(vehicle) {
       const rec = results.get(vehicle.image);
-      if (!rec) return vehicle;
       const next = { ...vehicle };
-      next.image = `vehicles/${rec.file}`;
-      next.image_width = rec.width || undefined;
-      next.image_height = rec.height || undefined;
-      if (rec.source) next.image_source = rec.source;
+      if (rec) {
+        next.image = `vehicles/${rec.file}`;
+        next.image_width = rec.width || undefined;
+        next.image_height = rec.height || undefined;
+        if (rec.source) next.image_source = rec.source;
+        return next;
+      }
+      // No local copy: deferred by the per-run cap, or the fetch failed.
+      // A remote URL must NEVER reach front matter -- Hugo's resource
+      // pipeline treats any string here as a local path and the build
+      // dies. Drop it; the vehicle lists with the bundled placeholder,
+      // and a later run fills the photograph in.
+      if (next.image && /^https?:\/\//i.test(next.image)) {
+        next.image = '';
+        next.image_width = undefined;
+        next.image_height = undefined;
+        delete next.image_source;
+      }
       return next;
     },
   };

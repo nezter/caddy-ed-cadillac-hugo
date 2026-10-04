@@ -150,9 +150,13 @@ function render(vehicle, existing) {
   if (vehicle.price !== undefined) fields.price = vehicle.price;
   if (vehicle.price_note) fields.price_note = vehicle.price_note;
   if (vehicle.subtitle) fields.subtitle = vehicle.subtitle;
-  if (vehicle.image) fields.image = vehicle.image;
-  if (vehicle.image_width) fields.image_width = vehicle.image_width;
-  if (vehicle.image_height) fields.image_height = vehicle.image_height;
+  // Local paths only. A URL here would be treated as an asset path by the
+  // site's resource pipeline and would break the build -- see images.js
+  // apply(). Guarding at write time too means no future feed shape can
+  // smuggle one through.
+  if (vehicle.image && !/^https?:\/\//i.test(vehicle.image)) fields.image = vehicle.image;
+  if (fields.image && vehicle.image_width) fields.image_width = vehicle.image_width;
+  if (fields.image && vehicle.image_height) fields.image_height = vehicle.image_height;
   if (vehicle.gallery && vehicle.gallery.length) fields.gallery = vehicle.gallery;
   if (vehicle.vin) fields.vin = vehicle.vin;
   if (vehicle.stock) fields.stock = vehicle.stock;
