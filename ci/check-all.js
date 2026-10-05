@@ -129,6 +129,11 @@ const CHECKS = [
     why: 'a vehicle record editor cannot mis-save, and unknown fields are refused whole',
   },
   {
+    name: 'articles admin',
+    file: 'check-articles-admin.js',
+    why: 'the article queue refuses bad saves whole and every reply tells the truth about publishing',
+  },
+  {
     name: 'admin portal',
     file: 'check-admin-portal.js',
     needsBuild: true,

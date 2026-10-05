@@ -1,0 +1,87 @@
+{{ define "main" }}
+{{- $author := .Params.author | default "Ed Portello" -}}
+<article>
+<section class="stage stage--deep grain">
+  <div class="wrap pad">
+    <p class="eyebrow">{{ .Date.Format "January 2, 2006" }} &middot; {{ $author }}</p>
+    <h1 class="display" style="max-width:26ch">{{ .Title }}</h1>
+    {{ with .Description }}<p class="lede">{{ . }}</p>{{ end }}
+  </div>
+</section>
+
+<section style="background:#fff;padding-block:clamp(2rem,4vw,3.5rem)">
+  <div class="wrap">
+    {{ with .Params.image }}
+    <figure class="plate plate--4x3" style="margin:0 0 2rem">
+      {{ partial "static-picture.html" (dict
+          "src" .
+          "alt" $.Title
+          "sizes" "(max-width: 40rem) 92vw, 800px"
+          "widths" (slice 400 800 1200)
+          "loading" "eager") }}
+    </figure>
+    {{ end }}
+    <div class="prose" style="max-width:70ch">{{ .Content }}</div>
+    {{ with .Params.tags }}
+    <p style="margin-top:1.6rem">{{ range . }}<span class="chip" style="margin-right:.4rem">{{ . }}</span>{{ end }}</p>
+    {{ end }}
+  </div>
+</section>
+
+{{/* Guided links back into the site -- the whole point of an article. */}}
+<section class="stage grain pad--tight">
+  <div class="wrap">
+    <p class="kicker"><i>&rarr;</i><span>Keep going</span></p>
+    <div class="bento bento--3" style="margin-top:1.2rem">
+      <div class="tile">
+        <h3>See what is in stock</h3>
+        <p>Every Cadillac on the lot, with photographs and the real number on it.</p>
+        <p style="margin-top:.8rem"><a class="chip" href="/inventory/">Browse inventory</a></p>
+      </div>
+      <div class="tile">
+        <h3>Value your trade</h3>
+        <p>Know what your current car is worth before the conversation starts.</p>
+        <p style="margin-top:.8rem"><a class="chip" href="/trade-in/">Trade-in valuation</a></p>
+      </div>
+      <div class="tile">
+        <h3>Talk to Ed</h3>
+        <p>One person, start to finish &mdash; call or send a note about any vehicle.</p>
+        <p style="margin-top:.8rem"><a class="chip" href="/contact/">Contact Ed</a></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+{{ $related := .Site.RegularPages.Related . | first 3 }}
+{{ with $related }}
+<section class="stage grain pad--tight">
+  <div class="wrap">
+    <p class="kicker"><i>&#9670;</i><span>Related reading</span></p>
+    <div class="bento bento--3" style="margin-top:1.2rem">
+      {{ range . }}
+      <div class="tile">
+        <h3 style="font-size:var(--text-lg)"><a href="{{ .RelPermalink }}">{{ .Title }}</a></h3>
+        <p>{{ .Description | default (.Summary | plainify | truncate 120) }}</p>
+      </div>
+      {{ end }}
+    </div>
+  </div>
+</section>
+{{ end }}
+</article>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": {{ .Title | jsonify | safeJS }},
+  "description": {{ (.Description | default (.Summary | plainify | truncate 160)) | jsonify | safeJS }},
+  "datePublished": {{ .Date.Format "2006-01-02T15:04:05Z07:00" | jsonify | safeJS }},
+  "dateModified": {{ (.Lastmod | default .Date).Format "2006-01-02T15:04:05Z07:00" | jsonify | safeJS }},
+  "author": {"@type": "Person", "name": {{ $author | jsonify | safeJS }}},
+  "publisher": {"@type": "AutoDealer", "name": {{ .Site.Title | jsonify | safeJS }}, "url": {{ .Site.BaseURL | jsonify | safeJS }}},
+  "mainEntityOfPage": {{ .Permalink | jsonify | safeJS }}{{ with .Params.image }},
+  "image": {{ . | absURL | jsonify | safeJS }}{{ end }}
+}
+</script>
+{{ end }}

@@ -4,5 +4,6 @@ Allow: /
 Sitemap: https://caddyed.com/sitemap.xml
 
 Disallow: /admin/
+Disallow: /cms.html
 Disallow: /404.html
 Disallow: /offline/

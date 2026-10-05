@@ -50,6 +50,7 @@
     "seed:vehicles": "node scripts/seed-vehicles.js",
     "seed:analytics": "node scripts/seed-analytics.js",
     "seed:all": "npm run seed:sales-reps && npm run seed:test-data && npm run seed:vehicles && npm run seed:analytics",
+    "articles:apply": "node scripts/articles/apply.js",
     "inventory:sync": "node scripts/inventory/index.js",
     "inventory:check": "node scripts/inventory/index.js --validate",
     "import:netlify-forms": "node scripts/import-netlify-forms.js",

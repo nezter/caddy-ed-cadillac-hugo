@@ -65,6 +65,8 @@ const ALL_PERMISSIONS = [
   'assignments_read', 'assignments_write',
   'preferences_read', 'preferences_write',
   'inventory_read', 'inventory_write',
+  'articles_read', 'articles_write',
+  'seo_read',
 ];
 
 /**
@@ -87,6 +89,8 @@ const PERMISSIONS_BY_ROLE = {
     'interactions_read', 'interactions_write',
     'assignments_read', 'assignments_write',
     'inventory_read', 'inventory_write',
+    'articles_read', 'articles_write',
+    'seo_read',
   ],
   sales_rep: () => [
     'view_customers', 'view_leads',
