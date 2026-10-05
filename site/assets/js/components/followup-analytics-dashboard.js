@@ -401,6 +401,24 @@ function viewCampaignDetails(campaignId) {
   // TODO: Implement campaign detail view
 }
 
+/* Boot.
+ *
+ * This component used to be exported for a page script to construct by
+ * name. The bundler wraps each entry as an IIFE, so that name never
+ * existed at runtime and the page threw on every click. It mounts itself
+ * now, quietly skipping pages that do not carry its mount point.
+ */
+function bootFollowupAnalyticsDashboard() {
+  if (!document.getElementById('followup-analytics-dashboard')) return;
+  new FollowupAnalyticsDashboard('followup-analytics-dashboard');
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', bootFollowupAnalyticsDashboard);
+} else {
+  bootFollowupAnalyticsDashboard();
+}
+
 // Export for use in other files
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = FollowupAnalyticsDashboard;

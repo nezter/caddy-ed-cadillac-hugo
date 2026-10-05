@@ -1,0 +1,86 @@
+{{- /*
+  admin-sections -- the one list of the admin's sections.
+
+  Both the hub (layouts/admin/list.html) and the navigation on every admin
+  page (partials/admin-nav.html) render from this, so a page added to the
+  section appears in both places or neither. ci/check-admin-portal.js
+  asserts that every content/admin/*.md page is named exactly once here and
+  that every route named here resolves.
+
+  Fields:
+    url       where the page lives (trailing slash except /admin/cms,
+              which rewrites out of the section to the CMS)
+    nav       the short label the nav shows
+    title     the heading the hub card shows
+    body      one sentence for the hub card
+    tag       live | sync | git -- how a change there reaches the site
+    tagLabel  what the tag says on the card
+*/ -}}
+{{- $sections := slice
+  (dict
+    "label" "Website"
+    "note" "What the public site shows."
+    "items" (slice
+      (dict "url" "/admin/inventory/" "nav" "Inventory" "title" "Inventory"
+            "tag" "sync" "tagLabel" "Next sync + deploy"
+            "body" "Every vehicle on the site. Edit pricing, specs and descriptions; hold a car off the lot; promote it as one of Ed's picks.")
+      (dict "url" "/admin/favourites/" "nav" "Favourites" "title" "Favourites — Ed's picks"
+            "tag" "live" "tagLabel" "Live"
+            "body" "Feature promotion: pin vehicles to the top of the home page fleet, badged as Ed's picks, with no rebuild.")
+      (dict "url" "/admin/settings/" "nav" "Settings" "title" "Site Settings"
+            "tag" "live" "tagLabel" "Live"
+            "body" "Phone, hours, the banner and headline copy. Changed during business hours, live on the next page load.")
+      (dict "url" "/admin/social/" "nav" "Social" "title" "Social Feed"
+            "tag" "live" "tagLabel" "Live"
+            "body" "Connect the accounts Ed posts from; test each connection and refresh the cached feed.")
+      (dict "url" "/admin/email/" "nav" "Email" "title" "Email Delivery"
+            "tag" "live" "tagLabel" "Live"
+            "body" "The mail provider every enquiry is sent through. Until this is set, nothing is emailed — leads wait here.")
+    ))
+  (dict
+    "label" "Sales & Leads"
+    "note" "The pipeline, from first enquiry to appointment."
+    "items" (slice
+      (dict "url" "/admin/dashboard/" "nav" "Dashboard" "title" "Sales Dashboard" "tag" "live" "tagLabel" "Live"
+            "body" "The signed-in rep's leads, appointments and performance metrics.")
+      (dict "url" "/admin/leads/" "nav" "Leads" "title" "Lead Management" "tag" "live" "tagLabel" "Live"
+            "body" "Deduplication stats, duplicate checks and the manual merge tool.")
+      (dict "url" "/admin/leads-intake/" "nav" "New lead" "title" "New Lead" "tag" "live" "tagLabel" "Live"
+            "body" "Enter a lead taken by phone or in person into the same pipeline the website forms feed.")
+      (dict "url" "/admin/followup-campaigns/" "nav" "Campaigns" "title" "Follow-up Campaigns" "tag" "live" "tagLabel" "Live"
+            "body" "Automated follow-up campaigns and their trigger rules, plus the analytics view of opens, clicks and conversion attribution.")
+      (dict "url" "/admin/lead-scoring/" "nav" "Scoring" "title" "Lead Scoring" "tag" "live" "tagLabel" "Live"
+            "body" "Where leads sit on the scoring curve, and which ones are hot.")
+      (dict "url" "/admin/lead-assignment/" "nav" "Assignment" "title" "Lead Assignment" "tag" "live" "tagLabel" "Live"
+            "body" "Rep workload, the unassigned queue, and manual assignment.")
+      (dict "url" "/admin/interactions/" "nav" "Interactions" "title" "Interaction History" "tag" "live" "tagLabel" "Live"
+            "body" "Every customer touchpoint in one timeline, and a form to add more.")
+      (dict "url" "/admin/search/" "nav" "Search" "title" "Search" "tag" "live" "tagLabel" "Live"
+            "body" "Cross-entity search across customers, leads, interactions, appointments and vehicle stock.")
+    ))
+  (dict
+    "label" "Customers & Calendar"
+    "note" ""
+    "items" (slice
+      (dict "url" "/admin/bookings/" "nav" "Bookings" "title" "Bookings & Calendar" "tag" "live" "tagLabel" "Live"
+            "body" "Every test-drive request, and push them onto the Google Calendar.")
+      (dict "url" "/admin/customers/" "nav" "Customers" "title" "Customers" "tag" "live" "tagLabel" "Live"
+            "body" "The book of customers assigned to the signed-in rep.")
+      (dict "url" "/admin/gdpr/" "nav" "Customer data" "title" "Customer Data" "tag" "live" "tagLabel" "Live"
+            "body" "Answer a request for someone's data, or remove it.")
+    ))
+  (dict
+    "label" "System"
+    "note" ""
+    "items" (slice
+      (dict "url" "/admin/staff/" "nav" "Staff" "title" "Staff" "tag" "live" "tagLabel" "Live"
+            "body" "Who can sign in to this site, and what each of them may do.")
+      (dict "url" "/admin/audit/" "nav" "Audit" "title" "Audit log" "tag" "live" "tagLabel" "Live"
+            "body" "What changed, who changed it, and when.")
+      (dict "url" "/admin/sign-in/" "nav" "Sign in" "title" "Staff Sign In" "tag" "live" "tagLabel" "Live"
+            "body" "The door: sessions for the sales tools.")
+      (dict "url" "/admin/cms" "nav" "CMS" "title" "Content (CMS)" "tag" "git" "tagLabel" "Needs a deploy"
+            "body" "The legacy editor for blog and hand-written pages. Saves commit to the repository and publish on the next deploy — for changes that must be live now, use Site Settings or the Inventory manager.")
+    ))
+-}}
+{{- return $sections -}}

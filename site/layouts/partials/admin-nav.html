@@ -1,0 +1,20 @@
+{{- /*
+  admin-nav -- the section navigation shown on every admin page.
+
+  Rendered from partials/admin-sections.html, the same data the hub uses,
+  so the two can never disagree about what exists. The current page carries
+  aria-current and a rail; /admin/cms is matched exactly and never marked,
+  because following it leaves this section for the CMS.
+*/ -}}
+{{- $current := .RelPermalink -}}
+<nav class="admin-nav" aria-label="Admin sections">
+  {{- range (partial "admin-sections.html" .) }}
+  <div class="admin-nav__group">
+    <span class="admin-nav__label">{{ .label }}</span>
+    {{- range .items }}
+    <a href="{{ .url }}"{{ if eq $current .url }} class="is-current" aria-current="page"{{ end }}>{{ .nav }}</a>
+    {{- end }}
+  </div>
+  {{- end }}
+  <a class="admin-nav__site" href="/">View the site</a>
+</nav>

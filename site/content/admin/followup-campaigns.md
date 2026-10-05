@@ -5,6 +5,7 @@ layout: "admin"
 styles:
   - components/admin.css
 scripts:
+  - components/admin-tabs.js
   - components/followup-campaign-manager.js
   - components/followup-analytics-dashboard.js
 ---
@@ -12,23 +13,18 @@ scripts:
 Automated follow-up campaigns and their trigger rules, plus the analytics view
 of opens, clicks and conversion attribution.
 
-<!-- Known defect, not fixed here: nothing constructs these two components.
-     The tab script this page used to carry referenced FollowupCampaignManager
-     and FollowupAnalyticsDashboard by bare name, but the bundler wraps each
-     entry as an IIFE, so those class names are module-scoped and the script
-     threw ReferenceError on every click. The bootstrap has to move into the
-     modules themselves before the tabs can work.
-
-     This used to be a visible blockquote on the page. It is a note for whoever
-     wires the components up, not something a sales user can act on. -->
+<!-- Wiring: components/admin-tabs.js switches the panels below, and each
+     component mounts itself against its host id. (The page's old script
+     referenced the classes by bare name -- impossible under IIFE bundling,
+     which is why it threw on every click.) -->
 
 
 <div class="admin-tabs" role="tablist" aria-label="Follow-up sections">
   <button type="button" class="tab-button active" data-tab="campaigns" role="tab" aria-selected="true" aria-controls="campaigns-tab">
-    <i class="fas fa-cogs" aria-hidden="true"></i> Campaign Manager
+    Campaign Manager
   </button>
   <button type="button" class="tab-button" data-tab="analytics" role="tab" aria-selected="false" aria-controls="analytics-tab">
-    <i class="fas fa-chart-bar" aria-hidden="true"></i> Analytics Dashboard
+    Analytics Dashboard
   </button>
 </div>
 

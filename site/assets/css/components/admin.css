@@ -1153,3 +1153,118 @@ button:disabled {
   .action-config-row { flex-direction: column; align-items: stretch; }
   .action-config-row label { min-inline-size: 0; }
 }
+
+/* --------------------------------------------------------------------------
+   10. Grouped navigation + the admin hub (2026-10)
+   --------------------------------------------------------------------------
+   The nav is rendered from partials/admin-sections.html, the same data the
+   hub renders, so both gain a page at once. Groups keep the twenty-odd
+   destinations scannable instead of one flat run-on list. */
+
+.admin-nav { align-items: baseline; row-gap: var(--space-2); }
+
+.admin-nav__group {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-3);
+}
+
+.admin-nav__group + .admin-nav__group {
+  padding-inline-start: var(--space-4);
+  border-inline-start: 1px solid var(--border);
+}
+
+.admin-nav__label {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.admin-nav a.is-current {
+  color: var(--text);
+  font-weight: 600;
+  text-decoration: none;
+  border-block-end: 2px solid var(--accent);
+  padding-block-end: 2px;
+}
+
+.admin-nav__site { margin-inline-start: auto; font-weight: 600; }
+
+.admin-hub {
+  display: grid;
+  gap: var(--space-7);
+  margin-block-start: var(--space-6);
+}
+
+.admin-hub__group { display: grid; gap: var(--space-3); }
+
+.admin-hub__group > h2 {
+  margin: 0;
+  font-size: var(--text-xl);
+}
+
+.admin-hub__note {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+.admin-hub__cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+  gap: var(--space-4);
+}
+
+.admin-hub-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  color: inherit;
+  text-decoration: none;
+  transition: border-color var(--dur) var(--ease);
+}
+
+.admin-hub-card:hover { border-color: var(--accent); }
+
+.admin-hub-card h3 {
+  margin: 0;
+  font-size: var(--text-lg);
+  color: var(--accent);
+}
+
+.admin-hub-card:hover h3 { color: var(--accent-hover); }
+
+.admin-hub-card p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+}
+
+.admin-hub-card__tag {
+  align-self: flex-start;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border: 1px solid currentColor;
+  border-radius: var(--radius-pill);
+}
+
+.admin-hub-card__tag--live { color: var(--admin-ok); }
+.admin-hub-card__tag--sync { color: var(--admin-warn); }
+.admin-hub-card__tag--git { color: var(--admin-info); }
+
+@media (max-width: 47.99rem) {
+  .admin-nav__site { margin-inline-start: 0; }
+  .admin-hub__cards { grid-template-columns: 1fr; }
+}

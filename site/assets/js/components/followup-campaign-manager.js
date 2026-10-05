@@ -864,6 +864,24 @@ class FollowupCampaignManager {
   }
 }
 
+/* Boot.
+ *
+ * This component used to be exported for a page script to construct by
+ * name. The bundler wraps each entry as an IIFE, so that name never
+ * existed at runtime and the page threw on every click. It mounts itself
+ * now, quietly skipping pages that do not carry its mount point.
+ */
+function bootFollowupCampaignManager() {
+  if (!document.getElementById('followup-campaign-manager')) return;
+  new FollowupCampaignManager('followup-campaign-manager');
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', bootFollowupCampaignManager);
+} else {
+  bootFollowupCampaignManager();
+}
+
 // Export for use in other modules
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = FollowupCampaignManager;
