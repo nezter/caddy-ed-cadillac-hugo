@@ -75,6 +75,16 @@ load:
 - **Follow-up campaigns** — `/admin/followup-campaigns`.
 - **Google Calendar** — per person, one row each in `google_calendar_tokens`.
   Needs `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`, which do not exist yet.
+- **Articles** (`/admin/articles`) — added 2026-10-04. Write articles by
+  hand or through the API agents use (`docs/CONTENT-API.md`). Queued rows
+  become `site/content/articles/<slug>.md` on `npm run articles:apply`;
+  drafts stay invisible until Published is ticked. The editor's link panel
+  exists to keep articles linking back into inventory and the site.
+- **SEO audit** (`/admin/seo`) — added 2026-10-04. Scores any page on
+  demand: title/description lengths, headings, canonical, Open Graph, alt
+  coverage, internal links, schema, and local signals (the service area in
+  the copy). Same pure scorer behind `/.netlify/functions/seo-score`, so
+  an agent gets identical numbers.
 - **Vehicle records** (`/admin/inventory`) — added 2026-10-04. Every
   vehicle's pricing, specs and page description are editable, and a car can
   be held off the site or promoted. Saves go to the `vehicle_edits` queue and

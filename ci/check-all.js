@@ -134,6 +134,11 @@ const CHECKS = [
     why: 'the article queue refuses bad saves whole and every reply tells the truth about publishing',
   },
   {
+    name: 'seo score',
+    file: 'check-seo-score.js',
+    why: 'a score someone acts on cannot lie in either direction',
+  },
+  {
     name: 'admin portal',
     file: 'check-admin-portal.js',
     needsBuild: true,

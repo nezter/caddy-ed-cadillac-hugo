@@ -202,6 +202,10 @@
     "streetAddress": {{ $address | jsonify | safeJS }},
     "addressCountry": "US"
   },
+  "areaServed": [
+    {"@type": "City", "name": "Charlotte"},
+    {"@type": "City", "name": "Pineville"}
+  ],
   "openingHoursSpecification": [
     {
       "@type": "OpeningHoursSpecification",

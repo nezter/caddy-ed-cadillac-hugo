@@ -353,6 +353,10 @@
   "address": {"@type":"PostalAddress",
     "streetAddress": {{ .Site.Params.address | default "10725 Pineville Rd, Pineville, NC 28134" | jsonify | safeJS }},
     "addressCountry": "US"},
+  "areaServed": [
+    {"@type": "City", "name": "Charlotte"},
+    {"@type": "City", "name": "Pineville"}
+  ],
   "openingHoursSpecification": [
     {"@type":"OpeningHoursSpecification",
      "dayOfWeek":["Monday","Tuesday","Wednesday","Thursday","Friday"],

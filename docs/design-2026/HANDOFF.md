@@ -1296,3 +1296,44 @@ description); plus the standing battery and every ci check green.
 To use it after the next deploy: sign in, /admin/ has one card per job.
 Record edits need TURSO_* wherever the sync runs and apply at the next
 sync + deploy; the Ed's-pick star is live on the next page load.
+
+---
+
+## Articles, the agent API, and the SEO engine
+
+Owner ask: every front-end aspect managed from the panel; a place where
+articles can be GENERATED and POSTED, reachable by an LLM agent through an
+endpoint API (or MCP); SEO scoring per page; internal linking between
+articles and pages; on-page local/conquest signals for South Charlotte.
+
+Articles (new at all -- the post templates had never been fed):
+- Queue pipeline identical to vehicle edits: /admin/articles (or the API)
+  -> article_drafts -> `npm run articles:apply` writes
+  site/content/articles/<slug>.md -> deploy publishes. Hand-written files
+  are never touched; drafts apply as draft: true.
+- The editor carries an insert-link panel over the fixed pages, every
+  article and the newest vehicles -- internal linking as a click.
+- Public side: /articles/ index + article template with Article JSON-LD,
+  guided back-links (inventory / trade-in / contact) and related reading.
+  Starter article written only from facts the site already states.
+- docs/CONTENT-API.md is the agent contract: auth, every field with
+  limits, examples, the saved-vs-published reply semantics, and suggested
+  MCP tool shapes.
+
+SEO (new): one pure scorer (netlify/functions/utils/seo-score.js) behind
+both /admin/seo and /.netlify/functions/seo-score: title/description
+lengths, single H1, heading structure, canonical, Open Graph, alt
+coverage, internal links, JSON-LD validity, expected schema per section,
+and -- labelled as the on-page half of local intent, not a ranking
+promise -- the service area named in the main content (header/footer
+stripped so chrome cannot fake it). AutoDealer JSON-LD on the home and
+about pages gained areaServed (Charlotte, Pineville).
+
+Also fixed: robots.txt never shipped its real content -- site/static's
+file lost to Hugo's generated default in every build, so Sitemap: and
+Disallow /admin/ were absent. Now a layouts/robots.txt template; the
+static file is gone.
+
+Verified: check-articles-admin 24/24; queue->file loop 17/17 against a
+throwaway DB; jsdom editor 12/12; scorer fixtures 19/19; jsdom SEO page
+10/10; build checks; portal 10/10; permissions and endpoint gates green.
