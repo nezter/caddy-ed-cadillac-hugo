@@ -6,14 +6,32 @@ No MCP server ships in this repository -- these endpoints are the stable
 interface, and an MCP wrapper is a thin adapter over them (see the last
 section for the tool shapes we would suggest).
 
-## Authentication
+## Authentication -- agents get their own identity
 
-- Staff session token, sent as `Authorization: Bearer <token>`.
-- Tokens come from the sign-in flow at `/admin/sign-in/`; the admin pages
-  keep theirs in `localStorage` under `caddyed_admin_token`.
-- Permissions are per-rep (`sales_reps.permissions`). What each endpoint
-  needs is stated below; an agent's operator grants them in `/admin/staff`.
-- A 401 body is honest about it (`code: "unauthenticated"`); a 503 with
+**An agent should not borrow a person's token.** Create an agent key at
+`/admin/agents`: a name, scopes (the same permission vocabulary staff
+have), an optional expiry. The secret (`cdy1_...`) is shown exactly once
+and stored only as a SHA-256 hash; present it as:
+
+    Authorization: Bearer cdy1_...
+
+What the key can do is exactly its scopes. Revocation is instant;
+`agent.create` / `agent.revoke` are audited; every action the key takes is
+audited as the agent (`agent:<id>`, role `agent`), never as a person. The
+`agents_read` / `agents_write` permissions can never be granted to a key
+-- agents cannot mint agents. Keys are resolved in
+`utils/auth-middleware.js`, the same chokepoint staff tokens pass through,
+so scopes are enforced identically for both.
+
+Notes to pass along with any instruction:
+
+- Endpoints that gate by HUMAN ROLE (`allowedRoles` -- e.g. the
+  vehicle-features POST) refuse agent keys by design; the scoped endpoints
+  below are the agent surface.
+- Staff session tokens (from `/admin/sign-in/`, kept by the admin pages in
+  `localStorage` as `caddyed_admin_token`) remain for people; keys are for
+  agents and automation.
+- A 401 body is honest (`code: "unauthenticated"`); a 503 with
   `code: "database-not-configured"` means the deployment has no database and
   NOTHING was saved -- never treat it as success.
 

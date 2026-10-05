@@ -139,6 +139,11 @@ const CHECKS = [
     why: 'a score someone acts on cannot lie in either direction',
   },
   {
+    name: 'agents admin',
+    file: 'check-agents-admin.js',
+    why: 'agent identities cannot be minted without scope limits, and secrets cannot be read back',
+  },
+  {
     name: 'admin portal',
     file: 'check-admin-portal.js',
     needsBuild: true,

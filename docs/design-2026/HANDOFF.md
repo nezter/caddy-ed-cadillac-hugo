@@ -1337,3 +1337,35 @@ static file is gone.
 Verified: check-articles-admin 24/24; queue->file loop 17/17 against a
 throwaway DB; jsdom editor 12/12; scorer fixtures 19/19; jsdom SEO page
 10/10; build checks; portal 10/10; permissions and endpoint gates green.
+
+---
+
+## Agent identities: scoped keys, managed from the portal
+
+Owner ask: how does an agent reach the AI/API surface, and where is the
+identity management so agent access can be controlled. The honest state
+before this: agents borrowed a staff member's session token -- no
+separate identity, no scoping, no independent revocation, and the audit
+trail could not tell agent from person.
+
+Now: /admin/agents manages first-class agent keys.
+- utils/agent-keys.js: `cdy1_` + 32 random bytes; SHA-256 hash + display
+  prefix in the `agent_keys` table; secret returned exactly once. Scopes
+  validated against the staff permission vocabulary; agents_* scopes are
+  never grantable (no self-propagation). resolve() fails closed: unknown,
+  revoked, expired and no-database are distinct answers; last_used_at is
+  stamped (throttled).
+- utils/auth-middleware.js: an agent-key branch runs BEFORE Identity and
+  JWT (a key is neither, and must not need JWT_SECRET). Scopes enforce
+  exactly like staff permissions; allowedRoles endpoints (human roles)
+  refuse agents by design -- documented.
+- agents-admin.js: list/create/revoke behind agents_read/agents_write;
+  the create reply is the only place a secret exists outside the agent's
+  hands; agent.create/agent.revoke are audited.
+
+Verified end to end against a real sqlite database and the REAL
+middleware: create -> authenticate as agent -> scope refusal -> unknown
+key 401 -> revoke -> instant 401; the stored row is a hash, not the
+secret; no-database fails closed (13/13). API check 29/29 (crypto,
+vocabulary, refusals, one-shot secret). jsdom of the page 9/9. Portal,
+permissions and endpoint gates green.

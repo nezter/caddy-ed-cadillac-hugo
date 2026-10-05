@@ -1,0 +1,41 @@
+/* agents-admin.css -- /admin/agents. Create form, key list, the one-time
+   secret panel. */
+
+.ag-layout { display: grid; gap: var(--space-5); }
+.ag-panel {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  padding: var(--space-4);
+}
+.ag-panel h2 { margin: 0 0 var(--space-3); font-size: var(--text-lg); }
+
+.ag-scopes { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: var(--space-1) var(--space-3); margin-block: var(--space-2); }
+.ag-scope { display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-sm); }
+.ag-scope code { font-size: var(--text-xs); color: var(--text-muted); }
+
+.ag-list { display: grid; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); }
+.ag-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-3);
+  border-block-end: 1px solid var(--border);
+}
+.ag-row:last-child { border-block-end: 0; }
+.ag-row__name { font-weight: 600; }
+.ag-row__meta { font-size: var(--text-xs); color: var(--text-muted); }
+.ag-row__chips { display: flex; flex-wrap: wrap; gap: var(--space-1); margin-block-start: var(--space-1); }
+.ag-chip { font-size: var(--text-xs); padding: 1px 8px; border: 1px solid var(--border); border-radius: var(--radius-pill); color: var(--text-muted); }
+.ag-chip--active { color: var(--admin-ok); border-color: currentColor; }
+.ag-chip--revoked, .ag-chip--expired { color: var(--admin-warn); border-color: currentColor; }
+
+.ag-secret {
+  margin-block: var(--space-3);
+  padding: var(--space-3);
+  border: 1px dashed var(--admin-warn);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--admin-warn) 8%, transparent);
+}
+.ag-secret code { display: block; margin-block: var(--space-2); overflow-wrap: anywhere; font-size: var(--text-sm); }

@@ -118,6 +118,18 @@ async function authenticateRequest(event, options = {}) {
     return { authenticated: false, user: null };
   }
 
+  // Agent keys: first-class identities for LLM agents and automation.
+  //
+  // An agent presents `Authorization: Bearer cdy1_...`, created and scoped
+  // in /admin/agents. This branch runs BEFORE Identity and before JWT on
+  // purpose: an agent key is neither, it does not need JWT_SECRET to be
+  // usable, and letting the other schemes fail against it first would
+  // report a working key as a broken token. Resolution fails closed --
+  // unknown, revoked, expired and no-database are their own answers.
+  if (/^cdy1_[A-Za-z0-9_-]{20,}$/.test(authToken)) {
+    return authenticateWithAgentKey(authToken, { requiredPermissions, allowedRoles });
+  }
+
   try {
     // Check if token is blacklisted
     if (isTokenBlacklisted(authToken)) {
@@ -493,6 +505,49 @@ function normalisePermissions(value) {
 
     return { authenticated: true, user };
   }
+
+/**
+ * A presented agent key -> an authenticated 'agent' actor, or an honest
+ * refusal. Scopes are checked against requiredPermissions exactly like a
+ * staff member's permissions; `allowedRoles` endpoints (which list human
+ * roles) refuse agents, because 'agent' is not among them -- that is the
+ * intended behaviour, not an oversight.
+ */
+async function authenticateWithAgentKey(rawKey, options) {
+  const { requiredPermissions = [], allowedRoles = [] } = options || {};
+  try {
+    const AgentKeys = require('./agent-keys');
+    const result = await AgentKeys.resolve(rawKey);
+    if (!result.ok) {
+      if (result.status === 'unavailable') {
+        return { authenticated: false, error: errorHandler.serverError(result.message) };
+      }
+      return { authenticated: false, error: errorHandler.unauthorizedError(result.message || 'Unknown agent key') };
+    }
+    const scopes = Array.isArray(result.agent.scopes) ? result.agent.scopes : [];
+    if (allowedRoles.length > 0 && !allowedRoles.includes('agent')) {
+      return { authenticated: false, error: errorHandler.forbiddenError('Insufficient permissions') };
+    }
+    if (requiredPermissions.length > 0 && !requiredPermissions.every((p) => scopes.includes(p))) {
+      return { authenticated: false, error: errorHandler.forbiddenError('Insufficient permissions') };
+    }
+    return {
+      authenticated: true,
+      agent: true,
+      user: {
+        id: 'agent:' + result.agent.id,
+        firstName: result.agent.name,
+        lastName: '',
+        email: '',
+        role: 'agent',
+        permissions: scopes,
+      },
+    };
+  } catch (err) {
+    console.error('[auth-middleware] agent key check failed:', err && err.message);
+    return { authenticated: false, error: errorHandler.serverError('Agent key could not be verified') };
+  }
+}
 
 module.exports = {
   authenticateRequest,

@@ -80,6 +80,13 @@ load:
   become `site/content/articles/<slug>.md` on `npm run articles:apply`;
   drafts stay invisible until Published is ticked. The editor's link panel
   exists to keep articles linking back into inventory and the site.
+- **Agent access** (`/admin/agents`) — added 2026-10-04. First-class
+  identities for LLM agents: scoped keys (`cdy1_...`), the secret shown
+  once and stored only as a hash, expiry optional, revocation instant.
+  `utils/auth-middleware.js` resolves keys at the same chokepoint staff
+  tokens pass, so scopes are enforced identically; agent actions are
+  audited as the agent. `agents_read`/`agents_write` are never grantable
+  to a key — agents cannot mint agents. See docs/CONTENT-API.md.
 - **SEO audit** (`/admin/seo`) — added 2026-10-04. Scores any page on
   demand: title/description lengths, headings, canonical, Open Graph, alt
   coverage, internal links, schema, and local signals (the service area in
