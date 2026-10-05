@@ -1,0 +1,164 @@
+name: Deploy Dev Lane
+
+# =============================================================================
+# The dev lane -- the Netlify-shaped flow on a site whose remote builders are
+# disabled.
+#
+# Every push to the working branch (and a manual dispatch) builds the site on
+# the self-hosted runner -- hardware we own, so ZERO Netlify build minutes --
+# and uploads the prebuilt directory to Netlify's draft channel with a stable
+# `dev` alias:
+#
+#     https://dev--vibrant-ritchie-0cef93.netlify.app
+#
+# The same `netlify deploy --dir` mechanism deploy.yml uses, deliberately
+# without `--prod`: this workflow has no production path at all. Production
+# stays a separate, human decision (see .github/workflows/deploy.yml).
+#
+# Deliberately NOT here:
+#   * --prod. The prod workflow is the only one that passes it.
+#   * pull_request triggers. This repository is PUBLIC and a PR run executes
+#     code on a self-hosted runner; pushes and dispatches are restricted to
+#     people who can already run code here. Same doctrine as ci-cd.yml.
+#
+# Credentials: NETLIFY_AUTH_TOKEN (+ optional NETLIFY_SITE_ID) repo secrets.
+# The site id falls back to the one in this repository, which is public.
+# =============================================================================
+
+on:
+  push:
+    branches:
+      - modernize/netlify-build-2026
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Why is the dev lane being refreshed?'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+# One dev-lane deploy at a time; a newer push supersedes an older run.
+concurrency:
+  group: deploy-dev
+  cancel-in-progress: true
+
+env:
+  CI_HOST: 127.0.0.1
+  CI_USER: gha
+  IMAGE: caddy-netlify-build:2026
+  SITE_ID: 532a7445-ce96-40c1-bebb-b9d14a0d0e10
+  DEV_ALIAS: dev
+
+jobs:
+  deploy-dev:
+    name: Build, verify, and upload the dev lane
+    runs-on: [self-hosted, caddy-ci]
+    timeout-minutes: 45
+    env:
+      # Same per-run workdir pattern as ci-cd.yml so concurrent or cancelled
+      # runs cannot delete each other's files mid-build.
+      REMOTE_WORKDIR: /var/lib/gitlab-runner/gha-work/${{ github.job }}-caddy-${{ github.run_id }}
+    steps:
+      - name: Verify the build image exists
+        run: |
+          set -euo pipefail
+          podman image exists "$IMAGE" \
+            || { echo "::error::image $IMAGE missing -- run: ./ci/run.sh image"; exit 1; }
+
+      - name: Require Netlify credentials
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+        run: |
+          set -euo pipefail
+          # Fail BEFORE any build work: a deploy that dies on a missing token
+          # after two minutes has told you nothing new.
+          if [ -z "$NETLIFY_AUTH_TOKEN" ]; then
+            echo "::error::secret NETLIFY_AUTH_TOKEN is not set on this repository"
+            echo "Add it via repo Settings -> Secrets and variables -> Actions."
+            echo "Token needs deploy rights on the site and nothing else."
+            exit 1
+          fi
+
+      - uses: actions/checkout@v7
+
+      - name: Production build (via ci/run.sh, in the pinned image)
+        env:
+          # ci/run.sh deletes its per-run workdir on exit; hold it open so the
+          # publish dir can be pulled back into the checkout below.
+          CLEANUP: 0
+        run: ./ci/run.sh build
+
+      - name: Pull the publish dir back from the CI-host workdir
+        run: |
+          set -euo pipefail
+          rsync -az "${CI_USER}@${CI_HOST}:${REMOTE_WORKDIR}/site/public/" site/public/
+          rm -rf "${REMOTE_WORKDIR:-/nonexistent}"
+          test -f site/public/index.html || { echo "::error::no index.html after the pull-back"; exit 1; }
+          echo "pages: $(find site/public -name '*.html' | wc -l)"
+
+      - name: Asset gate against the artifact
+        run: |
+          set -euo pipefail
+          # Same gate the production deploy runs, in the build image -- the
+          # runner host has no node.
+          podman run --rm -v "$PWD":/site:Z -w /site "$IMAGE" \
+            bash -lc 'node ci/verify-build.js site/public'
+
+      - name: Upload prebuilt site to the dev lane (no build minutes used)
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID_SECRET: ${{ secrets.NETLIFY_SITE_ID }}
+          REASON: ${{ inputs.reason }}
+        run: |
+          set -euo pipefail
+          SITE="${NETLIFY_SITE_ID_SECRET:-$SITE_ID}"
+          # Inputs are free text; strip the one character that could break the
+          # message quoting below.
+          SAFE_REASON="${REASON//\"/}"
+          MSG="dev lane: ${GITHUB_SHA} by ${GITHUB_ACTOR}${SAFE_REASON:+ -- $SAFE_REASON}"
+          # The CLI runs from the pinned image so the tool version is
+          # reproducible. NOT --prod: this workflow cannot touch production.
+          # Env vars carry the values into the container so no nested quoting
+          # touches them.
+          podman run --rm -v "$PWD":/site:Z -w /site \
+            -e NETLIFY_AUTH_TOKEN -e NETLIFY_SITE_ID="$SITE" \
+            -e DEPLOY_MSG="$MSG" -e DEV_ALIAS="$DEV_ALIAS" \
+            "$IMAGE" \
+            bash -lc 'netlify deploy --site="$NETLIFY_SITE_ID" --dir=site/public --functions=netlify/functions --alias="$DEV_ALIAS" --message="$DEPLOY_MSG"' \
+            2>&1 | tee deploy-log.txt
+          # The CLI prints the deploy URL and the alias URL. Surface both.
+          DEPLOY_URL=$(grep -Eo 'https://[a-z0-9-]+--vibrant-ritchie-0cef93\.netlify\.app' deploy-log.txt | head -1 || true)
+          echo "Deploy URL: ${DEPLOY_URL:-<none printed>}"
+          {
+            echo "### Dev lane updated"
+            echo ""
+            echo "- Alias: https://${DEV_ALIAS}--vibrant-ritchie-0cef93.netlify.app"
+            echo "- Deploy: ${DEPLOY_URL:-not parsed from CLI output}"
+            echo "- Commit: \`${GITHUB_SHA}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Smoke test the dev lane
+        run: |
+          set -euo pipefail
+          BASE="https://${DEV_ALIAS}--vibrant-ritchie-0cef93.netlify.app"
+          fail=0
+          # / and /inventory/ must be 200; /admin/ is gated, so a redirect is
+          # the correct answer there; /health must reach the function alias.
+          for pair in "/ 200" "/inventory/ 200" "/health 200" "/admin/ 302"; do
+            url="$BASE${pair% *}"
+            want="${pair#* }"
+            code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 25 "$url" || echo 000)
+            echo "$code (want $want)  $url"
+            [ "$code" = "$want" ] || fail=1
+          done
+          if [ "$fail" != "0" ]; then
+            echo "::error::dev lane smoke test failed"
+            exit 1
+          fi
+          echo "dev lane is up: $BASE"
+
+      - name: Clean up the CI-host workdir
+        if: always()
+        run: rm -rf "${REMOTE_WORKDIR:-/nonexistent}" || true
