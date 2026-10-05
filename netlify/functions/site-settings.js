@@ -59,7 +59,14 @@ const CORS = {
 const ALLOWED_ORIGINS = [
   'https://caddyed.com',
   'https://www.caddyed.com',
+  // The Netlify lanes this repo runs. The shared cors-middleware already
+  // accepts any *.netlify.app origin; this endpoint keeps an exact list on
+  // purpose, so every lane that should be trusted is named here -- the CI
+  // dev lane (deploy-dev.yml, alias `dev`) and the older deploy-preview
+  // lane. Same-origin admin usage sends no Origin header and is unaffected;
+  // this list is what the cross-origin paths check.
   'https://deploy-preview--vibrant-ritchie-0cef93.netlify.app',
+  'https://dev--vibrant-ritchie-0cef93.netlify.app',
 ];
 
 /**

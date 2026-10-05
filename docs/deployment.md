@@ -126,6 +126,22 @@ typing `deploy` to confirm, refuses a dirty working tree, re-runs the asset
 gate against the downloaded artifact, and smoke-tests `caddyed.com`
 afterwards.
 
+`.github/workflows/deploy-dev.yml` is the DEV LANE, the Netlify-shaped flow
+for a site whose remote builders are off. Every push to
+`modernize/netlify-build-2026` (and a manual dispatch) builds on the
+self-hosted runner, re-runs the asset gate, and uploads the prebuilt
+directory with `netlify deploy --dir --functions` to the draft channel
+under the stable alias:
+
+    https://dev--vibrant-ritchie-0cef93.netlify.app
+
+No `--prod` exists anywhere in it, so production cannot move without the
+workflow above. It stops before doing any work if the `NETLIFY_AUTH_TOKEN`
+repo secret is missing (that is the one manual setup step;
+`NETLIFY_SITE_ID` is optional and defaults to this repository's public
+site id), then smoke-tests `/`, `/inventory/`, `/health` and the gated
+`/admin/` (302 expected) against the alias.
+
 ## Adding a build step
 
 1. Edit `scripts/build-for-netlify.js` (ordered, labelled, fail-fast).
