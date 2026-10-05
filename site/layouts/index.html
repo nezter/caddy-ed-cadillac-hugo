@@ -30,7 +30,7 @@
     <div class="hero__split">
       <div class="hero__content">
         <p class="eyebrow">{{ .Site.Params.dealer_name | default "Cadillac Sales Specialist" }}</p>
-        <h1>Find the Cadillac you actually want.</h1>
+        <h1 data-setting="home.hero_heading">Find the Cadillac you actually want.</h1>
         {{ with $tagline }}
         <p class="lede">{{ . }}</p>
         {{ end }}
@@ -127,8 +127,8 @@
            page, and it is the thing that fills this column to roughly the
            height of the social feed beside it. */}}
       <div class="stay-connected">
-        <h2 class="stay-connected__title">Stay connected to Ed, between visits</h2>
-        <p class="stay-connected__body">
+        <h2 class="stay-connected__title" data-setting="signage.heading">Stay connected to Ed, between visits</h2>
+        <p class="stay-connected__body" data-setting="signage.intro">
           New stock lands here as it arrives, alongside what Ed is posting on
           Facebook and X. Ask about any vehicle without leaving the page, or set
           an alert for the one you are waiting on.

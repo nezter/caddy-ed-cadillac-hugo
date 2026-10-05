@@ -77,42 +77,27 @@ const ALLOWED_ORIGINS = [
 const KEYS = {
   'signage.heading': {
     kind: 'text', appliesTo: 'signage', label: 'Stay-connected heading',
-    seed: 'Stay connected',
+    seed: 'Stay connected to Ed, between visits',
   },
   'signage.intro': {
     kind: 'textarea', appliesTo: 'signage', label: 'Stay-connected intro',
-    seed: 'Three ways to hear from us, and the only two that are really us: this phone, and this inbox.',
+    seed: 'New stock lands here as it arrives, alongside what Ed is posting on Facebook and X. Ask about any vehicle without leaving the page, or set an alert for the one you are waiting on.',
   },
   'signage.alerts_heading': {
     kind: 'text', appliesTo: 'signage', label: 'Stock-alert heading',
-    seed: 'Get a note when the right one lands',
+    seed: 'Get an email when stock lands',
   },
   'signage.alerts_body': {
     kind: 'textarea', appliesTo: 'signage', label: 'Stock-alert body',
-    seed: 'Tell us the model and the budget. You get one note when something matches — not a mailing list.',
+    seed: 'Used only for stock alerts from Ed. Nothing else, ever.',
   },
-  'signage.phone_label': {
-    kind: 'text', appliesTo: 'signage', label: 'Phone chip label',
-    seed: 'Call or text Ed',
+  'home.hero_heading': {
+    kind: 'text', appliesTo: 'home', label: 'Home hero heading',
+    seed: 'Find the Cadillac you actually want.',
   },
-  'signage.email_label': {
-    kind: 'text', appliesTo: 'signage', label: 'Email chip label',
-    seed: 'Email Ed',
-  },
-  'signage.sms_label': {
-    kind: 'text', appliesTo: 'signage', label: 'Text chip label',
-    seed: 'Text Ed directly',
-  },
-  'contact.email': {
-    kind: 'text', appliesTo: 'contact', label: 'Public email address',
-    // ed@caddyed.com is what the site already shows. The domain is a fact, not a
-    // preference, which is why this is a setting and not a guess: the owner
-    // confirms the mailbox, we do not invent one.
-    seed: 'ed@caddyed.com',
-  },
-  'contact.hours_note': {
-    kind: 'textarea', appliesTo: 'contact', label: 'Opening-hours note',
-    seed: '',
+  'footer.tagline': {
+    kind: 'textarea', appliesTo: 'footer', label: 'Footer tagline',
+    seed: 'Luxury Cadillac sales and factory-trained service in South Charlotte. One person, start to finish.',
   },
   'banner.text': {
     kind: 'text', appliesTo: 'global', label: 'Site-wide banner (empty = off)',
@@ -123,6 +108,25 @@ const KEYS = {
     seed: 'info',
   },
 };
+
+/* WHY THE LIST SHRANK (2026-10)
+ *
+ * It used to carry phone/email/SMS chip labels, a public email and an
+ * hours note. None of those had an element carrying its data-setting
+ * attribute, so every one of them was a control that changed nothing --
+ * and the two chip seeds did not even match the copy on the page. They
+ * are gone. A settings page is a promise; a key with no element is a
+ * broken one wearing a badge.
+ *
+ * The email and hours are still not editable here for a mechanical reason
+ * worth stating: both appear inside mailto:/tel: HREFS as well as as text
+ * (the footer link, the contact-page link, the stay-connected chip). The
+ * apply script only rewrites textContent, by design -- so changing the
+ * text without the href would show one address and dial another. When a
+ * href-aware apply exists, they come back. See docs/ADMIN.md.
+ *
+ * Every key above is verified: the build script checks that a non-banner
+ * key has at least one [data-setting] element in the built HTML. */
 
 function isAllowedOrigin(headers = {}) {
   const origin = headers.origin || headers.Origin;

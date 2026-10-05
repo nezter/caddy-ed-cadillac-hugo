@@ -209,3 +209,29 @@ Dump the page and check it against `extractJsonLd` / `collectVehicles` in
 structured data rather than internal markup, it is far more stable than a DOM
 scrape would be — but it is still a contract, and `git log` on that file is the
 history of every change to it.
+
+## The admin edit queue
+
+`/admin/inventory` edits vehicle records. A save cannot touch the site
+directly -- this site deploys prebuilt and a Function cannot edit the
+repository -- so edits land in the `vehicle_edits` table and are applied to
+the content files by this toolkit:
+
+- A full sync merges pending rows into the vehicles BEFORE the diff, so a
+  feed refresh cannot clobber an admin's change (the plan and the diff show
+  the merged values, and so do the written files).
+- `npm run inventory:sync -- --apply-edits` applies pending rows to the
+  files alone -- no feed, no crawl, no rate limit. This is the fast path
+  for a price change and the only path that can reach a vehicle the feed no
+  longer lists.
+- Applied rows are marked with the `updated_at` they carried when they were
+  read, so an edit saved while a run executes stays pending for the next.
+
+Editable from the admin: price, price note, tagline, mileage, colours, body
+style, drivetrain, transmission, engine, mpg, condition, availability
+(hold off / put back), and the page description (empty = restore the
+generated text). Identity fields -- title, year, make, model, trim, VIN,
+stock, photo -- are the feed's and stay read-only. Blanking a normal field
+reverts it to the feed's value at the next full sync. The queue needs
+`TURSO_DATABASE_URL` / `TURSO_AUTH_TOKEN` wherever the sync runs; without
+them the sync says so in one line and continues untouched.

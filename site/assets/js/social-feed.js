@@ -112,8 +112,16 @@
   /** One read of the site's own cached endpoint. Never polls, never retries. */
   function loadCachedFeed() {
     var c = window.CADDY_CONNECT || {};
-    if (!c.socialEndpoint || !window.fetch) return;
-    fetch(c.socialEndpoint, { headers: { Accept: 'application/json' } })
+    // The literal fallback is deliberate, not belt-and-braces: ci/verify-endpoints.js
+    // proves an endpoint is wired by scanning reachable ENTRY files, and the
+    // config object alone would hide this one from the gate that exists to
+    // prove it is reachable (staff-session.js documents the same constraint
+    // for the same reason). connect-config.html overrides it with the same
+    // value; the fallback only matters to the scanner and to a page whose
+    // config script failed to load.
+    var endpoint = c.socialEndpoint || '/.netlify/functions/social-feed';
+    if (!window.fetch) return;
+    fetch(endpoint, { headers: { Accept: 'application/json' } })
       .then(function (r) { return r.ok ? r.json() : null; })
       .catch(function () { return null; })
       .then(function (data) {

@@ -1251,3 +1251,48 @@ vehicle pages, 0 failures. Build-caught defect fixed: unresolved remote
 image URLs no longer reach front matter (images.js apply() drops them,
 content.js refuses them, favourites-data.html ignores them); 172/173
 pages have mirrored photos; the rest arrive on later daily runs (60/run).
+
+---
+
+## The admin portal, completed: organized, linked, and editable to the records
+
+Owner ask: make the admin manage the front of the site -- inventory
+management, feature promotion, content -- all linked and working, well
+organized. Recon found 18 admin pages, a hub that did not exist (a bare
+'Admins' heading on the default list template), a flat nav missing three
+pages, the follow-up page's known defect (nothing constructed its
+components), and a settings page whose keys mostly matched no element.
+
+Shipped, in three commits:
+1. The front door: /admin/ hub (20 cards over four groups) + grouped nav on
+   every page, both rendered from one source (partials/admin-sections.html)
+   so they cannot disagree; ci/check-admin-portal.js asserts every page is
+   named exactly once and every route resolves. The follow-up components
+   mount themselves and components/admin-tabs.js does the switching
+   (aria-controls is where the button-to-panel mapping lived; the first cut
+   toggled buttons but not panels and the jsdom check caught it).
+2. /admin/inventory: every vehicle record editable -- pricing, specs,
+   description, hold off / put back -- plus inline Ed's-pick promotion.
+   Saves queue in vehicle_edits; scripts/inventory/edits.js applies them at
+   sync time or via --apply-edits (no crawl). The queue survives syncs (an
+   overridden field cannot be clobbered by a feed refresh) and marks rows
+   applied with a read-time snapshot so mid-run edits stay pending. Identity
+   fields stay read-only; blanking a field reverts to the feed.
+3. Content wiring + gates: site_settings keys rebuilt around elements that
+   actually exist (seed text corrected to the built copy, dead keys removed),
+   hero + stay-connected + footer tagline wired; ci/verify-endpoints.js now
+   passes completely for the first time (real dispositions for the social,
+   settings, staff, gdpr, mail and audit functions; platform-invoked
+   functions -- scheduled exports.config and event functions -- no longer
+   fail the alias check they can never satisfy; social-feed's endpoint
+   literal moved where the gate can see it).
+
+Proven, not assumed: jsdom drives of the built follow-up page (9/9) and the
+built inventory editor (16/16: rows, chips, editor values, save payload,
+star, filters); the queue->file loop end to end against a throwaway DB
+(21/21: apply, dry-run, idempotence, re-edit, revert, release, restore
+description); plus the standing battery and every ci check green.
+
+To use it after the next deploy: sign in, /admin/ has one card per job.
+Record edits need TURSO_* wherever the sync runs and apply at the next
+sync + deploy; the Ed's-pick star is live on the next page load.

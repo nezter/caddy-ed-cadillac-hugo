@@ -75,6 +75,14 @@ load:
 - **Follow-up campaigns** — `/admin/followup-campaigns`.
 - **Google Calendar** — per person, one row each in `google_calendar_tokens`.
   Needs `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`, which do not exist yet.
+- **Vehicle records** (`/admin/inventory`) — added 2026-10-04. Every
+  vehicle's pricing, specs and page description are editable, and a car can
+  be held off the site or promoted. Saves go to the `vehicle_edits` queue and
+  are applied to the content files by the inventory sync (or
+  `npm run inventory:sync -- --apply-edits`), then published by the next
+  deploy — deliberately the build path, because inventory pages are the ones
+  search traffic lands on. The one live control on that page is the Ed's-pick
+  star, which writes the same table the home page already reads.
 - **Email** (`/admin/email`) — added 2026-10-01. Pick SendGrid / Mailgun /
   Resend / Postmark / custom, and the host, port and username fill themselves in.
   Type the one secret, press **Save and send a test**. Writes one row to
@@ -129,12 +137,22 @@ Both sources show the badge and both reorder. They are not required to agree,
 because they are not the same control: one is a repository decision, one is a
 runtime one.
 
-### The signage copy
+### The signage copy — now partly a control (2026-10-04)
 
-"Stay connected", the stock-alert pitch, the SMS/email/phone chips, and
-`connect.js`'s config all live in Hugo partials and `site/data/social.yaml`.
-There is no admin surface for any of it. Changing the alert copy means editing
-a template and deploying.
+The stay-connected heading and intro, the stock-alert heading and body, the
+home hero heading and the footer tagline are editable at `/admin/settings`
+and live on the next page load. That is the whole list, and it is the whole
+list ON PURPOSE: `ci/check-admin-portal.js` and the settings page itself now
+assume every non-banner key has an element carrying its `data-setting`
+attribute, so a key that changes nothing fails the build rather than sitting
+in the admin looking useful.
+
+Three keys were REMOVED for exactly that reason: the phone/email/SMS chip
+labels and a public-email key had no matching element (their seeds did not
+even match the copy on the page), and the email and hours appear inside
+mailto:/tel: hrefs as well as as text — the apply script only rewrites text,
+so changing the text without the href would show one address and dial
+another. They come back when an href-aware apply exists.
 
 ---
 

@@ -124,6 +124,17 @@ const CHECKS = [
     why: 'connecting social accounts from the admin cannot mis-save or leak a token',
   },
   {
+    name: 'inventory admin',
+    file: 'check-inventory-admin.js',
+    why: 'a vehicle record editor cannot mis-save, and unknown fields are refused whole',
+  },
+  {
+    name: 'admin portal',
+    file: 'check-admin-portal.js',
+    needsBuild: true,
+    why: 'every admin page is reachable from the hub and the nav, and every route resolves',
+  },
+  {
     name: 'inquiry path',
     file: 'check-inquiry-path.js',
     needsDatabase: true,

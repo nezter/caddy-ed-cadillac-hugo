@@ -532,9 +532,24 @@ if (manifest) {
   // `operational` endpoints are reached by a monitor or an alias, not a page.
   // Check them against the alias table instead of the bundle graph, so putting
   // one here is not a way to dodge the `wired` check.
+  //
+  // Two kinds of operational function have NEITHER an alias NOR a page
+  // caller, and failing them would be wrong: the Netlify scheduler runs
+  // scheduled functions (their file exports `config.schedule`), and the
+  // platform invokes event functions like `submission-created` itself. An
+  // alias cannot reach either, so the check accepts both shapes.
+  const platformInvoked = (n) => {
+    if (n === 'submission-created') return true;
+    try {
+      return /exports\.config\s*=/.test(fs.readFileSync(path.join(FUNCTIONS_DIR, n + '.js'), 'utf8'));
+    } catch (e) {
+      return false;
+    }
+  };
   const ops = manifest.operational || {};
   const lyingOps = Object.keys(ops).filter(
-    (n) => ![...aliases.values()].some((to) => to.includes(`functions/${n}`)) && !liveFnNames.has(n)
+    (n) => ![...aliases.values()].some((to) => to.includes(`functions/${n}`)) &&
+      !liveFnNames.has(n) && !platformInvoked(n)
   );
   if (lyingOps.length) {
     console.error(

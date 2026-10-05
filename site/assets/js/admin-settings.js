@@ -40,6 +40,8 @@
 
   var GROUP_LABELS = {
     signage: 'Signage — the Stay Connected hub',
+    home: 'Home page',
+    footer: 'Footer',
     contact: 'Contact',
     global: 'Site-wide',
   };
