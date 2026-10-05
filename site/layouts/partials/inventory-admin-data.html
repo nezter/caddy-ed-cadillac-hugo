@@ -1,0 +1,63 @@
+{{- /*
+  inventory-admin-data.html -- every vehicle, for the /admin/inventory editor.
+
+  Same shape as favourites-data.html and for the same reasons: the vehicle
+  list is build-time content, there is deliberately no endpoint that returns
+  "every vehicle" (the detail pages are rendered from front matter, and a
+  runtime list would be a second source of truth that could drift), and the
+  page opts in with `inventoryData: true`.
+
+  Unlike the favourites list this one INCLUDES sold / held-off vehicles, so
+  the admin can put one back, and carries the page's own body text so the
+  description editor opens with what the page actually shows. The body is
+  capped at 6000 characters -- enough for any real description, small enough
+  that 173 of them do not make the page unusable.
+*/ -}}
+{{- $vehicles := sort (where site.RegularPages "Section" "inventory") "Title" -}}
+{{- $out := slice -}}
+{{- range $vehicles -}}
+  {{- $img := "" -}}
+  {{- with .Params.image }}{{ if not (or (hasPrefix . "http://") (hasPrefix . "https://")) }}{{ $img = . }}{{ end }}{{ end -}}
+  {{- $thumb := "" -}}
+  {{- with $img -}}
+    {{- range (slice . (printf "vehicles/%s" .) (printf "img/%s" .)) -}}
+      {{- if not $thumb -}}
+        {{- with resources.Get . -}}
+          {{- $thumb = (.Resize "320x q60").RelPermalink -}}
+        {{- end -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+  {{- $body := "" -}}
+  {{- with .RawContent -}}{{- $body = (. | strings.TrimSpace) -}}{{- end -}}
+  {{- if gt (len $body) 6000 -}}{{- $body = substr $body 0 6000 -}}{{- end -}}
+  {{- $out = $out | append (dict
+      "slug" .File.ContentBaseName
+      "title" .Title
+      "subtitle" (.Params.subtitle | default "")
+      "stock" (.Params.stock | default "")
+      "vin" (.Params.vin | default "")
+      "price" (.Params.price | default 0)
+      "price_note" (.Params.price_note | default "")
+      "mileage" (.Params.mileage | default 0)
+      "year" (.Params.year | default "")
+      "make" (.Params.make | default "")
+      "model" (.Params.model | default "")
+      "trim" (.Params.trim | default "")
+      "status" (.Params.status | default "")
+      "body_style" (.Params.body_style | default "")
+      "exterior_color" (.Params.exterior_color | default "")
+      "interior_color" (.Params.interior_color | default "")
+      "drivetrain" (.Params.drivetrain | default "")
+      "transmission" (.Params.transmission | default "")
+      "engine" (.Params.engine | default "")
+      "mpg" (.Params.mpg | default 0)
+      "available" (ne .Params.available false)
+      "unavailable_reason" (.Params.unavailable_reason | default "")
+      "pinned" (eq .Params.featured true)
+      "thumb" $thumb
+      "page" .RelPermalink
+      "body" $body
+      "synced" (.Params.inventory_sync_synced | default "")) -}}
+{{- end -}}
+<script>window.INVENTORY_VEHICLES = {{ $out | jsonify | safeJS }};</script>

@@ -1,0 +1,168 @@
+/* ==========================================================================
+   inventory-admin.css -- /admin/inventory, the vehicle record editor.
+   ==========================================================================
+   Layout: a filter bar, a scrolling list, and an editor panel beside it (an
+   overlay-width aside that stacks under the list on small screens). Tokens
+   come from main.css; status colours from admin.css's admin-local block.
+   Nothing here is required by JS beyond the class names it renders. */
+
+.inv-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: flex-end;
+  padding: var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.inv-bar__field { display: grid; gap: var(--space-1); flex: 1 1 10rem; min-inline-size: 8rem; }
+.inv-bar__field > span {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.inv-bar__field .input { inline-size: 100%; }
+.inv-bar__check { display: inline-flex; align-items: center; gap: var(--space-2); font-size: var(--text-sm); padding-block-end: var(--space-2); }
+
+.inv-count {
+  margin-block: var(--space-3) var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.inv-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(20rem, 26rem);
+  gap: var(--space-5);
+  align-items: start;
+}
+
+@media (max-width: 63.99rem) {
+  .inv-layout { grid-template-columns: 1fr; }
+  .inv-editor { position: static !important; }
+}
+
+.inv-list {
+  display: grid;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  max-block-size: 34rem;
+  overflow-y: auto;
+}
+
+.inv-row { display: flex; align-items: stretch; border-block-end: 1px solid var(--border); }
+.inv-row:last-child { border-block-end: 0; }
+.inv-row.is-selected { background: color-mix(in srgb, var(--accent) 6%, transparent); }
+
+.inv-row__open {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: center;
+  inline-size: 100%;
+  padding: var(--space-3);
+  background: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.inv-row__open:hover { background: color-mix(in srgb, var(--accent) 4%, transparent); }
+
+.inv-row__img { inline-size: 64px; block-size: 48px; object-fit: cover; border-radius: var(--radius-sm); background: var(--bg-subtle, var(--bg)); }
+.inv-row__img--blank { display: inline-block; border: 1px dashed var(--border); }
+.inv-row__body { display: grid; gap: 2px; min-inline-size: 0; }
+.inv-row__title { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.inv-row__meta { font-size: var(--text-xs); color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.inv-row__chips { display: flex; gap: var(--space-1); flex-wrap: wrap; margin-block-start: 2px; }
+.inv-row__nums { display: grid; gap: 2px; justify-items: end; text-align: end; }
+.inv-row__price { font-weight: 600; white-space: nowrap; }
+.inv-row__mi { font-size: var(--text-xs); color: var(--text-muted); white-space: nowrap; }
+
+.inv-chip {
+  font-size: var(--text-xs);
+  padding: 1px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.inv-chip--hold { color: var(--admin-warn); border-color: currentColor; }
+.inv-chip--pending { color: var(--admin-info); border-color: currentColor; }
+.inv-chip--pick { color: var(--accent); border-color: currentColor; }
+
+.inv-star {
+  align-self: center;
+  margin-inline-end: var(--space-3);
+  inline-size: 2.25rem;
+  block-size: 2.25rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: none;
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  cursor: pointer;
+  flex: none;
+}
+.inv-star:hover { border-color: var(--accent); color: var(--accent); }
+.inv-star.is-on { color: var(--accent); border-color: var(--accent); }
+
+.inv-editor {
+  position: sticky;
+  inset-block-start: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  padding: var(--space-4);
+  max-block-size: calc(100vh - 6rem);
+  overflow-y: auto;
+}
+
+.inv-editor__head h2 { margin: 0; font-size: var(--text-xl); line-height: var(--leading-snug); }
+.inv-editor__id { margin: var(--space-1) 0 0; color: var(--text-muted); font-size: var(--text-sm); }
+.inv-editor__links { margin: var(--space-2) 0 0; font-size: var(--text-sm); }
+.inv-editor__note {
+  margin-block: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--admin-info) 10%, transparent);
+  color: var(--text);
+  font-size: var(--text-sm);
+}
+
+.inv-group {
+  border: 0;
+  border-block-start: 1px solid var(--border);
+  margin: 0;
+  padding: var(--space-3) 0 0;
+}
+.inv-group legend {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 0;
+  margin-block-end: var(--space-2);
+}
+
+.inv-radio { display: flex; align-items: center; gap: var(--space-2); padding-block: var(--space-1); font-size: var(--text-sm); }
+
+.inv-empty { padding: var(--space-5); color: var(--text-muted); text-align: center; }
+
+.settings-status--ok { background: color-mix(in srgb, var(--admin-ok) 14%, transparent); color: var(--admin-ok); }
+
+.inv-editor__pick { margin-inline-start: auto; }
+
+@media (max-width: 47.99rem) {
+  .inv-row__nums { display: none; }
+  .inv-row__open { grid-template-columns: 48px minmax(0, 1fr); }
+  .inv-row__img { inline-size: 48px; block-size: 36px; }
+}

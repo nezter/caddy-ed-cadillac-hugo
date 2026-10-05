@@ -35,11 +35,12 @@ const syncState = require('./sync-state');
 const vehicleOps = require('./vehicle-ops');
 const crawler = require('./crawl');
 const images = require('./images');
+const edits = require('./edits');
 const { ensureDir, listManaged, contentPath, render, parseFrontMatter } = require('./content');
 
 /* ---------------------------------------------------------------- args -- */
 function parseArgs(argv) {
-  const args = { dryRun: false, prune: false, validate: false, source: null, file: null, write: false };
+  const args = { dryRun: false, prune: false, validate: false, source: null, file: null, write: false, applyEdits: false, noEdits: false };
   for (let i = 0; i < argv.length; i += 1) {
     const a = argv[i];
     if (a === '--dry-run' || a === '-n') args.dryRun = true;
@@ -49,6 +50,8 @@ function parseArgs(argv) {
     else if (a === '--prune') args.prune = true;
     else if (a === '--no-prune') args.prune = false;
     else if (a === '--validate') args.validate = true;
+    else if (a === '--apply-edits') args.applyEdits = true;
+    else if (a === '--no-edits') args.noEdits = true;
     else if (a === '--source') args.source = argv[++i];
     else if (a === '--file' || a === '-f') args.file = argv[++i];
     // --refresh <slug|vin>  check one specific vehicle instead of a full scan
@@ -90,6 +93,9 @@ ${C.bold}inventory:sync${C.reset} — pull vehicle inventory into Hugo content
   --validate             only validate what is already on disk
   --check-status         report what is available / sold / held off, from disk
   --refresh <slug|vin>   check ONE vehicle against the feed
+  --apply-edits          apply the admin's pending record edits to the content
+                         files only (no feed, no crawl) and mark them applied
+  --no-edits             ignore the admin edit queue for this run
   --disable <slug|vin>   hold a vehicle off the site by hand
   --enable  <slug|vin>   put a hand-held vehicle back on
   --help, -h
@@ -118,6 +124,8 @@ Source (in order of preference):
 Env:
   INVENTORY_SOURCE_URL    feed for --source http
   INVENTORY_SOURCE_TOKEN  bearer token for that feed
+  TURSO_DATABASE_URL      enables the admin edit queue (/admin/inventory)
+  TURSO_AUTH_TOKEN        token for that database
   INVENTORY_CRAWL_ORIGIN  dealer site origin (default: the dealer group's site)
   INVENTORY_CRAWL_UA      user agent; put a real contact address in it
   INVENTORY_CRAWL_MIN_HOURS      minimum hours between pulls (default 24)
@@ -226,6 +234,33 @@ async function main() {
 
   if (args.validate) {
     process.exitCode = validateOnDisk() ? 0 : 1;
+    return;
+  }
+
+  // Apply-only: run the admin's edit queue over the content files, no feed
+  // involved. Targeted like the per-vehicle modes below and safe to run at
+  // any hour for the same reason -- it touches nothing but our own files.
+  if (args.applyEdits) {
+    log(`\n${C.bold}Applying admin vehicle edits${C.reset}`);
+    const r = await edits.applyOnly({ dryRun: args.dryRun });
+    if (!r.ok) {
+      warn(`edit queue unavailable (${r.reason}) -- nothing to apply`);
+      if (r.detail) info(r.detail);
+      return;
+    }
+    if (!r.total) {
+      ok('no pending edits');
+      return;
+    }
+    for (const slug of r.applied) ok(`${slug}.md`);
+    for (const sk of r.skipped) warn(`skipped ${sk.slug} -- ${sk.reason}`);
+    if (args.dryRun) {
+      log(`\n  ${C.yellow}Dry run -- nothing written, nothing marked.${C.reset}\n`);
+      return;
+    }
+    ok(`${r.changed} file(s) rewritten; ${r.applied.length} edit row(s) satisfied`);
+    if (r.markReason) warn(`rows could not be marked applied (${r.markReason})`);
+    log(`\n  ${C.green}Done.${C.reset} Commit the content change, then build and deploy.\n`);
     return;
   }
 
@@ -450,9 +485,32 @@ async function main() {
   // (a trade returned to stock) is recognised rather than republished as new.
   const unavailable = new Set([...nowSold, ...markedSold]);
 
+  // 2d. The admin's pending edits (database). Merged into the vehicle objects
+  // BEFORE the diff, so the plan, the diff and the written files all carry
+  // them -- and a feed refresh cannot clobber an admin's change. Without
+  // database access this says so once and the sync proceeds untouched.
+  const editedUpTo = new Map();
+  if (!args.noEdits) {
+    const pending = await edits.loadPending();
+    if (pending.ok && pending.rows.length) {
+      let matched = 0;
+      for (const { slug, vehicle } of byKey.values()) {
+        const row = pending.bySlug.get(slug);
+        if (!row) continue;
+        edits.mergeIntoVehicle(vehicle, row.fields);
+        editedUpTo.set(slug, row.updatedAt);
+        matched += 1;
+      }
+      ok(`${pending.rows.length} pending admin edit(s), ${matched} matched to feed vehicles`);
+    } else if (!pending.ok) {
+      info(`admin edit queue skipped (${pending.reason})`);
+    }
+  }
+
   // 3. Diff ---------------------------------------------------------------
   const existing = listManaged();
   const plan = { create: [], update: [], unchanged: [], remove: [] };
+  const skippedSlugs = new Set();
 
   for (const { slug, vehicle } of byKey.values()) {
     const file = contentPath(slug);
@@ -464,6 +522,7 @@ async function main() {
     if (!data[MANAGED_MARKER]) {
       // A hand-written file is using this slug. Do not clobber it.
       warn(`skipping ${slug} — a hand-written page already owns that slug`);
+      skippedSlugs.add(slug);
       continue;
     }
     const next = render(vehicle, { body });
@@ -493,7 +552,15 @@ async function main() {
       `${plan.unchanged.length} unchanged · ${plan.remove.length} removed`
   );
 
+  const editEntries = [...editedUpTo.entries()]
+    .filter(([slug]) => !skippedSlugs.has(slug))
+    .map(([slug, upTo]) => ({ slug, upTo }));
+
   if (!writeCount) {
+    if (!args.dryRun && editEntries.length) {
+      const m = await edits.markApplied(editEntries);
+      if (m.ok && m.applied) ok(`${m.applied} edit row(s) satisfied (values already current)`);
+    }
     log(`\n  ${C.green}Nothing to do.${C.reset} Inventory is already in sync.\n`);
     return;
   }
@@ -511,11 +578,16 @@ async function main() {
   log(`\n${C.bold}Writing${C.reset}`);
   ensureDir();
   for (const c of plan.create) {
-    fs.writeFileSync(contentPath(c.slug), render(c.vehicle));
+    const carried = edits.bodyOverrideFor(c.vehicle, undefined);
+    fs.writeFileSync(contentPath(c.slug), render(c.vehicle, carried === undefined ? undefined : { body: carried }));
     ok(`created ${c.slug}.md`);
   }
   for (const u of plan.update) {
-    fs.writeFileSync(contentPath(u.slug), render(u.vehicle, { body: parseFrontMatter(fs.readFileSync(contentPath(u.slug), 'utf8')).body }));
+    const carried = edits.bodyOverrideFor(
+      u.vehicle,
+      parseFrontMatter(fs.readFileSync(contentPath(u.slug), 'utf8')).body
+    );
+    fs.writeFileSync(contentPath(u.slug), render(u.vehicle, carried === undefined ? undefined : { body: carried }));
     ok(`updated ${u.slug}.md`);
   }
   for (const r of plan.remove) {
@@ -532,6 +604,15 @@ async function main() {
     vehicles: syncState.buildNextState(state.vehicles || {}, feedVehicles, new Date().toISOString()),
   });
   ok(`sync state written to ${path.relative(process.cwd(), stateFile)}`);
+
+  // Mark what this run satisfied, each row with the updated_at it carried
+  // when it was read -- an edit saved while this run worked keeps a newer
+  // stamp and stays pending for the next one.
+  if (editEntries.length) {
+    const m = await edits.markApplied(editEntries);
+    if (m.ok) ok(`${m.applied} edit row(s) marked applied`);
+    else warn(`edit rows could not be marked applied (${m.reason})`);
+  }
 
   log(`\n  ${C.green}Done.${C.reset} Next: ./ci/run.sh verify && ./ci/preview.sh up\n`);
 }

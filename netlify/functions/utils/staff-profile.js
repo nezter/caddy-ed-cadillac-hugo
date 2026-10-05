@@ -44,7 +44,7 @@ const DatabaseService = require('./database-service');
  * Every permission any function in this project checks for.
  *
  * The schema's own default for `sales_reps.permissions` is
- * `'view_customers,manage_leads'` -- two of these eighteen, from a different
+ * `'view_customers,manage_leads'` -- two of these nineteen, from a different
  * vocabulary. So a rep created with the default has no access to campaigns,
  * rules, analytics, search, templates, interactions, assignments or
  * preferences, and the functions return 403 with no obvious reason.
@@ -64,6 +64,7 @@ const ALL_PERMISSIONS = [
   'interactions_read', 'interactions_write',
   'assignments_read', 'assignments_write',
   'preferences_read', 'preferences_write',
+  'inventory_read', 'inventory_write',
 ];
 
 /**
@@ -85,12 +86,14 @@ const PERMISSIONS_BY_ROLE = {
     'templates_read', 'templates_write',
     'interactions_read', 'interactions_write',
     'assignments_read', 'assignments_write',
+    'inventory_read', 'inventory_write',
   ],
   sales_rep: () => [
     'view_customers', 'view_leads',
     'campaigns_read', 'campaigns_write',
     'interactions_read', 'interactions_write',
     'preferences_read', 'preferences_write',
+    'inventory_read',
   ],
 };
 

@@ -15,6 +15,9 @@
            `favouritesData: true` and the layout emits the list. Only that one
            page pays for it. */}}
       {{ if .Params.favouritesData }}{{ partial "favourites-data.html" . }}{{ end }}
+      {{/* Same opt-in for the vehicle record editor: the full vehicle list, with
+           bodies, compiled into one page. See inventory-admin-data.html. */}}
+      {{ if .Params.inventoryData }}{{ partial "inventory-admin-data.html" . }}{{ end }}
     </div>
   </div>
 </div>

@@ -17,7 +17,11 @@ const path = require('path');
 
 const { MANAGED_MARKER, slugify } = require('./schema');
 
-const CONTENT_DIR = path.join(__dirname, '..', '..', 'site', 'content', 'inventory');
+// Tests that apply edits against a throwaway copy of the content point
+// INVENTORY_CONTENT_DIR at it; production runs never set it.
+const CONTENT_DIR = process.env.INVENTORY_CONTENT_DIR
+  ? path.resolve(process.env.INVENTORY_CONTENT_DIR)
+  : path.join(__dirname, '..', '..', 'site', 'content', 'inventory');
 
 /* ------------------------------------------------------------------ *
  * A small, dependency-free front-matter writer.
@@ -138,7 +142,11 @@ function render(vehicle, existing) {
   // `available: false` is what the templates filter on. `unavailable_reason`
   // carries the feed's own wording ("sold", "in transit", "pending") so the
   // page can say why rather than inventing a reason.
-  if (vehicle.__available === false) {
+  if (vehicle.__force_available) {
+    // Released in the admin: the edit queue says this car is back on the
+    // site, and that outranks the file's own held/sold flag. Nothing about
+    // availability is written, so the vehicle reads as available.
+  } else if (vehicle.__available === false) {
     fields.available = false;
     fields.unavailable_reason = vehicle.__status || 'unavailable';
   } else if (existing && existing.available === false) {
