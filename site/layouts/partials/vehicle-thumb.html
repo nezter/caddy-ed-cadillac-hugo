@@ -1,0 +1,35 @@
+{{- /*
+  vehicle-thumb.html -- a vehicle's 320px thumbnail, or "" when it has none.
+
+  ONE resolver for the admin pages that embed vehicle lists
+  (favourites-data.html and inventory-admin-data.html). The logic below was
+  copied between them first -- including the two silent bugs its comments
+  describe -- and two copies of a resolution rule is two places for the next
+  bug to live in.
+
+  Context: a Page from the inventory section. Returns the RelPermalink of a
+  320px thumbnail, or the empty string.
+
+  The front matter is `vehicles/<file>.jpg`, so prepending "vehicles/"
+  again -- which an earlier version did -- looks for
+  assets/vehicles/vehicles/<file>.jpg, misses, and every row renders with a
+  blank image. The value is tried as given first, then the two prefixes
+  vehicle front matter has used over the years.
+
+  A URL-shaped value is ignored here (and was already ignored at write time):
+  Hugo's resource pipeline treats any string as a local path, and a remote
+  URL in resources.Get kills the build -- see images.js apply().
+*/ -}}
+{{- $src := "" -}}
+{{- with .Params.image }}{{ if not (or (hasPrefix . "http://") (hasPrefix . "https://")) }}{{ $src = . }}{{ end }}{{ end -}}
+{{- $thumb := "" -}}
+{{- with $src -}}
+  {{- range (slice . (printf "vehicles/%s" .) (printf "img/%s" .)) -}}
+    {{- if not $thumb -}}
+      {{- with resources.Get . -}}
+        {{- $thumb = (.Resize "320x q60").RelPermalink -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- return $thumb -}}

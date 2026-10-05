@@ -16,18 +16,9 @@
 {{- $vehicles := sort (where site.RegularPages "Section" "inventory") "Title" -}}
 {{- $out := slice -}}
 {{- range $vehicles -}}
-  {{- $img := "" -}}
-  {{- with .Params.image }}{{ if not (or (hasPrefix . "http://") (hasPrefix . "https://")) }}{{ $img = . }}{{ end }}{{ end -}}
-  {{- $thumb := "" -}}
-  {{- with $img -}}
-    {{- range (slice . (printf "vehicles/%s" .) (printf "img/%s" .)) -}}
-      {{- if not $thumb -}}
-        {{- with resources.Get . -}}
-          {{- $thumb = (.Resize "320x q60").RelPermalink -}}
-        {{- end -}}
-      {{- end -}}
-    {{- end -}}
-  {{- end -}}
+  {{- /* Thumbnail resolution lives in partials/vehicle-thumb.html -- one
+     resolver for both admin vehicle lists. */ -}}
+{{- $thumb := partial "vehicle-thumb.html" . -}}
   {{- $body := "" -}}
   {{- with .RawContent -}}{{- $body = (. | strings.TrimSpace) -}}{{- end -}}
   {{- if gt (len $body) 6000 -}}{{- $body = substr $body 0 6000 -}}{{- end -}}

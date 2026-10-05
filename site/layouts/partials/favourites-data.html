@@ -30,23 +30,9 @@
 {{- $vehicles := where (where site.RegularPages "Section" "inventory") "Params.available" "!=" false -}}
 {{- $out := slice -}}
 {{- range $vehicles -}}
-  {{- $img := "" -}}
-  {{- with .Params.image }}{{ if not (or (hasPrefix . "http://") (hasPrefix . "https://")) }}{{ $img = . }}{{ end }}{{ end -}}
-  {{- $thumb := "" -}}
-  {{- with $img -}}
-    {{- /* The front matter is `vehicles/<file>.jpg`, so prepending "vehicles/"
-           again -- which is what this did first -- looks for
-           assets/vehicles/vehicles/<file>.jpg, misses, and every row rendered
-           with a blank image. Try the value as given first, then the two
-           prefixes vehicle front matter has used over the years. */ -}}
-    {{- range (slice . (printf "vehicles/%s" .) (printf "img/%s" .)) -}}
-      {{- if not $thumb -}}
-        {{- with resources.Get . -}}
-          {{- $thumb = (.Resize "320x q60").RelPermalink -}}
-        {{- end -}}
-      {{- end -}}
-    {{- end -}}
-  {{- end -}}
+  {{- /* Thumbnail resolution lives in partials/vehicle-thumb.html -- one
+     resolver for both admin vehicle lists. */ -}}
+{{- $thumb := partial "vehicle-thumb.html" . -}}
   {{- $out = $out | append (dict
       "slug" .File.ContentBaseName
       "title" .Title

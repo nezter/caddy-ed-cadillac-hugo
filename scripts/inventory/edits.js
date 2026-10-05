@@ -32,12 +32,18 @@ const {
   listManaged, contentPath, parseFrontMatter, renderFrontMatter, defaultBody,
 } = require('./content');
 
-/* Which override lands in which front-matter field. Kept as data rather than
- * a chain of ifs so the two apply paths cannot disagree about it. */
+/* Which override lands in which front-matter field.
+ *
+ * DERIVED from the store module, not re-listed here. The first version
+ * was a hand copy of the same ten names, which is exactly how a field
+ * added to one side and not the other becomes an edit that saves and
+ * never applies. `description` and `unavailable_reason` are excluded
+ * because the apply paths handle them specially (body text and the
+ * hold-off pair), and `status`/`available` travel the same special paths. */
 const FIELD_MAP = [
-  'price', 'price_note', 'subtitle', 'mileage', 'exterior_color',
-  'interior_color', 'body_style', 'drivetrain', 'transmission', 'engine', 'mpg',
-];
+  ...Object.keys(VehicleEdits.INT_FIELDS),
+  ...Object.keys(VehicleEdits.TEXT_FIELDS),
+].filter((k) => k !== 'description' && k !== 'unavailable_reason');
 
 /** Pending rows, keyed by slug. */
 function loadPending() {
