@@ -40,8 +40,13 @@ Create a key, copy the secret once, and give it to the agent as:
 Authorization: Bearer cdy1_...
 ```
 
-The scopes you tick are the exact permissions the key can use — the same
-vocabulary staff permissions use. An agent scoped to articles cannot touch
-inventory, SEO or settings. Revoking takes effect on the next request, and
-`agent_keys` permissions can never be granted to an agent, so no key can
-mint or revoke other keys. The full contract is in `docs/CONTENT-API.md`.
+The scopes you tick are the exact permissions the key can use, drawn from
+the site’s <strong>content</strong> permissions — articles, vehicle
+records, settings copy, Ed’s picks, SEO. That list is content-only by
+construction: CRM powers and anything destructive (customer erasure, staff
+management, lead merging) cannot be granted to a key at all, and the
+endpoints behind them additionally require human roles no key can hold.
+Content changes made by keys travel the same gated workflows as everyone
+else’s — queued, applied, deployed — and every action is audited as
+the agent. Revoking takes effect on the next request. The full contract is
+in `docs/CONTENT-API.md`.

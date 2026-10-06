@@ -112,9 +112,13 @@ exports.handler = async function (event) {
       // The slug regex just below was clearly written with the threat in mind --
       // "cannot be used as an arbitrary-write store" -- so the author was thinking
       // about who could write here. What was missed is that it was anyone.
+      // `agent` joined allowedRoles deliberately: an agent key is not a
+      // human role, so the middleware needs to know it may pass THIS
+      // endpoint's identity gate. The scope gate below is the real one
+      // for keys -- humans keep their role-based access unchanged.
       const auth = await authenticateRequest(event, {
         requireAuth: true,
-        allowedRoles: ['admin', 'manager', 'sales_rep'],
+        allowedRoles: ['admin', 'manager', 'sales_rep', 'agent'],
       });
       if (!auth.authenticated) {
         return {
@@ -124,6 +128,16 @@ exports.handler = async function (event) {
             error: 'Sign in to change the vehicle picks',
             code: 'unauthenticated',
           }),
+        };
+      }
+      // The agent scope gate. A key may manage picks only with
+      // inventory_write, the same scope the vehicle record editor uses;
+      // anything narrower gets a refusal that names the missing scope.
+      if (auth.agent && !(Array.isArray(auth.user.permissions) ? auth.user.permissions : []).includes('inventory_write')) {
+        return {
+          statusCode: 403,
+          headers: corsFor(event),
+          body: JSON.stringify({ error: 'Agent keys need the inventory_write scope to change vehicle picks', code: 'insufficient_scope' }),
         };
       }
 

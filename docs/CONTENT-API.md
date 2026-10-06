@@ -25,15 +25,27 @@ so scopes are enforced identically for both.
 
 Notes to pass along with any instruction:
 
-- Endpoints that gate by HUMAN ROLE (`allowedRoles` -- e.g. the
-  vehicle-features POST) refuse agent keys by design; the scoped endpoints
-  below are the agent surface.
+- Endpoints that gate by HUMAN ROLE refuse agent keys by design, and the
+  permissions behind them are not grantable anyway. One human-role
+  endpoint is additionally opened to keys: the vehicle-features POST
+  (Ed's picks) accepts a key holding `inventory_write`.
 - Staff session tokens (from `/admin/sign-in/`, kept by the admin pages in
   `localStorage` as `caddyed_admin_token`) remain for people; keys are for
   agents and automation.
 - A 401 body is honest (`code: "unauthenticated"`); a 503 with
   `code: "database-not-configured"` means the deployment has no database and
   NOTHING was saved -- never treat it as success.
+
+## Guard rails -- what keeps agents from breaking things
+
+| Guard | Mechanism |
+|---|---|
+| Content-only scopes | Keys can only hold the content permissions (articles, vehicle records, settings copy, Ed's picks, SEO). CRM powers and anything destructive are **not grantable** -- `create` refuses them by name. |
+| Human-only endpoints | Customer erasure and staff management require the `admin` ROLE; lead merging requires human roles. A key is refused by role before any logic runs. |
+| No direct site mutation | Content changes travel the queue -> `npm run ...:apply` -> deploy workflow. A key cannot write the repository, run builds, or deploy. |
+| Live writes are few and audited | Settings copy and pick toggles are the only live effects; both land in the audit log attributed to the agent. |
+| Instant revocation + expiry | `revoke` stops the next request; keys can carry an expiry date. |
+| No escalation | `agents_read`/`agents_write` can never be granted; a key lacking a scope gets a 403 that names it (`insufficient_scope` on picks). |
 
 ## articles-admin -- write articles
 

@@ -1369,3 +1369,31 @@ key 401 -> revoke -> instant 401; the stored row is a hash, not the
 secret; no-database fails closed (13/13). API check 29/29 (crypto,
 vocabulary, refusals, one-shot secret). jsdom of the page 9/9. Portal,
 permissions and endpoint gates green.
+
+---
+
+## Agent access: full content reach, everything else walled
+
+Owner ask: agents should reach ALL the site's content, with proper gates,
+controls and workflows so they cannot break things.
+
+- Grantable scopes are now CONTENT-ONLY by construction (articles,
+  inventory, settings copy, Ed's picks, SEO). CRM and destructive
+  permissions cannot be granted to a key at all -- 'an agent erased a
+  customer' is not reachable by configuration.
+- The one remaining human-role content endpoint (vehicle-features POST)
+  now accepts keys carrying inventory_write; a narrower key gets a 403
+  naming the missing scope (insufficient_scope). gdpr / staff-management /
+  lead-merge stay admin/human-role gated -- proven in the guard matrix.
+- Settings (preferences_write) were already key-compatible; the guard
+  matrix now proves the whole reachable surface: 14/14 against the REAL
+  middleware + a real database (settings gate open/closed by scope,
+  admin-role endpoints refused, picks written only with the right scope,
+  picks untouched without it, no-token 401, slug validation intact).
+- check-function-auth.js gained the two missing public-by-design
+  declarations from the social arc (social-feed, social-refresh) with
+  their reasons written down; the check is green again instead of
+  grandfathered.
+- docs/CONTENT-API.md now carries the guard-rails table: scopes, human-only
+  endpoints, no-direct-mutation, audited live writes, revocation, no
+  escalation.

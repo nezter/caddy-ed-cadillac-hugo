@@ -125,6 +125,18 @@ const PUBLIC_BY_DESIGN = new Map([
       'submission, never served at a URL. Records the signup into the leads ' +
       'table and returns nothing.',
   ],
+  [
+    'social-feed',
+    'The cached social payload, GET only, read by every visitor page. It ' +
+      'contains public posts, never customer data, and this handler cannot ' +
+      'write anything -- the cache is filled by social-refresh via the admin.',
+  ],
+  [
+    'social-refresh',
+    'Netlify SCHEDULED function -- invoked by the platform on a daily cron, ' +
+      'never served at a URL. Does the same refresh the admin page can ' +
+      'trigger; reads and writes only the social cache tables.',
+  ],
 ]);
 
 /** Tables whose rows are, or contain, customer identity. */

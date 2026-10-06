@@ -93,6 +93,16 @@ const call = async (o) => {
   check('prefix reveals 8 body chars after cdy1_', p === s1.slice(0, 13) && /^cdy1_[A-Za-z0-9_-]{8}$/.test(p), p);
   check('scopes: agents_write is NOT grantable', real.sanitizeScopes(['articles_write', 'agents_write']).ok === false);
   check('scopes: unknown name refused', real.sanitizeScopes(['articles_read', 'root_everything']).ok === false);
+  const crm = real.sanitizeScopes(['view_leads']);
+  check('scopes: CRM powers are not grantable (staff-only message)', crm.ok === false && /cannot be granted/.test(crm.errors[0] || ''), JSON.stringify(crm.errors));
+  for (const bad of ['manage_leads', 'view_customers', 'campaigns_read', 'interactions_write', 'search_read', 'templates_write', 'assignments_write', 'analytics_read']) {
+    check('scopes: ' + bad + ' not grantable', real.sanitizeScopes([bad]).ok === false);
+  }
+  {
+    const labels = Object.keys(real.SCOPE_LABELS).sort();
+    const grantable = real.GRANTABLE.slice().sort();
+    check('labels and grantable set are in lockstep', JSON.stringify(labels) === JSON.stringify(grantable), labels.join(',') + ' vs ' + grantable.join(','));
+  }
   check('scopes: comma string works, dedupes', JSON.stringify(real.sanitizeScopes('articles_read,seo_read,articles_read').scopes) === '["articles_read","seo_read"]');
 
   /* the API */
@@ -106,6 +116,10 @@ const call = async (o) => {
   let body = JSON.parse(r.body);
   check('GET lists agents + the scope vocabulary', r.statusCode === 200 && Array.isArray(body.agents) && body.scopes.length > 5 && body.note.includes('cdy1_'), r.statusCode);
   check('scope vocabulary excludes agents_*', !body.scopes.some((s) => s.key.indexOf('agents_') === 0));
+  {
+    const keys = body.scopes.map((x) => x.key).sort();
+    check('scope vocabulary is exactly the content set', JSON.stringify(keys) === JSON.stringify(['articles_read','articles_write','inventory_read','inventory_write','preferences_read','preferences_write','seo_read']), keys.join(','));
+  }
 
   DB = false;
   r = await call({ httpMethod: 'GET' });

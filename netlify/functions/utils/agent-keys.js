@@ -40,33 +40,38 @@ const PREFIX = 'cdy1_';
 const KEY_RE = /^cdy1_[A-Za-z0-9_-]{20,}$/;
 const LAST_USED_THROTTLE_MS = 5 * 60 * 1000;
 
-/* Human labels for the scopes the admin page renders as checkboxes. */
+/* THE GRANTABLE SET IS CONTENT ONLY, on purpose.
+ *
+ * An agent key may manage what the site SAYS -- articles, vehicle records,
+ * settings copy, pick promotion, SEO scoring -- and nothing else. The CRM
+ * (leads, customers, campaigns, erasure) and identity management are not
+ * in this list and cannot be granted to a key even by an administrator.
+ * Not because an operator might not trust an agent with them today, but
+ * because 'an agent action erased a customer' must not be reachable by
+ * configuration at all. The destructive endpoints additionally require
+ * human roles (admin) which keys can never hold.
+ */
+const GRANTABLE = [
+  'articles_read', 'articles_write',
+  'inventory_read', 'inventory_write',
+  'seo_read',
+  'preferences_read', 'preferences_write',
+];
+
+/* Human labels for the admin page's checkboxes. Kept in lockstep with
+ * GRANTABLE by a test: a label without a grantable scope is a checkbox
+ * that cannot save. */
 const SCOPE_LABELS = {
   'articles_read': 'Read the article queue',
   'articles_write': 'Write and edit articles',
+  'inventory_read': 'Read the vehicle edit queue',
+  'inventory_write': 'Edit vehicle records and manage Ed\u2019s picks',
   'seo_read': 'Score pages (SEO audit)',
-  'inventory_read': 'Read vehicle edit queue',
-  'inventory_write': 'Edit vehicle records',
   'preferences_read': 'Read site settings',
-  'preferences_write': 'Change site settings',
-  'view_leads': 'View leads',
-  'manage_leads': 'Manage leads',
-  'view_customers': 'View customers',
-  'search_read': 'Search the CRM',
-  'interactions_read': 'Read interactions',
-  'interactions_write': 'Write interactions',
-  'campaigns_read': 'Read campaigns',
-  'campaigns_write': 'Manage campaigns',
-  'rules_read': 'Read campaign rules',
-  'rules_write': 'Manage campaign rules',
-  'analytics_read': 'Read analytics',
-  'assignments_read': 'Read lead assignments',
-  'assignments_write': 'Manage lead assignments',
-  'templates_read': 'Read message templates',
-  'templates_write': 'Manage message templates',
+  'preferences_write': 'Change site settings (the copy layer)',
 };
 
-/* Never grantable to an agent: managing identities is a human decision. */
+/* Never grantable to any key under any circumstances. */
 const UNGRANTABLE = ['agents_read', 'agents_write'];
 
 let _client;
@@ -121,9 +126,11 @@ function sanitizeScopes(input) {
   for (const raw of list) {
     const s = String(raw).trim();
     if (!s) continue;
-    if (UNGRANTABLE.includes(s)) errors.push('"' + s + '" cannot be granted to an agent');
-    else if (!Object.prototype.hasOwnProperty.call(SCOPE_LABELS, s)) errors.push('"' + s + '" is not a known permission');
-    else if (!scopes.includes(s)) scopes.push(s);
+    if (GRANTABLE.includes(s)) {
+      if (!scopes.includes(s)) scopes.push(s);
+    } else {
+      errors.push('"' + s + '" cannot be granted to agent keys -- keys manage content only (articles, inventory, settings, SEO)');
+    }
   }
   if (!scopes.length && !errors.length) errors.push('scopes must name at least one permission');
   return { ok: errors.length === 0 && scopes.length > 0, scopes, errors };
@@ -261,7 +268,7 @@ async function resolve(secret) {
 }
 
 module.exports = {
-  TABLE, PREFIX, KEY_RE, SCOPE_LABELS, UNGRANTABLE,
+  TABLE, PREFIX, KEY_RE, GRANTABLE, SCOPE_LABELS, UNGRANTABLE,
   isConfigured, sanitizeScopes, create, list, revoke, resolve,
   _internals: { generateSecret, hashSecret, prefixOf },
 };
