@@ -435,7 +435,7 @@ function main() {
     for (const rel of codeBlocksAsMarkup) console.error(`    ${rel}`);
     console.error(
       '    Remove the blank lines inside the raw HTML in the .md, or run\n' +
-        '    scripts/fix-raw-html-blocks.py. Whitespace between block elements is\n' +
+        '    scripts/archive/fix-raw-html-blocks.py. Whitespace between block elements is\n' +
         '    insignificant in HTML, so removing them changes nothing that renders --\n' +
         '    except the visitors no longer see your markup as source code.'
     );

@@ -1,3 +1,5 @@
+*(Moved from `documentation/` in the 2026-10 repo hygiene pass — historical notes, kept for the record.)*
+
 # Critical CSS Implementation Guide
 
 This guide explains how the critical CSS system works in the Caddy Ed Cadillac website and provides instructions for maintenance and extension.

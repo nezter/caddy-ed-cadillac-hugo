@@ -16,7 +16,6 @@ site/assets/js/index.js          the site entry. Built by Hugo Pipes esbuild
         +--> src/js/cms.js        a SEPARATE build (webpack) for the CMS editor
 
 site/assets/css/                 19 plain CSS files, 1 SCSS
-site/layouts/partials/critical/  6 small CSS files for above-the-fold
 ```
 
 Two build systems, not one. That is the single most confusing fact here:

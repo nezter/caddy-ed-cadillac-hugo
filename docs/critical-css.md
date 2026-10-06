@@ -1,3 +1,5 @@
+> **RETIRED (2026-10).** The generated files under `site/layouts/partials/critical/` were removed in the repo hygiene pass: nothing loaded them after the critical-CSS approach was replaced by the inline block in `partials/critical-css.html`. The generator is archived at `scripts/archive/generate-critical-css.js`. This document is kept for the record and for anyone who wants to resurrect the pipeline deliberately.
+
 # Critical CSS Documentation
 
 This document explains the critical CSS implementation for the Caddy Ed Cadillac website.

@@ -92,3 +92,8 @@ site/data/inventory-sync-state.json
 
 # webpack CMS bundle sidecar
 site/static/cms.js.LICENSE.txt
+
+# Build/test artifacts (2026-10 hygiene)
+netlify/functions/test-results/
+junit.xml
+site/static/[0-9]*.js.LICENSE.txt

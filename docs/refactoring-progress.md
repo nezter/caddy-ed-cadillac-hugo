@@ -1,3 +1,5 @@
+*(Moved from `documentation/` in the 2026-10 repo hygiene pass — historical notes, kept for the record.)*
+
 # Refactoring Progress Report
 
 This document tracks the progress of major refactoring efforts across the Caddy Ed Cadillac website codebase, highlighting improvements, metrics, and lessons learned.

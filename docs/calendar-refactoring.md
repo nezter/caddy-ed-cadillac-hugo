@@ -1,3 +1,5 @@
+*(Moved from `documentation/` in the 2026-10 repo hygiene pass — historical notes, kept for the record.)*
+
 # Calendar Component Refactoring
 
 This document outlines the refactoring of the Scheduling Calendar component, describing the new architecture, usage patterns, and implementation details.

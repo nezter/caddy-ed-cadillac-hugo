@@ -1439,3 +1439,27 @@ the standing gates all green: check-articles-admin 24/24, check-content-
 admin 21/21, check-agents-admin 41/41, agent e2e 13/13 + guard matrix
 14/14, jsdom three-type drive 25/25, apply loops 17/17 + 17/17, portal,
 permissions, function-auth, front-end and endpoint gates green.
+
+---
+
+## Repo hygiene pass (inventory -> cleanup)
+
+Full-repo inventory first (Netlify surface, lost/unwired, dedup), then the
+approved cleanup:
+- Archived 11 one-shot migration/repair scripts to scripts/archive/ (with a
+  README stating what was left behind and why). Verified still-live scripts
+  that LOOK one-shot were kept: pg2turso.py (ci/run.sh calls it),
+  import-netlify-forms.js (npm script + docs), seed/setup/test tooling.
+- Removed dead assets after reference checks: root sw.js (a stale twin of
+  site/static/sw.js that nothing loaded), partials/meta.html (superseded by
+  head-meta.html), the six retired critical/*.css plus their generator
+  (archived), two orphaned .wasm files, jest.config.simple.js.
+- 3 stale webpack chunks removed earlier (94 present, 91 referenced by the
+  committed cms.js).
+- documentation/ merged into docs/ with provenance banners; junk ignored:
+  netlify/functions/test-results/, junit.xml, chunk license files untracked
+  + gitignored; verify-build comment and FRONTEND.md updated; critical-css.md
+  carries a RETIRED note.
+- Verified after: build clean, all CI gates green (portal, permissions,
+  function-auth, front-end, endpoints, verify-build, content-admin,
+  articles-admin, agents-admin, seo-score, structured-data).
