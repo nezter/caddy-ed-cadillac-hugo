@@ -78,8 +78,32 @@ function requiredByFunctions() {
       let m;
       while ((m = re.exec(text))) {
         for (const raw of m[1].split(',')) {
-          const name = raw.trim().replace(/^['"`]|['"`]$/g, '');
+          let name = raw.trim().replace(/^['"`]|['"`]$/g, '');
           if (!name || name === '*') continue;
+          // The content types (articles / specials / testimonials) share one
+          // handler factory, so their requiredPermissions read
+          // `def.permissions.read` rather than naming the permission. The
+          // names live in utils/content-types.js; resolve them here so the
+          // vocabulary stays derivable from the code that actually checks it.
+          const dyn = name.match(/^def\.permissions\.(read|write)$/);
+          if (dyn) {
+            try {
+              const types = require(path.join(FUNCTIONS, 'utils', 'content-types.js')).TYPES;
+              for (const def of Object.values(types)) {
+                const resolved = def.permissions[dyn[1]];
+                if (!found.has(resolved)) found.set(resolved, []);
+                found.get(resolved).push(path.relative(ROOT, full));
+              }
+            } catch (e) {
+              // A broken require must be visible as a missing permission, never
+              // a silent pass: record the raw reference and move on.
+              if (!found.has(name)) found.set(name, []);
+              found.get(name).push(path.relative(ROOT, full));
+            }
+            // `def.permissions.read` is a reference, not a permission name;
+            // it resolved to real names above.
+            continue;
+          }
           if (!found.has(name)) found.set(name, []);
           found.get(name).push(path.relative(ROOT, full));
         }

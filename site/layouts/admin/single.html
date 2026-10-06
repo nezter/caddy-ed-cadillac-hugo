@@ -18,7 +18,9 @@
       {{/* Same opt-in for the vehicle record editor: the full vehicle list, with
            bodies, compiled into one page. See inventory-admin-data.html. */}}
       {{ if .Params.inventoryData }}{{ partial "inventory-admin-data.html" . }}{{ end }}
-      {{ if .Params.articlesData }}{{ partial "articles-admin-data.html" . }}{{ end }}
+      {{/* The content editor pages (articles / specials / testimonials): one
+           generic emitter, typed by front matter. */}}
+      {{ if .Params.contentAdminData }}{{ partial "content-admin-data.html" (dict "type" .Params.contentType) }}{{ end }}
     </div>
   </div>
 </div>

@@ -134,6 +134,11 @@ const CHECKS = [
     why: 'the article queue refuses bad saves whole and every reply tells the truth about publishing',
   },
   {
+    name: 'content admin',
+    file: 'check-content-admin.js',
+    why: 'specials and testimonials are the same machine as articles and must behave identically',
+  },
+  {
     name: 'seo score',
     file: 'check-seo-score.js',
     why: 'a score someone acts on cannot lie in either direction',

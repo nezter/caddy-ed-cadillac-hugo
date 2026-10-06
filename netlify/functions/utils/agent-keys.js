@@ -53,6 +53,8 @@ const LAST_USED_THROTTLE_MS = 5 * 60 * 1000;
  */
 const GRANTABLE = [
   'articles_read', 'articles_write',
+  'specials_read', 'specials_write',
+  'testimonials_read', 'testimonials_write',
   'inventory_read', 'inventory_write',
   'seo_read',
   'preferences_read', 'preferences_write',
@@ -64,6 +66,10 @@ const GRANTABLE = [
 const SCOPE_LABELS = {
   'articles_read': 'Read the article queue',
   'articles_write': 'Write and edit articles',
+  'specials_read': 'Read the specials queue',
+  'specials_write': 'Write and edit special offers',
+  'testimonials_read': 'Read the testimonials queue',
+  'testimonials_write': 'Write and edit testimonials',
   'inventory_read': 'Read the vehicle edit queue',
   'inventory_write': 'Edit vehicle records and manage Ed\u2019s picks',
   'seo_read': 'Score pages (SEO audit)',

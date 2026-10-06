@@ -1,0 +1,37 @@
+{{ define "main" }}
+<article>
+<section class="stage stage--deep grain">
+  <div class="wrap pad">
+    <p class="eyebrow">Offer{{ with .Params.expires }} &middot; ends {{ . }}{{ end }}</p>
+    <h1 class="display" style="max-width:26ch">{{ .Title }}</h1>
+    {{ with .Description }}<p class="lede">{{ . }}</p>{{ end }}
+    <div style="display:flex;gap:.7rem;flex-wrap:wrap;margin-top:1.8rem">
+      <a class="btn btn--cream" href="/contact/">Ask about this offer</a>
+      <a class="btn btn--ghost" href="/inventory/">See what's in stock</a>
+    </div>
+  </div>
+</section>
+
+<section style="background:#fff;padding-block:clamp(2rem,4vw,3.5rem)">
+  <div class="wrap">
+    {{ with .Params.image }}
+    <figure class="plate plate--4x3" style="margin:0 0 2rem">
+      {{ partial "static-picture.html" (dict
+          "src" .
+          "alt" $.Title
+          "sizes" "(max-width: 40rem) 92vw, 800px"
+          "widths" (slice 400 800 1200)
+          "loading" "eager") }}
+    </figure>
+    {{ end }}
+    <div class="prose" style="max-width:70ch">{{ .Content }}</div>
+    {{ with .Params.terms }}
+    <div class="plate" style="margin-top:2rem;padding:1.4rem">
+      <p class="mono-label" style="margin:0 0 .4rem">Terms &amp; conditions</p>
+      <div class="prose" style="max-width:70ch">{{ . | markdownify }}</div>
+    </div>
+    {{ end }}
+  </div>
+</section>
+</article>
+{{ end }}

@@ -1,0 +1,39 @@
+{{ define "main" }}
+<section class="stage stage--deep grain">
+  <div class="wrap pad">
+    <p class="eyebrow">What owners say<span class="ltbar" aria-hidden="true"><i></i><i></i><i></i></span></p>
+    <h1 class="display">{{ .Title }}</h1>
+    {{ with .Description }}<p class="lede">{{ . }}</p>{{ end }}
+  </div>
+</section>
+
+{{ $all := .RegularPages.ByDate.Reverse }}
+{{ $featured := where $all "Params.featured" true }}
+{{ $rest := where $all "Params.featured" "!=" true }}
+{{ $items := $featured | append $rest }}
+{{ if $items }}
+<section style="background:#fff;padding-block:clamp(2rem,4vw,3.5rem)">
+  <div class="wrap">
+    <div class="bento bento--3">
+      {{ range $items }}
+      {{ $t := . }}
+      <blockquote class="tile" style="margin:0">
+        {{ with .Params.image }}
+        <div class="plate plate--square" style="width:72px;margin-bottom:1rem">
+          {{ partial "static-picture.html" (dict "src" . "alt" $t.Title "sizes" "72px" "widths" (slice 144) "loading" "lazy") }}
+        </div>
+        {{ end }}
+        <div class="prose" style="max-width:none">{{ $t.Content }}</div>
+        <footer style="margin-top:1rem">
+          <p class="mono-label" style="color:var(--bronze);margin:0">{{ $t.Title }}{{ with $t.Params.vehicle }} &middot; {{ . }}{{ end }}</p>
+          {{ if $t.Params.featured }}<p style="margin:.4rem 0 0"><span class="chip">Featured</span></p>{{ end }}
+        </footer>
+      </blockquote>
+      {{ end }}
+    </div>
+  </div>
+</section>
+{{ else }}
+<section class="stage grain pad--tight"><div class="wrap"><p class="lede" style="max-width:60ch">Owner stories are on their way.</p></div></section>
+{{ end }}
+{{ end }}

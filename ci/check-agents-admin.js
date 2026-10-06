@@ -101,7 +101,8 @@ const call = async (o) => {
   {
     const labels = Object.keys(real.SCOPE_LABELS).sort();
     const grantable = real.GRANTABLE.slice().sort();
-    check('labels and grantable set are in lockstep', JSON.stringify(labels) === JSON.stringify(grantable), labels.join(',') + ' vs ' + grantable.join(','));
+    check('scopes: specials and testimonials are grantable content scopes', real.sanitizeScopes(['specials_write', 'testimonials_read']).ok === true);
+  check('labels and grantable set are in lockstep', JSON.stringify(labels) === JSON.stringify(grantable), labels.join(',') + ' vs ' + grantable.join(','));
   }
   check('scopes: comma string works, dedupes', JSON.stringify(real.sanitizeScopes('articles_read,seo_read,articles_read').scopes) === '["articles_read","seo_read"]');
 
@@ -118,7 +119,7 @@ const call = async (o) => {
   check('scope vocabulary excludes agents_*', !body.scopes.some((s) => s.key.indexOf('agents_') === 0));
   {
     const keys = body.scopes.map((x) => x.key).sort();
-    check('scope vocabulary is exactly the content set', JSON.stringify(keys) === JSON.stringify(['articles_read','articles_write','inventory_read','inventory_write','preferences_read','preferences_write','seo_read']), keys.join(','));
+    check('scope vocabulary is exactly the content set', JSON.stringify(keys) === JSON.stringify(['articles_read','articles_write','inventory_read','inventory_write','preferences_read','preferences_write','seo_read','specials_read','specials_write','testimonials_read','testimonials_write']), keys.join(','));
   }
 
   DB = false;

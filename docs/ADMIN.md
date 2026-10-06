@@ -75,6 +75,12 @@ load:
 - **Follow-up campaigns** — `/admin/followup-campaigns`.
 - **Google Calendar** — per person, one row each in `google_calendar_tokens`.
   Needs `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`, which do not exist yet.
+- **Specials + testimonials** (`/admin/specials`, `/admin/testimonials`) —
+  added 2026-10-06. The same content machine as articles: queue, apply
+  (`npm run specials:apply` / `testimonials:apply`), publish on deploy.
+  Specials carry expiry dates and render on `/specials/`; testimonials are
+  quotes that render on `/testimonials/`. Agents reach them with the
+  `specials_*` / `testimonials_*` scopes.
 - **Articles** (`/admin/articles`) — added 2026-10-04. Write articles by
   hand or through the API agents use (`docs/CONTENT-API.md`). Queued rows
   become `site/content/articles/<slug>.md` on `npm run articles:apply`;

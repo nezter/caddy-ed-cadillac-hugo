@@ -81,6 +81,11 @@ const AUTH_MARKERS = [
   'checkAuthentication(',
   "require('./utils/admin-guard')",
   "require('./utils/netlify-identity')",
+  // Delegated guard: articles/specials/testimonials-admin hand their whole
+  // request to utils/content-admin.js, which always calls authenticateRequest
+  // with the type's permissions. ci/check-content-admin.js proves the
+  // behaviour; this marker proves the wiring is inspectable.
+  "require('./utils/content-admin')",
 ];
 
 /**

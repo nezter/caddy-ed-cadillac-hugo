@@ -2,13 +2,14 @@
 title: "Articles"
 description: "Write and publish articles — by hand or by an LLM agent through the API."
 layout: "admin"
-articlesData: true
+contentAdminData: true
+contentType: articles
 styles:
   - components/admin.css
   - components/settings.css
-  - components/articles-admin.css
+  - components/content-admin.css
 scripts:
-  - admin-articles.js
+  - admin-content.js
 ---
 
 <p class="lede">
@@ -19,8 +20,8 @@ scripts:
   articles linking back into inventory and the site’s pages.
 </p>
 
-<div id="articles-admin-status" class="settings-status" role="status" hidden></div>
-<div id="articles-admin">
+<div id="content-admin-status" class="settings-status" role="status" hidden></div>
+<div id="content-admin">
   <div class="settings-progress">
     <div class="spinner" aria-hidden="true"></div>
     <p>Loading articles…</p>

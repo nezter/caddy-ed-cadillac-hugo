@@ -21,6 +21,12 @@
     "label" "Website"
     "note" "What the public site shows."
     "items" (slice
+      (dict "url" "/admin/testimonials/" "nav" "Testimonials" "title" "Testimonials"
+            "tag" "sync" "tagLabel" "Next sync + deploy"
+            "body" "Customer quotes: collect, edit and feature them. Queued rows become site files on npm run testimonials:apply, published by the next deploy.")
+      (dict "url" "/admin/specials/" "nav" "Specials" "title" "Specials"
+            "tag" "sync" "tagLabel" "Next sync + deploy"
+            "body" "The offers on /specials/: write them, date them, expire them. Same queue-and-apply pipeline as articles.")
       (dict "url" "/admin/inventory/" "nav" "Inventory" "title" "Inventory"
             "tag" "sync" "tagLabel" "Next sync + deploy"
             "body" "Every vehicle on the site. Edit pricing, specs and descriptions; hold a car off the lot; promote it as one of Ed's picks.")

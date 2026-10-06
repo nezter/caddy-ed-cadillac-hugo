@@ -127,9 +127,15 @@ collections:
       - {label: Description, name: description, widget: markdown}
       - {label: Features, name: features, widget: list}
 
+  # Content types (articles / specials / testimonials) are edited from
+  # /admin/* in the site itself, where saving queues into the database and
+  # the apply scripts write these files. The CMS below still commits to git
+  # (and, per the banner, needs a deploy); a NEW file it creates here is
+  # hand-written as far as the queue is concerned and is never overwritten.
+  # Editing an existing queued file HERE is a bad idea for the same reason.
   - name: "blog"
-    label: "Blog"
-    folder: "site/content/post"
+    label: "Blog (legacy git flow -- prefer /admin/articles)"
+    folder: "site/content/articles"
     create: true
     fields:
       - {label: "Title", name: "title", widget: "string"}

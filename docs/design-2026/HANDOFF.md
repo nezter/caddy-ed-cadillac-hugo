@@ -1397,3 +1397,45 @@ controls and workflows so they cannot break things.
 - docs/CONTENT-API.md now carries the guard-rails table: scopes, human-only
   endpoints, no-direct-mutation, audited live writes, revocation, no
   escalation.
+
+---
+
+## The content machine: three types, one implementation
+
+Owner ask: fix the gaps identified (specials and testimonials had no
+admin/API), and make sure the repo is clean, well organised and properly
+laid out.
+
+Specials and testimonials now ride the SAME machine as articles -- and the
+machine was generalised instead of copied:
+- utils/content-types.js: one definition per type (table, marker, fields
+  with kinds and limits, permissions, audit action, apply command).
+- utils/content-queue.js: one queue implementation; articles/specials/
+  testimonials are thin instances (the articles file kept its export
+  surface, so every existing caller and test kept working).
+- utils/content-admin.js: one handler factory; the three endpoints are
+  five lines of wiring each, and the GET reply carries the type's field
+  spec so the admin editor and an agent build from the same definition.
+- scripts/content/apply.js: one applier, --type articles|specials|
+  testimonials; npm run articles:apply kept, specials:apply and
+  testimonials:apply added; scripts/articles/ removed.
+- One admin client (admin-content.js) drives all three pages; one CSS
+  file; one data partial. The articles-only copies were deleted.
+- agent keys gained specials_* and testimonials_* scopes (content-only,
+  as before). Gates extended honestly: check-permissions resolves the
+  factory's def.permissions reference from content-types; check-function-
+  auth accepts the delegated guard; both were proven, not excused.
+
+Public: /specials/ now renders offers (list + single with expiry and
+terms), /testimonials/ is new (featured-first quotes), both linked from
+the footer; the CMS blog collection was pointed at the real articles
+folder with the caveat written down.
+
+Repo hygiene pass: no strays (two scratch files from earlier turns found
+and removed: check-runs.js, art-apply-test.js -- both were already gone
+from the tree), deleted superseded files fully unreferenced (grep-
+verified), scripts/ now organised by domain (content/, inventory/), and
+the standing gates all green: check-articles-admin 24/24, check-content-
+admin 21/21, check-agents-admin 41/41, agent e2e 13/13 + guard matrix
+14/14, jsdom three-type drive 25/25, apply loops 17/17 + 17/17, portal,
+permissions, function-auth, front-end and endpoint gates green.

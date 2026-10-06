@@ -1,20 +1,15 @@
 {{- /*
-  articles-admin-data.html -- build-time data for /admin/articles.
-
-  Two lists, one payload:
-    built    every article that exists as a file (the ones a deploy would
-             publish), so the editor can say what is already on the site;
-    targets  link targets for the editor's insert-link panel: the fixed site
-             pages, every article, and the newest available vehicles. The
-             point is internal linking -- an article that links out to real
-             pages is the whole link-building story, and hunting for the
-             right URL by hand is where that stops happening.
-
-  Same opt-in pattern as the other admin embeds: `articlesData: true` in the
-  page's front matter, emitted by layouts/admin/single.html, safeJS payload.
+  content-admin-data.html -- build-time data for the CONTENT ADMIN pages.
+  Called with (dict "type" ...). Emits:
+    built    every file-backed item of that type (what a deploy publishes),
+    targets  link targets for the editor panel: fixed pages, articles,
+             specials, and the newest vehicles.
+  Same opt-in pattern as the other admin embeds (contentAdminData: true).
 */ -}}
+{{- $type := .type -}}
+{{- $section := $type -}}
 {{- $built := slice -}}
-{{- range (sort (where site.RegularPages "Section" "articles") "Date" "desc") -}}
+{{- range (sort (where site.RegularPages "Section" $section) "Date" "desc") -}}
   {{- $built = $built | append (dict
       "slug" .File.ContentBaseName
       "title" .Title
@@ -35,8 +30,11 @@
 {{- range (sort (where site.RegularPages "Section" "articles") "Date" "desc") -}}
   {{- $targets = $targets | append (dict "title" .Title "url" .RelPermalink) -}}
 {{- end -}}
+{{- range (sort (where site.RegularPages "Section" "specials") "Date" "desc") -}}
+  {{- $targets = $targets | append (dict "title" .Title "url" .RelPermalink) -}}
+{{- end -}}
 {{- $fresh := first 40 (sort (where (where site.RegularPages "Section" "inventory") "Params.available" "!=" false) "Params.year" "desc") -}}
 {{- range $fresh -}}
   {{- $targets = $targets | append (dict "title" .Title "url" .RelPermalink) -}}
 {{- end -}}
-<script>window.ARTICLE_ADMIN_DATA = {{ dict "built" $built "targets" $targets | jsonify | safeJS }};</script>
+<script>window.CONTENT_ADMIN_DATA = {{ dict "type" $type "built" $built "targets" $targets | jsonify | safeJS }};</script>

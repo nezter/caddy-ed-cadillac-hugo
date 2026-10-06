@@ -66,6 +66,8 @@ const ALL_PERMISSIONS = [
   'preferences_read', 'preferences_write',
   'inventory_read', 'inventory_write',
   'articles_read', 'articles_write',
+  'specials_read', 'specials_write',
+  'testimonials_read', 'testimonials_write',
   'seo_read',
   'agents_read', 'agents_write',
 ];
@@ -91,6 +93,8 @@ const PERMISSIONS_BY_ROLE = {
     'assignments_read', 'assignments_write',
     'inventory_read', 'inventory_write',
     'articles_read', 'articles_write',
+    'specials_read', 'specials_write',
+    'testimonials_read', 'testimonials_write',
     'seo_read',
     'agents_read',
   ],

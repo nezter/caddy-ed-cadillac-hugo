@@ -70,7 +70,7 @@ const FakeQueue = {
 const origLoad = Module._load;
 Module._load = function (request) {
   if (request === './utils/article-queue') return FakeQueue;
-  if (request === './utils/auth-middleware') {
+  if (request === './utils/auth-middleware' || request === './auth-middleware') {
     return {
       authenticateRequest: async (event, opts) => {
         LAST_PERMS = opts && opts.requiredPermissions;

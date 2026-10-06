@@ -15,7 +15,7 @@ and stored only as a SHA-256 hash; present it as:
 
     Authorization: Bearer cdy1_...
 
-What the key can do is exactly its scopes. Revocation is instant;
+What the key can do is exactly its scopes (for content: `articles_*`, `specials_*`, `testimonials_*`, `inventory_*`, `seo_read`, `preferences_*`). Revocation is instant;
 `agent.create` / `agent.revoke` are audited; every action the key takes is
 audited as the agent (`agent:<id>`, role `agent`), never as a person. The
 `agents_read` / `agents_write` permissions can never be granted to a key
@@ -47,7 +47,23 @@ Notes to pass along with any instruction:
 | Instant revocation + expiry | `revoke` stops the next request; keys can carry an expiry date. |
 | No escalation | `agents_read`/`agents_write` can never be granted; a key lacking a scope gets a 403 that names it (`insufficient_scope` on picks). |
 
-## articles-admin -- write articles
+## Content endpoints -- articles, specials, testimonials
+
+One machine, three types. Each has its own endpoint, queue table, field
+spec and permissions; the shapes below are identical across them:
+
+| type | endpoint | permissions (read / write) | apply |
+|---|---|---|---|
+| articles | `articles-admin` | `articles_read` / `articles_write` | `npm run articles:apply` |
+| specials | `specials-admin` | `specials_read` / `specials_write` | `npm run specials:apply` |
+| testimonials | `testimonials-admin` | `testimonials_read` / `testimonials_write` | `npm run testimonials:apply` |
+
+GET lists the queue AND returns `fields` -- the type's field spec (key,
+kind, label, limits) from the same definition the validator and the admin
+editor use, so an agent can build a form or a prompt from the reply alone.
+POST `save` / `clear` behave as below for every type.
+
+### articles-admin -- write articles
 
 `/.netlify/functions/articles-admin`
 
