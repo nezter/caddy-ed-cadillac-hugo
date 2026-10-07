@@ -15,12 +15,15 @@ separately.
 
 | Primitive | Where | State |
 |---|---|---|
-| **Functions** | 52 files under `netlify/functions/` | The entire backend. Deployed prebuilt, so no remote build minutes. |
-| **Blobs** | `vehicle-features.js` | Favourites store. Added this session. |
-| **Identity** | `static/cms.html` | Decap CMS login. The only consumer today. |
-| **Forms** | `connect-hub` stock alerts, `data-netlify="true"` | Native form handling, no function needed. |
-| **Image CDN / Pipes** | `partials/picture.html` | AVIF/WebP/JPEG ladder, never upscaled, derived at build. |
-| **Deploy previews** | `ci/run.sh deploy` | `--dir` upload, zero build minutes. |
+| **Functions** | 57 files under `netlify/functions/` | The entire backend (endpoints, scheduled refresh, form events, the admin gate). Deployed prebuilt -- zero remote build minutes. |
+| **Scheduled Functions** | `social-refresh.js` (`exports.config.schedule`) | Daily social cache refresh; ci/check-function-auth accepts it as platform-invoked. |
+| **Event Functions** | `submission-created.js` | Netlify Forms submissions (stock alerts) recorded into the leads table. |
+| **Blobs** | `vehicle-features.js` | Favourites store. **Store creation still owed** unless done in the dashboard -- see below. |
+| **Identity** | `static/cms.html`, staff sign-in | CMS login (git-gateway backend) + the sign-in widget. |
+| **Forms** | stock-alert form (home), honeypot + reCAPTCHA | Native handling; `submission-created` is the recorder. |
+| **Headers / Redirects** | `netlify.toml` (13 header rules, 6 redirects) | Differentiated cache policy, HSTS, CSP, admin noindex; pin by ci/check-netlify-config.js. |
+| **Deploy previews (prebuilt)** | `ci/run.sh deploy` + the GitHub Actions dev lane (`deploy-dev.yml`) | `--dir` uploads, stable `dev` alias, zero build minutes. |
+| **RSS** | `/articles/index.xml` | Site feed deliberately scoped to the articles section. |
 
 **Third-party JavaScript on a public page: none.** The only external origins the
 built HTML references are `facebook.com` (the feed embed) and the site's own
@@ -120,14 +123,17 @@ dashboard click.
 
 ---
 
-## What is deliberately not native
+## Deliberate non-uses (Sep 2026 feature pass)
 
-One third-party embed remains: the Facebook and X feed on the home page. It
-costs a `connect.facebook.net` and `platform.twitter.com` allowance in the CSP,
-and in Firefox with no session the widget logs retry errors while it gives up.
+Everything below was evaluated in the 2026-10 compliance pass and NOT
+adopted, each for a reason that is a decision rather than an oversight:
 
-The fallback — plain links plus the sentence "New stock and what Ed is working on
-get posted as it happens" — renders without it. Removing the embed costs
-nothing except the live feed, and the live feed is the only part of this site
-that reaches a third party at all. **This is a decision, not a defect**, and it
-is worth deciding deliberately rather than inheriting.
+| Feature | Why not |
+|---|---|
+| **Netlify Image CDN** | Hugo already builds the AVIF/WebP/JPEG ladder at build time from source images; routing through the CDN would add a runtime hop for zero visual gain. |
+| **Edge Functions** | The one edge-shaped job -- gating `/admin/*` -- is served well by the existing function (`admin-guard`) with no latency problem worth a second runtime. |
+| **Netlify DB / managed Postgres** | The data layer is Turso (libSQL) by design; the functions talk to it over HTTPS with no native bindings. |
+| **Identity for staff auth** | Identity runs the CMS login; staff auth is our own JWT with per-rep permissions, already tested end to end. |
+| **Build Plugins** | Deprecated for new sites, and this site never builds remotely anyway. |
+| **Remote builds / automatic deploys** | Off by design: builds run in the pinned podman image on the CI host; Netlify receives prebuilt directories. |
+| **Netlify Analytics** | No scripts on public pages by choice; server-side analytics would be a paid add-on decision for the owner. |

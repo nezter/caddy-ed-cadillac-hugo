@@ -315,12 +315,19 @@
     X-Frame-Options = "SAMEORIGIN"
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "geolocation=(self), microphone=(), camera=()"
-    # Netlify Identity is required for the CMS and the customer portal login.
-    # The social embeds on the home page (connect.js) need Facebook and Twitter
-    # domains. Without them the CSP blocks the Facebook page plugin iframe and
-    # the Twitter timeline widget, so the "What Ed is posting" panel renders
-    # empty. These are the minimum domains required for those two embeds.
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://identity.netlify.com https://unpkg.com https://www.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data:; connect-src 'self' https://*.netlify.app https://*.supabase.co wss://*.supabase.co; frame-src 'self' https://www.google.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self'"
+    # What actually needs an allowance, verified 2026-10:
+    #   - identity.netlify.com: the Netlify Identity widget (CMS login at
+    #     /cms.html and the staff sign-in page). Script AND connect -- the
+    #     widget talks to the Identity API by XHR, which the old policy
+    #     forgot, so login could be blocked by our own CSP.
+    #   - www.google.com + www.gstatic.com: reCAPTCHA on the Netlify Forms
+    #     (the stock-alert form) -- api script, challenge iframe, XHRs.
+    # Everything else is gone: the social embeds were replaced by the cached
+    # first-party feed (social-feed.js), fonts are self-hosted, and no
+    # browser code talks to Supabase or other netlify.app origins anymore.
+    # ci/check-netlify-config.js fails if a stale origin (unpkg,
+    # fonts.googleapis, cdnjs, supabase) reappears in any CSP copy.
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://identity.netlify.com https://www.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data:; connect-src 'self' https://identity.netlify.com https://www.google.com; frame-src 'self' https://www.google.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self'"
 
 # -----------------------------------------------------------------------------
 # Edge/bot handling

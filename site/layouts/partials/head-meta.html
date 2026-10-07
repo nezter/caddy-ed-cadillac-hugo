@@ -39,6 +39,11 @@
 {{- /* Canonical + trailing-slash consistency. */}}
 <link rel="canonical" href="{{ .Permalink }}">
 
+{{- /* Feed discovery. The editorial feed is the articles section feed --
+     deliberate: a site feed would list all 170+ vehicle pages, and the
+     thing a reader subscribes to is what Ed writes. */}}
+<link rel="alternate" type="application/rss+xml" title="{{ .Site.Title }} — articles" href="{{ "/articles/index.xml" | absURL }}">
+
 {{- /* Icons. Manifest and theme-color so the installed PWA matches the design. */}}
 <link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32x32.png">

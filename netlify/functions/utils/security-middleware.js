@@ -31,11 +31,11 @@ const securityHeaders = {
   // Content Security Policy
   'Content-Security-Policy': [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com",
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://identity.netlify.com https://www.google.com https://www.gstatic.com",
+    "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: https: blob:",
-    "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com",
-    "connect-src 'self' https://api.supabase.co https://*.supabase.co",
+    "font-src 'self' data:",
+    "connect-src 'self' https://identity.netlify.com https://www.google.com",
     "frame-src 'none'",
     "object-src 'none'",
     "base-uri 'self'",
@@ -47,7 +47,6 @@ const securityHeaders = {
   // Other security headers
   'X-Content-Type-Options': 'nosniff',
   'X-Frame-Options': 'DENY',
-  'X-XSS-Protection': '1; mode=block',
   'Referrer-Policy': 'strict-origin-when-cross-origin',
   'Permissions-Policy': [
     'camera=()',
@@ -80,11 +79,11 @@ const developmentHeaders = {
   ...securityHeaders,
   'Content-Security-Policy': [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com",
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://identity.netlify.com https://www.google.com https://www.gstatic.com",
+    "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: https: blob:",
-    "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com",
-    "connect-src 'self' https://api.supabase.co https://*.supabase.co ws: wss:",
+    "font-src 'self' data:",
+    "connect-src 'self' https://identity.netlify.com https://www.google.com ws: wss:",
     "frame-src 'self'",
     "object-src 'none'",
     "base-uri 'self'",

@@ -1463,3 +1463,31 @@ approved cleanup:
 - Verified after: build clean, all CI gates green (portal, permissions,
   function-auth, front-end, endpoints, verify-build, content-admin,
   articles-admin, agents-admin, seo-score, structured-data).
+
+---
+
+## Netlify compliance pass (Sep-2026 feature audit)
+
+Full audit of the platform surface against September-2026 Netlify, then the
+real gaps closed:
+- CSP tightened to the origins the site ACTUALLY uses, in all three copies
+  (netlify.toml, nginx.preview, security-middleware). Gone: unpkg, Google
+  Fonts, cdnjs/jsdelivr, Supabase. Fixed while there: identity.netlify.com
+  added to CONNECT-src (the widget talks to the Identity API by XHR -- the
+  old policy could have blocked its own CMS login), www.google.com added for
+  reCAPTCHA XHRs. Stale comment replaced with the verified facts.
+- NEW ci/check-netlify-config.js: publish/command/functions keys, one Node
+  pin across four files, preview contexts carry markers, every redirect
+  target resolves, HSTS/nosniff/CSP present, the TWO CSP copies must be
+  identical after normalisation, no stale origin may reappear in any copy,
+  no legacy _headers/_redirects, articles feed configured + advertised.
+- Articles RSS: /articles/index.xml (deliberately the editorial feed, not a
+  site feed that would list 170+ vehicle pages), discovery link in head,
+  subscribe chip on the articles page.
+- docs/NETLIFY-FOUNDATIONS.md refreshed: current primitive table + a
+  deliberate-non-uses matrix (Image CDN, Edge Functions, Netlify DB,
+  Identity-for-staff, Build Plugins, remote builds, Analytics) each with
+  its reason. Blobs-store caveat kept as an owed dashboard check.
+
+Verified: build clean; 12 CI gates green incl. the new netlify config
+17/17; jsdom content editors 25/25; counts and button batteries green.

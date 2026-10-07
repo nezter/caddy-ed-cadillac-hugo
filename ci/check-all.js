@@ -155,6 +155,11 @@ const CHECKS = [
     why: 'every admin page is reachable from the hub and the nav, and every route resolves',
   },
   {
+    name: 'netlify config',
+    file: 'check-netlify-config.js',
+    why: 'one platform policy: CSP copies agree, no stale origins, redirects resolve, node pins in sync',
+  },
+  {
     name: 'inquiry path',
     file: 'check-inquiry-path.js',
     needsDatabase: true,

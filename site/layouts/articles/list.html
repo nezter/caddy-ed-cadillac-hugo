@@ -4,6 +4,7 @@
     <p class="eyebrow">Articles &amp; guides<span class="ltbar" aria-hidden="true"><i></i><i></i><i></i></span></p>
     <h1 class="display">{{ .Title }}</h1>
     {{ with .Description }}<p class="lede">{{ . }}</p>{{ end }}
+<p style="margin-top:1rem"><a class="chip" href="{{ "/articles/index.xml" | absURL }}">Subscribe — RSS feed</a></p>
   </div>
 </section>
 <section style="background:#fff;padding-block:clamp(2rem,4vw,3.5rem)">
