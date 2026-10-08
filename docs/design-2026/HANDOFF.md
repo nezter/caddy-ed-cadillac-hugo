@@ -1491,3 +1491,24 @@ real gaps closed:
 
 Verified: build clean; 12 CI gates green incl. the new netlify config
 17/17; jsdom content editors 25/25; counts and button batteries green.
+
+---
+
+## Launch plumbing: the production workflow could never have run
+
+Waiting on the Netlify token surfaced two faults in deploy.yml, both
+fixed before the first real dispatch could hit them:
+1. It downloaded a `site-public` artifact from ci-cd.yml, but
+   actions/download-artifact reads the CURRENT run's artifacts and this
+   workflow has no build job -- the launch would have died on step one.
+   It now builds inline on the runner, identical in shape to deploy-dev.
+2. workflow_dispatch only works when the file exists on the DEFAULT
+   branch, and the default branch was `master` (the stale February tree).
+   deploy.yml was invisible to GitHub. Default branch corrected to
+   modernize/netlify-build-2026.
+Also found while writing it: the file-write pipeline rewrote a GitHub
+expression to three stars in the new workflow (YAML then failed to
+parse). Repaired byte-level; ci/check-netlify-config.js now parses both
+workflows for real, forbids three-star mangling, asserts prod-only
+--prod, the confirmation gate, and that only the production workflow
+declares the production environment.

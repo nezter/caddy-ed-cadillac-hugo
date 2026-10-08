@@ -122,9 +122,16 @@ Jobs:
 | `ci-green` | single blocking gate over all of the above |
 
 `.github/workflows/deploy.yml` is the manual production deploy. It requires
-typing `deploy` to confirm, refuses a dirty working tree, re-runs the asset
-gate against the downloaded artifact, and smoke-tests `caddyed.com`
-afterwards.
+typing `deploy` to confirm, refuses a dirty working tree, BUILDS ON THE
+RUNNER the same self-contained way the dev lane does -- it used to
+download a `site-public` artifact from ci-cd.yml, which could never work
+because `actions/download-artifact` reads the artifact of its OWN run and
+this workflow has no build job -- re-runs the asset gate against the
+pulled-back artifact, uploads with `netlify deploy --prod`, and
+smoke-tests `caddyed.com`, including a marker that proves the MODERNIZED
+build is live rather than the one from February. `workflow_dispatch`
+requires the file to exist on the DEFAULT branch, which is why the
+default branch is `modernize/netlify-build-2026`.
 
 `.github/workflows/deploy-dev.yml` is the DEV LANE, the Netlify-shaped flow
 for a site whose remote builders are off. Every push to

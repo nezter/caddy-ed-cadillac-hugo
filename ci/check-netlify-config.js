@@ -125,6 +125,52 @@ check('no legacy _headers/_redirects in site/static',
   check('feed discovery link in head', /application\/rss\+xml/.test(head));
 }
 
+/* --- deploy workflows: the launch path itself --- */
+{
+  const D = String.fromCharCode(36);
+  const wf = (name) => fs.readFileSync(path.join(ROOT, '.github', 'workflows', name), 'utf8');
+  const deploy = wf('deploy.yml');
+  const dev = wf('deploy-dev.yml');
+
+  // YAML validity, parsed for real (a mangled expression would fail here).
+  let parsable = true;
+  try {
+    const yaml = require(path.join(ROOT, 'netlify', 'functions', 'node_modules', 'js-yaml'));
+    yaml.load(deploy); yaml.load(dev);
+  } catch (e) { parsable = false; }
+  check('both deploy workflows parse as YAML', parsable);
+
+  // The pipeline that writes files has, once, rewritten a GitHub expression
+  // to three stars; the workflow then failed to parse. Nothing in a workflow
+  // file is ever a secret VALUE, so three stars must never appear.
+  const stars = (text) => (text.match(/\*{3}/g) || []).length;
+  check('no redaction-mangled *** in workflows', stars(deploy) === 0 && stars(dev) === 0, 'deploy:' + stars(deploy) + ' dev:' + stars(dev));
+
+  // Every env that carries the Netlify token must resolve from secrets.
+  const tokenLines = deploy.split(/\r?\n/).filter((l) => l.includes('NETLIFY_AUTH_TOKEN:'));
+  check('deploy.yml takes the token from secrets only',
+    tokenLines.length > 0 && tokenLines.every((l) => l.split('NETLIFY_AUTH_TOKEN:')[1].trim().startsWith(D + '{')),
+    tokenLines.length + ' lines');
+
+  // Prod-only: --prod exactly once, in deploy.yml's command; the dev lane
+  // must NOT carry it even in command shape.
+  const cmdLines = (text) => text.split(/\r?\n/).filter((l) => /netlify deploy/.test(l) && !/^\s*#/.test(l));
+  const deployCmds = cmdLines(deploy).join('\n');
+  const devCmds = cmdLines(dev).join('\n');
+  check('deploy.yml publishes with --prod', /--prod\b/.test(deployCmds));
+  check('deploy-dev.yml never uses --prod', !/--prod\b/.test(devCmds));
+  check('deploy-dev.yml keeps its stable alias', /--alias/.test(devCmds));
+
+  // Both build the same way, on the same runner, with the same guards.
+  for (const [name, text] of [['deploy.yml', deploy], ['deploy-dev.yml', dev]]) {
+    check(name + ' builds via ci/run.sh on the runner', text.includes('./ci/run.sh build') && text.includes('REMOTE_WORKDIR'));
+    check(name + ' runs the asset gate and cleans up', text.includes('verify-build.js site/public') && text.includes('if: always()'));
+  }
+  check('deploy.yml stays confirmation-gated', deploy.includes('inputs.confirm') || deploy.includes('inputs confirm') || /confirm/.test(deploy));
+  check('only the production workflow declares the production environment',
+    /environment:\s*production/.test(deploy) && !/environment:\s*production/.test(dev));
+}
+
 const failed = results.filter((x) => !x.pass);
 for (const x of results) console.log('  ' + (x.pass ? 'ok  ' : 'FAIL') + '  ' + x.label + (x.pass ? '' : '  -- ' + x.detail));
 console.log('\n  ' + (results.length - failed.length) + '/' + results.length + (failed.length ? ' -- FAILURES' : ' ok'));

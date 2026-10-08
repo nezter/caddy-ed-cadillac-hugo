@@ -3,8 +3,9 @@ name: Deploy
 # =============================================================================
 # Production deploy for caddyed.com
 #
-# This workflow does NOT run a Netlify build. It downloads the prebuilt
-# site/public artifact produced by ci-cd.yml and uploads it:
+# Manual, confirmation-gated, and it does NOT run a Netlify build. It builds
+# on the self-hosted runner -- the same self-contained shape as the dev lane
+# (deploy-dev.yml) -- and uploads the result:
 #
 #     netlify deploy --prod --dir=site/public --functions=netlify/functions
 #
@@ -13,7 +14,16 @@ name: Deploy
 # skip_automatic_builds is enabled precisely so that a git push can never
 # silently start a remote build.
 #
-# Triggered manually only. Nothing pushes to master and expects a deploy.
+# WHY IT BUILDS ITSELF (2026-10): it used to download a `site-public`
+# artifact from ci-cd.yml -- but actions/download-artifact reads artifacts
+# from the SAME workflow run, and this workflow has no build job, so the
+# download could never find anything. The first real dispatch would have died
+# on step one. It now builds inline, exactly the way the dev lane has been
+# doing, and the two workflows differ only in --prod and the smoke targets.
+#
+# One way to run it: GitHub UI -> Actions -> Deploy -> Run workflow. The
+# file must exist on the DEFAULT branch for workflow_dispatch to be offered,
+# which is why the default branch is modernize/netlify-build-2026.
 # =============================================================================
 
 on:
@@ -31,7 +41,7 @@ on:
 permissions:
   contents: read
 
-# Only one deploy at a time, ever.
+# Only one production deploy at a time, ever.
 concurrency:
   group: netlify-production-deploy
   cancel-in-progress: false
@@ -47,16 +57,40 @@ env:
 
 jobs:
   deploy:
-    name: Deploy prebuilt site to production
+    name: Build, verify, and publish to production
     runs-on: [self-hosted, caddy-ci]
+    timeout-minutes: 45
     environment: production
-
+    env:
+      # Same per-run workdir pattern as ci-cd.yml and deploy-dev.yml so
+      # concurrent or cancelled runs cannot delete each other's files.
+      REMOTE_WORKDIR: /var/lib/gitlab-runner/gha-work/${{ github.job }}-caddy-prod-${{ github.run_id }}
     steps:
       - name: Verify the operator really meant it
         run: |
           set -euo pipefail
           if [ "${{ inputs.confirm }}" != "deploy" ]; then
             echo "::error::confirmation must be exactly 'deploy'"
+            exit 1
+          fi
+
+      - name: Verify the build image exists
+        run: |
+          set -euo pipefail
+          podman image exists "$IMAGE" \
+            || { echo "::error::image $IMAGE missing -- run: ./ci/run.sh image"; exit 1; }
+
+      - name: Require Netlify credentials
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+        run: |
+          set -euo pipefail
+          # Fail BEFORE any build work: a deploy that dies on a missing token
+          # after two minutes has told you nothing new.
+          if [ -z "$NETLIFY_AUTH_TOKEN" ]; then
+            echo "::error::secret NETLIFY_AUTH_TOKEN is not set on this repository"
+            echo "Add it via repo Settings -> Secrets and variables -> Actions."
+            echo "Token needs deploy rights on the site and nothing else."
             exit 1
           fi
 
@@ -71,73 +105,91 @@ jobs:
             exit 1
           fi
 
-      - name: Require Netlify credentials
+      - name: Production build (via ci/run.sh, in the pinned image)
         env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          # ci/run.sh deletes its per-run workdir on exit; hold it open so the
+          # publish dir can be pulled back into the checkout below.
+          CLEANUP: 0
+        run: ./ci/run.sh build
+
+      - name: Pull the publish dir back from the CI-host workdir
         run: |
           set -euo pipefail
-          # Fail BEFORE any build/verification work: a deploy that dies on a
-          # missing token after two minutes has told you nothing new.
-          if [ -z "$NETLIFY_AUTH_TOKEN" ]; then
-            echo "::error::secret NETLIFY_AUTH_TOKEN is not set on this repository"
-            echo "Add it via repo Settings -> Secrets and variables -> Actions."
-            echo "Token needs deploy rights on the site and nothing else."
-            exit 1
-          fi
-
-      - name: Download the verified build artifact
-        uses: actions/download-artifact@v8
-        with:
-          name: site-public
-          path: site/public
-
-      - name: Sanity-check the artifact
-        run: |
-          set -euo pipefail
-          test -f site/public/index.html || { echo "::error::no index.html in artifact"; exit 1; }
+          rsync -az "${CI_USER}@${CI_HOST}:${REMOTE_WORKDIR}/site/public/" site/public/
+          rm -rf "${REMOTE_WORKDIR:-/nonexistent}"
+          test -f site/public/index.html || { echo "::error::no index.html after the pull-back"; exit 1; }
           echo "pages: $(find site/public -name '*.html' | wc -l)"
-          # Re-run the asset gate against the downloaded artifact. In the build
-          # image -- the runner host has no node.
+
+      - name: Asset gate against the artifact
+        run: |
+          set -euo pipefail
+          # Same gate the rest of the pipeline runs, in the build image -- the
+          # runner host has no node.
           podman run --rm -v "$PWD":/site:Z -w /site "$IMAGE" \
             bash -lc 'node ci/verify-build.js site/public'
 
-      - name: Authenticate to Netlify
+      - name: Upload prebuilt site to production (no build minutes used)
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-        run: echo "::add-mask::${NETLIFY_AUTH_TOKEN}"
-
-      - name: Upload prebuilt site (no build minutes used)
-        env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+          NETLIFY_SITE_ID_SECRET: ${{ secrets.NETLIFY_SITE_ID }}
+          REASON: ${{ inputs.reason }}
         run: |
           set -euo pipefail
-          # Run the CLI from the pinned build image so the deploy tool version is
-          # reproducible rather than whatever is newest on the runner.
+          SITE="${NETLIFY_SITE_ID_SECRET:-$SITE_ID}"
+          # Inputs are free text; strip the one character class that could
+          # break the message quoting below.
+          SAFE_REASON="${REASON//\"/}"
+          MSG="production: ${GITHUB_SHA} by ${GITHUB_ACTOR}${SAFE_REASON:+ -- $SAFE_REASON}"
+          # The CLI runs from the pinned image so the tool version is
+          # reproducible. --prod is what makes it the live site; there is no
+          # other workflow that passes it.
           podman run --rm -v "$PWD":/site:Z -w /site \
-            -e NETLIFY_AUTH_TOKEN -e NETLIFY_SITE_ID \
+            -e NETLIFY_AUTH_TOKEN -e NETLIFY_SITE_ID="$SITE" \
+            -e DEPLOY_MSG="$MSG" \
             "$IMAGE" \
-            bash -lc 'netlify deploy --prod \
-              --site="$NETLIFY_SITE_ID" \
-              --dir=site/public \
-              --functions=netlify/functions \
-              --message="${{ github.actor }}: ${{ inputs.reason }}"'
+            bash -lc 'netlify deploy --prod --site="$NETLIFY_SITE_ID" --dir=site/public --functions=netlify/functions --message="$DEPLOY_MSG"' \
+            2>&1 | tee deploy-log.txt
+          DEPLOY_URL=$(grep -Eo 'https://[a-z0-9-]+--vibrant-ritchie-0cef93\.netlify\.app' deploy-log.txt | head -1 || true)
+          {
+            echo "### Production deployed"
+            echo ""
+            echo "- https://caddyed.com/"
+            echo "- Deploy: ${DEPLOY_URL:-not parsed from CLI output}"
+            echo "- Commit: \`${GITHUB_SHA}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Post-deploy smoke test
         run: |
           set -euo pipefail
           fail=0
+          # 200s: the pages, the feed, and the function alias.
           for url in \
             "https://caddyed.com/" \
             "https://caddyed.com/inventory/" \
-            "https://caddyed.com/contact/" \
-            "https://caddyed.com/contact/" ; do
+            "https://caddyed.com/articles/" \
+            "https://caddyed.com/articles/index.xml" \
+            "https://caddyed.com/health"; do
             code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 25 "$url" || echo 000)
-            echo "$code  $url"
+            echo "$code (want 200)  $url"
             [ "$code" = "200" ] || fail=1
           done
-          # The health function must be reachable through the /health alias.
-          code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 25 "https://caddyed.com/health" || echo 000)
-          echo "$code  https://caddyed.com/health"
-          [ "$code" = "200" ] || fail=1
-          exit $fail
+          # The admin gate must still redirect (302) rather than serve.
+          code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 25 "https://caddyed.com/admin/" || echo 000)
+          echo "$code (want 302)  https://caddyed.com/admin/"
+          [ "$code" = "302" ] || fail=1
+          # Prove it is THIS build, not the old one: the modernized footer
+          # links /articles/ and the feed exists. The February build had
+          # neither.
+          if ! curl -fsS --max-time 25 https://caddyed.com/ | grep -Eq 'href="?/articles/'; then
+            echo "::error::smoke: home page does not carry the modernized build marker"
+            fail=1
+          fi
+          if [ "$fail" != "0" ]; then
+            echo "::error::production smoke test failed"
+            exit 1
+          fi
+          echo "production is up: https://caddyed.com/"
+
+      - name: Clean up the CI-host workdir
+        if: always()
+        run: rm -rf "${REMOTE_WORKDIR:-/nonexistent}" || true
