@@ -118,10 +118,18 @@ jobs:
           # 3) always report what exists, readable or not: these logs are the
           #    only window onto this host from CI, so the probe earns its
           #    lines even when it succeeds elsewhere.
-          echo "probe: user=$(whoami) home=$HOME"
+          # Emitted as annotations on purpose: workflow logs need a scope
+          # this deployment's read access does not carry, but annotations
+          # are readable, so the probe can actually be SEEN from outside.
+          echo "::warning title=netlify-probe::user=$(whoami) home=$HOME"
+          probe_found=0
           for c in /root/.config/netlify/config.json /root/.netlify/config.json /home/*/.config/netlify/config.json /home/*/.netlify/config.json; do
-            if [ -f "$c" ]; then echo "probe found: $c (readable=$([ -r "$c" ] && echo yes || echo no))"; fi
+            if [ -f "$c" ]; then
+              probe_found=1
+              echo "::warning title=netlify-probe::found: $c (readable=$([ -r "$c" ] && echo yes || echo no))"
+            fi
           done
+          if [ "$probe_found" = "0" ]; then echo "::warning title=netlify-probe::no netlify config found under /root or /home/*"; fi
           if [ -n "$CFG" ]; then
             echo "MODE=hostconfig" >> "$GITHUB_ENV"
             echo "HOST_NETLIFY_CONFIG=$CFG" >> "$GITHUB_ENV"
