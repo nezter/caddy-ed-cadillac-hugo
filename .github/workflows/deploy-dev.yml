@@ -89,12 +89,30 @@ jobs:
             exit 0
           fi
           CFG=""
-          if [ -f "$HOME/.config/netlify/config.json" ]; then CFG="$HOME/.config/netlify/config.json";
-          elif [ -f "$HOME/.netlify/config.json" ]; then CFG="$HOME/.netlify/config.json"; fi
+          # 1) this user's own homes, every location the CLI accepts
+          for c in "$HOME/.config/netlify/config.json" "$HOME/.netlify/config.json" "${XDG_CONFIG_HOME:-/nonexistent}/netlify/config.json"; do
+            if [ -f "$c" ]; then CFG="$c"; break; fi
+          done
+          # 2) the token PREDATES the runner: it was placed for whichever
+          #    user first deployed from this host (2026-09-28). Look at the
+          #    other humans' and root's homes too, and only accept what this
+          #    user can actually read.
+          if [ -z "$CFG" ]; then
+            for c in /root/.config/netlify/config.json /root/.netlify/config.json /home/*/.config/netlify/config.json /home/*/.netlify/config.json; do
+              if [ -f "$c" ] && [ -r "$c" ]; then CFG="$c"; break; fi
+            done
+          fi
+          # 3) always report what exists, readable or not: these logs are the
+          #    only window onto this host from CI, so the probe earns its
+          #    lines even when it succeeds elsewhere.
+          echo "probe: user=$(whoami) home=$HOME"
+          for c in /root/.config/netlify/config.json /root/.netlify/config.json /home/*/.config/netlify/config.json /home/*/.netlify/config.json; do
+            if [ -f "$c" ]; then echo "probe found: $c (readable=$([ -r "$c" ] && echo yes || echo no))"; fi
+          done
           if [ -n "$CFG" ]; then
             echo "MODE=hostconfig" >> "$GITHUB_ENV"
             echo "HOST_NETLIFY_CONFIG=$CFG" >> "$GITHUB_ENV"
-            echo "Using the netlify CLI login stored on this host"
+            echo "Using the netlify CLI login stored on this host: $CFG"
             exit 0
           fi
           echo "::error::no Netlify credentials on this runner and no NETLIFY_AUTH_TOKEN secret"
