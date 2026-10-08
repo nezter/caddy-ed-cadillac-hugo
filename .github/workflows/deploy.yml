@@ -130,6 +130,12 @@ jobs:
             fi
           done
           if [ "$probe_found" = "0" ]; then echo "::warning title=netlify-probe::no netlify config found under /root or /home/*"; fi
+          # deeper pass: where COULD it be that the first probe could not look
+          echo "::warning title=netlify-probe2::home-users: $(ls /home 2>/dev/null | tr '\n' ' ')"
+          echo "::warning title=netlify-probe2::runnerhome: $(ls -a "$HOME" 2>/dev/null | tr '\n' ' ' | head -c 280)"
+          find /var/lib/gitlab-runner -maxdepth 4 -name 'config.json' -path '*netlify*' 2>/dev/null | head -5 | while read f; do echo "::warning title=netlify-probe2::found: $f"; done || true
+          command -v netlify >/dev/null 2>&1 && echo "::warning title=netlify-probe2::netlify-cli-on-host=yes" || echo "::warning title=netlify-probe2::netlify-cli-on-host=no"
+          sudo -n true 2>/dev/null && echo "::warning title=netlify-probe2::sudo=yes" || echo "::warning title=netlify-probe2::sudo=no"
           if [ -n "$CFG" ]; then
             echo "MODE=hostconfig" >> "$GITHUB_ENV"
             echo "HOST_NETLIFY_CONFIG=$CFG" >> "$GITHUB_ENV"
