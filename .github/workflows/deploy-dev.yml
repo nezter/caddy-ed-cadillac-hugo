@@ -67,19 +67,40 @@ jobs:
           podman image exists "$IMAGE" \
             || { echo "::error::image $IMAGE missing -- run: ./ci/run.sh image"; exit 1; }
 
-      - name: Require Netlify credentials
+      - name: Resolve Netlify credentials
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
         run: |
           set -euo pipefail
           # Fail BEFORE any build work: a deploy that dies on a missing token
           # after two minutes has told you nothing new.
-          if [ -z "$NETLIFY_AUTH_TOKEN" ]; then
-            echo "::error::secret NETLIFY_AUTH_TOKEN is not set on this repository"
-            echo "Add it via repo Settings -> Secrets and variables -> Actions."
-            echo "Token needs deploy rights on the site and nothing else."
-            exit 1
+          #
+          # Two ways to be credentialed, checked in order:
+          #   1. the repo secret (works anywhere; prefer it when present);
+          #   2. the netlify CLI login ON THIS RUNNER HOST -- the pipeline
+          #      that originally deployed this site ran where the token
+          #      lived (~/.config/netlify/config.json, commit 52d88e8),
+          #      and the runner IS that host. Accepting the host login is
+          #      not a shortcut; it restores how the deploy actually worked
+          #      until this workflow started demanding a second copy.
+          if [ -n "$NETLIFY_AUTH_TOKEN" ]; then
+            echo "MODE=secret" >> "$GITHUB_ENV"
+            echo "Using the NETLIFY_AUTH_TOKEN repo secret"
+            exit 0
           fi
+          CFG=""
+          if [ -f "$HOME/.config/netlify/config.json" ]; then CFG="$HOME/.config/netlify/config.json";
+          elif [ -f "$HOME/.netlify/config.json" ]; then CFG="$HOME/.netlify/config.json"; fi
+          if [ -n "$CFG" ]; then
+            echo "MODE=hostconfig" >> "$GITHUB_ENV"
+            echo "HOST_NETLIFY_CONFIG=$CFG" >> "$GITHUB_ENV"
+            echo "Using the netlify CLI login stored on this host"
+            exit 0
+          fi
+          echo "::error::no Netlify credentials on this runner and no NETLIFY_AUTH_TOKEN secret"
+          echo "Checked: env NETLIFY_AUTH_TOKEN, ~/.config/netlify/config.json, ~/.netlify/config.json"
+          echo "Either add the repo secret, or run netlify login once as this runner user."
+          exit 1
 
       - uses: actions/checkout@v7
 
@@ -122,8 +143,16 @@ jobs:
           # reproducible. NOT --prod: this workflow cannot touch production.
           # Env vars carry the values into the container so no nested quoting
           # touches them.
+          # When the credential is this host's CLI login, hand that login to
+          # the container's root user (the image runs the CLI as root); the
+          # CLI then reads it without any variable being set.
+          MOUNT_ARGS=()
+          if [ "${MODE:-}" = "hostconfig" ]; then
+            MOUNT_ARGS=(-v "$HOST_NETLIFY_CONFIG:/root/.config/netlify/config.json:ro")
+          fi
           podman run --rm -v "$PWD":/site:Z -w /site \
             -e NETLIFY_AUTH_TOKEN -e NETLIFY_SITE_ID="$SITE" \
+            "${MOUNT_ARGS[@]}" \
             -e DEPLOY_MSG="$MSG" -e DEV_ALIAS="$DEV_ALIAS" \
             "$IMAGE" \
             bash -lc 'netlify deploy --site="$NETLIFY_SITE_ID" --dir=site/public --functions=netlify/functions --alias="$DEV_ALIAS" --message="$DEPLOY_MSG"' \

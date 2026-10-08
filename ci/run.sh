@@ -309,7 +309,19 @@ do_deploy() {
 # Fail BEFORE the build, not after it. A deploy that builds for two minutes and
 # then dies on a missing token has wasted the build and told you nothing new.
 preflight_deploy() {
-  if [ -z "${NETLIFY_AUTH_TOKEN:-}" ] && [ ! -f "$HOME/.netlify/config.json" ]; then
+  # The Netlify CLI keeps its login in ONE of three places and this preflight
+  # used to know only two of them: the env var, and ~/.netlify/config.json.
+  # The token that actually exists on the CI host lives in the XDG location,
+  # ~/.config/netlify/config.json (found for real on 2026-09-28, recorded in
+  # commit 52d88e8) -- so from the day this preflight landed, every deploy on
+  # the host refused with no credentials WHILE HOLDING VALID CREDENTIALS.
+  # That is the pipeline-used-to-work-then-got-disabled story, and this is
+  # the fix: accept every location the CLI itself accepts.
+  local cfg=""
+  if [ -f "$HOME/.config/netlify/config.json" ]; then cfg="$HOME/.config/netlify/config.json"
+  elif [ -f "$HOME/.netlify/config.json" ]; then cfg="$HOME/.netlify/config.json"
+  fi
+  if [ -z "${NETLIFY_AUTH_TOKEN:-}" ] && [ -z "$cfg" ]; then
     log "FATAL: no Netlify credentials"
     log "  A deploy needs one of:"
     log "    NETLIFY_AUTH_TOKEN=<token>    preferred, works in a script"
@@ -321,7 +333,11 @@ preflight_deploy() {
     log "  Nothing was built and nothing was uploaded."
     exit 1
   fi
-  log "Netlify credentials present"
+  if [ -n "$cfg" ]; then
+    log "Netlify credentials present (host CLI config)"
+  else
+    log "Netlify credentials present (NETLIFY_AUTH_TOKEN)"
+  fi
 }
 
 case "${1:-build}" in

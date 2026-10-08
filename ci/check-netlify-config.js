@@ -166,6 +166,13 @@ check('no legacy _headers/_redirects in site/static',
     check(name + ' builds via ci/run.sh on the runner', text.includes('./ci/run.sh build') && text.includes('REMOTE_WORKDIR'));
     check(name + ' runs the asset gate and cleans up', text.includes('verify-build.js site/public') && text.includes('if: always()'));
   }
+  // The credential fallback restores the ORIGINAL pipeline: the netlify CLI
+  // login living on the runner host (commit 52d88e8). Dropping it silently
+  // would demand a second copy of a token that already exists.
+  for (const [name, text] of [['deploy.yml', deploy], ['deploy-dev.yml', dev]]) {
+    check(name + ' accepts the host netlify login as a credential fallback',
+      text.includes('MODE=hostconfig') && text.includes('MOUNT_ARGS') && text.includes('.config/netlify/config.json'));
+  }
   check('deploy.yml stays confirmation-gated', deploy.includes('inputs.confirm') || deploy.includes('inputs confirm') || /confirm/.test(deploy));
   check('only the production workflow declares the production environment',
     /environment:\s*production/.test(deploy) && !/environment:\s*production/.test(dev));

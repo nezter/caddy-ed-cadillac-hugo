@@ -1512,3 +1512,26 @@ parse). Repaired byte-level; ci/check-netlify-config.js now parses both
 workflows for real, forbids three-star mangling, asserts prod-only
 --prod, the confirmation gate, and that only the production workflow
 declares the production environment.
+
+---
+
+## Recovered: the pipeline that used to work, and why it stopped
+
+Traced through git history at the owner's prompting. The Sep-28 commit
+52d88e8 records the whole story: the deploy that first worked ran where
+the Netlify token lived -- `~/.config/netlify/config.json` on the CI
+host -- and the repo was linked there. The live site still carries that
+era's content, WITHOUT functions (docs/MISSING.md documented all 47
+functions 404ing).
+
+The pipeline then DISABLED ITSELF: the deploy preflight (d0536e8) checks
+`$HOME/.netlify/config.json` and the env var -- but NOT the XDG path
+where the token actually sits. From that day on, `./ci/run.sh deploy` on
+the host refused with 'no credentials' while holding valid ones.
+Fixed: the preflight now accepts every location the CLI itself accepts.
+
+And the GitHub workflows no longer demand a SECOND copy of the token:
+they resolve credentials as repo secret first, else the netlify CLI
+login ON the runner host (the runner IS that host), mounting it read-
+only into the build container's root home. The fallback is asserted by
+ci/check-netlify-config.js so it cannot be dropped silently.
