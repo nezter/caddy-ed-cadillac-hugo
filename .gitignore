@@ -97,3 +97,6 @@ site/static/cms.js.LICENSE.txt
 netlify/functions/test-results/
 junit.xml
 site/static/[0-9]*.js.LICENSE.txt
+
+# local fallback deploy artifact (see docs/deployment.md)
+site/public-deploy/

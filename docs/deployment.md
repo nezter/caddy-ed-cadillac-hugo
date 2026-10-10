@@ -157,3 +157,19 @@ site id), then smoke-tests `/`, `/inventory/`, `/health` and the gated
 
 Never add a step that reaches Netlify's build API, and never add a version pin
 in only one of `.nvmrc` / `.tool-versions` / `netlify.toml` / `ci/Containerfile`.
+
+## When the CI runner is offline (fallback path)
+
+The self-hosted runner is the preferred deploy lane, but it is a single
+host and can be offline (it was, on 2026-10-10, the day of the first
+production launch). Deploying does not depend on it:
+
+1. Build the publish dir the same way ci/run.sh does -- see
+   `scripts/build-for-netlify.js` for the exact flags (Hugo extended,
+   HUGO_BASEURL=https://caddyed.com/, --minify --gc).
+2. `netlify deploy --prod --site 532a7445-ce96-40c1-bebb-b9d14a0d0e10 \`
+   `  --auth <token> --dir <publish-dir> --functions netlify/functions \`
+   `  --message "production: <sha> -- <why>"`
+
+The token can be a personal access token with deploy rights on this site
+only; do not paste it into commits, logs, or chat.

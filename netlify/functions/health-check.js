@@ -7,12 +7,19 @@ const enhancedDatabaseService = require('./utils/enhanced-database-service');
 const redisCacheService = require('./utils/redis-cache-service');
 const performanceMonitor = require('./utils/performance-monitor');
 const { createSecureResponse } = require('./utils/security-middleware');
+const DatabaseService = require('./utils/database-service');
 
 exports.handler = async function(event, context) {
   try {
     const startTime = Date.now();
     const method = event.httpMethod;
-    const path = (event.path || '').replace('/.netlify/functions/health-check', '');
+    // The netlify.toml rewrite /health -> /health-check forwards the ORIGINAL
+    // request path here, so the strip above was a no-op for it and the
+    // router below never matched ("Endpoint not found" at /health).
+    // Normalize both shapes: /.netlify/functions/health-check/* and /health/*.
+    const path = (event.path || '')
+      .replace('/.netlify/functions/health-check', '')
+      .replace(/^\/health(?=\/|$)/, '');
 
     // Apply basic security (no auth for health checks)
     const securityResult = await require('./utils/security-middleware').applySecurity(event, {
@@ -74,20 +81,40 @@ exports.handler = async function(event, context) {
 };
 
 /**
+ * Probe the database layer the site ACTUALLY uses (Turso over HTTPS via
+ * utils/database-service), not the legacy enhanced/Postgres/Supabase
+ * service. That legacy service reports 'none' on this site, which made
+ * /health cry 'unhealthy' while every real endpoint read Turso fine.
+ */
+async function probeDatabase() {
+  if (!DatabaseService.isDatabaseConfigured()) {
+    return { status: 'disconnected', type: 'none', detail: 'TURSO_DATABASE_URL / TURSO_AUTH_TOKEN not set' };
+  }
+  try {
+    const started = Date.now();
+    await DatabaseService.query('SELECT 1 AS ok');
+    return { status: 'connected', type: 'turso', responseTime: `${Date.now() - started}ms` };
+  } catch (error) {
+    return { status: 'error', type: 'turso', error: String((error && error.message) || error).slice(0, 200) };
+  }
+}
+
+/**
  * Basic health check - returns simple status
  */
 async function getBasicHealth() {
   const startTime = Date.now();
   
   try {
-    // Quick checks
-    const dbHealth = await enhancedDatabaseService.healthCheck();
+    // Quick checks -- against the database layer the site actually uses.
+    const db = await probeDatabase();
     const cacheHealth = await redisCacheService.healthCheck();
     const memoryUsage = process.memoryUsage();
     
-    const overallStatus = (dbHealth.postgres || dbHealth.supabase) && 
-                         cacheHealth.status !== 'unhealthy' ? 
-                         'healthy' : 'unhealthy';
+    // Cache is optional infrastructure here: 'not_initialized' is the honest
+    // state for a site with no Redis, and it must not flag the whole site
+    // unhealthy by itself. Only a configured cache reporting 'unhealthy' does.
+    const overallStatus = db.status === 'connected' && cacheHealth.status !== 'unhealthy' ? 'healthy' : 'unhealthy';
     
     const responseTime = Date.now() - startTime;
     
@@ -97,10 +124,7 @@ async function getBasicHealth() {
       timestamp: new Date().toISOString(),
       responseTime: `${responseTime}ms`,
       services: {
-        database: {
-          status: dbHealth.postgres || dbHealth.supabase ? 'connected' : 'disconnected',
-          type: dbHealth.postgres ? 'postgresql' : (dbHealth.supabase ? 'supabase' : 'none')
-        },
+        database: db,
         cache: {
           status: cacheHealth.status,
           connected: cacheHealth.connected
@@ -193,10 +217,11 @@ async function getDatabaseHealth() {
   try {
     const dbHealth = await enhancedDatabaseService.healthCheck();
     const queryStats = enhancedDatabaseService.getQueryStats();
+    const modern = await probeDatabase();
     
     return createSecureResponse(200, {
       success: true,
-      database: dbHealth,
+      database: { legacy: dbHealth, turso: modern },
       statistics: queryStats,
       timestamp: new Date().toISOString()
     });

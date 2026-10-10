@@ -1573,3 +1573,46 @@ from this machine or the runner (probed every path), and no SSH. The
 pipeline is gated, probed and waiting for exactly one of: the repo secret,
 the config restored at ~/.config/netlify/ for the runner user, or an SSH
 key so this box can drive the CI host directly.
+
+---
+
+## LAUNCHED -- 2026-10-10, production runs the modernized build
+
+The owner supplied a Netlify personal access token. With it, and with the
+CI runner found OFFLINE (actions/runners: cicd-runners status offline -- a
+dispatch queued and was cancelled), production was deployed directly from
+this workstation with netlify-cli 27.12.0:
+
+- deploy `6aca9c157b9a6174cad27118` (context production): 2195 files + 57
+  functions -- the first launch of the modernized site.
+- deploy `6aca9d4bdb59370cce64e754`: the health-check fix below (1 function).
+
+The token is also sealed (libsodium, tweetsodium) into repo secrets
+`NETLIFY_AUTH_TOKEN` + `NETLIFY_SITE_ID`, so `deploy.yml`'s credential gate
+passes on the runner the moment the host comes back; nothing needs a token
+file on any host anymore.
+
+Verified live from outside: /, /inventory/, /articles/, /articles/index.xml,
+/specials/, /testimonials/ -> 200; /admin/ -> 302 /admin/sign-in/; CSP +
+HSTS present; sitemap 218 URLs; a vehicle detail page 200; functions
+answering; Turso connected (vehicle-features source:"database"; /health
+database connected, 192ms); Blobs id env present. Site env already had
+TURSO_DATABASE_URL, TURSO_AUTH_TOKEN, JWT_SECRET, SITE_RECAPTCHA_KEY/SECRET,
+NETLIFY_BLOBS_SITE_ID (names observed through the API; values never read).
+
+### health-check.js fix (rode in deploy 6aca9d4bdb...)
+- The netlify.toml rewrite /health -> health-check forwards the ORIGINAL
+  request path, so the old strip was a no-op and the router fell to its 404
+  branch. Paths are now normalized for both shapes.
+- Basic health probed the legacy enhanced/Postgres/Supabase layer, whose
+  "none" verdict made /health report status:"unhealthy" while every real
+  endpoint was reading Turso fine. probeDatabase() runs SELECT 1 through
+  utils/database-service (the layer the site uses); a missing Redis no
+  longer flags the site, only a configured cache in trouble can.
+  Live now: {"status":"healthy","database":{"status":"connected","type":"turso"}}.
+
+### Deploying from here on
+- Runner online: dispatch deploy.yml (confirm="deploy"); secret is in place.
+- Runner offline: build (scripts/build-for-netlify.js env recipe) and run
+  `netlify deploy --prod --site <id> --auth <token> --dir <built-dir>`
+  `--functions netlify/functions` from any workstation.
