@@ -78,6 +78,40 @@
   TURSO_DATABASE_URL      = ""
   TURSO_AUTH_TOKEN        = ""
   SUPABASE_SERVICE_ROLE_KEY = ""
+  # Everything else a preview must never inherit, emptied the same way.
+  # Derived from every env var the functions read (2026-10 sweep);
+  # ci/check-netlify-config.js asserts these markers stay present so a
+  # future env addition cannot silently reopen the inheritance hole.
+  SMTP_HOST                = ""
+  SMTP_PORT                = ""
+  SMTP_USER                = ""
+  SMTP_PASS                = ""
+  SMTP_SECURE              = ""
+  EMAIL_FROM               = ""
+  GOOGLE_CLIENT_ID         = ""
+  GOOGLE_CLIENT_SECRET     = ""
+  FACEBOOK_PAGE_TOKEN      = ""
+  X_BEARER_TOKEN           = ""
+  INSTAGRAM_ACCESS_TOKEN   = ""
+  RECAPTCHA_SECRET_KEY     = ""
+  CRM_API_KEY              = ""
+  CRM_API_URL              = ""
+  CRM_API_ENDPOINT         = ""
+  SUPABASE_URL             = ""
+  SUPABASE_ANON_KEY        = ""
+  SUPABASE_DB_CONNECTION   = ""
+  SUPABASE_DATABASE_URL    = ""
+  SUPABASE_PG_HOST         = ""
+  SUPABASE_PG_PORT         = ""
+  SUPABASE_PG_USER         = ""
+  SUPABASE_PG_PASSWORD     = ""
+  SUPABASE_PG_DATABASE     = ""
+  REDIS_URL                = ""
+  REDIS_CONNECTION_STRING  = ""
+  UPSTASH_REDIS_REST_URL   = ""
+  UPSTASH_REDIS_REST_TOKEN = ""
+  INVENTORY_SOURCE_URL     = ""
+  INVENTORY_SOURCE_TOKEN   = ""
 
 [context.branch-deploy.environment]
   JWT_SECRET              = "branch-deploy-not-configured"
@@ -86,6 +120,40 @@
   TURSO_DATABASE_URL      = ""
   TURSO_AUTH_TOKEN        = ""
   SUPABASE_SERVICE_ROLE_KEY = ""
+  # Everything else a preview must never inherit, emptied the same way.
+  # Derived from every env var the functions read (2026-10 sweep);
+  # ci/check-netlify-config.js asserts these markers stay present so a
+  # future env addition cannot silently reopen the inheritance hole.
+  SMTP_HOST                = ""
+  SMTP_PORT                = ""
+  SMTP_USER                = ""
+  SMTP_PASS                = ""
+  SMTP_SECURE              = ""
+  EMAIL_FROM               = ""
+  GOOGLE_CLIENT_ID         = ""
+  GOOGLE_CLIENT_SECRET     = ""
+  FACEBOOK_PAGE_TOKEN      = ""
+  X_BEARER_TOKEN           = ""
+  INSTAGRAM_ACCESS_TOKEN   = ""
+  RECAPTCHA_SECRET_KEY     = ""
+  CRM_API_KEY              = ""
+  CRM_API_URL              = ""
+  CRM_API_ENDPOINT         = ""
+  SUPABASE_URL             = ""
+  SUPABASE_ANON_KEY        = ""
+  SUPABASE_DB_CONNECTION   = ""
+  SUPABASE_DATABASE_URL    = ""
+  SUPABASE_PG_HOST         = ""
+  SUPABASE_PG_PORT         = ""
+  SUPABASE_PG_USER         = ""
+  SUPABASE_PG_PASSWORD     = ""
+  SUPABASE_PG_DATABASE     = ""
+  REDIS_URL                = ""
+  REDIS_CONNECTION_STRING  = ""
+  UPSTASH_REDIS_REST_URL   = ""
+  UPSTASH_REDIS_REST_TOKEN = ""
+  INVENTORY_SOURCE_URL     = ""
+  INVENTORY_SOURCE_TOKEN   = ""
 
 # Local `netlify dev`. Same reasoning, and this is where a developer is most
 # likely to have a real DATABASE_URL in their shell and be surprised that
@@ -96,6 +164,40 @@
   TURSO_DATABASE_URL      = ""
   TURSO_AUTH_TOKEN        = ""
   SUPABASE_SERVICE_ROLE_KEY = ""
+  # Everything else a preview must never inherit, emptied the same way.
+  # Derived from every env var the functions read (2026-10 sweep);
+  # ci/check-netlify-config.js asserts these markers stay present so a
+  # future env addition cannot silently reopen the inheritance hole.
+  SMTP_HOST                = ""
+  SMTP_PORT                = ""
+  SMTP_USER                = ""
+  SMTP_PASS                = ""
+  SMTP_SECURE              = ""
+  EMAIL_FROM               = ""
+  GOOGLE_CLIENT_ID         = ""
+  GOOGLE_CLIENT_SECRET     = ""
+  FACEBOOK_PAGE_TOKEN      = ""
+  X_BEARER_TOKEN           = ""
+  INSTAGRAM_ACCESS_TOKEN   = ""
+  RECAPTCHA_SECRET_KEY     = ""
+  CRM_API_KEY              = ""
+  CRM_API_URL              = ""
+  CRM_API_ENDPOINT         = ""
+  SUPABASE_URL             = ""
+  SUPABASE_ANON_KEY        = ""
+  SUPABASE_DB_CONNECTION   = ""
+  SUPABASE_DATABASE_URL    = ""
+  SUPABASE_PG_HOST         = ""
+  SUPABASE_PG_PORT         = ""
+  SUPABASE_PG_USER         = ""
+  SUPABASE_PG_PASSWORD     = ""
+  SUPABASE_PG_DATABASE     = ""
+  REDIS_URL                = ""
+  REDIS_CONNECTION_STRING  = ""
+  UPSTASH_REDIS_REST_URL   = ""
+  UPSTASH_REDIS_REST_TOKEN = ""
+  INVENTORY_SOURCE_URL     = ""
+  INVENTORY_SOURCE_TOKEN   = ""
 
 # -----------------------------------------------------------------------------
 # Functions
@@ -246,25 +348,24 @@
   [headers.values]
     Cache-Control = "public, max-age=86400, stale-while-revalidate=604800"
 
-# /img/* holds two different kinds of file and they must not share a policy.
+# /img/* : ONE rule, deliberately.
 #
-# Hugo's derived variants carry a content hash (home-jumbotron_hu_<hash>.avif),
-# so they are safe to cache forever. The rest have STABLE names -- favicon.ico,
-# logo.svg, og-image.jpg, the mstile set, safari-pinned-tab.svg -- and an
-# `immutable` year on those means a changed og-image.jpg could not reach a
-# returning visitor for 365 days. The hashed ones are matched by shape below.
-[[headers]]
-  for = "/img/*"
-  [headers.values]
-    Cache-Control = "public, max-age=86400, stale-while-revalidate=604800"
-
-# Content-hashed derivatives anywhere under /img: safe forever.
-[[headers]]
-  for = "/img/*_*"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
-# Icons and the social card change on a design edit, not on a deploy cadence.
+# This used to try to be cleverer -- a generic rule for stable names
+# (favicon.ico, og-image.jpg, the mstile set ...) plus an `immutable` rule
+# for Hugo's content-hashed derivatives (/img/*_*) -- and it was wrong
+# twice over: the generic rule was duplicated, and Netlify COMBINES every
+# matching header rule instead of picking one ("any custom headers that
+# match for a path combine instead of cancelling out" -- Netlify staff,
+# answers.netlify.com). A hashed file therefore collected BOTH
+# Cache-Control values, and a conflicting duplicate is worse than either
+# policy alone.
+#
+# Globs cannot say "everything except *_*", so the honest choice is one
+# policy for the whole directory: a day of freshness, then stale-while-
+# revalidate. Hashed derivatives give up a theoretical year of immutability;
+# correctness of the served headers is worth more than the micro-cache.
+# ci/check-netlify-config.js fails if overlapping Cache-Control rules
+# (or duplicate rules) ever come back.
 [[headers]]
   for = "/img/*"
   [headers.values]
@@ -279,16 +380,11 @@
     Cache-Control = "public, max-age=31536000, immutable"
     Vary = "Accept"
 
-# AVIF/WebP variants are content-hashed too, so they need no revalidation.
-[[headers]]
-  for = "/*.avif"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
-[[headers]]
-  for = "/*.webp"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
+# (The /*.avif and /*.webp globals that sat here were removed in the same
+#  pass: every avif/webp in the build lives under /img/ or /vehicles/, so
+#  the globals only ever doubled up on the directory rules -- conflicting
+#  with /img's value and duplicating /vehicles'. Each directory now
+#  carries exactly one Cache-Control rule.)
 
 # The CMS bundle is fingerprinted only by webpack's content, and rebuilt often.
 [[headers]]

@@ -92,6 +92,58 @@ for (const ctx of ['deploy-preview', 'branch-deploy']) {
   check('global headers carry a CSP', /Content-Security-Policy\s*=\s*"/.test(toml));
 }
 
+/* --- header rules: one Cache-Control per file, or none --- */
+/*
+ * Netlify COMBINES every matching header rule instead of picking one
+ * (answers.netlify.com, Netlify staff). Two rules that can match the same
+ * file and both set Cache-Control therefore ship a contradictory header --
+ * which is how /img/* ended up with a duplicated rule AND a hashed-
+ * derivative rule whose `immutable` could never be the only value served.
+ * The glob overlap test below is deliberately conservative: static prefixes
+ * that contain one another count as an overlap, because this gate's job is
+ * to catch the NEXT clever pattern before a browser does.
+ */
+{
+  const blocks = [...toml.matchAll(/\[\[headers\]\]\s*\n\s*for\s*=\s*"([^"]+)"\s*\n([\s\S]*?)(?=\n\[\[|\n?$)/g)];
+  const patterns = blocks.map((b) => b[1]);
+  const dupes = patterns.filter((p, i) => patterns.indexOf(p) !== i);
+  check('no duplicate header rules for the same path', dupes.length === 0, dupes.join(', '));
+
+  const withCC = blocks
+    .filter((b) => /Cache-Control/.test(b[2]))
+    .map((b) => {
+      const star = b[1].indexOf('*');
+      return { pattern: b[1], prefix: star === -1 ? b[1] : b[1].slice(0, star) };
+    });
+  const clashes = [];
+  for (let i = 0; i < withCC.length; i++) {
+    for (let j = i + 1; j < withCC.length; j++) {
+      const a = withCC[i], b = withCC[j];
+      if (a.prefix.startsWith(b.prefix) || b.prefix.startsWith(a.prefix)) {
+        clashes.push(a.pattern + ' vs ' + b.pattern);
+      }
+    }
+  }
+  check('no two Cache-Control rules can match the same file (Netlify combines them)', clashes.length === 0, clashes.join(', '));
+}
+
+/* --- preview contexts negate every sensitive env var the code reads --- */
+{
+  const REQUIRED = [
+    'JWT_SECRET', 'DATABASE_URL', 'TURSO_DATABASE_URL', 'TURSO_AUTH_TOKEN', 'SUPABASE_SERVICE_ROLE_KEY',
+    'SMTP_HOST', 'SMTP_USER', 'SMTP_PASS', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET',
+    'FACEBOOK_PAGE_TOKEN', 'X_BEARER_TOKEN', 'INSTAGRAM_ACCESS_TOKEN', 'RECAPTCHA_SECRET_KEY',
+    'CRM_API_KEY', 'SUPABASE_URL', 'SUPABASE_ANON_KEY', 'SUPABASE_PG_HOST', 'SUPABASE_PG_PASSWORD',
+    'REDIS_URL', 'UPSTASH_REDIS_REST_TOKEN', 'INVENTORY_SOURCE_TOKEN',
+  ];
+  for (const ctx of ['deploy-preview', 'branch-deploy']) {
+    const part = toml.split('[context.' + ctx + '.environment]')[1] || '';
+    const blockText = part.split(/\n\[/)[0];
+    const missing = REQUIRED.filter((k) => !new RegExp('^\\s*' + k + '\\s*=', 'm').test(blockText));
+    check('context ' + ctx + ' negates every sensitive env marker', missing.length === 0, missing.join(', '));
+  }
+}
+
 /* --- CSP copies agree + no stale origins anywhere --- */
 {
   const norm = (s) => s.replace(/\s+/g, ' ').replace(/;\s*/g, '; ').trim();

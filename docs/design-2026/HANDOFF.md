@@ -1535,3 +1535,41 @@ they resolve credentials as repo secret first, else the netlify CLI
 login ON the runner host (the runner IS that host), mounting it read-
 only into the build container's root home. The fallback is asserted by
 ci/check-netlify-config.js so it cannot be dropped silently.
+
+---
+
+## Double-verify sweep: two more silent breakages, fixed and gated
+
+Prompted by the owner: if the pipeline faults were missed, what ELSE is
+quietly wrong? Swept four failure classes across the whole platform surface.
+
+FOUND + FIXED:
+1. Header rules combine, they do not override. Netlify staff (answers.-
+   netlify.com): 'any custom headers that match for a path combine instead
+   of cancelling out.' /img/* carried a DUPLICATED generic rule plus an
+   `immutable` rule for hashed derivatives -- so a hashed image collected
+   BOTH conflicting Cache-Control values. Fixed: one rule for /img/* (a
+   day + stale-while-revalidate); the /*.avif //*.webp globals removed too
+   (every avif/webp lives under /img or /vehicles; the globals only ever
+   doubled up). ci/check-netlify-config now fails on duplicate rules and on
+   any two Cache-Control rules whose static prefixes can overlap.
+2. Preview contexts covered 6 env markers but the functions read 50 vars.
+   Added 30 sensitive markers (SMTP_*, GOOGLE_*, social tokens, reCAPTCHA,
+   CRM_*, Supabase family, Redis/Upstash, INVENTORY_SOURCE_*) to both
+   preview contexts and to dev; the gate asserts the list stays present.
+
+VERIFIED CLEAN (no action):
+3. Case-sensitivity scan across ~400 built pages: no reference differs in
+   case from the file on disk (a Windows-only bug class CI would catch on
+   Linux, now also pre-empted locally).
+4. External origins in built HTML: exactly two, both accounted for
+   (identity.netlify.com for the CMS/login; a facebook.com anchor href on
+   the home page -- navigation, not a resource, CSP-irrelevant).
+5. Redirect order: narrowest first (/admin/cms before /admin/*), correct
+   under Netlify's first-match rule.
+
+Still the same one blocker, unchanged: no Netlify credential reachable
+from this machine or the runner (probed every path), and no SSH. The
+pipeline is gated, probed and waiting for exactly one of: the repo secret,
+the config restored at ~/.config/netlify/ for the runner user, or an SSH
+key so this box can drive the CI host directly.
