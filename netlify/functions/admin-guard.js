@@ -135,7 +135,21 @@ exports.handler = async function (event) {
   const path = raw.split('?')[0];
 
   if (isOpen(path)) {
-    return redirect(path, 200);
+    /*
+     * Serve the real file the same way the authenticated branch does: via
+     * /.__admin/, which netlify.toml rewrites to the static file and does
+     * not guard.
+     *
+     * This used to return `redirect(path, 200)` -- status 200 with a
+     * Location header. That does not redirect anything: browsers ignore
+     * Location on 2xx and render the (empty) function body. Every visitor
+     * to /admin/sign-in/ got a blank page -- the gate was locking people
+     * out of the door it exists to open. A 302 to the same /admin path is
+     * not an option either: that path is what got rewritten into this
+     * function, so it would loop. /.__admin/ is the one hop that both
+     * serves the page and stays outside the gate.
+     */
+    return redirect(path.replace(/^\/admin/, '/.__admin'), 302);
   }
 
   // Anything that is not under /admin is not this function's business. It

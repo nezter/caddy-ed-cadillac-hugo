@@ -1654,3 +1654,41 @@ Known limitations confirmed (by design, documented in the layouts):
 
 Test rows to delete when convenient: 3 leads, 1 booking (14 Oct 10:00),
 1 pre-approval -- all under caddyed-verify@example.com / phone 803-555-0100.
+
+---
+
+## Admin sign-in repaired -- 2026-10-10 (three stacked faults)
+
+Owner: "how do we fix the admin login". Answer turned out to be three
+independent faults, each sufficient to break it alone:
+
+1. **/admin/sign-in/ was a blank page for everyone.** admin-guard's OPEN
+   branch returned `redirect(path, 200)` -- status 200 WITH a Location
+   header. Browsers ignore Location on 2xx; they render the empty body. A
+   crawl only sees "200", so this hid behind every status-code check ever
+   run at the URL. Fixed: OPEN paths now 302 through /.__admin/ -- the same
+   hop the authenticated branch uses, which netlify.toml rewrites to the
+   static file and does not guard.
+2. **The session cookie was never set.** staff-session.js stores the token in
+   localStorage and sends it as a header -- fine for every fetch an admin
+   page makes, useless for the navigation itself. admin-guard reads the
+   Authorization header or the `auth_token` cookie; nothing set the cookie
+   (sales-logout had always expired one). Fixed: sales-login now sets
+   `auth_token` (HttpOnly, SameSite=Lax, Secure on https, Max-Age matched
+   to JWT_EXPIRES_IN).
+3. **No staff account existed.** `sales_reps` held only a dev-era row
+   (`ab@c.co`, role `sales_representative`). Every credential attempt was
+   correct to fail. Two admin accounts were provisioned (owner + Ed) via a
+   temporary, key-guarded bootstrap function -- deploy 6acb0b46 -- which was
+   then REMOVED in deploy 6acb0c76 and verified 404. Passwords were handed
+   to the owner out-of-band and are not recorded here.
+
+Verified live after the fixes: login -> 200 + Set-Cookie; /admin/ with the
+cookie -> 302 -> /.__admin/ -> 200 (hub renders); without -> 302 sign-in;
+/admin/sign-in/ renders 13.7KB with its form in a real browser; auth check
+passes via header AND cookie AND x-auth-token; sales-leads (authed) -> 200.
+Checkers back to green: 35 guarded / 22 public-by-design.
+
+Loose ends: there is no password-change UI (resets go through a small
+scripted step); the `ab@c.co` row is left as-is; the Netlify Identity
+button on the sign-in page remains an alternative path.

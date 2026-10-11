@@ -31,6 +31,37 @@ const JWT_SECRET = process.env.JWT_SECRET || '';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '8h';
 
 /**
+ * The cookie that lets BROWSER NAVIGATION carry the session to /admin/*.
+ *
+ * staff-session.js keeps the token in localStorage and sends it as an
+ * Authorization header -- which works for every fetch an admin page makes,
+ * but NOT for the navigation itself. netlify.toml routes /admin/* through
+ * admin-guard, that gate reads the Authorization header or this cookie, and
+ * a plain link click carries neither localStorage nor custom headers. Until
+ * this cookie was set, every signed-in visit to an admin page bounced back
+ * to the sign-in form: the sign-in "worked" and led nowhere. sales-logout
+ * has always expired this cookie -- it was simply never set anywhere.
+ *
+ * HttpOnly: page scripts have no business reading it (they hold the
+ * localStorage copy). SameSite=Lax so it rides top-level navigations to
+ * /admin/* but not cross-site POSTs. Secure only when the request arrived
+ * over https, so `netlify dev` on http://localhost still works.
+ */
+function sessionCookie(token, event) {
+  const maxAge = ttlSeconds(JWT_EXPIRES_IN);
+  const secure = String(event.headers['x-forwarded-proto'] || '').toLowerCase() === 'https' ? '; Secure' : '';
+  return `auth_token=${token}; Path=/; Max-Age=${maxAge}; SameSite=Lax; HttpOnly${secure}`;
+}
+
+/** '8h' -> 28800. Mirrors staff-session.js parseTtl so the cookie and the JWT age together. */
+function ttlSeconds(value) {
+  const match = String(value || '').trim().match(/^(\d+)\s*([smhd])?$/i);
+  if (!match) return 8 * 60 * 60;
+  const factors = { s: 1, m: 60, h: 3600, d: 86400 };
+  return parseInt(match[1], 10) * factors[(match[2] || 's').toLowerCase()];
+}
+
+/**
  * Sales Login API
  * Authenticates sales representatives and returns JWT token
  */
@@ -165,7 +196,10 @@ exports.handler = async function(event, context) {
         ...success.headers,
         // This body contains a bearer token. It must never be written to a
         // shared cache, a browser disk cache, or a service worker cache.
-        'Cache-Control': 'no-store'
+        'Cache-Control': 'no-store',
+        // And this is the credential itself, in cookie form, for the
+        // admin-guard gate on full-page navigations. See sessionCookie().
+        'Set-Cookie': sessionCookie(token, event)
       }
     });
 
