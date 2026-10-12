@@ -7,7 +7,7 @@
   because following it leaves this section for the CMS.
 */ -}}
 {{- $current := .RelPermalink -}}
-<nav class="admin-nav" aria-label="Admin sections">
+<nav class="admin-nav" aria-label="Admin sections" data-admin-nav hidden>
   {{- range (partial "admin-sections.html" .) }}
   <div class="admin-nav__group">
     <span class="admin-nav__label">{{ .label }}</span>
@@ -18,3 +18,8 @@
   {{- end }}
   <a class="admin-nav__site" href="/">View the site</a>
 </nav>
+
+{{- /* The reveal rule. The menu ships hidden so the static shell leaks no
+       navigation before a session exists; admin-nav.js removes `hidden`
+       only after sales-auth-check confirms the stored token. */ -}}
+{{ partial "entry.html" (dict "entry" "admin-nav.js" "page" .) }}

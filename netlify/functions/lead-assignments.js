@@ -186,8 +186,16 @@ async function getUnassignedLeads(event) {
   try {
     const leads = await DatabaseService.getLeadsNeedingReassignment();
 
+    // The DB helper answers a BROADER question on purpose: it also lists
+    // leads that are assigned but stale (older than a week) or sitting with
+    // a rep whose capacity was never set -- REBALANCE wants those. A panel
+    // titled "unassigned" must not: after the 2026-10-12 rebalance, fifteen
+    // already-assigned leads still listed here and read as unassigned.
+    // Show only rows with no assignee at all.
+    const trulyUnassigned = leads.filter((lead) => !lead.assigned_sales_rep_id);
+
     // Format for response
-    const formattedLeads = leads.slice(0, limit).map(lead => ({
+    const formattedLeads = trulyUnassigned.slice(0, limit).map(lead => ({
       id: lead.id,
       firstName: lead.first_name,
       lastName: lead.last_name,
@@ -202,7 +210,7 @@ async function getUnassignedLeads(event) {
 
     return errorHandler.createSuccessResponse({
       leads: formattedLeads,
-      total: leads.length,
+      total: trulyUnassigned.length,
       limit
     });
 

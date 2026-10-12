@@ -1,10 +1,13 @@
 {{ define "main" }}
 <div class="admin-page">
   <div class="container">
+    {{/* The section menu sits at the very top of the page, above the title.
+         It ships hidden and admin-nav.js reveals it only after the session
+         checks out -- a visitor without a session never sees it. */}}
+    {{ partial "admin-nav.html" . }}
     <header class="admin-header">
       <h1>{{ .Title }}</h1>
       <p>{{ .Description }}</p>
-      {{ partial "admin-nav.html" . }}
     </header>
 
     <div class="admin-content">

@@ -894,6 +894,72 @@ class DatabaseService {
    */
   
   /**
+   * Update a lead row.
+   *
+   * FOUND MISSING, 2026-10-12: `DatabaseService.updateLead` was called from
+   * six places -- manual assignment, rebalancing, lead scoring, the follow-up
+   * rules engine, interaction outcomes and lead creation's auto-assign -- and
+   * defined by none of them, so every one of those paths threw
+   * "DatabaseService.updateLead is not a function". The assignment page's
+   * Assign button answered 500 because of exactly this line of absence.
+   *
+   * Allowlist, not free-form (the shape updateSalesRep uses). `undefined`
+   * values are skipped rather than bound -- libSQL rejects undefined params
+   * with an error that names no field, and the fallback-assignment path
+   * legitimately leaves assignmentScore undefined. Dates are stringified for
+   * the same reason: interaction-service passes real Date objects.
+   */
+  static async updateLead(leadId, updateData) {
+    // The placeholder sigil (\u0024), written as an escape for the same reason
+    // siblings elsewhere in this file assemble it -- the raw character does
+    // not reliably survive every tool in the chain.
+    const SIGIL = "\u0024";
+    const ALLOWED = [
+      'assigned_sales_rep_id', 'assigned_sales_rep_name', 'assignment_reason',
+      'assignment_score', 'status', 'priority', 'score', 'next_follow_up_date',
+      'follow_up_count', 'last_contact', 'sales_rep_notes', 'converted_to_customer',
+      'conversion_date', 'conversion_value', 'customer_id', 'vehicle_interest', 'message'
+    ];
+    // interaction-service writes 'disqualified', which the schema's CHECK does
+    // not allow; 'lost' is the same fact in this schema's vocabulary.
+    const STATUS_ALIASES = { disqualified: 'lost' };
+
+    const sets = [];
+    const params = [];
+    for (const [key, raw] of Object.entries(updateData || {})) {
+      if (!ALLOWED.includes(key)) continue;
+      if (raw === undefined) continue;
+      let value = raw;
+      if (value instanceof Date) value = value.toISOString();
+      if (key === 'status' && Object.prototype.hasOwnProperty.call(STATUS_ALIASES, value)) {
+        value = STATUS_ALIASES[value];
+      }
+      params.push(value);
+      sets.push(key + ' = ' + SIGIL + params.length);
+    }
+    if (!sets.length) throw new Error('No valid fields to update');
+    params.push(String(leadId));
+    const sql = 'UPDATE leads SET ' + sets.join(', ') +
+      ", updated_at = datetime('now') WHERE id = " + SIGIL + params.length + ' RETURNING *';
+    try {
+      const result = await query(sql, params);
+      return result.rows[0];
+    } catch (error) {
+      console.error('Error updating lead:', error);
+      throw new Error('Failed to update lead');
+    }
+  }
+
+  /**
+   * Get one lead by id. Also found missing on 2026-10-12: lead-scoring and
+   * others call it; the scoring update path threw the same way updateLead did.
+   */
+  static async getLead(leadId) {
+    const result = await query('SELECT * FROM leads WHERE id = \u0024' + '1', [String(leadId)]);
+    return result.rows[0] || null;
+  }
+
+  /**
    * Create a new lead
    */
   static async createLead(leadData) {

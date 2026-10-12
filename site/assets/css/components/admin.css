@@ -91,9 +91,15 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-4);
-  margin-block-start: var(--space-4);
+  /* At the top of the page now: spacing goes below, not above. */
+  margin-block: 0 var(--space-5);
   font-size: var(--text-sm);
 }
+
+/* Ships hidden (partials/admin-nav.html) and admin-nav.js reveals it after
+   the session check. Without this rule the `display: flex` above would
+   beat the UA's [hidden] rule and the menu would render before login. */
+.admin-nav[hidden] { display: none; }
 
 .admin-nav a {
   color: var(--accent);

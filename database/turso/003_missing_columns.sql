@@ -50,3 +50,19 @@ ALTER TABLE vehicles ADD COLUMN created_by TEXT DEFAULT 'system';
 -- validates it (`Joi.string().valid('all', 'prospects', 'leads', ...)`) and the
 -- INSERT writes it, so a campaign could be created only to fail at the database.
 ALTER TABLE followup_campaigns ADD COLUMN target_audience TEXT DEFAULT 'all';
+
+-- ---------------------------------------------------------------------------
+-- 2026-10-12: columns the CODE has always referenced but no SQL file created.
+-- Found live: /lead-assignments/analytics answered 500 on production because
+-- leads.assignment_score / leads.assignment_reason do not exist in the applied
+-- schema, and findAvailableReps reads sales_reps.capacity / territory /
+-- source_expertise / budget_expertise (capacity only ever lived in
+-- database/turso/schema.sql, which is not the applied file). Applied to
+-- production via a one-shot; recorded here so a rebuild gets them too.
+-- ---------------------------------------------------------------------------
+ALTER TABLE leads ADD COLUMN assignment_score REAL;
+ALTER TABLE leads ADD COLUMN assignment_reason TEXT;
+ALTER TABLE sales_reps ADD COLUMN capacity INTEGER DEFAULT 0;
+ALTER TABLE sales_reps ADD COLUMN territory TEXT;
+ALTER TABLE sales_reps ADD COLUMN source_expertise TEXT;
+ALTER TABLE sales_reps ADD COLUMN budget_expertise TEXT;

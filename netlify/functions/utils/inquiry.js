@@ -191,6 +191,35 @@ async function recordLead(fields) {
     vehicle_year: fields.vehicleYear || null,
     vehicle_make: fields.vehicleMake || null,
   });
+
+  // And assign it to a rep immediately. An unassigned lead appears in no
+  // dashboard and notifies no rep -- the sixteen enquiries from Sept-Oct that
+  // sat unassigned until 2026-10-12 had exactly this shape. Non-fatal on
+  // purpose: the lead is already recorded, and a failure to assign must not
+  // fail the customer's request. The leads.js endpoint does the same dance.
+  try {
+    const LeadAssignmentService = require('./lead-assignment-service');
+    const assignment = await LeadAssignmentService.assignLead({
+      id: lead.id,
+      first_name: first,
+      last_name: last,
+      email: fields.email,
+      phone: fields.phone,
+      source: fields.source || 'website',
+      vehicle_interest: fields.vehicleTitle || fields.vehicleId || null,
+      message: fields.message,
+    });
+    if (assignment && assignment.assignedRep) {
+      await DatabaseService.updateLead(lead.id, {
+        assigned_sales_rep_id: assignment.assignedRep.id,
+        assignment_reason: assignment.assignmentReason,
+        assignment_score: assignment.assignmentScore,
+      });
+    }
+  } catch (err) {
+    console.error('[inquiry] auto-assign skipped:', err.message);
+  }
+
   return lead;
 }
 

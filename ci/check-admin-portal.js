@@ -109,6 +109,22 @@ if (!fs.existsSync(hubPath)) {
   }
 }
 
+// 6. the menu ships hidden and is revealed only after a session check
+//    (2026-10-12): it also sits at the top of the page, above the title.
+for (const [label, rel] of [['dashboard', path.join('admin', 'dashboard', 'index.html')], ['sign-in', path.join('admin', 'sign-in', 'index.html')]]) {
+  const p = path.join(PUBLIC, rel);
+  if (!fs.existsSync(p)) { check('built ' + label + ' page exists for the nav checks', false, p); continue; }
+  const html = fs.readFileSync(p, 'utf8');
+  const navTag = html.match(/<nav[^>]*data-admin-nav[^>]*>/);
+  check('the nav ships hidden on the ' + label + ' page', Boolean(navTag) && /\bhidden\b/.test(navTag[0]), navTag ? navTag[0].slice(0, 140) : 'no nav tag');
+  check('the reveal script is wired on the ' + label + ' page', /js\/admin-nav[.\"']/.test(html));
+  if (label === 'dashboard') {
+    const navAt = html.indexOf('data-admin-nav');
+    const headAt = html.indexOf('admin-header');
+    check('the nav sits above the page title', navAt !== -1 && headAt !== -1 && navAt < headAt, 'navAt ' + navAt + ' headAt ' + headAt);
+  }
+}
+
 const failed = results.filter((x) => !x.pass);
 for (const x of results) console.log('  ' + (x.pass ? 'ok  ' : 'FAIL') + '  ' + x.label + (x.pass ? '' : '  -- ' + x.detail));
 console.log('\n  ' + (results.length - failed.length) + '/' + results.length + (failed.length ? ' -- FAILURES' : ' ok'));

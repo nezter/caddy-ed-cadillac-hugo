@@ -1715,3 +1715,57 @@ button on the sign-in page remains an alternative path.
 - Open offers: a staff change-password screen; forgot-password (needs SMTP
   first, same missing piece as lead notifications); Netlify /admin/* password
   protection as defence in depth.
+
+---
+
+## Admin menu + leads pipeline -- 2026-10-12 (overnight repair round)
+
+Owner asked: (1) the admin section menu must not be visible before sign-in,
+(2) it belongs at the top of the page, (3) clicking every admin page link
+must populate, not empty out or error. All three are done and verified.
+
+MENU
+- Both admin layouts render the section menu at the very top now (above the
+  page title), and it ships with the `hidden` attribute. New admin-nav.js
+  verifies the stored session against sales-auth-check and only then removes
+  hidden; no session -> no menu, including /admin/sign-in/ -- a stranger
+  cannot enumerate the portal from the front door.
+- .admin-nav[hidden] { display:none } added because the author `display:flex`
+  would otherwise beat the UA's [hidden] rule.
+- ci/check-admin-portal.js gained four gates (nav ships hidden on dashboard
+  and sign-in; reveal script wired; nav above the title). 15/15 locally;
+  reveal behaviour jsdom-verified 3/3. Deploy 6acc736a.
+
+LEADS PIPELINE (the "nothing populates or errors out" sweep)
+- Authenticated sweep of all 25 admin routes: every page passes the gate and
+  renders. The function probes found four real faults, all fixed:
+  1. /lead-assignments/analytics answered 500: leads.assignment_score and
+     leads.assignment_reason existed in NO SQL file while six code paths
+     referenced them. Columns added to production (one-shot, removed same
+     night) and recorded in database/turso/003_missing_columns.sql.
+  2. DatabaseService.updateLead and .getLead DID NOT EXIST AT ALL, though
+     six callers used them (assign, rebalance, scoring, rules, interaction
+     outcomes, auto-assign) -- the assignment page's Assign button 500'd.
+     Both implemented in database-service.js (allowlist, undefined/Date
+     guards, and a status alias for the one value the schema CHECK forbids).
+  3. The unassigned panel listed assigned leads: it shares
+     getLeadsNeedingReassignment() with rebalance, which deliberately also
+     includes week-old leads and reps without capacity. The PANEL now
+     filters to genuinely unassigned rows; rebalance keeps the broad view.
+  4. New form enquiries would have orphaned forever: inquiry.js (all four
+     form paths) now auto-assigns on record, exactly like leads.js always
+     did.
+- Rebalance then assigned every waiting lead: 19/19, 0 errors -- fifteen are
+  REAL historical enquiries (2020-2025 imports) that had never reached a
+  dashboard. A fresh form submission auto-assigned in production afterwards.
+- sales-metrics returns live numbers now (dashboard renders newLeads /
+  appointments / sales / conversionRate); revenue stays an honest 0 -- no
+  sales-value model exists. The stale ab@c.co test row was deactivated via
+  /admin/staff before rebalancing so nothing lands on it.
+
+INCIDENT, STATED PLAINLY: one intermediate deploy carried a broken
+database-service.js (a tooling artifact mangled the new code mid-write; the
+local syntax gate caught it, but the deploy had been chained off the failed
+script without a guard). Healed within ~15 minutes (deploy 6acc7778) and the
+estate re-verified healthy. Guard added: a failing edit script now aborts the
+deploy step.
