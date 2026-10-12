@@ -46,12 +46,9 @@ connected. Identity above does not.
 A failed attempt says so, in place, with the reason. A session that has expired
 says so too, and offers the form again. Neither of those is an empty table.
 
-<!-- Not a page guard: signing in here does not make /admin/* private. Hugo builds
-     these pages to the public directory and the site has no server-side gate, so
-     anyone can load the dashboard shell without a session; what they cannot do is
-     make its functions return data, because every one of them returns 401 without
-     a valid token. Closing that gap needs Netlify /admin/* password protection or
-     a build-time split of the admin section.
-     This was a visible blockquote. It describes the deployment, not the sign-in. -->
-`/admin/*` password protection or a build-time split of the admin section —
-> neither of which this page can do by itself.
+<!-- The old note here warned that signing in does not make /admin/* private and
+     named "Netlify password protection or a build-time split" as the missing fix.
+     Obsolete: netlify.toml routes /admin/* through admin-guard, which redirects
+     anyone without a session to this page, and every function still checks its own
+     token. Defence in depth is still available: Netlify's own /admin/* password
+     protection can be layered on from the dashboard. -->

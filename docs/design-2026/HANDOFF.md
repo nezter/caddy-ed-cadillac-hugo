@@ -1692,3 +1692,26 @@ Checkers back to green: 35 guarded / 22 public-by-design.
 Loose ends: there is no password-change UI (resets go through a small
 scripted step); the `ab@c.co` row is left as-is; the Netlify Identity
 button on the sign-in page remains an alternative path.
+
+---
+
+## Admin follow-ups -- 2026-10-12 (sign-in copy fix + owner password reset)
+
+- The sign-in page carried a dangling fragment at its end:
+  "`/admin/*` password protection or a build-time split of the admin section -
+  neither of which this page can do by itself." -- the tail of an editing
+  accident (most of that note had been turned into an HTML comment; two
+  rendered lines were left behind), and the note itself predated admin-guard.
+  The fragment is removed and the source now carries a short, accurate comment
+  (Hugo's minifier strips source comments from output). Verified live.
+- nportello21@gmail.com password reset at the owner's request, via the same
+  key-guarded one-shot pattern (deploy 6acc70e1; removed in 6acc714b and
+  verified 404). Post-change verification: login -> session -> gate -> hub.
+  The password itself is deliberately NOT recorded here; it was delivered to
+  the owner directly. Ed's account was left untouched.
+- Netlify Identity is enabled (/.netlify/identity/settings -> 200) and the
+  widget loads on demand from identity-sign-in.js; users are invited from the
+  Netlify dashboard, exactly as the page's copy says.
+- Open offers: a staff change-password screen; forgot-password (needs SMTP
+  first, same missing piece as lead notifications); Netlify /admin/* password
+  protection as defence in depth.
