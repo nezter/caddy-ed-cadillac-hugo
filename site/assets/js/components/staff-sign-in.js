@@ -41,6 +41,21 @@ const ENDPOINTS = {
   authCheck: '/.netlify/functions/sales-auth-check'
 };
 
+/**
+ * Where a fresh sign-in should land: the `next` the admin-guard added when
+ * it bounced the visitor here, provided it is a same-site path (an absolute
+ * URL would make this an open redirect), else the hub. Owner, 2026-10-12:
+ * after signing in, the page just sat on /admin/sign-in -- the password path
+ * never navigated anywhere, while the identity path always jumped. \u0024
+ */
+function nextTarget() {
+  try {
+    const raw = new URLSearchParams(window.location.search).get('next') || '';
+    if (raw.startsWith('/') && !raw.startsWith('//')) return raw;
+  } catch (err) { /* fall through to the hub */ }
+  return '/admin/';
+}
+
 class StaffSignIn {
   constructor() {
     this.root = document.getElementById('staff-sign-in');
@@ -118,6 +133,10 @@ class StaffSignIn {
       this.showSignedIn(session.user);
       // The password is not retained anywhere, including in this component.
       if (this.passwordInput) this.passwordInput.value = '';
+      // And go where the guard was sending them all along. The transform
+      // above is what a RETURN visitor sees; a fresh sign-in should not sit
+      // on the sign-in URL (owner: "stuck on .../sign-in").
+      window.location.assign(nextTarget());
     } catch (error) {
       // A rejected sign-in is a first-class visible state, and it is the single
       // most important thing on this page. The alternative — clear the form,
