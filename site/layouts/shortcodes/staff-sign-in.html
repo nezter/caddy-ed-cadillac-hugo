@@ -68,6 +68,10 @@
 
   <div id="sign-in-success" class="admin-alert admin-alert--success" style="display: none;">
     <p id="sign-in-who"></p>
+    {{- /* Filled by staff-sign-in.js: the signed-in person's email and role.
+           The signed-in view of this page is the one page whose job is to say
+           who you are and where you can go. */ -}}
+    <p id="sign-in-details" class="staff-sign-in__details" hidden></p>
     <p>
       <a class="btn btn-primary" href="/admin/dashboard">Sales dashboard</a>
       <a class="btn btn-secondary" href="/admin/leads">Leads</a>

@@ -1769,3 +1769,31 @@ local syntax gate caught it, but the deploy had been chained off the failed
 script without a guard). Healed within ~15 minutes (deploy 6acc7778) and the
 estate re-verified healthy. Guard added: a failing edit script now aborts the
 deploy step.
+
+---
+
+## Sign-in page: the signed-in view transform -- 2026-10-12 (later)
+
+Owner, after signing in live: "it should hide all the sign-in options, showing
+user profile information and the main admin menu."
+
+- staff-sign-in.js: when a session exists (on load OR right after submitting),
+  every offer to sign in disappears -- both cards, their headings, all the
+  explanatory notes (the nine sibling blocks of the component root are hidden
+  inline, and the restore list brings them back on sign-out). The profile
+  panel then shows the person with their email and role plus its existing
+  buttons (dashboard, leads, sign out). The section menu is revealed at the
+  same moment and hidden again when the session ends.
+- The stuck "Checking for an existing session..." line on the signed-out path
+  is cleared now; it used to sit there until someone submitted.
+- Inline display is used for hiding rather than the hidden attribute: some of
+  these blocks carry a stylesheet display, and an author display beats
+  [hidden] (the section menu had exactly that bug hours earlier).
+- Gated: ci/check-admin-portal keeps a profile-panel contract check (16/16),
+  and a three-state jsdom test against the built page proves all three
+  states. Deploy 6acc7d98.
+
+Caveat for the record: the final keystrokes of a live sign-in could not be
+driven through the side-panel browser (its input tool does not reach fields
+below ~928px), so the transform is proven by the jsdom states plus the live
+markup/bundle rather than by an in-panel Enter press.

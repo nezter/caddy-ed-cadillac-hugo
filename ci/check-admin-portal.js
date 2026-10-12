@@ -125,6 +125,18 @@ for (const [label, rel] of [['dashboard', path.join('admin', 'dashboard', 'index
   }
 }
 
+// 7. the signed-in view of the sign-in page keeps its profile-panel contract
+{
+  const p = path.join(PUBLIC, 'admin', 'sign-in', 'index.html');
+  if (fs.existsSync(p)) {
+    const html = fs.readFileSync(p, 'utf8');
+    check('sign-in page keeps the profile panel (who + details + dashboard link)',
+      html.includes('sign-in-who') && html.includes('sign-in-details') && /href="?\/admin\/dashboard/.test(html));
+  } else {
+    check('built sign-in page exists for the profile-panel check', false, p);
+  }
+}
+
 const failed = results.filter((x) => !x.pass);
 for (const x of results) console.log('  ' + (x.pass ? 'ok  ' : 'FAIL') + '  ' + x.label + (x.pass ? '' : '  -- ' + x.detail));
 console.log('\n  ' + (results.length - failed.length) + '/' + results.length + (failed.length ? ' -- FAILURES' : ' ok'));

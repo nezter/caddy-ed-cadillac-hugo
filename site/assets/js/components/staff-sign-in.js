@@ -54,6 +54,9 @@ class StaffSignIn {
     this.statusBox = document.getElementById('sign-in-status');
     this.successBox = document.getElementById('sign-in-success');
     this.whoBox = document.getElementById('sign-in-who');
+    this.detailsBox = document.getElementById('sign-in-details');
+    // Elements hidden while a session exists; see hideOptions().
+    this.hiddenOptions = [];
     this.signOutButton = document.getElementById('sign-in-signout');
 
     this.init();
@@ -78,6 +81,9 @@ class StaffSignIn {
           this.showSignedIn(result.user || getUser());
         } else {
           this.showForm();
+          // Clear the checking line on THIS outcome too -- it used to stay on
+          // screen forever for a signed-out visitor (owner found it live).
+          this.setStatus('');
           if (result.reason && result.reason !== 'no-token') {
             // A stored token the server rejected: say so, rather than presenting
             // a blank form as though nothing had happened.
@@ -133,17 +139,32 @@ class StaffSignIn {
     this.setBusy(false);
     this.showForm();
     this.setStatus('You are signed out.');
+    const navEl = document.querySelector('[data-admin-nav]');
+    if (navEl) navEl.hidden = true;
     if (this.form) this.form.reset();
     if (this.emailInput) this.emailInput.focus();
   }
 
   showSignedIn(user) {
+    // A session exists: every OFFER TO SIGN IN disappears -- both cards,
+    // their headings and all the explanatory notes -- leaving the profile
+    // panel and (revealed here, too) the section menu at the top.
+    this.hideOptions();
+    const navEl = document.querySelector('[data-admin-nav]');
+    if (navEl) navEl.hidden = false;
+
     if (this.form) this.form.style.display = 'none';
     if (this.statusBox) this.statusBox.textContent = '';
     if (this.successBox) this.successBox.style.display = 'block';
 
     const name = [user?.firstName, user?.lastName].filter(Boolean).join(' ');
     const who = name || user?.email || 'a valid session';
+    if (this.detailsBox) {
+      const bits = [user && user.email, user && user.role ? String(user.role).replace(/_/g, ' ') : ''].filter(Boolean);
+      this.detailsBox.textContent = bits.join(' \u00b7 ');
+      if (bits.length) this.detailsBox.removeAttribute('hidden');
+      else this.detailsBox.setAttribute('hidden', '');
+    }
     if (this.whoBox) {
       // textContent: `who` originates in the login response body.
       this.whoBox.textContent = `Signed in as ${who}.`;
@@ -152,8 +173,39 @@ class StaffSignIn {
   }
 
   showForm() {
+    // Signed-out state: the offers return and the menu hides again.
+    this.restoreOptions();
     if (this.successBox) this.successBox.style.display = 'none';
     if (this.form) this.form.style.display = '';
+  }
+
+  /*
+   * Hide / restore the offers to sign in.
+   *
+   * The options are not one element: the identity card with its heading and
+   * paragraphs, the password card's heading, and the notes in between -- all
+   * siblings of the component root inside .admin-content. Hide every child
+   * of the content column except the one that contains this component.
+   * Inline display rather than the hidden attribute: some of these carry a
+   * stylesheet display (the nav had exactly this bug), and an author
+   * display beats the UA [hidden] rule.
+   */
+  hideOptions() {
+    const content = this.root && this.root.closest('.admin-content');
+    if (!content) return;
+    this.hiddenOptions = [];
+    Array.prototype.forEach.call(content.children, (el) => {
+      if (el === this.root || el.contains(this.root)) return;
+      this.hiddenOptions.push(el);
+      el.style.display = 'none';
+    });
+  }
+
+  restoreOptions() {
+    if (this.hiddenOptions) {
+      this.hiddenOptions.forEach((el) => { el.style.display = ''; });
+    }
+    this.hiddenOptions = [];
   }
 
   showError(message) {
