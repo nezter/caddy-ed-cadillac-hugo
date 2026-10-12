@@ -264,22 +264,25 @@ class FollowupCampaignManager {
     this.setLoading(true);
 
     try {
-      // Load campaigns
-      const campaignsResponse = await fetch('/.netlify/functions/followup-campaigns');
+      // Campaigns, rules and the template pair are independent round trips;
+      // run them as ONE wave. They used to run one after another, so on a cold
+      // functions pool the page waited out three starts in sequence.
+      // (Owner, 2026-10-12: "load times ... slow".)
+      const [campaignsResponse, rulesResponse] = await Promise.all([
+        fetch('/.netlify/functions/followup-campaigns'),
+        fetch('/.netlify/functions/followup-rules'),
+        this.loadTemplates()
+      ]);
+
       if (campaignsResponse.ok) {
         const campaignsData = await campaignsResponse.json();
         this.campaigns = campaignsData.campaigns || [];
       }
 
-      // Load rules
-      const rulesResponse = await fetch('/.netlify/functions/followup-rules');
       if (rulesResponse.ok) {
         const rulesData = await rulesResponse.json();
         this.rules = rulesData.rules || [];
       }
-
-      // Load templates
-      await this.loadTemplates();
 
       this.renderCampaignList();
       this.renderCampaignDetail();

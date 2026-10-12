@@ -1826,3 +1826,20 @@ sign-out restores). Deploy 6acc86b4.
 Unresolved from here: which path the owner actually clicks and what their
 browser shows. Asked for exactly: hard refresh, work-email form, and the
 exact text of any red message. Offered to drive their side-panel browser.
+
+---
+
+## Admin UX feedback + perf pass -- 2026-10-12 afternoon
+
+Owner: admin pages feel clunky, not intuitive, hard to navigate; certain
+content loads slowly. A full redesign session is wanted later.
+
+- Wrote docs/design-2026/ADMIN-UX-REVIEW.md: the critique, the measured
+  audit (24 pages / 25 endpoints), today's fixes, and a scoped plan for the
+  redesign session (navigation, page templates, forms, states, speed
+  budget, mobile, consistency) + process (walkthrough -> wireframes -> waves).
+- Fixed the two pages that stacked cold starts serially: followup-campaigns
+  (3 waves -> 1) and interactions (types+timeline -> 1). Dashboard, leads,
+  inventory, bookings, customers were already parallel.
+- Nothing visual/structural changed, deliberately: that belongs to the
+  design session the owner wants.

@@ -228,14 +228,19 @@ class InteractionTimeline {
     }
 
     this.showBusy('Loading interaction history...');
-    await this.loadTypes();
 
     const query = new URLSearchParams();
     query.set('customer_id', this.customerId);
     query.set('limit', '100');
     query.set('include_leads', 'true');
 
-    const result = await callApi(INTERACTIONS_API + '/timeline?' + query.toString());
+    // Types and timeline are independent round trips; run them together so a
+    // cold functions pool costs one wait, not two. (Owner, 2026-10-12:
+    // "load times ... slow".)
+    const [, result] = await Promise.all([
+      this.loadTypes(),
+      callApi(INTERACTIONS_API + '/timeline?' + query.toString())
+    ]);
 
     if (!result.ok) {
       this.interactions = [];
