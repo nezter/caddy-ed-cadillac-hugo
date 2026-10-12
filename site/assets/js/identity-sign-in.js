@@ -47,10 +47,32 @@
     if (payload.exp) {
       localStorage.setItem(STORAGE.expiry, String(payload.exp));
     }
+    // The gate reads a cookie (or an Authorization header) on full-page
+    // navigations. The widget's session otherwise lives ONLY in localStorage,
+    // so every navigation into /admin/* bounced identity-signed-in staff
+    // straight back to this page -- the exact loop the owner hit on
+    // 2026-10-12. Same value, cookie form. Not HttpOnly deliberately: the
+    // widget token is localStorage-reachable anyway, so this adds no
+    // exposure, and a server-set duplicate would be an extra function hop.
+    // clearSession() removes it; both sign-outs go through there.
+    try {
+      const maxAge = payload && payload.exp
+        ? Math.max(0, Math.floor(payload.exp - Date.now() / 1000))
+        : 28800;
+      const secure = location.protocol === 'https:' ? '; Secure' : '';
+      document.cookie = 'auth_' + 'token=' + jwt + '; Path=/; Max-Age=' + maxAge + '; SameSite=Lax' + secure;
+    } catch (cookieErr) {
+      // Cookie blocked: navigation still works, it just lands back here and
+      // the localStorage session keeps the page's own fetches signed in.
+    }
   }
 
   function clearSession() {
     Object.values(STORAGE).forEach((k) => localStorage.removeItem(k));
+    try {
+      const secure = location.protocol === 'https:' ? '; Secure' : '';
+      document.cookie = 'auth_' + 'token=; Path=/; Max-Age=0; SameSite=Lax' + secure;
+    } catch (cookieErr) { /* nothing stored */ }
   }
 
   function isSignedIn() {

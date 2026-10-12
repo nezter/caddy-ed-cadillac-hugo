@@ -1797,3 +1797,32 @@ Caveat for the record: the final keystrokes of a live sign-in could not be
 driven through the side-panel browser (its input tool does not reach fields
 below ~928px), so the transform is proven by the jsdom states plus the live
 markup/bundle rather than by an in-panel Enter press.
+
+---
+
+## Sign-in, third pass -- 2026-10-12 midday (owner still stuck live)
+
+Owner: "still nothing" on /.__admin/sign-in/?next=%2Fadmin. Server-side was
+re-proven healthy (login 200 + Set-Cookie; gate releases with the cookie;
+/admin no-slash also releases fine). Two client-side gaps remained:
+
+1. The Netlify Identity path never carried the gate. The widget session lives
+   in localStorage under auth_token, but admin-guard reads the COOKIE or an
+   Authorization header on navigations -- so an identity sign-in navigated to
+   /admin/ and bounced straight back here, forever. identity-sign-in.js now
+   mirrors the widget token into an `auth_token` cookie (non-HttpOnly on
+   purpose: the widget token is localStorage-reachable anyway), with Max-Age
+   from the token exp; clearSession() removes it on both sign-out routes.
+   admin-guard already verifies identity tokens via JWKS, so no server change
+   was needed.
+2. The page now leads with the WORK-EMAIL form ("Sign in with your work
+   email") and the Identity card sits below it, because the working dealer
+   path should be the first thing on the page. Copy adjusted accordingly.
+
+Re-verified after the change: build + 16/16 portal gates + the four-state
+jsdom run (signed-out / signed-in-on-load / SUBMIT -> navigation fired /
+sign-out restores). Deploy 6acc86b4.
+
+Unresolved from here: which path the owner actually clicks and what their
+browser shows. Asked for exactly: hard refresh, work-email form, and the
+exact text of any red message. Offered to drive their side-panel browser.

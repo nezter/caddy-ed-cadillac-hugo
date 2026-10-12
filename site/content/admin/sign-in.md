@@ -16,6 +16,17 @@ Everything behind this form is staff-only. Customers have their own sign-in on
 the [customer portal](/customer/), which asks for an email address and a phone
 number rather than a password.
 
+## Sign in with your work email
+
+{{< staff-sign-in >}}
+
+That form talks to `/.netlify/functions/sales-login`, which verifies the password
+against a `bcrypt` hash in the `sales_reps` table, so it needs the database
+connected. Netlify Identity below does not.
+
+A failed attempt says so, in place, with the reason. A session that has expired
+says so too, and offers the form again. Neither of those is an empty table.
+
 ## Sign in with Netlify Identity
 
 <div id="identity-sign-in" class="identity-sign-in">
@@ -28,23 +39,12 @@ number rather than a password.
   <p class="sign-in-msg" id="identity-sign-in-error" hidden></p>
 </div>
 
-This is Netlify's own user store, and it is the recommended way in. It works
+This is Netlify's own user store. It works
 before any customer database exists, and it brings password reset, invitations
-and session revocation — none of which the password form below has.
+and session revocation — none of which the work-email form above has.
 
 Access is granted by adding a user in the Netlify dashboard. Give them the
 **admin** role and they get everything.
-
-## Or use a password from the customer database
-
-{{< staff-sign-in >}}
-
-That form talks to `/.netlify/functions/sales-login`, which verifies the password
-against a `bcrypt` hash in the `sales_reps` table, so it needs the database
-connected. Identity above does not.
-
-A failed attempt says so, in place, with the reason. A session that has expired
-says so too, and offers the form again. Neither of those is an empty table.
 
 <!-- The old note here warned that signing in does not make /admin/* private and
      named "Netlify password protection or a build-time split" as the missing fix.
