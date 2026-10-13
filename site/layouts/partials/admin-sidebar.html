@@ -1,0 +1,18 @@
+﻿{{- /*
+  admin-sidebar -- the operator console's left rail.
+
+  Brand, the section nav (partials/admin-nav.html, hidden until a session
+  exists), and the way back to the public site. The nav's data comes from
+  partials/admin-sections.html, the same source the hub renders from.
+*/ -}}
+<aside class="op-side" aria-label="Admin navigation">
+  <a class="op-brand" href="/admin/">
+    <span class="op-brand__mark">CE</span>
+    <span>
+      <span class="op-brand__name">Caddy Ed</span>
+      <span class="op-brand__sub">Operator console</span>
+    </span>
+  </a>
+  {{ partial "admin-nav.html" . }}
+  <a class="op-side__site" href="/">View the site</a>
+</aside>

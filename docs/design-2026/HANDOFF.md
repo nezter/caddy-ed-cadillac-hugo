@@ -1843,3 +1843,30 @@ content loads slowly. A full redesign session is wanted later.
   inventory, bookings, customers were already parallel.
 - Nothing visual/structural changed, deliberately: that belongs to the
   design session the owner wants.
+
+---
+
+## Operator console foundation in the real admin -- 2026-10-13
+
+Owner picked Direction A and said start building it into the live admin.
+Foundation round shipped to production (deploy 6ace4db5c6bd8918276c579e):
+
+- New shell on every admin page: dark operator chrome (sidebar with the
+  navigation regrouped Today / Customers / Cars / Marketing / Admin; topbar
+  with search, a New quick menu, the staff chip, sign-out; toast layer;
+  keyboard shortcuts, press ? for the panel).
+- The site header/footer are suppressed on admin pages via layout block
+  overrides. Gotcha recorded: Hugo prunes EMPTY template defines (including
+  comment-only ones), so the override needs a real node; each define holds
+  an HTML comment.
+- admin-operator.css loads LAST through the layout's scripts block so it
+  wins collisions with the older component stylesheets; admin-shell.js is
+  the new behaviors file. The theme is scoped to body.admin and .op-* with
+  its own --op-* tokens; the public site is untouched (verified live).
+- The sign-in transform, nav reveal-until-session and the admin gate all
+  verified working under the new shell (jsdom, zero errors); ci: portal
+  16/16, content 21, inventory 24, articles 24, agents 41, seo 19 green.
+- Preview channel now mirrors the whole built site (the three-directions
+  artifact stays archived in DELIVERY/caddyed-2026/admin-redesign).
+- Next rounds (owner-driven): worklist dashboard, leads board view,
+  Reports/Calendar/Scheduling wired to real data, per-page polish.

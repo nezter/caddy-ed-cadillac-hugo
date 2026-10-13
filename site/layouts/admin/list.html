@@ -1,44 +1,54 @@
-{{ define "main" }}
-{{- /* The admin front door. Unlike the other pages in this section it is a
+﻿{{- /* The admin front door. Unlike the other pages in this section it is a
        section index, so it renders through layouts/admin/list.html instead
-       of single.html -- same shell, plus the hub. The cards come from
-       partials/admin-sections.html, the same data the nav renders, so
+       of single.html -- same operator shell, plus the hub. The cards come
+       from partials/admin-sections.html, the same data the nav renders, so
        every page in this section is reachable from here and from the nav
        on every other page. ci/check-admin-portal.js asserts both.
 
        ONE DELIBERATE OMISSION: no live counters on the cards. A door that
        shows yesterday's number is worse than a plain one; the pages that
        own the data show it themselves. */ -}}
-<div class="admin-page">
-  <div class="container">
-    {{/* The section menu sits at the very top of the page, above the title.
-         It ships hidden and admin-nav.js reveals it only after the session
-         checks out -- a visitor without a session never sees it. */}}
-    {{ partial "admin-nav.html" . }}
-    <header class="admin-header">
-      <h1>{{ .Title }}</h1>
-      <p>{{ .Description }}</p>
-    </header>
+{{/* Empty on purpose (HTML comment keeps the override from being pruned):
+     admin pages carry their own chrome via the operator shell. */}}
+{{ define "header" }}<!-- admin chrome: see layouts/admin -->{{ end }}
+{{ define "footer" }}<!-- admin chrome: see layouts/admin -->{{ end }}
 
-    <div class="admin-content">
-      {{ .Content }}
+{{ define "scripts" }}
+{{ partial "stylesheet.html" "components/admin-operator.css" }}
+{{ partial "entry.html" (dict "entry" "admin-shell.js" "page" .) }}
+{{ end }}
 
-      <div class="admin-hub">
-      {{ range (partial "admin-sections.html" .) }}
-      <section class="admin-hub__group">
-        <h2>{{ .label }}</h2>
-        {{ with .note }}<p class="admin-hub__note">{{ . }}</p>{{ end }}
-        <div class="admin-hub__cards">
-          {{ range .items }}
-          <a class="admin-hub-card" href="{{ .url }}">
-            <span class="admin-hub-card__tag admin-hub-card__tag--{{ .tag }}">{{ .tagLabel }}</span>
-            <h3>{{ .title }}</h3>
-            <p>{{ .body }}</p>
-          </a>
-          {{ end }}
+{{ define "main" }}
+<div class="op-shell">
+  {{ partial "admin-sidebar.html" . }}
+  <div class="op-main">
+    {{ partial "admin-topbar.html" . }}
+    <div class="op-content">
+      <header class="admin-header">
+        <h1>{{ .Title }}</h1>
+        <p>{{ .Description }}</p>
+      </header>
+
+      <div class="admin-content">
+        {{ .Content }}
+
+        <div class="admin-hub">
+        {{ range (partial "admin-sections.html" .) }}
+        <section class="admin-hub__group">
+          <h2>{{ .label }}</h2>
+          {{ with .note }}<p class="admin-hub__note">{{ . }}</p>{{ end }}
+          <div class="admin-hub__cards">
+            {{ range .items }}
+            <a class="admin-hub-card" href="{{ .url }}">
+              <span class="admin-hub-card__tag admin-hub-card__tag--{{ .tag }}">{{ .tagLabel }}</span>
+              <h3>{{ .title }}</h3>
+              <p>{{ .body }}</p>
+            </a>
+            {{ end }}
+          </div>
+        </section>
+        {{ end }}
         </div>
-      </section>
-      {{ end }}
       </div>
     </div>
   </div>

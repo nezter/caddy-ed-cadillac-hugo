@@ -1,29 +1,43 @@
-{{ define "main" }}
-<div class="admin-page">
-  <div class="container">
-    {{/* The section menu sits at the very top of the page, above the title.
-         It ships hidden and admin-nav.js reveals it only after the session
-         checks out -- a visitor without a session never sees it. */}}
-    {{ partial "admin-nav.html" . }}
-    <header class="admin-header">
-      <h1>{{ .Title }}</h1>
-      <p>{{ .Description }}</p>
-    </header>
+﻿{{- /* The admin console suppresses the public site's header and footer;
+       the operator shell carries its own chrome. */ -}}
+{{/* Empty on purpose (HTML comment keeps the override from being pruned):
+     admin pages carry their own chrome via the operator shell. */}}
+{{ define "header" }}<!-- admin chrome: see layouts/admin -->{{ end }}
+{{ define "footer" }}<!-- admin chrome: see layouts/admin -->{{ end }}
 
-    <div class="admin-content">
-      {{ .Content }}
-      {{/* The favourites control needs the vehicle list at build time. It cannot
-           be fetched, and it cannot be written as {{ partial }} in the .md body
-           because Go templates are not evaluated there -- so a page opts in with
-           `favouritesData: true` and the layout emits the list. Only that one
-           page pays for it. */}}
-      {{ if .Params.favouritesData }}{{ partial "favourites-data.html" . }}{{ end }}
-      {{/* Same opt-in for the vehicle record editor: the full vehicle list, with
-           bodies, compiled into one page. See inventory-admin-data.html. */}}
-      {{ if .Params.inventoryData }}{{ partial "inventory-admin-data.html" . }}{{ end }}
-      {{/* The content editor pages (articles / specials / testimonials): one
-           generic emitter, typed by front matter. */}}
-      {{ if .Params.contentAdminData }}{{ partial "content-admin-data.html" (dict "type" .Params.contentType) }}{{ end }}
+{{- /* Emitted LAST in the body (after the page's own stylesheets) so the
+       operator skin wins collisions with the older component styles. */ -}}
+{{ define "scripts" }}
+{{ partial "stylesheet.html" "components/admin-operator.css" }}
+{{ partial "entry.html" (dict "entry" "admin-shell.js" "page" .) }}
+{{ end }}
+
+{{ define "main" }}
+<div class="op-shell">
+  {{ partial "admin-sidebar.html" . }}
+  <div class="op-main">
+    {{ partial "admin-topbar.html" . }}
+    <div class="op-content">
+      <header class="admin-header">
+        <h1>{{ .Title }}</h1>
+        <p>{{ .Description }}</p>
+      </header>
+
+      <div class="admin-content">
+        {{ .Content }}
+        {{/* The favourites control needs the vehicle list at build time. It cannot
+             be fetched, and it cannot be written as {{ partial }} in the .md body
+             because Go templates are not evaluated there -- so a page opts in with
+             `favouritesData: true` and the layout emits the list. Only that one
+             page pays for it. */}}
+        {{ if .Params.favouritesData }}{{ partial "favourites-data.html" . }}{{ end }}
+        {{/* Same opt-in for the vehicle record editor: the full vehicle list, with
+             bodies, compiled into one page. See inventory-admin-data.html. */}}
+        {{ if .Params.inventoryData }}{{ partial "inventory-admin-data.html" . }}{{ end }}
+        {{/* The content editor pages (articles / specials / testimonials): one
+             generic emitter, typed by front matter. */}}
+        {{ if .Params.contentAdminData }}{{ partial "content-admin-data.html" (dict "type" .Params.contentType) }}{{ end }}
+      </div>
     </div>
   </div>
 </div>
