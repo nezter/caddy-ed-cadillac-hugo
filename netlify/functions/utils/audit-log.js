@@ -40,6 +40,16 @@ const ACTIONS = {
   APPOINTMENT_COMPLETE: 'appointment.complete',
   AUTH_LOGIN: 'auth.login',
   SEED_RUN: 'seed.run',
+  // These four are written by staff-management, inventory-admin and
+  // agents-admin, which also call registerAction(). That call only reaches
+  // the lambda instance it runs in -- audit-log-view is a SEPARATE function,
+  // so its dropdown and filter could never see them, and filtering by an
+  // action it did not know was refused as unknown. The vocabulary has to be
+  // complete HERE, where every reader starts from.
+  STAFF_UPDATE: 'staff.update',
+  VEHICLE_EDIT: 'vehicle.edit',
+  AGENT_CREATE: 'agent.create',
+  AGENT_REVOKE: 'agent.revoke',
 };
 
 let ACTION_SET = new Set(Object.values(ACTIONS));

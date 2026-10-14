@@ -80,7 +80,7 @@
     return (
       '<fieldset class="settings-group" data-id="' + id + '">' +
         '<legend>' + name +
-          (active ? '' : ' <em style="color:#a26a00">(' + esc(person.status) + ')</em>') +
+          (active ? '' : ' <em>(' + esc(person.status) + ')</em>') +
         '</legend>' +
 
         '<div class="settings-field">' +
@@ -90,17 +90,19 @@
             : ' · <strong>never signed in</strong>') +
           '</p>' +
           (person.last_login ? '' :
-            '<p class="settings-note" style="color:#a26a00">This person has never signed in, so ' +
+            '<p class="settings-note settings-note--warn">This person has never signed in, so ' +
             'they cannot sign in yet. They need to accept their Netlify Identity invite and sign in ' +
             'once; the row above is created by that first sign-in.</p>') +
         '</div>' +
 
         '<div class="settings-field">' +
           '<label for="name-' + id + '">Name</label>' +
-          '<input id="name-' + id + '" class="input" type="text" data-field="first_name" value="' +
-            esc(person.first_name) + '"> ' +
-          '<input class="input" type="text" data-field="last_name" value="' +
-            esc(person.last_name) + '" aria-label="Last name">' +
+          '<div class="settings-row">' +
+            '<input id="name-' + id + '" class="input" type="text" data-field="first_name" value="' +
+              esc(person.first_name) + '" aria-label="First name">' +
+            '<input class="input" type="text" data-field="last_name" value="' +
+              esc(person.last_name) + '" aria-label="Last name">' +
+          '</div>' +
         '</div>' +
 
         '<div class="settings-field">' +
@@ -122,7 +124,7 @@
             esc(person.permissions.join(', ')) + '">' +
           '<p class="settings-note">Blank uses the role\'s defaults. Currently: <code>' +
             esc(roleDefaults.join(', ') || 'none') + '</code></p>' +
-          '<p class="settings-note">Any of: <code>' + esc(meta.allPermissions.join(' ')) + '</code></p>' +
+          '<details class="settings-note settings-note--fold"><summary>All ' + meta.allPermissions.length + ' permission names</summary><code>' + esc(meta.allPermissions.join(' ')) + '</code></details>' +
         '</div>' +
 
         '<div class="settings-actions" style="border:0;padding-bottom:0">' +
@@ -146,7 +148,7 @@
     // The one warning that matters, stated where it will be read.
     if (data.notifyWarning) {
       html +=
-        '<div class="settings-group" style="border-color:#c88a00;background:#fffaf0">' +
+        '<div class="settings-group settings-group--warn">' +
         '<p><strong>' + esc(data.notifyWarning) + '</strong></p></div>';
     } else if (data.staff.length === 0) {
       html +=

@@ -117,11 +117,11 @@
       })
       .map(function (g) {
         return (
-          '<fieldset class="settings-group"><legend>' +
+          '<details class="settings-group settings-fold" open><summary class="settings-fold__summary">' +
           esc(GROUP_LABELS[g] || g) +
-          '</legend>' +
+          '</summary>' +
           byGroup[g].map(field).join('') +
-          '</fieldset>'
+          '</details>'
         );
       })
       .join('');

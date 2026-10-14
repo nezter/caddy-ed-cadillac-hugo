@@ -73,12 +73,15 @@
 
   /* ---------- tiles (sales-metrics, shop-wide) ---------- */
   function renderMetrics(res) {
-    if (res.status === 401 || res.status === 403) { needSignIn = true; return failCard('The week', 'Sign in to see the numbers.'); }
-    if (!res.body || !res.body.memberId) return failCard('The week', 'The metrics endpoint did not answer.');
+    if (res.status === 401 || res.status === 403) { needSignIn = true; return failCard('Pipeline', 'Sign in to see the numbers.'); }
+    if (!res.body || !res.body.memberId) return failCard('Pipeline', 'The metrics endpoint did not answer.');
     var b = res.body;
-    return '<section class="op-hub-card op-hub-card--tiles"><h2 class="op-hub-card__title">The week</h2>' +
+    // All time on purpose: the pipeline is historical, and a weekly window
+    // rendered it as four zeros -- the console looking emptier than the
+    // shop is. The windowed view still exists on the sales dashboard.
+    return '<section class="op-hub-card op-hub-card--tiles"><h2 class="op-hub-card__title">Pipeline (all time)</h2>' +
       '<div class="op-hub-tiles">' +
-      tile(num(b.newLeads), 'New leads') +
+      tile(num(b.newLeads), 'Leads') +
       tile(num(b.appointments), 'Appointments') +
       tile(num(b.totalLeads), 'In the pipeline') +
       tile(b.conversionRate || '0%', 'Conversion') +
@@ -117,6 +120,7 @@
     return '<section class="op-hub-card op-hub-card--chart"><h2 class="op-hub-card__title">Last 14 days</h2>' +
       '<div class="op-hub-chart">' + bars + '</div>' +
       '<div class="op-hub-legend"><span class="op-cal-badge is-inq">' + inqTotal + '</span> enquiries <span class="op-cal-badge is-bkg">' + bkgTotal + '</span> booking requests</div>' +
+      ((inqTotal + bkgTotal) === 0 ? '<p class="op-hub-card__fail">No activity in this window yet.</p>' : '') +
       '</section>';
   }
 
@@ -125,13 +129,13 @@
     if (res.status === 401 || res.status === 403) { needSignIn = true; return failCard('Latest enquiries', 'Sign in to see enquiries.'); }
     if (!res.body || !res.body.data) return failCard('Latest enquiries', 'The lead list did not answer.');
     var leads = (res.body.data.leads || []).slice(0, 5);
-    if (!leads.length) return '<section class="op-hub-card"><h2 class="op-hub-card__title">Latest enquiries</h2><p class="op-hub-card__fail">Nothing new this week.</p></section>';
+    if (!leads.length) return '<section class="op-hub-card"><h2 class="op-hub-card__title">Latest enquiries</h2><p class="op-hub-card__fail">Nothing recorded yet.</p></section>';
     var rows = '';
     leads.forEach(function (l) {
       var name = ((l.firstName || '') + ' ' + (l.lastName || '')).trim() || 'Customer';
       rows += '<a class="op-hub-row" href="/admin/leads/">' +
         '<span class="op-hub-row__name">' + esc(name) + '</span>' +
-        '<span class="op-hub-row__meta">' + esc(l.status || 'new') + (l.createdAt ? ' &middot; ' + esc(ago(l.createdAt)) : '') + '</span>' +
+        '<span class="op-hub-row__meta">' + esc(l.status || 'new') + ((l.createdAt || l.timestamp) ? ' &middot; ' + esc(ago(l.createdAt || l.timestamp)) : '') + '</span>' +
         '</a>';
     });
     return '<section class="op-hub-card"><h2 class="op-hub-card__title">Latest enquiries</h2>' +
@@ -159,6 +163,19 @@
     return '<section class="op-hub-card"><h2 class="op-hub-card__title">Upcoming test drives</h2>' +
       '<div class="op-hub-rows">' + rows + '</div>' +
       '<a class="op-hub-card__more" href="/admin/bookings/">All bookings</a></section>';
+  }
+
+  /* ---------- pipeline by status (same payload as latest enquiries) ---------- */
+  function renderPipeline(res) {
+    var d = res.body && res.body.data;
+    if (!d || !d.leads || !d.leads.length) return '';
+    var counts = {};
+    d.leads.forEach(function (l) { var k = l.status || 'new'; counts[k] = (counts[k] || 0) + 1; });
+    var keys = Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a]; });
+    var chips = keys.map(function (k) { return '<span class="op-sync-chip">' + esc(k) + ' &middot; ' + counts[k] + '</span>'; }).join('');
+    return '<section class="op-hub-card"><h2 class="op-hub-card__title">Pipeline by status</h2>' +
+      '<div class="op-sync-chips">' + chips + '</div>' +
+      '<a class="op-hub-card__more" href="/admin/leads/">All leads</a></section>';
   }
 
   /* ---------- system (sync record + booking queue count) ---------- */
@@ -191,9 +208,9 @@
     var today = new Date();
     var from = new Date(today.getTime() - (DAYS_SHOWN - 1) * 86400000);
     var tasks = [
-      get('/.netlify/functions/sales-metrics?timeframe=week'),
+      get('/.netlify/functions/sales-metrics?timeframe=all'),
       get('/.netlify/functions/calendar-data?from=' + iso(from) + '&to=' + iso(today)),
-      get('/.netlify/functions/sales-leads?timeframe=week&status=all&sort=date-desc'),
+      get('/.netlify/functions/sales-leads?timeframe=all&status=all&sort=date-desc'),
       get('/.netlify/functions/booking-queue'),
       get('/.netlify/functions/inventory-sync-status'),
     ];
@@ -202,12 +219,13 @@
         renderMetrics(results[0]),
         renderChart(results[1]),
         renderLeads(results[2]),
+        renderPipeline(results[2]),
         renderBookings(results[3]),
         renderSystem(results[4], results[3]),
       ]);
     }).catch(function () {
       render([
-        failCard('The week', 'The console could not reach its data just now. Reload to try again.'),
+        failCard('The console', 'Could not reach its data just now. Reload to try again.'),
       ]);
     });
   })();

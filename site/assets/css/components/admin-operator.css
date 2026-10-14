@@ -564,3 +564,48 @@ body.admin .option-content p { color: var(--op-text-dim); }
 body.admin .gdpr-info { background: var(--op-surface); border-left-color: var(--op-accent); }
 body.admin .gdpr-info h4 { color: var(--op-text); }
 body.admin .gdpr-info p { color: var(--op-text-dim); }
+
+/* ---------- settings.css + social-admin.css, scoped dark ---------- */
+/* Both stylesheets hardcode light values; these pages (staff, audit, social,
+   settings, email) render inside the dark console, so re-point them here. */
+body.admin .settings-progress { color: var(--op-text-dim); }
+body.admin .settings-group { border-color: var(--op-border); }
+body.admin .settings-group legend { color: var(--op-text); }
+body.admin .settings-group legend em { color: var(--op-warn); font-style: normal; font-weight: 600; }
+body.admin .settings-group--warn { border-color: rgba(255, 196, 90, 0.45); background: rgba(255, 196, 90, 0.07); }
+body.admin .settings-group--warn p { color: var(--op-text); }
+body.admin .settings-note { color: var(--op-text-dim); }
+body.admin .settings-note--warn { color: var(--op-warn); }
+body.admin .settings-note code, body.admin .settings-group code { font-family: var(--op-mono); font-size: 12px; background: var(--op-surface); border: 1px solid var(--op-border); border-radius: 6px; padding: 1px 5px; color: var(--op-text); }
+body.admin .settings-note--fold summary { cursor: pointer; color: var(--op-text-dim); }
+body.admin .settings-note--fold summary:hover { color: var(--op-text); }
+body.admin .settings-note--fold code { display: inline-block; margin-top: 6px; white-space: normal; }
+body.admin .settings-actions { border-top-color: var(--op-border); }
+body.admin .settings-saved { color: var(--op-ok); }
+body.admin .settings-status { border: 1px solid transparent; }
+body.admin .settings-status--info { background: rgba(110, 168, 255, 0.12); color: #bcd4ff; border-color: rgba(110, 168, 255, 0.3); }
+body.admin .settings-status--warn { background: rgba(255, 196, 90, 0.12); color: #ffd98a; border-color: rgba(255, 196, 90, 0.3); }
+body.admin .settings-status--error { background: rgba(212, 103, 90, 0.14); color: #ff9a8f; border-color: rgba(212, 103, 90, 0.38); }
+body.admin .settings-status--ok { background: rgba(123, 196, 127, 0.14); color: #a8dfab; border-color: rgba(123, 196, 127, 0.35); }
+body.admin .settings-field label { display: block; font-size: 12px; color: var(--op-text-dim); margin-bottom: 6px; }
+body.admin .settings-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+body.admin .settings-row .input { width: 100%; }
+body.admin .social-card { background: var(--op-bg-raised); border-color: var(--op-border); }
+body.admin .social-card__head h3 { color: var(--op-text); }
+body.admin .social-card__meta { color: var(--op-text-dim); }
+body.admin .social-pill--ok { background: rgba(123, 196, 127, 0.16); color: #9fd9a3; }
+body.admin .social-pill--off { background: var(--op-surface); color: var(--op-text-dim); }
+body.admin .social-result { color: var(--op-text-dim); }
+body.admin .social-result--ok { color: var(--op-ok); }
+body.admin .social-result--error { color: var(--op-bad); }
+/* Collapsible settings groups: the sections fold so the page reads as a
+   table of contents instead of a wall of fields. */
+body.admin .settings-fold { padding: 0; }
+body.admin .settings-fold__summary { cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; font-weight: 700; font-size: 14px; color: var(--op-text); }
+body.admin .settings-fold__summary::-webkit-details-marker { display: none; }
+body.admin .settings-fold__summary::after { content: '+'; color: var(--op-text-faint); font-weight: 600; }
+body.admin .settings-fold[open] .settings-fold__summary { border-bottom: 1px solid var(--op-border); margin-bottom: 2px; }
+body.admin .settings-fold[open] .settings-fold__summary::after { content: '\2212'; }
+body.admin .settings-fold > .settings-field, body.admin .settings-fold > .form-group { padding: 14px 18px 0; }
+body.admin .settings-fold > :last-child { padding-bottom: 16px; }
+@media (max-width: 640px) { body.admin .settings-row { grid-template-columns: 1fr; } }

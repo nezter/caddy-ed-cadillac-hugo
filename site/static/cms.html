@@ -94,13 +94,16 @@
 
     <script>
       // Gate on authentication before the CMS mounts, so editors land on a
-      // login screen rather than a half-rendered editor.
+      // login screen rather than a half-rendered editor. With no session this
+      // OPENS the login widget; before, it registered a login handler and
+      // returned, which left 'Loading the CMS...' on screen forever.
       if (window.netlifyIdentity) {
         window.netlifyIdentity.on('init', function (user) {
           if (!user) {
             window.netlifyIdentity.on('login', function () {
-              window.location.href = '/admin/';
+              window.location.reload();
             });
+            window.netlifyIdentity.open();
             return;
           }
           document.getElementById('cms-loading')?.remove();

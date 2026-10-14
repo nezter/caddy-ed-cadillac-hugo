@@ -286,6 +286,15 @@
   from = "/admin/cms"
   to = "/cms.html"
   status = 200
+# Decap CMS fetches its config relative to /admin/ (the editor is served at
+# /admin/cms). Without this rule the request hits the admin gate below, gets
+# a 302 to the sign-in PAGE, and the editor dies with a config error. The
+# config describes collections, not secrets, so it is served from the root
+# copy (site/static/config.yml, kept identical to site/static/admin/config.yml).
+[[redirects]]
+  from = "/admin/config.yml"
+  to = "/config.yml"
+  status = 200
 
 [[redirects]]
   from = "/admin/*"

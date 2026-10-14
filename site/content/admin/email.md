@@ -15,8 +15,8 @@ scripts:
   </div>
   <form id="email-form" hidden>
     <div id="email-summary"></div>
-    <fieldset class="settings-group">
-      <legend>Provider</legend>
+    <details class="settings-group settings-fold" open>
+      <summary class="settings-fold__summary">Provider</summary>
       <div class="settings-field">
         <label for="email-provider">Who sends the mail</label>
         <select id="email-provider" name="provider" class="input"></select>
@@ -31,9 +31,9 @@ scripts:
           Leave this off until the test below arrives.
         </p>
       </div>
-    </fieldset>
-    <fieldset class="settings-group">
-      <legend>Connection</legend>
+    </details>
+    <details class="settings-group settings-fold" open>
+      <summary class="settings-fold__summary">Connection</summary>
       <div class="settings-field">
         <label for="email-host">SMTP host</label>
         <input type="text" id="email-host" name="smtp_host" class="input" autocomplete="off" spellcheck="false">
@@ -64,9 +64,9 @@ scripts:
           this page.
         </p>
       </div>
-    </fieldset>
-    <fieldset class="settings-group">
-      <legend>Addresses</legend>
+    </details>
+    <details class="settings-group settings-fold" open>
+      <summary class="settings-fold__summary">Addresses</summary>
       <div class="settings-field">
         <label for="email-from">From address</label>
         <input type="email" id="email-from" name="email_from" class="input" autocomplete="off" spellcheck="false">
@@ -74,7 +74,7 @@ scripts:
           Required, and never guessed by the site.
         </p>
       </div>
-    </fieldset>
+    </details>
     <div class="settings-actions">
       <button type="submit" class="btn btn-primary" id="email-save">Save</button>
       <button type="button" class="btn btn-secondary" id="email-test">Save and send a test</button>

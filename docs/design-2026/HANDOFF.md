@@ -2127,3 +2127,47 @@ Verified: jsdom harness ALL PASS (rules line, any-hour note, waiver
 line + all earlier checks), checks 38/22 auth, 16/16 portal, 35/35
 config, build PASSED. Deploy 6acfb3ee published (prod JS carries
 "Automatic pulls"); preview refreshed; projects.json updated last.
+
+---
+
+## Seven-page punch list (2026-10-14, sixth round)
+
+Owner: staff layout/bugs; audit slow/failing; social unformatted; site
+settings a wall of fields + loading failures; email partial + hard to
+navigate; CMS errors out; hub missing information and failing to load.
+
+Root causes found and fixed:
+
+1. CMS "errors out": /admin/config.yml passed through the admin gate, so
+   Decap fetched a 302 to the sign-in page and died loading its config.
+   A redirect above /admin/* serves it from a root copy (site/static/
+   config.yml, lockstep with admin/config.yml); cms.html now OPENS the
+   Identity login instead of an eternal "Loading the CMS..." when signed
+   out, and reloads into the CMS after login.
+2. Sync record 503 on prod: the file:-URL client selection made require()
+   dynamic, which Netlify bundling cannot resolve statically, so the
+   function could not load libsql and reported not-configured forever.
+   Static require restored; sqlite tests inject the client through
+   require.cache now.
+3. Audit filter 422: staff.update / vehicle.edit / agent.create /
+   agent.revoke were registerAction()d in OTHER lambdas, invisible to the
+   viewer function. The base vocabulary in utils/audit-log.js carries all
+   of them now.
+4. Hub zeros: it asked sales-metrics/sales-leads for timeframe=week; the
+   pipeline is historical, so four zeros. Now all time, tiles retitled
+   "Pipeline (all time)", plus a new "Pipeline by status" card, an empty-
+   window note on the chart, and a lead timestamp fallback.
+5. Settings.css and social-admin.css hardcode light values, which is why
+   staff / audit / social / settings / email looked unformatted on the
+   dark console. Scoped dark overrides added in admin-operator.css.
+6. Settings page: groups are collapsible folds now (summary + details),
+   so the page reads as a table of contents. Email page: same folds
+   (Provider / Connection / Addresses). Staff page: name fields in a
+   two-column row, permissions list folded, inline light colors replaced
+   with themed classes.
+
+Verified: jsdom harnesses ALL PASS (hub / settings / staff), sqlite sync
+round-trip with cache-seeded client, checks 38/22 + 16/16 + 35/35, build
+PASSED. Deploy 6acfb6f3 live; probes on production: /admin/config.yml 200
+(YAML), inventory-sync-status 200 with rules, audit filter 200, metrics
+all-time 15. Preview refreshed; projects.json updated last.

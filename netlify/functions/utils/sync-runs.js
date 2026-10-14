@@ -70,10 +70,11 @@ function client() {
   try {
     const url = process.env.TURSO_DATABASE_URL;
     if (!url) { _client = null; return _client; }
-    // file: URLs (local tests, fixtures) go through the node entry;
-    // everything in production is a libsql http endpoint.
-    const entry = url.startsWith('file:') ? '@libsql/client/node' : '@libsql/client/http';
-    const { createClient } = require(entry);
+    // STATIC on purpose: Netlify's bundler resolves requires statically, and a
+    // computed require string left this module unbundled in production (the
+    // function answered 'not-configured' while the database was fine). Tests
+    // that need a file: database swap the module in require.cache instead.
+    const { createClient } = require('@libsql/client/http');
     _client = createClient({ url, authToken: process.env.TURSO_AUTH_TOKEN || undefined });
   } catch (err) {
     console.warn('sync-runs: client unavailable:', err.message);
