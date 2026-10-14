@@ -7,32 +7,9 @@ styles:
   - components/lead-intake.css
 scripts:
   - lead-management.js
----
-
-Leads do not only arrive through the website. Someone calls about an Escalade,
-someone walks the lot on a Saturday, a neighbour hands over a name — and until
-now the only way into the leads table was a web form. This page is the other
-door: a staff-side intake form that submits to
-`/.netlify/functions/leads`, the same function the public forms target. One
-pipeline, one leads table, one deduplication pass — a lead entered here is
-indistinguishable from one that arrived by form, except that its `form_type`
-records `manual_intake` and its source says how it actually reached us.
-
-No sign-in is required to submit, and that is deliberate rather than an
-oversight: `leads` is the public intake function, and gating it on a staff
-token would break every public form that posts to it. Signing in matters for
-reading the pipeline back — the [lead management console](/admin/leads),
-[lead scoring](/admin/lead-scoring) and [lead assignment](/admin/lead-assignment)
-pages all require a session — not for adding to it.
-
-The function checks every submission against existing leads before storing it.
-A repeat is not a second row: the original lead's last-contact time is moved
-forward and the reply says the person is already on file, so the honest outcome
-of entering a known customer is "we already have your information", not a
-duplicated lead to clean up later.
-
+---
 <form data-lead-form data-lead-source="phone" class="lead-intake-form" novalidate>
-  <input type="hidden" name="formType" value="manual_intake">
+  <input type="hidden" name="formType" value="manual_intake">
 
   <div class="form-row">
     <div class="form-group">
@@ -43,7 +20,7 @@ duplicated lead to clean up later.
       <label for="lead-email">Email</label>
       <input id="lead-email" name="email" type="email" autocomplete="email" required>
     </div>
-  </div>
+  </div>
 
   <div class="form-row">
     <div class="form-group">
@@ -54,7 +31,7 @@ duplicated lead to clean up later.
       <label for="lead-vehicle-interest">Vehicle interest</label>
       <input id="lead-vehicle-interest" name="vehicleInterest" type="text" placeholder="e.g. 2024 Escalade">
     </div>
-  </div>
+  </div>
 
   <div class="form-group">
     <label for="lead-source">How did they reach us?</label>
@@ -65,19 +42,19 @@ duplicated lead to clean up later.
       <option value="event">Event</option>
       <option value="website">Website (relayed)</option>
     </select>
-  </div>
+  </div>
 
   <div class="form-group">
     <label for="lead-message">Notes</label>
     <textarea id="lead-message" name="message" rows="4" placeholder="What they asked about, when to call back, who they spoke to"></textarea>
-  </div>
+  </div>
 
   <div class="form-group form-group--consent">
     <label for="lead-consent">
       <input id="lead-consent" name="consent" type="checkbox" value="true">
       They agreed to be contacted about this enquiry
     </label>
-  </div>
+  </div>
 
   <button type="submit" class="btn btn-primary">Save lead</button>
 </form>

@@ -9,13 +9,6 @@ scripts:
   - bookings-admin.js
 ---
 
-<p class="lede">
-  Every test-drive request sent through this site, newest first. These are kept on
-  Netlify's own storage, so they survive even before the customer database exists.
-  Push the list onto your Google Calendar, and pull back anything you have
-  moved or cancelled there — both directions, once the calendar is connected.
-</p>
-
 <div class="bookings-bar">
   <p class="bookings-bar__calendar" data-cal-status aria-live="polite">Checking calendar…</p>
   <div class="bookings-bar__actions">
@@ -31,9 +24,5 @@ scripts:
 </div>
 
 <noscript>
-  <div class="form-message form-message--error" role="alert">
-    <strong>This page needs JavaScript.</strong>
-    Requests are read from Netlify Blobs over the network, so there is nothing
-    useful to show with scripting off. Requests are still emailed either way.
-  </div>
-</noscript>
+    <p class="settings-note">This control needs JavaScript.</p>
+  </noscript>

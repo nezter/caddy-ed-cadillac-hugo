@@ -8,12 +8,6 @@ styles:
 scripts:
   - admin-email.js
 ---
-
-  Until this is filled in, **nothing this site sends reaches anybody**. Every
-  enquiry is still recorded and still visible at
-  [Leads](/admin/leads) and [Bookings](/admin/bookings) — nothing is lost —
-  but nobody is told, so somebody has to remember to look.
-
   <div id="email-status" class="settings-status" role="status" hidden></div>
   <div id="email-progress" class="settings-progress">
     <div class="spinner" aria-hidden="true"></div>
@@ -34,9 +28,7 @@ scripts:
           Turn sending on
         </label>
         <p class="settings-note">
-          Leave this off until the test below arrives. A half-entered provider
-          that is switched on fails every enquiry's notification, and a failed
-          notification is easy to miss.
+          Leave this off until the test below arrives.
         </p>
       </div>
     </fieldset>
@@ -79,9 +71,7 @@ scripts:
         <label for="email-from">From address</label>
         <input type="email" id="email-from" name="email_from" class="input" autocomplete="off" spellcheck="false">
         <p class="settings-note">
-          Required, and never guessed by the site. A From address that is not
-          verified with your provider either bounces or fails SPF, and the
-          enquiry lands in spam where nobody will see it.
+          Required, and never guessed by the site.
         </p>
       </div>
     </fieldset>
@@ -94,33 +84,8 @@ scripts:
   </form>
 
   <noscript>
-    <p class="settings-note">This control needs JavaScript. Without it, mail can
-    still be configured with <code>SMTP_HOST</code>, <code>SMTP_PORT</code>,
-    <code>SMTP_USER</code>, <code>SMTP_PASS</code>, <code>EMAIL_TO</code> and
-    <code>EMAIL_FROM</code> in the Netlify UI — those still work, and take
-    priority over nothing here.</p>
+    <p class="settings-note">
+          This control needs JavaScript.
+        </p>
   </noscript>
 
-  ## Where enquiries go
-
-  The **To** address is not set here on purpose. It is resolved per enquiry: the
-  first active member of staff in the `sales_reps` table, and only if there is
-  nobody there does it fall back to `EMAIL_TO`.
-
-  That ordering exists because a hardcoded address is how the customer list once
-  ended up being mailed to a stranger's mailbox. `EMAIL_TO` is the fallback for
-  before anybody has signed in — it is not the normal answer.
-
-  ## Why this is not the Netlify dashboard
-
-  Both work, and the environment variables take priority only if no row is saved
-  here. Setting it here means the site can be told how to send mail without a
-  redeploy and without dashboard access.
-
-  The password is stored in this site's database in plain text. That is an
-  honest limitation, not an oversight: there is no secret store on this
-  deployment, and encrypting with a key the sending code can also read would
-  protect nothing. If you would rather the password never touched the database,
-  leave the password field blank, tick nothing, and set `SMTP_HOST`,
-  `SMTP_USER` and `SMTP_PASS` in the Netlify UI instead — that path is fully
-  supported and takes over automatically.

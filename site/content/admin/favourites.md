@@ -9,15 +9,6 @@ styles:
 scripts:
   - favourites-admin.js
 ---
-
-<p class="lede">
-  Favourited vehicles are hoisted to the top of the home page fleet and badged
-  <strong>Ed's pick</strong>. The home page shows the ten most recently synced
-  Cadillacs; anything you favourite here jumps the queue, up to six of them.
-  Everything else is one click away on the
-  <a href="/inventory/">full inventory page</a>.
-</p>
-
 <div class="favourites-bar">
   <p class="favourites-bar__status" data-fav-status aria-live="polite">Loading current stock…</p>
   <div class="favourites-bar__actions">
@@ -34,10 +25,5 @@ scripts:
 </div>
 
 <noscript>
-  <div class="form-message form-message--error" role="alert">
-    <strong>This page needs JavaScript.</strong>
-    Favourites are stored in Netlify Blobs and toggled over the network, so there
-    is nothing useful to show with scripting off. The home page is unaffected --
-    it reads the same list and simply shows whatever was last set.
-  </div>
-</noscript>
+    <p class="settings-note">This control needs JavaScript.</p>
+  </noscript>

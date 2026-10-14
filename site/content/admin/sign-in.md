@@ -9,26 +9,6 @@ scripts:
   - components/staff-sign-in.js
   - identity-sign-in.js
 ---
-
-Sign in to reach the sales dashboard, lead management and follow-up campaigns.
-
-Everything behind this form is staff-only. Customers have their own sign-in on
-the [customer portal](/customer/), which asks for an email address and a phone
-number rather than a password.
-
-## Sign in with your work email
-
-{{< staff-sign-in >}}
-
-That form talks to `/.netlify/functions/sales-login`, which verifies the password
-against a `bcrypt` hash in the `sales_reps` table, so it needs the database
-connected. Netlify Identity below does not.
-
-A failed attempt says so, in place, with the reason. A session that has expired
-says so too, and offers the form again. Neither of those is an empty table.
-
-## Sign in with Netlify Identity
-
 <div id="identity-sign-in" class="identity-sign-in">
   <p class="identity-sign-in__status" id="identity-sign-in-status" hidden></p>
   <div class="identity-sign-in__buttons">

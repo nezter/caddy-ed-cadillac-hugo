@@ -1973,3 +1973,26 @@ calendar view missing, pages not loading, data not looking real.
 - Still queued: deeper per-page content polish, Reports + Scheduling
   pages, and whichever pages the owner still finds thin on the live
   console.
+
+---
+
+## Admin commentary diet (2026-10-14)
+
+Owner: the pages carried a ton of inline commentary instead of content.
+
+- All 27 admin pages dieted: ledes, help footnotes, prose-only sections
+  and design-explainer notes removed or compressed to short functional
+  lines. Visible prose across the section: about 4,450 -> 625 words.
+- Every functional container (forms and ids the page scripts hook into)
+  verified intact via a marker-diff guard and per-page checks.
+- WARNING for future scripts: the diet's broad paragraph-stripping rule
+  initially matched plain-text runs that INCLUDED the YAML front matter
+  of 24 pages and deleted it. The build caught it; all files restored
+  from git and the set re-verified (27/27 have front matter). Never run
+  paragraph-stripping regexes across content md without a front-matter
+  guard and a marker diff.
+- Hub intro trimmed; CMS hub card shortened. Remaining copy is labels
+  and notes that prevent mistakes (e.g. 'leave blank to keep saved').
+- Verified: build PASSED, portal 16/16, ten cleaned pages jsdom with 0
+  errors, containers present on all 27. Deploy 6acf260f published;
+  preview mirror refreshed at 27.6MB.
