@@ -2101,3 +2101,29 @@ real row, jsdom harness ALL PASS, checks 38 guarded / 16/16 portal /
 
 Reality: runs execute where the repo lives (this machine / CI). The
 production crawl window is 01:00-05:00; queued requests run outside it.
+
+---
+
+## Sync limits, stated where the button is (2026-10-14, fifth round)
+
+Owner: "There is a limitation on sync -- there should be feedback based
+on those rules, so they know."
+
+- netlify/functions/utils/sync-rules.js is the ONE home of the limits
+  (24h interval, 01:00-05:00 window). scripts/inventory/crawl.js takes
+  its DEFAULTS from it now, and inventory-sync-status.js ships it in the
+  GET payload, so the page text and the enforced gate cannot drift.
+- The page shows a rules line under Sync now: "Automatic pulls: once per
+  24h, 01:00-05:00 only. Queued requests run when a runner picks them
+  up, at any hour." Built from the payload numbers, not typed copy.
+- Queued card + queue confirmation now say manual requests may run at
+  any hour.
+- The runner records WHY a run skipped the window: claimed manual
+  requests write detail.gate.waivedBy = manual request; --force writes
+  detail.forced. The details panel shows "Window waived: manual request"
+  / "Ran with --force".
+
+Verified: jsdom harness ALL PASS (rules line, any-hour note, waiver
+line + all earlier checks), checks 38/22 auth, 16/16 portal, 35/35
+config, build PASSED. Deploy 6acfb3ee published (prod JS carries
+"Automatic pulls"); preview refreshed; projects.json updated last.

@@ -28,6 +28,7 @@
 'use strict';
 
 const SyncRuns = require('./utils/sync-runs');
+const SyncRules = require('./utils/sync-rules');
 const { authenticateRequest } = require('./utils/auth-middleware');
 const { originHeaders } = require('./utils/cors-middleware');
 
@@ -99,6 +100,13 @@ exports.handler = async function (event) {
     return json(event, 200, {
       ok: true,
       now: new Date().toISOString(),
+      // The operating limits, so the page can tell its users why a run may
+      // have to wait instead of leaving them to guess.
+      rules: {
+        minIntervalHours: SyncRules.minIntervalHours,
+        windowStartHour: SyncRules.windowStartHour,
+        windowEndHour: SyncRules.windowEndHour,
+      },
       current: current.run,
       runs: recent.runs,
     });

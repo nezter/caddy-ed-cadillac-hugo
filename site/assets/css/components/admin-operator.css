@@ -355,6 +355,7 @@ body.admin :focus-visible { outline: 2px solid var(--op-accent); outline-offset:
 /* /admin/sync: the Sync now control and per-run detail panels */
 .op-sync-card--controls { padding: 14px 20px; }
 .op-sync-controls { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.op-sync-rules { flex-basis: 100%; font-size: 12px; color: var(--op-text-faint); border-top: 1px solid var(--op-border); padding-top: 10px; }
 .op-sync-btn { font: inherit; font-size: 13px; font-weight: 600; color: #0b0c0e; background: var(--op-accent); border: 1px solid var(--op-accent); border-radius: var(--op-r-sm); padding: 8px 16px; cursor: pointer; }
 .op-sync-btn:hover { filter: brightness(1.06); }
 .op-sync-btn:disabled { opacity: 0.55; cursor: default; }

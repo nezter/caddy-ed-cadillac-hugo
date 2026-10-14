@@ -177,18 +177,30 @@
     return '<div class="op-sync-chips">' + html + '</div>';
   }
 
-  function controls() {
+  function controls(rules) {
+    var rulesText = rulesLine(rules);
     return '<section class="op-sync-card op-sync-card--controls"><div class="op-sync-controls">' +
       '<button type="button" class="op-sync-btn" id="sync-now">Sync now</button>' +
       '<span class="op-sync-hint" id="sync-now-note">Queues a run. It starts when the sync runner picks it up.</span>' +
+      (rulesText ? '<span class="op-sync-rules">' + esc(rulesText) + '</span>' : '') +
       '</div></section>';
+  }
+
+  // The limits the runner enforces, said where the button is. Built from the
+  // numbers the endpoint reports, so the page and the runner cannot drift.
+  function rulesLine(rules) {
+    if (!rules) return '';
+    var hh = function (h) { var t2 = String(num(h)); return t2.length === 1 ? '0' + t2 : t2; };
+    return 'Automatic pulls: once per ' + num(rules.minIntervalHours) + 'h, ' +
+      hh(rules.windowStartHour) + ':00-' + hh(rules.windowEndHour) + ':00 only. ' +
+      'Queued requests run when a runner picks them up, at any hour.';
   }
 
   function queuedCard(run) {
     var meta = [];
     meta.push('<span>Requested ' + esc(clock(run.requestedAt || run.startedAt)) + ' (' + esc(ago(run.requestedAt || run.startedAt)) + ')</span>');
     if (run.requestedBy) meta.push('<span>By ' + esc(run.requestedBy) + '</span>');
-    meta.push('<span class="op-sync-note">Starts when the sync runner picks it up</span>');
+    meta.push('<span class="op-sync-note">Starts when the sync runner picks it up; manual requests may run at any hour</span>');
     return '<section class="op-sync-card">' +
       '<div class="op-sync-card__head"><h2 class="op-sync-card__title">Sync requested</h2>' + pill(run) + '</div>' +
       '<div class="op-sync-meta">' + meta.join('') + '</div>' +
@@ -279,6 +291,8 @@
     if (d.runner) bits.push('Runner: ' + (d.runner.user ? d.runner.user + ' at ' + d.runner.host : d.runner.host));
     if (d.timings && d.timings.durationMs) bits.push('Took ' + Math.max(1, Math.round(d.timings.durationMs / 1000)) + 's');
     if (run.trigger) bits.push('Trigger: ' + run.trigger);
+    if (d.gate && d.gate.waivedBy) bits.push('Window waived: ' + d.gate.waivedBy);
+    if (d.forced) bits.push('Ran with --force');
     if (bits.length) out.push('<p class="op-sync-detail__row">' + esc(bits.join(' / ')) + '</p>');
     if (d.phases && d.phases.length) {
       var chipsHtml = '';
@@ -327,7 +341,7 @@
     lastData = data;
     var runs = data.runs || [];
     var current = data.current;
-    var html = controls();
+    var html = controls(data.rules);
     var queued = null;
     for (var i = 0; i < runs.length; i += 1) {
       if (runs[i].status === 'requested') { queued = runs[i]; break; }
@@ -406,7 +420,7 @@
         if (res.status === 403) { note.textContent = 'This account cannot queue syncs.'; return; }
         if (res.status === 503) { note.textContent = (res.body && res.body.error) || 'The record database is not configured.'; return; }
         if (!res.body || !res.body.ok) { note.textContent = 'The request could not be recorded.'; return; }
-        note.textContent = res.body.alreadyQueued ? 'A run is already queued.' : 'Sync queued. It starts when a runner picks it up.';
+        note.textContent = res.body.alreadyQueued ? 'A run is already queued.' : 'Sync queued. It starts when a runner picks it up, at any hour.';
         schedule(1500);
       })
       .catch(function () {

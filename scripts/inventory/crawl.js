@@ -45,6 +45,9 @@
 const fs = require('fs');
 const path = require('path');
 
+// The window/interval above come from the same module /admin/sync reads.
+const SYNC_RULES = require('../../netlify/functions/utils/sync-rules');
+
 const DEFAULTS = {
   origin: 'https://www.cadillacofsouthcharlotte.com',
   // Self-identifying. Overridable so you can put a real contact address in it.
@@ -67,9 +70,10 @@ const DEFAULTS = {
   jitterMs: 1200, // random extra on the floor, so it is not metronomic
   maxPagesPerFamily: 12, // pagination guard; New needs ~7 at 24/page
   maxRequestsPerRun: 30, // hard cap across all families
-  minIntervalHours: 24,
-  windowStartHour: 1, // 01:00 local
-  windowEndHour: 5, // 05:00 local
+  // The window and interval live in netlify/functions/utils/sync-rules.js:
+  // /admin/sync shows these numbers to its users, and one source means the
+  // page's promise and this gate cannot drift.
+  ...SYNC_RULES,
   requestTimeoutMs: 30000,
   maxConsecutiveFailures: 2,
 };

@@ -364,11 +364,15 @@ async function main() {
       activeRunId = claimed.id;
       activeRunStartedAt = Date.now();
       runDetail.requestedAt = claimed.requestedAt || null;
+      // A claimed request runs regardless of the crawl window; say so in the
+      // record so the page can show WHY this run skipped the overnight rule.
+      runDetail.gate = { waivedBy: 'manual request' };
       info(`adopted the queued sync request for /admin/sync (${claimed.id})`);
     } else if (!claimed.ok && claimed.reason !== 'not-configured') {
       info(`the sync queue could not be checked (${claimed.reason})`);
     }
   }
+  if (args.force) runDetail.forced = true;
 
   // 0. Gate (crawl source only) --------------------------------------------
   // Rate limit and off-peak window, for runs that started on their own. A
