@@ -1904,3 +1904,32 @@ and how many vehicles were found, already there, updated, new, retired.
   35/35, verify-endpoints green (feature-manifest entry added), build
   verified. Deployed 6acf143f (ready): /admin/sync/ 302s to sign-in,
   the function 401s unauthenticated, assets 200.
+
+---
+
+## Admin sidebar render fix + preview channel repack (2026-10-14)
+
+Owner reported the left menu was messed up and pages would not load.
+Both parts were real, in different places:
+
+- SIDEBAR (live admin): main.css and components/admin.css still carry
+  .admin-nav rules written for the OLD horizontal menu (flex row, pill-
+  bordered links, inline-flex groups, group dividers). Admin pages load
+  different combinations of those sheets, so the operator rail rendered
+  differently page to page. Fixed by scoping the rail's styles as
+  body.admin .op-side .admin-nav* with full property resets, so no
+  legacy sheet can reshape it. Deploy 6acf1eca (ready/published).
+- PREVIEW CHANNEL (the 'pages do not load' half): the preview URL was
+  still serving the FIRST upload (design directions) because every path
+  falls back to index.html and the full-site updates never landed --
+  the artifact was about 86MB raw / about 114MB base64 while this
+  channel caps the upload body at 50MB base64 (fc-nginx-website).
+  Fix: the preview copy now carries downscaled vehicle photography
+  (sharp; variants to 480w, originals to 720w; filenames unchanged so
+  no reference changes): 86MB to 27.5MB, base64 about 36.6MB, single
+  retrigger submitted. Live/production keeps full quality -- the slim
+  tree exists only under projects/<id>.
+- Verified this round: all 26 admin pages load with zero script errors
+  against their real built bundles (jsdom); a sample vehicle page's 25
+  image references all resolve in the slim tree; portal checks 16/16;
+  build verification green.

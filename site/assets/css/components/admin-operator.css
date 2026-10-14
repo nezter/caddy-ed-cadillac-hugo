@@ -147,21 +147,66 @@ body.admin .admin-header { border: none; border-bottom: 1px solid var(--op-borde
 body.admin .admin-header h1 { color: var(--op-text); font-size: 22px; letter-spacing: -0.01em; }
 body.admin .admin-header p { color: var(--op-text-dim); margin: 4px 0 0; }
 
-/* ---------- sidebar nav (rendered by partials/admin-nav.html) ---------- */
-.op-side .admin-nav { display: flex; flex-direction: column; gap: 1px; }
-.op-side .admin-nav[hidden] { display: none; }
-.admin-nav__group { margin-bottom: 12px; }
-.admin-nav__label {
-  display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
-  color: var(--op-text-faint); padding: 4px 12px; margin-bottom: 2px;
+/* ---------- sidebar nav (rendered by partials/admin-nav.html) ----------
+   The page-level sheets (main.css, components/admin.css) also carry
+   .admin-nav rules written for the old horizontal menu, and pages load
+   different combinations of them. Everything here is scoped under
+   body.admin .op-side so the rail renders the same on every page no
+   matter which sheets arrive, and neutralises the older rules property
+   by property instead of hoping the load order wins. */
+body.admin .op-side .admin-nav {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: 1px;
+  margin: 0 0 4px;
+  font-size: inherit;
 }
-.admin-nav__group a {
-  display: block; padding: 6px 12px; border-radius: var(--op-r-sm);
-  color: var(--op-text-dim); font-size: 13.5px; text-decoration: none;
+body.admin .op-side .admin-nav[hidden] { display: none; }
+body.admin .op-side .admin-nav__group {
+  display: block;
+  margin: 0 0 12px;
+  padding-inline-start: 0;
+  border-inline-start: 0;
 }
-.admin-nav__group a:hover { background: var(--op-surface); color: var(--op-text); }
-.admin-nav__group a.is-current { background: var(--op-surface-2); color: var(--op-text); }
-
+body.admin .op-side .admin-nav__group + .admin-nav__group {
+  padding-inline-start: 0;
+  border-inline-start: 0;
+}
+body.admin .op-side .admin-nav__label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--op-text-faint);
+  padding: 4px 12px;
+  margin-bottom: 2px;
+}
+body.admin .op-side .admin-nav__group a {
+  display: block;
+  padding: 6px 12px;
+  border: 0;
+  border-radius: var(--op-r-sm);
+  background: none;
+  color: var(--op-text-dim);
+  font-size: 13.5px;
+  font-weight: 400;
+  text-decoration: none;
+}
+body.admin .op-side .admin-nav__group a:hover {
+  background: var(--op-surface);
+  color: var(--op-text);
+}
+body.admin .op-side .admin-nav__group a.is-current {
+  background: var(--op-surface-2);
+  color: var(--op-text);
+  font-weight: 600;
+  border: 0;
+  padding-block-end: 6px;
+  text-decoration: none;
+}
 /* ---------- generic primitives under the admin ---------- */
 body.admin a { color: inherit; }
 body.admin .admin-content a:not(.btn) { color: var(--op-accent); text-decoration: none; }
