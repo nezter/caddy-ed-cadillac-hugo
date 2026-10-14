@@ -9,6 +9,10 @@ scripts:
   - components/staff-sign-in.js
   - identity-sign-in.js
 ---
+## Sign in with your work email
+
+{{< staff-sign-in >}}
+
 <div id="identity-sign-in" class="identity-sign-in">
   <p class="identity-sign-in__status" id="identity-sign-in-status" hidden></p>
   <div class="identity-sign-in__buttons">

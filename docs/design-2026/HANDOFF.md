@@ -1996,3 +1996,43 @@ Owner: the pages carried a ton of inline commentary instead of content.
 - Verified: build PASSED, portal 16/16, ten cleaned pages jsdom with 0
   errors, containers present on all 27. Deploy 6acf260f published;
   preview mirror refreshed at 27.6MB.
+
+---
+
+## Admin landing dashboard + Worklist repair (2026-10-14, second round)
+
+Owner: the landing was just a list of pages; the worklist was stuck on
+failed/spinning; content styling missing; information not right.
+
+- /admin/ is now a console landing: stat tiles (new leads, appointments,
+  pipeline, conversion), a 14-day activity chart (enquiries vs bookings,
+  stacked), latest enquiries, upcoming test drives and a shop-status card
+  (booking queue + last sync). Each card fails alone; a session failure
+  raises one banner. The sections grid stays below as 'All sections'.
+- THE WORKLIST had three stacked bugs, all fixed:
+  1. salesDashboard.js read leads/appointments from the TOP LEVEL, but
+     both endpoints answer in the {success,data} envelope, so
+     renderLeadsList(undefined) threw 'Failed to load dashboard data.'
+  2. hideLoading() removed '.dashboard-loader' while the initial markup
+     is '.dashboard-loading': the first spinner never left the page.
+  3. Admins/managers were scoped to their own id; the owner owns none of
+     the leads, so their dashboard was empty. Admin/manager with no
+     salesId now means the whole shop (sales-leads, sales-appointments;
+     sales-metrics already worked this way). The dashboard stops sending
+     salesId for admins.
+- New 'All time' timeframe (dashboard filter + both endpoints): the whole
+  pipeline here is historical (2021-2025 imports, all assigned to Ed), so
+  week/month windows are empty until new enquiries arrive. All time shows
+  the 15 real leads.
+- Operator compat CSS now styles the legacy component classes
+  (settings-*, crm-*, dashboard-*, lead-*, metric cards, tabs, status
+  pills) so page bodies render consistently on the dark console.
+- RESTORED: the work-email sign-in form. The commentary diet had removed
+  the {{< staff-sign-in >}} shortcode section on sign-in.md (a section
+  with no literal markup). ci/check-admin-portal caught it. LESSON: diet
+  rules must treat shortcode invocations as functional content.
+- Verified: portal 16/16; build PASSED; jsdom hub (tiles/bars/lists,
+  0 errors); jsdom dashboard (lead renders, loader is removed, admin
+  sends no salesId); live: all-time leads = 15, metrics shop-wide = 15,
+  sign-in restored, /admin/ gated. Deploys 6acf7858 + 6acf78dd (both
+  published). Preview refreshed at 27.7MB.

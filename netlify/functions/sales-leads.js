@@ -25,10 +25,12 @@ exports.handler = async function(event, context) {
     const user = authResult.user;
     let salesRepId = user.id;
 
-    // Managers and admins can view all leads or specify a sales rep
+    // Managers and admins can view all leads or specify a sales rep. With
+    // no salesId they get the whole shop -- scoping them to their own id
+    // showed an empty dashboard on an account that owns no leads.
     const params = event.queryStringParameters || {};
-    if ((user.role === 'admin' || user.role === 'sales_manager') && params.salesId) {
-      salesRepId = params.salesId;
+    if (user.role === 'admin' || user.role === 'sales_manager') {
+      salesRepId = params.salesId || null;
     }
 
     // Get query parameters
@@ -80,6 +82,12 @@ async function getSalesRepLeads(salesRepId, timeframe, status, sort, search) {
       case 'year':
         startDate = new Date(now.getFullYear(), 0, 1);
         break;
+      case 'all':
+        // No window: the console's 'All time' filter. Useful because a shop
+        // between campaigns can have nothing in the last year while the
+        // pipeline itself is not empty.
+        startDate = new Date(0);
+        break;
       default:
         startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000); // Default to 30 days
     }
@@ -95,11 +103,16 @@ async function getSalesRepLeads(salesRepId, timeframe, status, sort, search) {
         l.sales_rep_notes
       FROM leads l
       LEFT JOIN customers c ON l.customer_id = c.id
-      WHERE l.assigned_sales_rep_id = $1
-      AND l.created_at >= $2
+      WHERE 1=1
     `;
 
-    const params = [salesRepId, startDate.toISOString()];
+    const params = [];
+    if (salesRepId) {
+      sql += ` AND l.assigned_sales_rep_id = $${params.length + 1}`;
+      params.push(salesRepId);
+    }
+    sql += ` AND l.created_at >= $${params.length + 1}`;
+    params.push(startDate.toISOString());
 
     // Add status filter
     if (status !== 'all') {

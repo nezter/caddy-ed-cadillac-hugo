@@ -33,18 +33,25 @@ class SalesDashboard {
   }
   
   async init() {
-    // Import session manager
-    const sessionManager = await import('./utils/session-manager.js');
+    try {
+      // Import session manager
+      const sessionManager = await import('./utils/session-manager.js');
 
-    // Check authentication using session manager
-    const isAuthenticated = await sessionManager.default.isAuthenticated();
+      // Check authentication using session manager
+      const isAuthenticated = await sessionManager.default.isAuthenticated();
 
-    if (isAuthenticated) {
-      this.sessionManager = sessionManager.default;
-      this.currentUser = sessionManager.default.getCurrentUser();
-      this.setupDashboard();
-    } else {
-      this.showLoginPrompt();
+      if (isAuthenticated) {
+        this.sessionManager = sessionManager.default;
+        this.currentUser = sessionManager.default.getCurrentUser();
+        this.setupDashboard();
+      } else {
+        this.showLoginPrompt();
+      }
+    } catch (error) {
+      // Never leave the loading state spinning with nothing to read.
+      console.error('Dashboard session setup failed:', error);
+      this.hideLoading();
+      this.showError('The dashboard could not start. Reload the page, or sign in again.');
     }
   }
   
@@ -85,7 +92,7 @@ class SalesDashboard {
     .catch(error => {
       console.error('Error setting up dashboard:', error);
       this.hideLoading();
-      this.showError('Failed to load dashboard data. Please try again.');
+      this.showError('Failed to load dashboard data. Reload the page, or sign in again if this keeps happening.');
     });
   }
 
@@ -187,7 +194,9 @@ class SalesDashboard {
     const searchTerm = searchInput?.value || '';
 
     const url = new URL('/.netlify/functions/sales-leads', window.location.origin);
-    url.searchParams.append('salesId', this.currentUser.id);
+    if (this.currentUser.role !== 'admin' && this.currentUser.role !== 'sales_manager') {
+      url.searchParams.append('salesId', this.currentUser.id);
+    }
     url.searchParams.append('timeframe', this.filters.timeframe);
     url.searchParams.append('status', this.filters.status);
     url.searchParams.append('sort', this.filters.sort);
@@ -205,15 +214,21 @@ class SalesDashboard {
       }
       return response.json();
     })
-    .then(data => {
-      this.renderLeadsList(data.leads);
-      return data;
+    .then(envelope => {
+      // sales-leads answers in the standard {success, data} envelope, so the
+      // list lives at data.leads. Reading the top level handed
+      // renderLeadsList an undefined and the dashboard failed to load.
+      const payload = envelope && envelope.data ? envelope.data : envelope;
+      this.renderLeadsList(payload.leads || []);
+      return payload;
     });
   }
   
   async fetchAppointments() {
     const url = new URL('/.netlify/functions/sales-appointments', window.location.origin);
-    url.searchParams.append('salesId', this.currentUser.id);
+    if (this.currentUser.role !== 'admin' && this.currentUser.role !== 'sales_manager') {
+      url.searchParams.append('salesId', this.currentUser.id);
+    }
     url.searchParams.append('timeframe', this.filters.timeframe);
 
     return fetch(url, {
@@ -226,15 +241,19 @@ class SalesDashboard {
       }
       return response.json();
     })
-    .then(data => {
-      this.renderAppointmentsList(data.appointments);
-      return data;
+    .then(envelope => {
+      // Same envelope as sales-leads: the list is at data.appointments.
+      const payload = envelope && envelope.data ? envelope.data : envelope;
+      this.renderAppointmentsList(payload.appointments || []);
+      return payload;
     });
   }
   
   async fetchSalesMetrics() {
     const url = new URL('/.netlify/functions/sales-metrics', window.location.origin);
-    url.searchParams.append('salesId', this.currentUser.id);
+    if (this.currentUser.role !== 'admin' && this.currentUser.role !== 'sales_manager') {
+      url.searchParams.append('salesId', this.currentUser.id);
+    }
     url.searchParams.append('timeframe', this.filters.timeframe);
 
     return fetch(url, {
@@ -255,6 +274,7 @@ class SalesDashboard {
   
   renderLeadsList(leads) {
     if (!this.leadsList) return;
+    leads = leads || [];
     
     if (leads.length === 0) {
       this.leadsList.innerHTML = `
@@ -268,7 +288,7 @@ class SalesDashboard {
     let html = '';
     
     leads.forEach(lead => {
-      const leadDate = new Date(lead.timestamp);
+      const leadDate = new Date(lead.timestamp || lead.createdAt || Date.now());
       const formattedDate = leadDate.toLocaleDateString('en-US', { 
         month: 'short', day: 'numeric', year: 'numeric' 
       });
@@ -592,16 +612,20 @@ class SalesDashboard {
     }
     
     hideLoading() {
-      const loader = this.dashboardElement.querySelector('.dashboard-loader');
-      if (loader) {
-        this.dashboardElement.removeChild(loader);
+      // The static markup ships with '.dashboard-loading' (the initial
+      // spinner) while showLoading() creates '.dashboard-loader'. The
+      // original queried only the latter, so the initial spinner never
+      // left. Remove both.
+      const loaders = this.dashboardElement.querySelectorAll('.dashboard-loader, .dashboard-loading');
+      for (let i = 0; i < loaders.length; i += 1) {
+        loaders[i].parentNode.removeChild(loaders[i]);
       }
     }
     
     showError(message) {
       const errorEl = document.createElement('div');
       errorEl.className = 'dashboard-error';
-      errorEl.innerHTML = `<p>${message}</p>`;
+      errorEl.innerHTML = `<p>${message}</p><p><a href="/admin/sign-in/">Sign in again</a></p>`;
       
       this.dashboardElement.appendChild(errorEl);
       

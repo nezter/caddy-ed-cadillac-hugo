@@ -39,10 +39,18 @@ exports.handler = async function(event, context) {
       return errorHandler.unauthorizedError('Authentication required');
     }
 
-    const salesRepId = authCheck.user.userId;
+    let salesRepId = authCheck.user.userId;
 
     // Get query parameters
     const params = event.queryStringParameters || {};
+
+    // Managers and admins can view the whole shop or one rep. With no
+    // salesId they get the whole shop.
+    const role = authCheck.user && authCheck.user.role;
+    if (role === 'admin' || role === 'sales_manager') {
+      salesRepId = params.salesId || null;
+    }
+
     const timeframe = params.timeframe || 'week';
 
     // Get appointments for this sales rep
@@ -82,6 +90,10 @@ async function getSalesRepAppointments(salesRepId, timeframe) {
         startDate = new Date(now.getFullYear(), now.getMonth(), 1);
         endDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
         break;
+      case 'all':
+        startDate = new Date(0);
+        endDate = new Date(now.getTime() + 3650 * 24 * 60 * 60 * 1000);
+        break;
       default:
         startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
         endDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
@@ -102,14 +114,17 @@ async function getSalesRepAppointments(salesRepId, timeframe) {
       FROM appointments a
       LEFT JOIN customers c ON a.customer_id = c.id
       LEFT JOIN leads l ON a.lead_id = l.id
-      WHERE a.assigned_sales_rep_id = $1
-      AND a.scheduled_start >= $2
-      AND a.scheduled_start < $3
+      WHERE 1=1
+      ${salesRepId ? 'AND a.assigned_sales_rep_id = $1' : ''}
+      AND a.scheduled_start >= $${salesRepId ? 2 : 1}
+      AND a.scheduled_start < $${salesRepId ? 3 : 2}
       AND a.status IN ('scheduled', 'confirmed')
       ORDER BY a.scheduled_start ASC
     `;
 
-    const params = [salesRepId, startDate.toISOString(), endDate.toISOString()];
+    const params = salesRepId
+      ? [salesRepId, startDate.toISOString(), endDate.toISOString()]
+      : [startDate.toISOString(), endDate.toISOString()];
 
     const result = await DatabaseService.query(sql, params);
 

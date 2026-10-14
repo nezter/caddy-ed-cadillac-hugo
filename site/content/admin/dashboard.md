@@ -27,6 +27,7 @@ scripts:
         <option value="month">This month</option>
         <option value="quarter">This quarter</option>
         <option value="year">This year</option>
+        <option value="all">All time</option>
       </select>
     </div>
     <div class="filter-group">
