@@ -1870,3 +1870,37 @@ Foundation round shipped to production (deploy 6ace4db5c6bd8918276c579e):
   artifact stays archived in DELIVERY/caddyed-2026/admin-redesign).
 - Next rounds (owner-driven): worklist dashboard, leads board view,
   Reports/Calendar/Scheduling wired to real data, per-page polish.
+
+---
+
+## /admin/sync built -- the inventory sync reports itself (2026-10-14)
+
+Owner asked for a better sync surface: where a run is in its progress,
+and how many vehicles were found, already there, updated, new, retired.
+
+- New shared module netlify/functions/utils/sync-runs.js + the
+  inventory_sync_runs table (created lazily; 006 records it in the repo).
+  scripts/inventory/index.js now records every full sync: phases
+  (reading/images/planning/writing/done), the five counts, and detail
+  chips (photos mirrored, record edits applied, duplicates, skipped).
+  Failed runs record their error. Fail-soft: no database in the sync
+  process just means one info line and no record; the sync is unaffected.
+- New function inventory-sync-status.js (GET, inventory_read) and the
+  page /admin/sync/ in the Operator styling: current run with a phase
+  stepper, the five count tiles, a live progress bar, and the last 15
+  runs in a table. Polls fast (4s) while a run is live, slowly (30s)
+  otherwise. Read-only on purpose: a sync starts where the feed and the
+  working tree are (npm run inventory:sync).
+- BUG FIXED IN PASSING: sync-state.js keys vehicles by __key, and
+  index.js never set it -- so the state diff and the sold-by-absence
+  detection had silently been no-ops since introduction (the committed
+  state file held zero vehicles). __key is now assigned at normalise
+  time; the first sync after this populates the state, and subsequent
+  runs become genuinely incremental. The counts this page shows depend
+  on that fix, which is why it rides in this round.
+- Verified: shimmed local dry runs wrote correct failed + done rows;
+  jsdom render tests (running/done/dry/empty/503/401) with zero errors;
+  portal 16/16, function-auth 36 guarded / 22 public, netlify-config
+  35/35, verify-endpoints green (feature-manifest entry added), build
+  verified. Deployed 6acf143f (ready): /admin/sync/ 302s to sign-in,
+  the function 401s unauthenticated, assets 200.

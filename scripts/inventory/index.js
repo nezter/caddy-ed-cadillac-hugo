@@ -36,6 +36,7 @@ const vehicleOps = require('./vehicle-ops');
 const crawler = require('./crawl');
 const images = require('./images');
 const edits = require('./edits');
+const syncRuns = require('../../netlify/functions/utils/sync-runs');
 const { ensureDir, listManaged, contentPath, render, parseFrontMatter } = require('./content');
 
 /* ---------------------------------------------------------------- args -- */
@@ -78,6 +79,20 @@ const ok = (m) => console.log(`  ${C.green}ok${C.reset}    ${m}`);
 const warn = (m) => console.log(`  ${C.yellow}warn${C.reset}  ${m}`);
 const bad = (m) => console.log(`  ${C.red}fail${C.reset}  ${m}`);
 const info = (m) => console.log(`  ${C.dim}${m}${C.reset}`);
+
+/* What this run tells /admin/sync (utils/sync-runs.js). Recording is
+ * best-effort: a sync must never fail, or stall, because the record could
+ * not be written. */
+let activeRunId = null;
+const runDetail = {};
+function runSend(patch) {
+  if (!activeRunId) return;
+  syncRuns.update(activeRunId, patch).catch(() => {});
+}
+function runFinish(patch) {
+  if (!activeRunId) return Promise.resolve();
+  return syncRuns.finish(activeRunId, patch).catch(() => {});
+}
 
 function usage() {
   log(`
@@ -333,6 +348,16 @@ async function main() {
     }
   }
 
+  // Record this run for /admin/sync (utils/sync-runs.js). No database in
+  // this process just means no record; the sync itself is unaffected.
+  {
+    const sourceLabel = args.file ? 'file' : (args.source === 'http' ? 'feed' : 'crawl');
+    const started = await syncRuns.start({ mode: args.dryRun ? 'dry-run' : 'live', source: sourceLabel });
+    if (started.ok) { activeRunId = started.id; info(`recording this run for /admin/sync (${started.id})`); }
+    else if (started.reason !== 'not-configured') info(`run not recorded (${started.reason})`);
+    runSend({ phase: 'reading' });
+  }
+
   // 1. Load ---------------------------------------------------------------
   log(`\n${C.bold}Reading inventory${C.reset}`);
   let loaded;
@@ -351,6 +376,7 @@ async function main() {
       loaded = await loadFromCrawl(args);
     }
     ok(`${loaded.vehicles.length} record(s) from ${loaded.meta.source}: ${loaded.meta.location}`);
+    runSend({ feed_total: loaded.vehicles.length });
   } catch (err) {
     if (err instanceof crawler.GateError) {
       warn(err.message);
@@ -358,6 +384,7 @@ async function main() {
       return;
     }
     bad(err.message);
+    await runFinish({ status: 'failed', message: err.message });
     process.exitCode = 1;
     return;
   }
@@ -386,6 +413,10 @@ async function main() {
       // Luxury" appears repeatedly with different trims and prices).
       // VIN is the only stable identity the feed gives us.
       const key = v.vin ? `vin:${v.vin}` : `title:${v.title.toLowerCase()}`;
+      // sync-state.js keys its map by this -- without it, planSync and
+      // buildNextState silently skip every vehicle and the state file stays
+      // empty (which is exactly what happened until this line existed).
+      v.__key = key;
       // Distinct cars routinely share a marketing title ("2026 CADILLAC XT5
       // Luxury" appears several times with different trims and prices), so a
       // slug collision is expected. Disambiguate with the last six of the VIN --
@@ -422,6 +453,9 @@ async function main() {
 
   ok(`${byKey.size} valid vehicle(s)` +
      (duplicates ? `, ${duplicates} duplicate listing(s) merged by VIN` : ''));
+  runDetail.duplicates = duplicates;
+  runDetail.skipped = skipped.length;
+  runSend({ feed_total: byKey.size, detail: runDetail });
 
   // 2b. Mirror photography locally.
   //
@@ -432,6 +466,7 @@ async function main() {
   const remote = [...byKey.values()].filter((e) => /^https?:\/\//i.test(e.vehicle.image || ''));
   if (remote.length && !args.noImages) {
     log(`\n${C.bold}Mirroring images${C.reset}`);
+    runSend({ phase: 'images' });
     const stats = await images.mirror(
       remote.map((e) => e.vehicle),
       { log: (m) => log(m) }
@@ -441,6 +476,8 @@ async function main() {
     }
     const kb = (n) => `${(n / 1024).toFixed(0)}KB`;
     ok(`${stats.mirrored} mirrored, ${stats.cached} unchanged, ${stats.failed} failed (${kb(stats.bytes)} new)`);
+    runDetail.images = { mirrored: stats.mirrored, cached: stats.cached, failed: stats.failed };
+    runSend({ detail: runDetail });
     if (stats.failed) {
       warn(`${stats.failed} vehicle(s) keep the placeholder — a missing photo must never mean a missing vehicle`);
     }
@@ -476,6 +513,15 @@ async function main() {
   log(`\n${C.bold}Sync plan${C.reset}`);
   ok(`${incremental.added.length} new, ${incremental.changed.length} changed, ` +
      `${nowSold.length + markedSold.length} sold, ${incremental.unchanged.length} unchanged`);
+  runSend({
+    phase: 'planning',
+    feed_total: byKey.size,
+    existing_count: incremental.unchanged.length,
+    updated_count: incremental.changed.length,
+    added_count: incremental.added.length,
+    retired_count: nowSold.length + markedSold.length,
+    detail: runDetail,
+  });
   if (incremental.unchanged.length) {
     log(`  ${C.dim}${incremental.unchanged.length} vehicle(s) need no action -- not rewritten${C.reset}`);
   }
@@ -502,8 +548,11 @@ async function main() {
         matched += 1;
       }
       ok(`${pending.rows.length} pending admin edit(s), ${matched} matched to feed vehicles`);
+      runDetail.edits = { pending: pending.rows.length, matched };
+      runSend({ detail: runDetail });
     } else if (!pending.ok) {
       info(`admin edit queue skipped (${pending.reason})`);
+      runDetail.edits = { reason: pending.reason };
     }
   }
 
@@ -547,6 +596,23 @@ async function main() {
   for (const r of plan.remove) log(`  ${C.red}-${C.reset} ${r}`);
 
   const writeCount = plan.create.length + plan.update.length + plan.remove.length;
+  // The final plan counts, so /admin/sync shows what actually gets written
+  // rather than only what the state diff predicted.
+  runDetail.write = {
+    create: plan.create.length,
+    update: plan.update.length,
+    unchanged: plan.unchanged.length,
+    remove: plan.remove.length,
+  };
+  if (skippedSlugs.size) runDetail.skipped_slugs = skippedSlugs.size;
+  runSend({
+    feed_total: byKey.size,
+    existing_count: plan.unchanged.length,
+    updated_count: plan.update.length,
+    added_count: plan.create.length,
+    retired_count: nowSold.length + markedSold.length,
+    detail: runDetail,
+  });
   log(
     `\n  ${plan.create.length} new · ${plan.update.length} updated · ` +
       `${plan.unchanged.length} unchanged · ${plan.remove.length} removed`
@@ -562,6 +628,8 @@ async function main() {
       if (m.ok && m.applied) ok(`${m.applied} edit row(s) satisfied (values already current)`);
     }
     log(`\n  ${C.green}Nothing to do.${C.reset} Inventory is already in sync.\n`);
+
+    await runFinish({ status: 'done', message: 'Already in sync; nothing to write', detail: runDetail });
     return;
   }
 
@@ -571,12 +639,15 @@ async function main() {
   if (args.dryRun) {
     log(`\n  ${C.yellow}Dry run — nothing written.${C.reset}`);
     log(`  Re-run without --dry-run to apply, then commit the result.\n`);
+
+    await runFinish({ status: 'done', message: 'Dry run: plan only, nothing written', detail: runDetail });
     return;
   }
 
   // 5. Write --------------------------------------------------------------
   log(`\n${C.bold}Writing${C.reset}`);
   ensureDir();
+  runSend({ phase: 'writing', processed: 0, process_total: writeCount });
   for (const c of plan.create) {
     const carried = edits.bodyOverrideFor(c.vehicle, undefined);
     fs.writeFileSync(contentPath(c.slug), render(c.vehicle, carried === undefined ? undefined : { body: carried }));
@@ -614,6 +685,11 @@ async function main() {
     else warn(`edit rows could not be marked applied (${m.reason})`);
   }
 
+    await runFinish({
+    status: 'done',
+    message: `${incremental.added.length} new, ${incremental.changed.length} changed, ${nowSold.length + markedSold.length} sold, ${incremental.unchanged.length} unchanged`,
+    detail: runDetail,
+  });
   log(`\n  ${C.green}Done.${C.reset} Next: ./ci/run.sh verify && ./ci/preview.sh up\n`);
 }
 
@@ -629,7 +705,8 @@ function diffFields(prev, next) {
   return changed.join(', ') || 'metadata';
 }
 
-main().catch((err) => {
+main().catch(async (err) => {
   console.error(`\n  ${C.red}inventory:sync crashed${C.reset} ${err.stack || err.message}\n`);
+  try { await runFinish({ status: 'failed', message: String(err.message || err).slice(0, 400) }); } catch (_) { /* best-effort */ }
   process.exit(1);
 });
