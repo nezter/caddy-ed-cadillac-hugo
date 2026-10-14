@@ -2036,3 +2036,34 @@ failed/spinning; content styling missing; information not right.
   sends no salesId); live: all-time leads = 15, metrics shop-wide = 15,
   sign-in restored, /admin/ gated. Deploys 6acf7858 + 6acf78dd (both
   published). Preview refreshed at 27.7MB.
+
+---
+
+## Dark-theme flip for the legacy light components (2026-10-14, third round)
+
+Owner sent screenshots: analytics, scoring, assignment and the dashboard
+filters still rendered as light panels (white cards, washed text) on the
+dark console.
+
+ROOT CAUSE: those components were written against the public site's LIGHT
+tokens (--surface: #fff, --text: grey-900...) or hardcoded light colors
+entirely. The console's dark theme never overrode them.
+
+- Token remap: under body.admin, the light tokens are re-pointed at
+  console values (--surface #14161a, --text #e7e9ee, --border rgba white
+  .08...). Because body.admin is closer to the elements than :root, this
+  flips every var-based component (lead scoring, lead assignment, most of
+  admin.css incl. the dashboard filter bar) with no per-rule work.
+- Hardcoded-light components patched with scoped overrides: follow-up
+  analytics (its own prefers-color-scheme dark block existed but never
+  fired, now enforced unconditionally), the campaign manager, and the
+  communication-preferences widget (scoped to admin; the public copy
+  stays light). The oversized blue metric circles are re-styled to small
+  accent-soft icons.
+- Verified: build PASSED, portal 16/16, the flip present in the built
+  operator stylesheet (analytics override + var remap both in-file).
+  Deploy 6acf7c25 published. Preview refreshed.
+
+NOTE on verification limits: layout was verified structurally and via
+computed cascade reasoning + jsdom; this box cannot take screenshots, so
+the final visual pass is the owner's browser.
