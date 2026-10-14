@@ -52,7 +52,7 @@
     // Same place the other admin scripts read it. A separate reader would be a
     // second answer to "what is the session token".
     try {
-      return window.localStorage.getItem('caddyed_admin_token') || '';
+      return window.localStorage.getItem('auth_token') || window.localStorage.getItem('caddyed_admin_token') || '';
     } catch (e) {
       return '';
     }

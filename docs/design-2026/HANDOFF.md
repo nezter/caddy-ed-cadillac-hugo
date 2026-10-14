@@ -1933,3 +1933,43 @@ Both parts were real, in different places:
   against their real built bundles (jsdom); a sample vehicle page's 25
   image references all resolve in the slim tree; portal checks 16/16;
   build verification green.
+
+---
+
+## Accordion menu, Calendar, and the token-read fix (2026-10-14)
+
+Owner report: menu still wrong (no accordion, no indentation), the
+calendar view missing, pages not loading, data not looking real.
+
+- ROOT CAUSE for 'half the pages do not load': twelve admin scripts
+  (admin-agents/audit/content/email/gdpr/inventory/seo/settings/social/
+  staff, bookings-admin, favourites-admin) read their session token from
+  localStorage key caddyed_admin_token, and NOTHING in the codebase has
+  ever written that key -- sign-in writes auth_token. Every fetch from
+  those pages went out with no Authorization and 401'd even for a
+  signed-in user: empty lists, error banners, broken-looking loading.
+  All twelve now read auth_token first, keeping caddyed_admin_token as
+  a fallback for older stored sessions. Verified with a fetch spy.
+- The sidebar is a real accordion: one group open at a time, the current
+  page's group opens itself, the open group is remembered across pages,
+  and sub-items are indented under their group label behind a rail.
+  Links stay in the DOM, so the static checks and no-JS readers still
+  see every page.
+- NEW /admin/calendar/ (Today group): month grid with per-day counts
+  (enquiries vs booking requests), click-a-day detail, month stats,
+  prev/next/today/refresh. Backed by new calendar-data.js (view_leads;
+  leads by created_at, booking_requests by preferred_date).
+- Data truth: the ZZ VERIFY TEST records are gone from the LIVE
+  database -- 5 test leads, their interactions rows, 1 test booking,
+  and the auto-created test customer, byte-verified before deletion.
+  15 real leads remain; dashboards and the calendar show only real
+  records now.
+- Verified: jsdom accordion (exclusive open, current group, links) and
+  calendar (31 cells, badges, day detail, month nav, 0 errors); portal
+  16/16; function-auth 37 guarded; endpoints green; build verified.
+  Deploy 6acf2375 published. Preview mirror refreshed at 27.6MB (under
+  the channel's 50MB base64 cap; vehicle photos intentionally
+  downscaled in the preview copy only).
+- Still queued: deeper per-page content polish, Reports + Scheduling
+  pages, and whichever pages the owner still finds thin on the live
+  console.

@@ -1,8 +1,10 @@
-﻿{{- /*
+{{- /*
   admin-nav -- the section navigation shown on every admin page.
 
   Rendered from partials/admin-sections.html, the same data the hub uses,
-  so the two can never disagree about what exists. The current page carries
+  so the two can never disagree about what exists. Groups are a real
+  accordion: one opens at a time, the page you are on opens itself, and
+  sub-items are indented under their group. The current page carries
   aria-current and a rail; /admin/cms is matched exactly and never marked,
   because following it leaves this section for the CMS.
 
@@ -12,11 +14,19 @@
 {{- $current := .RelPermalink -}}
 <nav class="admin-nav" aria-label="Admin sections" data-admin-nav hidden>
   {{- range (partial "admin-sections.html" .) }}
-  <div class="admin-nav__group">
-    <span class="admin-nav__label">{{ .label }}</span>
-    {{- range .items }}
-    <a href="{{ .url }}"{{ if eq $current .url }} class="is-current" aria-current="page"{{ end }}>{{ .nav }}</a>
-    {{- end }}
+  {{- $slug := .label | urlize }}
+  {{- $isCurrent := false }}
+  {{- range .items }}{{ if eq $current .url }}{{ $isCurrent = true }}{{ end }}{{ end }}
+  <div class="admin-nav__group{{ if $isCurrent }} is-current-group{{ end }}" data-nav-group="{{ $slug }}">
+    <button type="button" class="admin-nav__toggle" aria-expanded="{{ if $isCurrent }}true{{ else }}false{{ end }}" aria-controls="nav-items-{{ $slug }}">
+      <span class="admin-nav__label">{{ .label }}</span>
+      <svg class="admin-nav__chevron" width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 3.5 L5 6.5 L8 3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <div class="admin-nav__items" id="nav-items-{{ $slug }}">
+      {{- range .items }}
+      <a href="{{ .url }}"{{ if eq $current .url }} class="is-current" aria-current="page"{{ end }}>{{ .nav }}</a>
+      {{- end }}
+    </div>
   </div>
   {{- end }}
 </nav>

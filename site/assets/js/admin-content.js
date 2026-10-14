@@ -43,7 +43,7 @@
   };
 
   function token() {
-    try { return window.localStorage.getItem('caddyed_admin_token') || ''; } catch (e) { return ''; }
+    try { return window.localStorage.getItem('auth_token') || window.localStorage.getItem('caddyed_admin_token') || ''; } catch (e) { return ''; }
   }
   function headers() {
     var h = { 'Content-Type': 'application/json' };

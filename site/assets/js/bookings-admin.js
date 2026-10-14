@@ -34,7 +34,7 @@
   function authHeaders() {
     let token = '';
     try {
-      token = window.localStorage.getItem('caddyed_admin_token') || '';
+      token = window.localStorage.getItem('auth_token') || window.localStorage.getItem('caddyed_admin_token') || '';
     } catch (e) {
       token = '';
     }

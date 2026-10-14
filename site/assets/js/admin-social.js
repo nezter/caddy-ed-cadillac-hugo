@@ -38,7 +38,7 @@
 
   function token() {
     try {
-      return window.localStorage.getItem('caddyed_admin_token') || '';
+      return window.localStorage.getItem('auth_token') || window.localStorage.getItem('caddyed_admin_token') || '';
     } catch (e) {
       return '';
     }
