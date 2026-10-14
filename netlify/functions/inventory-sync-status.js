@@ -5,10 +5,18 @@
  *
  * The runs are recorded by scripts/inventory/index.js through
  * utils/sync-runs.js, which is ALSO the module this function reads with, so
- * the two sides cannot drift on column names or shapes. This function is
- * read-only on purpose: a sync is started by running the script where the
- * feed and the working tree are, not by a button here that could not do the
- * work it claims.
+ * the two sides cannot drift on column names or shapes.
+ *
+ * GET             -> the newest run, plus the recent history. List rows are
+ *                    slim on purpose (no change lists); ask for one run with
+ *                    ?run=<id> to get its full detail.
+ * GET ?run=<id>   -> one run, full detail: phase timeline, timings, runner,
+ *                    error if it failed, and the change lists.
+ *
+ * Reads stay read-only here; starting a sync is inventory-sync-trigger.js,
+ * which queues a request the next live script run adopts. The split is
+ * deliberate: a sync needs the feed and the working tree, so only the
+ * script side can run one.
  *
  * AUTH
  * ----
@@ -59,6 +67,23 @@ exports.handler = async function (event) {
         error: 'The sync record needs the database, and it is not configured here.',
         code: 'database-not-configured',
       });
+    }
+
+    // One run, on request: the details panel behind each history row.
+    const params = event.queryStringParameters || {};
+    if (params.run) {
+      const one = await SyncRuns.get(params.run);
+      if (!one.ok) {
+        return json(event, 503, {
+          error: 'The sync record could not be read.',
+          code: one.reason || 'read-failed',
+          detail: one.detail || null,
+        });
+      }
+      if (!one.run) {
+        return json(event, 404, { error: 'No sync run with that id.', code: 'not-found' });
+      }
+      return json(event, 200, { ok: true, run: one.run });
     }
 
     const current = await SyncRuns.latest();

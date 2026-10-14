@@ -27,6 +27,7 @@
 'use strict';
 
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 
 const { normalise, ValidationError, slugify, MANAGED_MARKER } = require('./schema');
@@ -41,7 +42,7 @@ const { ensureDir, listManaged, contentPath, render, parseFrontMatter } = requir
 
 /* ---------------------------------------------------------------- args -- */
 function parseArgs(argv) {
-  const args = { dryRun: false, prune: false, validate: false, source: null, file: null, write: false, applyEdits: false, noEdits: false };
+  const args = { dryRun: false, prune: false, validate: false, source: null, file: null, write: false, applyEdits: false, noEdits: false, trigger: null };
   for (let i = 0; i < argv.length; i += 1) {
     const a = argv[i];
     if (a === '--dry-run' || a === '-n') args.dryRun = true;
@@ -53,6 +54,8 @@ function parseArgs(argv) {
     else if (a === '--validate') args.validate = true;
     else if (a === '--apply-edits') args.applyEdits = true;
     else if (a === '--no-edits') args.noEdits = true;
+    // --trigger <label>  how this run was started (local | scheduled), recorded
+    else if (a === '--trigger') args.trigger = argv[++i];
     else if (a === '--source') args.source = argv[++i];
     else if (a === '--file' || a === '-f') args.file = argv[++i];
     // --refresh <slug|vin>  check one specific vehicle instead of a full scan
@@ -82,16 +85,40 @@ const info = (m) => console.log(`  ${C.dim}${m}${C.reset}`);
 
 /* What this run tells /admin/sync (utils/sync-runs.js). Recording is
  * best-effort: a sync must never fail, or stall, because the record could
- * not be written. */
+ * not be written. Every phase transition lands in runDetail.phases, and
+ * runFinish stamps the runner and the timings, so one row can tell the
+ * whole story: who queued it, what each phase did, and what the run
+ * changed, item by item. */
 let activeRunId = null;
+let activeRunStartedAt = null;
 const runDetail = {};
+function notePhase(phase) {
+  if (!phase) return;
+  if (!Array.isArray(runDetail.phases)) runDetail.phases = [];
+  const last = runDetail.phases[runDetail.phases.length - 1];
+  if (last && last.phase === phase) return;
+  runDetail.phases.push({ phase: String(phase), at: new Date().toISOString() });
+  if (runDetail.phases.length > 40) runDetail.phases = runDetail.phases.slice(-40);
+}
 function runSend(patch) {
   if (!activeRunId) return;
+  if (patch && patch.phase) notePhase(patch.phase);
   syncRuns.update(activeRunId, patch).catch(() => {});
 }
 function runFinish(patch) {
   if (!activeRunId) return Promise.resolve();
-  return syncRuns.finish(activeRunId, patch).catch(() => {});
+  const merged = Object.assign({}, patch || {});
+  notePhase(merged.phase || (merged.status === 'failed' ? 'failed' : 'done'));
+  runDetail.runner = runDetail.runner || { host: os.hostname(), user: os.userInfo().username };
+  const finishedAt = new Date().toISOString();
+  runDetail.timings = {
+    requestedAt: runDetail.requestedAt || null,
+    startedAt: activeRunStartedAt ? new Date(activeRunStartedAt).toISOString() : null,
+    finishedAt: finishedAt,
+    durationMs: activeRunStartedAt ? Date.now() - activeRunStartedAt : null,
+  };
+  merged.detail = Object.assign({}, runDetail, merged.detail || {});
+  return syncRuns.finish(activeRunId, merged).catch(() => {});
 }
 
 function usage() {
@@ -111,6 +138,7 @@ ${C.bold}inventory:sync${C.reset} — pull vehicle inventory into Hugo content
   --apply-edits          apply the admin's pending record edits to the content
                          files only (no feed, no crawl) and mark them applied
   --no-edits             ignore the admin edit queue for this run
+  --trigger <label>      how the run was started: local (default) or scheduled
   --disable <slug|vin>   hold a vehicle off the site by hand
   --enable  <slug|vin>   put a hand-held vehicle back on
   --help, -h
@@ -322,11 +350,32 @@ async function main() {
     }
   }
 
+  // Adopt a queued request first (the Sync now button on /admin/sync). The
+  // claimed row IS this run, so the record carries who asked for it and when.
+  // A claimed request is a person deciding now, so it also lifts the crawl
+  // window for this one run -- the window exists so the site never polls on
+  // its own during the day, not to refuse a deliberate human request. Dry
+  // runs and --window checks never claim: neither can satisfy a request.
+  let claimedId = null;
+  if (!args.dryRun && !args.window) {
+    const claimed = await syncRuns.claimRequest();
+    if (claimed.ok && claimed.id) {
+      claimedId = claimed.id;
+      activeRunId = claimed.id;
+      activeRunStartedAt = Date.now();
+      runDetail.requestedAt = claimed.requestedAt || null;
+      info(`adopted the queued sync request for /admin/sync (${claimed.id})`);
+    } else if (!claimed.ok && claimed.reason !== 'not-configured') {
+      info(`the sync queue could not be checked (${claimed.reason})`);
+    }
+  }
+
   // 0. Gate (crawl source only) --------------------------------------------
-  // Checked before anything else so a rate-limited or out-of-window run says so
-  // immediately instead of appearing to work.
+  // Rate limit and off-peak window, for runs that started on their own. A
+  // claimed manual request skips both, with one line saying so: the pull is
+  // deliberate, happens once, and lands in the record.
   const useCrawl = !args.file && args.source !== 'file' && args.source !== 'http';
-  if (useCrawl && !args.window) {
+  if (useCrawl && !args.window && !claimedId) {
     const cfg = crawler.config();
     const g = crawler.gate(cfg, { force: args.force });
     if (!g.allowed) {
@@ -347,16 +396,31 @@ async function main() {
       return;
     }
   }
+  if (useCrawl && !args.window && claimedId) {
+    const g = crawler.gate(crawler.config(), { force: false });
+    if (!g.allowed) info('manual request: running outside the off-peak window (this once)');
+  }
 
   // Record this run for /admin/sync (utils/sync-runs.js). No database in
-  // this process just means no record; the sync itself is unaffected.
-  {
+  // this process just means no record; the sync itself is unaffected. A
+  // claimed request above is already recorded; anything else opens its row
+  // here.
+  if (!activeRunId) {
     const sourceLabel = args.file ? 'file' : (args.source === 'http' ? 'feed' : 'crawl');
-    const started = await syncRuns.start({ mode: args.dryRun ? 'dry-run' : 'live', source: sourceLabel });
-    if (started.ok) { activeRunId = started.id; info(`recording this run for /admin/sync (${started.id})`); }
-    else if (started.reason !== 'not-configured') info(`run not recorded (${started.reason})`);
-    runSend({ phase: 'reading' });
+    const started = await syncRuns.start({
+      mode: args.dryRun ? 'dry-run' : 'live',
+      source: sourceLabel,
+      trigger: args.trigger || 'local',
+    });
+    if (started.ok) {
+      activeRunId = started.id;
+      activeRunStartedAt = Date.now();
+      info(`recording this run for /admin/sync (${started.id})`);
+    } else if (started.reason !== 'not-configured') {
+      info(`run not recorded (${started.reason})`);
+    }
   }
+  runSend({ phase: 'reading' });
 
   // 1. Load ---------------------------------------------------------------
   log(`\n${C.bold}Reading inventory${C.reset}`);
@@ -594,6 +658,39 @@ async function main() {
   }
   for (const slug of plan.unchanged) log(`  ${C.dim}= ${slug}${C.reset}`);
   for (const r of plan.remove) log(`  ${C.red}-${C.reset} ${r}`);
+
+  // What this run changed, kept item by item so /admin/sync can answer
+  // 'what changed?' with names, not just counts. Capped: a record that can
+  // grow without bound is a record nobody reads.
+  const CHANGE_CAP = 300;
+  const capList = (list) => list.slice(0, CHANGE_CAP);
+  const addedList = plan.create.map((c) => ({
+    slug: c.slug,
+    title: c.vehicle && c.vehicle.title ? String(c.vehicle.title) : null,
+  }));
+  const updatedList = plan.update.map((u) => ({
+    slug: u.slug,
+    title: u.vehicle && u.vehicle.title ? String(u.vehicle.title) : null,
+    fields: diffFields(u.previous, u.vehicle),
+  }));
+  const retiredList = [];
+  for (const sold of incremental.sold) {
+    retiredList.push({ key: sold.key, title: (sold.previous && sold.previous.title) || null, reason: 'no longer listed' });
+  }
+  for (const ch of incremental.changed) {
+    if (ch.to.status === 'available') continue;
+    retiredList.push({ key: ch.key, title: ch.vehicle && ch.vehicle.title ? String(ch.vehicle.title) : null, reason: 'listed as sold' });
+  }
+  for (const slug of plan.remove) {
+    const meta = existing.get(slug);
+    retiredList.push({ key: slug, title: meta && meta.data && meta.data.title ? String(meta.data.title) : null, reason: 'pruned' });
+  }
+  runDetail.changes = {
+    added: capList(addedList),
+    updated: capList(updatedList),
+    retired: capList(retiredList),
+    truncated: addedList.length > CHANGE_CAP || updatedList.length > CHANGE_CAP || retiredList.length > CHANGE_CAP,
+  };
 
   const writeCount = plan.create.length + plan.update.length + plan.remove.length;
   // The final plan counts, so /admin/sync shows what actually gets written

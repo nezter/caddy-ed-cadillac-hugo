@@ -1,6 +1,6 @@
 ---
 title: "Inventory Sync"
-description: "Where the last sync landed, and while one is running, how far along it is."
+description: "Every sync run, what it changed, and how to queue the next one."
 layout: "admin"
 scripts:
   - inventory-sync-admin.js

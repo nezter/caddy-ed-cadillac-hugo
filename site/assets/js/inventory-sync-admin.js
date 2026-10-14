@@ -1,21 +1,24 @@
 ﻿/*
  * inventory-sync-admin.js -- the live record behind /admin/sync.
  *
- * WHAT IT READS. One endpoint (inventory-sync-status, inventory_read) that
- * returns the newest inventory sync run plus the recent history, written by
- * scripts/inventory/index.js through utils/sync-runs.js. While a run is in
- * flight this page polls it every few seconds; otherwise it reloads on a
- * slow timer.
+ * WHAT IT READS. inventory-sync-status (inventory_read) returns the newest
+ * inventory sync run plus the recent history; ?run=<id> returns one run's
+ * full detail. Rows are written by scripts/inventory/index.js through
+ * utils/sync-runs.js. While a run is in flight this page polls every few
+ * seconds; otherwise it reloads on a slow timer.
  *
- * WHAT IT DOES NOT DO. It cannot start a sync. A sync runs where the feed
- * and the working tree are (npm run inventory:sync), and a button here that
- * could not do that work would be a lie. The page says how to run one
- * instead.
+ * WHAT IT DOES. Sync now queues a request (inventory-sync-trigger,
+ * inventory_write). The next live script run adopts the queued row and
+ * becomes it, so the record carries the whole lineage: who asked, when it
+ * started, what each phase did, and what the run changed. A sync needs the
+ * feed and the working tree, so the button queues instead of pretending to
+ * run one. Each history row expands into that run's details.
  */
 (function () {
   'use strict';
 
   var ENDPOINT = '/.netlify/functions/inventory-sync-status';
+  var TRIGGER = '/.netlify/functions/inventory-sync-trigger';
   var LIVE_MS = 4000;
   var IDLE_MS = 30000;
 
@@ -31,6 +34,11 @@
   ];
 
   var timer = null;
+  var lastData = null;
+  var openRuns = {};
+  var detailCache = {};
+  var detailLoading = {};
+  var detailFailed = {};
 
   function token() {
     try {
@@ -84,6 +92,7 @@
   }
 
   function pill(run) {
+    if (run.status === 'requested') return '<span class="op-sync-pill is-queued">Queued</span>';
     if (run.status === 'running') return '<span class="op-sync-pill is-live">Running now</span>';
     if (run.status === 'failed') return '<span class="op-sync-pill is-failed">Failed</span>';
     if (run.mode === 'dry-run') return '<span class="op-sync-pill is-dry">Dry run</span>';
@@ -168,7 +177,26 @@
     return '<div class="op-sync-chips">' + html + '</div>';
   }
 
+  function controls() {
+    return '<section class="op-sync-card op-sync-card--controls"><div class="op-sync-controls">' +
+      '<button type="button" class="op-sync-btn" id="sync-now">Sync now</button>' +
+      '<span class="op-sync-hint" id="sync-now-note">Queues a run. It starts when the sync runner picks it up.</span>' +
+      '</div></section>';
+  }
+
+  function queuedCard(run) {
+    var meta = [];
+    meta.push('<span>Requested ' + esc(clock(run.requestedAt || run.startedAt)) + ' (' + esc(ago(run.requestedAt || run.startedAt)) + ')</span>');
+    if (run.requestedBy) meta.push('<span>By ' + esc(run.requestedBy) + '</span>');
+    meta.push('<span class="op-sync-note">Starts when the sync runner picks it up</span>');
+    return '<section class="op-sync-card">' +
+      '<div class="op-sync-card__head"><h2 class="op-sync-card__title">Sync requested</h2>' + pill(run) + '</div>' +
+      '<div class="op-sync-meta">' + meta.join('') + '</div>' +
+      '</section>';
+  }
+
   function runCard(run, heading) {
+    if (run.status === 'requested') return queuedCard(run);
     var running = run.status === 'running';
     var meta = [];
     meta.push('<span>Started ' + esc(clock(run.startedAt)) + (running ? ' (' + esc(ago(run.startedAt)) + ')' : '') + '</span>');
@@ -179,6 +207,8 @@
       meta.push('<span>Finished ' + esc(ago(run.finishedAt || run.updatedAt)) + '</span>');
     }
     if (run.source) meta.push('<span>Source: ' + esc(run.source) + '</span>');
+    if (run.requestedBy) meta.push('<span>Requested by ' + esc(run.requestedBy) + '</span>');
+    if (run.trigger && run.trigger !== 'manual') meta.push('<span>Trigger: ' + esc(run.trigger) + '</span>');
     if (run.mode === 'dry-run') meta.push('<span class="op-sync-note">Dry run: nothing was written to the site files</span>');
     return '<section class="op-sync-card">' +
       '<div class="op-sync-card__head"><h2 class="op-sync-card__title">' + esc(heading) + '</h2>' + pill(run) + '</div>' +
@@ -194,6 +224,7 @@
     var rows = '';
     for (var i = 0; i < runs.length; i += 1) {
       var r = runs[i];
+      var open = Boolean(openRuns[r.id]);
       rows += '<tr>' +
         '<td>' + esc(clock(r.startedAt)) + '</td>' +
         '<td>' + pill(r) + '</td>' +
@@ -204,22 +235,76 @@
         '<td class="num">' + num(r.existingCount) + '</td>' +
         '<td>' + esc(r.finishedAt ? dur(r.startedAt, r.finishedAt) : '') + '</td>' +
         '<td class="op-sync-table__note">' + esc(r.message || '') + '</td>' +
+        '<td><button type="button" class="op-sync-more" data-run-toggle="' + esc(r.id) + '">' + (open ? 'Hide' : 'Details') + '</button></td>' +
         '</tr>';
+      if (open) {
+        rows += '<tr class="op-sync-table__detail-row"><td colspan="10"><div data-detail-for="' + esc(r.id) + '">' +
+          (detailCache[r.id] ? detailPanel(detailCache[r.id]) : detailPlaceholder(r.id)) +
+          '</div></td></tr>';
+      }
     }
     return '<section class="op-sync-card">' +
       '<div class="op-sync-card__head"><h2 class="op-sync-card__title">Recent runs</h2></div>' +
       '<div class="op-sync-scroll"><table class="op-sync-table"><thead><tr>' +
       '<th>Started</th><th>Status</th><th class="num">Found</th><th class="num">New</th>' +
       '<th class="num">Updated</th><th class="num">Retired</th><th class="num">Existing</th>' +
-      '<th>Time</th><th>Result</th></tr></thead><tbody>' + rows + '</tbody></table></div></section>';
+      '<th>Time</th><th>Result</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div></section>';
+  }
+
+  function detailPlaceholder(id) {
+    if (detailFailed[id]) return '<p class="op-sync-hint">Could not load the details for this run.</p>';
+    return '<p class="op-sync-hint">Loading...</p>';
+  }
+
+  function changeList(label, items, withFields) {
+    if (!items || !items.length) return '';
+    var shown = items.slice(0, 20);
+    var html = '<h4>' + esc(label + ' (' + items.length + ')') + '</h4><ul>';
+    for (var i = 0; i < shown.length; i += 1) {
+      var it = shown[i];
+      var name = it.title || it.slug || it.key || 'unknown';
+      var extra = '';
+      if (withFields && it.fields) extra = ' - ' + it.fields;
+      else if (it.reason) extra = ' (' + it.reason + ')';
+      html += '<li><b>' + esc(name) + '</b>' + esc(extra) + '</li>';
+    }
+    if (items.length > shown.length) html += '<li class="op-sync-hint">and ' + (items.length - shown.length) + ' more</li>';
+    return html + '</ul>';
+  }
+
+  function detailPanel(run) {
+    var d = run.detail || {};
+    var out = [];
+    var bits = [];
+    if (d.runner) bits.push('Runner: ' + (d.runner.user ? d.runner.user + ' at ' + d.runner.host : d.runner.host));
+    if (d.timings && d.timings.durationMs) bits.push('Took ' + Math.max(1, Math.round(d.timings.durationMs / 1000)) + 's');
+    if (run.trigger) bits.push('Trigger: ' + run.trigger);
+    if (bits.length) out.push('<p class="op-sync-detail__row">' + esc(bits.join(' / ')) + '</p>');
+    if (d.phases && d.phases.length) {
+      var chipsHtml = '';
+      for (var i = 0; i < d.phases.length; i += 1) {
+        chipsHtml += '<span class="op-sync-chip">' + esc((d.phases[i].phase || '') + ' at ' + clock(d.phases[i].at)) + '</span>';
+      }
+      out.push('<h4>Phases</h4><div class="op-sync-detail__row">' + chipsHtml + '</div>');
+    }
+    var ch = d.changes;
+    if (ch) {
+      out.push(changeList('Added', ch.added, false));
+      out.push(changeList('Updated', ch.updated, true));
+      out.push(changeList('Retired', ch.retired, false));
+      if (ch.truncated) out.push('<p class="op-sync-hint">Lists are capped; this run changed more than shown.</p>');
+    }
+    if (run.message) out.push('<p class="op-sync-message">' + esc(run.message) + '</p>');
+    var body = out.join('');
+    if (!body) body = '<p>No detail was recorded for this run.</p>';
+    return '<div class="op-sync-detail">' + body + '</div>';
   }
 
   function emptyState() {
     return '<section class="op-sync-card op-sync-card--empty">' +
       '<h2 class="op-sync-card__title">No sync runs recorded yet</h2>' +
-      '<p>Runs appear here as soon as one is recorded. The record is kept in the database, so a sync writes to it when it runs with database access.</p>' +
-      '<p><span class="op-sync-command">npm run inventory:sync</span></p>' +
-      '<p class="op-sync-hint">A run without database access still syncs; it simply leaves no record here.</p>' +
+      '<p>Queue one with Sync now, or run <span class="op-sync-command">npm run inventory:sync</span> where the repository lives.</p>' +
+      '<p class="op-sync-hint">Runs record themselves while they have database access; without it they still sync, silently.</p>' +
       '</section>';
   }
 
@@ -239,11 +324,18 @@
   }
 
   function render(data) {
+    lastData = data;
     var runs = data.runs || [];
     var current = data.current;
-    var html = '';
+    var html = controls();
+    var queued = null;
+    for (var i = 0; i < runs.length; i += 1) {
+      if (runs[i].status === 'requested') { queued = runs[i]; break; }
+    }
     if (current && current.status === 'running') {
       html += runCard(current, 'Sync in progress');
+    } else if (queued) {
+      html += queuedCard(queued);
     } else if (current) {
       html += runCard(current, current.mode === 'dry-run' ? 'Last run: dry run' : 'Last run');
     } else {
@@ -251,6 +343,76 @@
     }
     html += history(runs);
     root.innerHTML = html;
+    // A poll re-render drops panel contents; refill whatever is still open.
+    Object.keys(openRuns).forEach(function (id) {
+      if (openRuns[id] && !detailCache[id] && !detailLoading[id] && !detailFailed[id]) loadDetail(id);
+    });
+  }
+
+  function loadDetail(id) {
+    if (detailCache[id] || detailLoading[id]) return;
+    detailLoading[id] = true;
+    fetch(ENDPOINT + '?run=' + encodeURIComponent(id), { headers: authHeaders(), cache: 'no-store' })
+      .then(function (res) {
+        return res.json()
+          .catch(function () { return {}; })
+          .then(function (body) { return { status: res.status, body: body }; });
+      })
+      .then(function (res) {
+        detailLoading[id] = false;
+        if (res.status === 200 && res.body && res.body.ok && res.body.run) {
+          detailCache[id] = res.body.run;
+        } else {
+          detailFailed[id] = true;
+        }
+        refreshDetail(id);
+      })
+      .catch(function () {
+        detailLoading[id] = false;
+        detailFailed[id] = true;
+        refreshDetail(id);
+      });
+  }
+
+  function refreshDetail(id) {
+    var holder = root.querySelector('[data-detail-for="' + id + '"]');
+    if (!holder) return;
+    holder.innerHTML = detailCache[id] ? detailPanel(detailCache[id]) : detailPlaceholder(id);
+  }
+
+  function toggleDetail(id) {
+    if (openRuns[id]) delete openRuns[id];
+    else openRuns[id] = true;
+    if (lastData) render(lastData);
+    if (openRuns[id]) loadDetail(id);
+  }
+
+  function queueSync() {
+    var btn = document.getElementById('sync-now');
+    var note = document.getElementById('sync-now-note');
+    if (!btn || !note) return;
+    if (!window.confirm('Queue a sync run?')) return;
+    btn.disabled = true;
+    note.textContent = 'Queueing...';
+    fetch(TRIGGER, { method: 'POST', headers: authHeaders(), cache: 'no-store' })
+      .then(function (res) {
+        return res.json()
+          .catch(function () { return {}; })
+          .then(function (body) { return { status: res.status, body: body }; });
+      })
+      .then(function (res) {
+        btn.disabled = false;
+        if (res.status === 401) { note.textContent = 'Sign in again to queue a run.'; return; }
+        if (res.status === 403) { note.textContent = 'This account cannot queue syncs.'; return; }
+        if (res.status === 503) { note.textContent = (res.body && res.body.error) || 'The record database is not configured.'; return; }
+        if (!res.body || !res.body.ok) { note.textContent = 'The request could not be recorded.'; return; }
+        note.textContent = res.body.alreadyQueued ? 'A run is already queued.' : 'Sync queued. It starts when a runner picks it up.';
+        schedule(1500);
+      })
+      .catch(function () {
+        btn.disabled = false;
+        note.textContent = 'The request could not be sent.';
+      });
   }
 
   function schedule(ms) {
@@ -271,7 +433,12 @@
         if (!res.body || !res.body.ok) throw new Error('unexpected payload');
         render(res.body);
         var running = res.body.current && res.body.current.status === 'running';
-        schedule(running ? LIVE_MS : IDLE_MS);
+        var queued = false;
+        var rs = res.body.runs || [];
+        for (var qi = 0; qi < rs.length; qi += 1) {
+          if (rs[qi].status === 'requested') { queued = true; break; }
+        }
+        schedule(running ? LIVE_MS : (queued ? 10000 : IDLE_MS));
       })
       .catch(function () {
         if (!root.querySelector('.op-sync-card')) {
@@ -283,6 +450,19 @@
         schedule(IDLE_MS * 2);
       });
   }
+
+  // One listener for everything the page renders, because render() replaces
+  // the markup on every poll; per-element listeners would be re-bound by it.
+  root.addEventListener('click', function (ev) {
+    var el = ev.target;
+    while (el && el !== root) {
+      if (el.id === 'sync-now' || (el.getAttribute && el.getAttribute('data-run-toggle'))) break;
+      el = el.parentNode;
+    }
+    if (!el || el === root) return;
+    if (el.id === 'sync-now') queueSync();
+    else toggleDetail(el.getAttribute('data-run-toggle'));
+  });
 
   load();
 })();

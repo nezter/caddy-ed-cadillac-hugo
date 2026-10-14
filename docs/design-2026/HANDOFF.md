@@ -2067,3 +2067,37 @@ entirely. The console's dark theme never overrode them.
 NOTE on verification limits: layout was verified structurally and via
 computed cascade reasoning + jsdom; this box cannot take screenshots, so
 the final visual pass is the owner's browser.
+
+---
+
+## /admin/sync: Sync now + full run lineage (2026-10-14, fourth round)
+
+Owner: "There is no sync button or historical lineage of last syncs,
+what happened to each one, what changed -- that should all be reported
+and stored."
+
+- Sync now button (inventory-sync-trigger.js, inventory_write) queues a
+  request row: status requested, requested_by, requested_at. Duplicate
+  presses answer already-queued. Optional SYNC_TRIGGER_WEBHOOK wake-up.
+- The next live run of scripts/inventory/index.js adopts the queued row
+  (claimRequest, atomic UPDATE guarded on status) and becomes it, so one
+  row is the whole lineage request -> phases -> changes -> outcome. A
+  claimed request lifts the crawl window for that run: a person deciding
+  now outranks the polite-polling window.
+- Runs now record: phase timeline with times, runner (host/user),
+  timings, and change lists -- added, updated (with changed fields),
+  retired (with reason), capped at 300 items.
+- Storage: trigger/requested_by/requested_at columns (lazy ALTERs in
+  sync-runs.js; mirrored in database/turso/007_sync_runs_lineage.sql).
+  ?run=<id> on inventory-sync-status returns one run full; list rows slim.
+- Page: queued card + Queued pill, per-row Details expansion, running >
+  queued > last-run priority.
+
+Verified: sqlite round-trip (request->claim->finish->get, upgrade path
+from an old table), script dry-run recorded phases + change lists in a
+real row, jsdom harness ALL PASS, checks 38 guarded / 16/16 portal /
+35/35 config, build PASSED. Deploy 6acfb1fb published; prod probes 401/
+302 as expected; preview refreshed.
+
+Reality: runs execute where the repo lives (this machine / CI). The
+production crawl window is 01:00-05:00; queued requests run outside it.

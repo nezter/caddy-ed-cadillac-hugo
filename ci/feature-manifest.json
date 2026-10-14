@@ -67,6 +67,7 @@
     "audit-log-view": "/admin/audit -- admin-audit.js reads the log through it.",
     "schedule-appointment": "customer-portal.js POSTs to it (the portal's appointment action); replaces the older inline scheduling path.",
     "inventory-sync-status": "/admin/sync -- the inventory sync record. GET returns the newest run plus the recent history; the rows are written by scripts/inventory/index.js through utils/sync-runs.js while a sync runs. Read-only on purpose: a sync starts where the feed and the working tree are.",
+  "inventory-sync-trigger": "/admin/sync, Sync now. POST queues a manual sync request (inventory_write). The next live run of scripts/inventory/index.js adopts the queued row, so one record carries the whole lineage: who asked, what each phase did, what changed. An optional SYNC_TRIGGER_WEBHOOK announces the queue entry.",
     "calendar-data": "/admin/calendar -- the month view. GET ?from&to returns the enquiries and booking requests in range (view_leads). Read-only; the records are written by the pages that own them."
   },
   "planned": {
