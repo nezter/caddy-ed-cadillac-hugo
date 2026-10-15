@@ -16,6 +16,6 @@ exterior_color: Deep Ocean Tintcoat (Late and Extremely Limited Av
 interior_color: Black, Inteluxe Seats with Perforated inserts seat
 drivetrain: AWD
 inventory_sync: https://www.cadillacofsouthcharlotte.com
-inventory_sync_synced: 2026-10-04
+inventory_sync_synced: 2026-10-15
 ---
 AWD. AWD drivetrain · Deep Ocean Tintcoat (Late and Extremely Limited Av exterior · Black, Inteluxe Seats with Perforated inserts seat interior. Full specification and availability on request — ask Caddy Ed for the details on this vehicle.

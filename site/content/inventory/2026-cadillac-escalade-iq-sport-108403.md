@@ -2,7 +2,7 @@
 title: 2026 CADILLAC ESCALADE IQ Sport
 status: New
 price: 137520
-subtitle: AWD · Electric · 4 mi
+subtitle: AWD · Electric · 7 mi
 image: vehicles/1gyteekl9tu108403-8e39f59b8d.jpg
 image_width: 640
 image_height: 480
@@ -12,12 +12,12 @@ year: 2026
 make: CADILLAC
 model: ESCALADE IQ
 trim: Sport
-mileage: 4
+mileage: 7
 exterior_color: Monarch Orange
 interior_color: Backen Black with Santorini Accents, Inteluxe Seat
 drivetrain: AWD
 transmission: Electric
 inventory_sync: https://www.cadillacofsouthcharlotte.com
-inventory_sync_synced: 2026-10-04
+inventory_sync_synced: 2026-10-15
 ---
 AWD · Electric · 4 mi. AWD drivetrain · Electric · Monarch Orange exterior · Backen Black with Santorini Accents, Inteluxe Seat interior. 4 miles. Full specification and availability on request — ask Caddy Ed for the details on this vehicle.

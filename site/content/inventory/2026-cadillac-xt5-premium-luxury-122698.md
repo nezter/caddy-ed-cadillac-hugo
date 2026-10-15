@@ -19,6 +19,6 @@ drivetrain: FWD
 transmission: Automatic
 engine: Turbo 4-cylinder engine
 inventory_sync: https://www.cadillacofsouthcharlotte.com
-inventory_sync_synced: 2026-10-04
+inventory_sync_synced: 2026-10-15
 ---
 FWD · Automatic · 3 mi. FWD drivetrain · Automatic · Turbo 4-cylinder engine · Crystal White Tricoat exterior · Sedona Sauvage, Leather seating surfaces with mini interior. 3 miles. Full specification and availability on request — ask Caddy Ed for the details on this vehicle.

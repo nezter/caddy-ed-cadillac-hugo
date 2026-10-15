@@ -23,11 +23,11 @@ scripts:
       <label for="timeframe-filter">Timeframe</label>
       <select id="timeframe-filter" name="timeframe">
         <option value="day">Today</option>
-        <option value="week" selected>This week</option>
+        <option value="week">This week</option>
         <option value="month">This month</option>
         <option value="quarter">This quarter</option>
         <option value="year">This year</option>
-        <option value="all">All time</option>
+        <option value="all" selected>All time</option>
       </select>
     </div>
     <div class="filter-group">

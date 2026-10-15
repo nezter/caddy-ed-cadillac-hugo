@@ -23,7 +23,9 @@ class SalesDashboard {
     
     // State
     this.filters = {
-      timeframe: 'week',
+      // All time by default: the pipeline is historical, so a weekly window
+      // rendered the whole page as zeros.
+      timeframe: 'all',
       status: 'all',
       sort: 'date-desc'
     };

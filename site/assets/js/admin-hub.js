@@ -178,20 +178,40 @@
       '<a class="op-hub-card__more" href="/admin/leads/">All leads</a></section>';
   }
 
-  /* ---------- system (sync record + booking queue count) ---------- */
-  function renderSystem(syncRes, bookingRes) {
+  /* ---------- enquiries by source (same payload as latest enquiries) ---------- */
+  function renderSource(res) {
+    var d = res.body && res.body.data;
+    if (!d || !d.leads || !d.leads.length) return '';
+    var counts = {};
+    d.leads.forEach(function (l) { var k = l.source || 'unknown'; counts[k] = (counts[k] || 0) + 1; });
+    var keys = Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a]; });
+    var chips = keys.map(function (k) { return '<span class="op-sync-chip">' + esc(k) + ' &middot; ' + counts[k] + '</span>'; }).join('');
+    return '<section class="op-hub-card"><h2 class="op-hub-card__title">Enquiries by source</h2>' +
+      '<div class="op-sync-chips">' + chips + '</div></section>';
+  }
+
+  /* ---------- inventory (from the sync record) ---------- */
+  function renderInventory(syncRes) {
+    var s = (syncRes.body || {}).current;
+    var rows = '';
+    if (s) {
+      rows += '<a class="op-hub-row" href="/admin/inventory/"><span class="op-hub-row__name">' + num(s.feedTotal) + ' vehicles in the last pull</span>' +
+        '<span class="op-hub-row__meta">' + num(s.addedCount) + ' new &middot; ' + num(s.updatedCount) + ' updated &middot; ' + num(s.retiredCount) + ' retired &middot; ' + esc(ago(s.finishedAt || s.updatedAt)) + '</span></a>';
+    } else {
+      rows += '<a class="op-hub-row" href="/admin/sync/"><span class="op-hub-row__name">No sync recorded yet</span><span class="op-hub-row__meta">queue one from the sync page</span></a>';
+    }
+    rows += '<a class="op-hub-row" href="/admin/inventory/"><span class="op-hub-row__name">Vehicle editor</span><span class="op-hub-row__meta">prices, photos, notes</span></a>';
+    return '<section class="op-hub-card"><h2 class="op-hub-card__title">Inventory</h2><div class="op-hub-rows">' + rows +
+      '</div><a class="op-hub-card__more" href="/admin/sync/">Sync record</a></section>';
+  }
+
+  /* ---------- system (booking queue + calendar) ---------- */
+  function renderSystem(bookingRes) {
     var lines = [];
     var body = bookingRes.body || {};
     if (body.entries) {
       var waiting = body.entries.filter(function (e) { return (e.status || 'new') === 'new'; }).length;
-      lines.push('<span class="op-hub-row__meta">' + waiting + ' booking request(s) waiting</span>');
-    }
-    var s = (syncRes.body || {}).current;
-    if (s) {
-      var counts = 'found ' + num(s.feedTotal) + ' &middot; new ' + num(s.addedCount) + ' &middot; updated ' + num(s.updatedCount) + ' &middot; retired ' + num(s.retiredCount);
-      lines.push('<a class="op-hub-row" href="/admin/sync/"><span class="op-hub-row__name">Last sync: ' + esc(s.status === 'running' ? 'running now' : (s.status || 'done')) + '</span><span class="op-hub-row__meta">' + counts + ' &middot; ' + esc(ago(s.finishedAt || s.updatedAt)) + '</span></a>');
-    } else {
-      lines.push('<a class="op-hub-row" href="/admin/sync/"><span class="op-hub-row__name">Inventory sync</span><span class="op-hub-row__meta">no run recorded yet</span></a>');
+      lines.push('<a class="op-hub-row" href="/admin/bookings/"><span class="op-hub-row__name">' + waiting + ' booking request(s) waiting</span><span class="op-hub-row__meta">test drives and appointments</span></a>');
     }
     lines.push('<a class="op-hub-row" href="/admin/calendar/"><span class="op-hub-row__name">Calendar</span><span class="op-hub-row__meta">the month at a glance</span></a>');
     return '<section class="op-hub-card"><h2 class="op-hub-card__title">Shop status</h2><div class="op-hub-rows">' + lines.join('') + '</div></section>';
@@ -220,8 +240,10 @@
         renderChart(results[1]),
         renderLeads(results[2]),
         renderPipeline(results[2]),
+        renderSource(results[2]),
         renderBookings(results[3]),
-        renderSystem(results[4], results[3]),
+        renderInventory(results[4]),
+        renderSystem(results[3]),
       ]);
     }).catch(function () {
       render([

@@ -18,6 +18,6 @@ interior_color: Backen Black with Santorini Accents, Inteluxe Seat
 drivetrain: AWD
 transmission: Electric
 inventory_sync: https://www.cadillacofsouthcharlotte.com
-inventory_sync_synced: 2026-10-04
+inventory_sync_synced: 2026-10-15
 ---
 AWD · Electric · 6 mi. AWD drivetrain · Electric · Black Raven exterior · Backen Black with Santorini Accents, Inteluxe Seat interior. 6 miles. Full specification and availability on request — ask Caddy Ed for the details on this vehicle.

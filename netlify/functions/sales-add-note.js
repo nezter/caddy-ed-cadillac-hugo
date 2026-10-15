@@ -57,9 +57,12 @@ exports.handler = async function(event, context) {
     }
 
     // Verify the lead exists and belongs to this sales rep
+    const privileged = authCheck.user.role === 'admin' || authCheck.user.role === 'sales_manager';
     const lead = await DatabaseService.query(
-      'SELECT id, sales_rep_notes FROM leads WHERE id = $1 AND assigned_sales_rep_id = $2',
-      [leadId, salesRepId]
+      privileged
+        ? 'SELECT id, sales_rep_notes FROM leads WHERE id = $1'
+        : 'SELECT id, sales_rep_notes FROM leads WHERE id = $1 AND assigned_sales_rep_id = $2',
+      privileged ? [leadId] : [leadId, salesRepId]
     );
 
     if (lead.rows.length === 0) {

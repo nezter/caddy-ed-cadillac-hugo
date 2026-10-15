@@ -27,11 +27,22 @@
  * ----
  * inventory_write, like the other inventory mutations. 503 when the
  * database is not configured: a queue nobody can read is not a queue.
+ *
+ * PACING
+ * ------
+ * A second gate paces the button: one manual run per
+ * SYNC_RULES.manualCooldownMinutes (30). Attempts inside the window are
+ * refused with 429 and recorded as sync.throttled, so a person who clicks
+ * twice sees why, and a script clicking in a loop leaves a trail on the
+ * audit page instead of just costing runs.
  */
 
 'use strict';
 
 const SyncRuns = require('./utils/sync-runs');
+const SyncRules = require('./utils/sync-rules');
+const AuditLog = require('./utils/audit-log');
+const DatabaseService = require('./utils/database-service');
 const { authenticateRequest } = require('./utils/auth-middleware');
 const { originHeaders } = require('./utils/cors-middleware');
 
@@ -122,6 +133,38 @@ exports.handler = async function (event) {
       });
     }
 
+    // Second gate: one manual run per cooldown window. The button is a
+    // person deciding, but a person cannot decide twice a minute -- a
+    // script that can is the bot this refuses, and refusals are recorded.
+    const latest = await SyncRuns.latest();
+    if (latest.ok && latest.run) {
+      const startedMs = latest.run.startedAt ? Date.parse(latest.run.startedAt) : 0;
+      const cooldownMs = SyncRules.manualCooldownMinutes * 60000;
+      if (startedMs && Date.now() - startedMs < cooldownMs) {
+        await AuditLog.record(DatabaseService, {
+          action: 'sync.throttled',
+          entityType: 'inventory_sync_runs',
+          entityId: latest.run.id,
+          actor: auth.user,
+          detail: {
+            lastStartedAt: latest.run.startedAt,
+            cooldownMinutes: SyncRules.manualCooldownMinutes,
+            running: latest.run.status === 'running',
+          },
+          context: event,
+        });
+        return json(event, 429, {
+          error: latest.run.status === 'running'
+            ? 'A sync is running right now. It will finish on its own.'
+            : 'A sync ran recently. Manual runs are limited to one every ' + SyncRules.manualCooldownMinutes + ' minutes.',
+          code: latest.run.status === 'running' ? 'running' : 'cooldown',
+          lastStartedAt: latest.run.startedAt,
+          retryAfterMs: Math.max(0, cooldownMs - (Date.now() - startedMs)),
+          cooldownMinutes: SyncRules.manualCooldownMinutes,
+        });
+      }
+    }
+
     const actor = actorOf(auth.user);
     const rq = await SyncRuns.request({ requestedBy: actor });
     if (!rq.ok) {
@@ -131,6 +174,16 @@ exports.handler = async function (event) {
         detail: rq.detail || null,
       });
     }
+
+    // The queue row says who; the audit page should show it too, beside
+    // any throttled attempts, so demand for syncs is legible in one place.
+    await AuditLog.record(DatabaseService, {
+      action: 'sync.request',
+      entityType: 'inventory_sync_runs',
+      entityId: rq.id,
+      actor: auth.user,
+      context: event,
+    });
 
     const dispatch = await announce({ id: rq.id, requestedBy: actor });
     return json(event, 200, { ok: true, queued: true, id: rq.id, dispatch });

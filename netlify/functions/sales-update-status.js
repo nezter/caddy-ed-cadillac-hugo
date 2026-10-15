@@ -62,10 +62,14 @@ exports.handler = async function(event, context) {
       return errorHandler.badRequestError('Invalid status value');
     }
 
-    // Verify the lead exists and belongs to this sales rep
+    // Admins and managers work the whole shop (the same rule sales-leads
+    // applies); a rep stays scoped to their own leads.
+    const privileged = authCheck.user.role === 'admin' || authCheck.user.role === 'sales_manager';
     const lead = await DatabaseService.query(
-      'SELECT id, status FROM leads WHERE id = $1 AND assigned_sales_rep_id = $2',
-      [leadId, salesRepId]
+      privileged
+        ? 'SELECT id, status FROM leads WHERE id = $1'
+        : 'SELECT id, status FROM leads WHERE id = $1 AND assigned_sales_rep_id = $2',
+      privileged ? [leadId] : [leadId, salesRepId]
     );
 
     if (lead.rows.length === 0) {

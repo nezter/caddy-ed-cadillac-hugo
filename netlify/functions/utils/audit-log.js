@@ -50,6 +50,8 @@ const ACTIONS = {
   VEHICLE_EDIT: 'vehicle.edit',
   AGENT_CREATE: 'agent.create',
   AGENT_REVOKE: 'agent.revoke',
+  SYNC_REQUEST: 'sync.request',
+  SYNC_THROTTLED: 'sync.throttled',
 };
 
 let ACTION_SET = new Set(Object.values(ACTIONS));

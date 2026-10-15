@@ -1,6 +1,6 @@
 ﻿---
 title: "Operator"
-description: "Today at a glance, then every section of the console"
+description: "The pipeline, the activity and the shop at a glance"
 layout: "admin"
 ---
 
@@ -8,4 +8,3 @@ layout: "admin"
   <p class="op-hub__loading">Loading today's numbers...</p>
 </div>
 
-<h2 class="op-hub__heading" id="all-sections">All sections</h2>

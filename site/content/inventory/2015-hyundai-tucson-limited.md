@@ -19,6 +19,6 @@ drivetrain: AWD
 transmission: Automatic
 engine: 4 Cylinder
 inventory_sync: https://www.cadillacofsouthcharlotte.com
-inventory_sync_synced: 2026-10-04
+inventory_sync_synced: 2026-10-15
 ---
 AWD · Automatic · 86,679 mi. AWD drivetrain · Automatic · 4 Cylinder · Black Black exterior · BLK/Black interior. 86,679 miles. Full specification and availability on request — ask Caddy Ed for the details on this vehicle.

@@ -17,6 +17,6 @@ exterior_color: Adobe Frost
 interior_color: Black, Nouveauluxe Seats with custom Quilted Perfo
 drivetrain: AWD
 inventory_sync: https://www.cadillacofsouthcharlotte.com
-inventory_sync_synced: 2026-10-04
+inventory_sync_synced: 2026-10-15
 ---
 AWD · 4 mi. AWD drivetrain · Adobe Frost exterior · Black, Nouveauluxe Seats with custom Quilted Perfo interior. 4 miles. Full specification and availability on request — ask Caddy Ed for the details on this vehicle.

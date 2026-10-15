@@ -17,6 +17,6 @@ exterior_color: Emerald Lake Metallic
 interior_color: Sky Cool Gray with Santorini Blue accents, Intelux
 drivetrain: RWD
 inventory_sync: https://www.cadillacofsouthcharlotte.com
-inventory_sync_synced: 2026-10-04
+inventory_sync_synced: 2026-10-15
 ---
 RWD · 3 mi. RWD drivetrain · Emerald Lake Metallic exterior · Sky Cool Gray with Santorini Blue accents, Intelux interior. 3 miles. Full specification and availability on request — ask Caddy Ed for the details on this vehicle.

@@ -2171,3 +2171,36 @@ round-trip with cache-seeded client, checks 38/22 + 16/16 + 35/35, build
 PASSED. Deploy 6acfb6f3 live; probes on production: /admin/config.yml 200
 (YAML), inventory-sync-status 200 with rules, audit filter 200, metrics
 all-time 15. Preview refreshed; projects.json updated last.
+
+---
+
+## Dashboard, leads, calendar, sync pacing + a real sync (2026-10-15, seventh round)
+
+Owner: hub should drop All sections and carry cards/stats; sales dashboard
+still not fully working; calendar buttons broken; leads page has no list or
+management; sync button must be gated, un-spammable, and flag bot-like
+pushes inside the last run window.
+
+- Hub: sections grid removed (list.html + _index.md); port and nav keep
+  wayfinding. New cards: Pipeline (all time) tiles, enquiries by source,
+  inventory (from the sync record), pipeline by status; chart says when a
+  window is empty. check-admin-portal asserts the new contract (16/16).
+- Sales dashboard: defaults to All time (weekly window rendered the
+  historical pipeline as zeros). salesId guard for admins already existed.
+- Calendar: .op-btn was referenced but never defined -- prev/next/today/
+  refresh arrived browser-default. Styles added (+ title/actions polish).
+- Leads: /admin/leads rebuilt as a working list (timeframe/status/sort/
+  search, per-lead status change, assign, notes; duplicate finder folded
+  below). Backend: sales-update-status and sales-add-note now let admins/
+  managers act shop-wide like sales-leads already did.
+- Sync pacing: manualCooldownMinutes=30 in sync-rules; trigger refuses
+  inside the window with 429 and records sync.request / sync.throttled
+  audit rows; the page disables the button with the next-allowed time.
+  Claimed manual runs now also force the INNER crawl gate (crawl()
+  re-checks it), and a GateError closes the row instead of stranding it.
+
+Live proof: pressed the button as the owner -> queued (requested_by
+recorded); ran the sync -> adopted the row, crawled (172 found, 14 new,
+128 updated), phases + change lists recorded, gate waiver noted; pressed
+again -> 429 cooldown + sync.throttled audit row. Inventory rebuilt and
+redeployed. Deploy 6ad0c7b3 + content deploy.

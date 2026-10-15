@@ -17,6 +17,6 @@ exterior_color: Vibrant White Tricoat
 interior_color: Noir with Santorini Blue accents, Inteluxe Seats w
 drivetrain: AWD
 inventory_sync: https://www.cadillacofsouthcharlotte.com
-inventory_sync_synced: 2026-10-04
+inventory_sync_synced: 2026-10-15
 ---
 AWD · 2 mi. AWD drivetrain · Vibrant White Tricoat exterior · Noir with Santorini Blue accents, Inteluxe Seats w interior. 2 miles. Full specification and availability on request — ask Caddy Ed for the details on this vehicle.

@@ -19,6 +19,6 @@ drivetrain: RWD
 transmission: Automatic
 engine: Twin-scroll turbocharged 4-cylinder engine
 inventory_sync: https://www.cadillacofsouthcharlotte.com
-inventory_sync_synced: 2026-10-04
+inventory_sync_synced: 2026-10-15
 ---
 RWD · Automatic · 2 mi. RWD drivetrain · Automatic · Twin-scroll turbocharged 4-cylinder engine · Vibrant White Tricoat exterior · Sahara Beige with Jet Black Accents, Leather Seati interior. 2 miles. Full specification and availability on request — ask Caddy Ed for the details on this vehicle.

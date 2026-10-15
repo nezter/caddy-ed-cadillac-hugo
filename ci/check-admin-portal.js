@@ -16,7 +16,7 @@
  *   - every route named there resolves: an /admin/<x>/ url to a built page
  *     (or its content file), /admin/cms to cms.html
  *   - every page's declared scripts and styles exist under assets/
- *   - the BUILT hub links every page; a normal admin page's nav does too,
+ *   - the BUILT hub is a dashboard (no sections grid); a normal admin
  *     with is-current on its own link
  *
  * Run:  node ci/check-admin-portal.js   (needs a build in site/public/)
@@ -84,18 +84,16 @@ for (const p of pages) {
 }
 check('every declared admin script/style exists', assetProblems.length === 0, assetProblems.join(', '));
 
-// 4. the built hub links every page
+// 4. the built hub is the dashboard: numbers, not a second menu
 const hubPath = path.join(PUBLIC_ADMIN, 'index.html');
 if (!fs.existsSync(hubPath)) {
   check('built hub exists (run a build first)', false, 'missing ' + hubPath);
 } else {
   const hub = fs.readFileSync(hubPath, 'utf8');
-  const unlinked = pages.filter((p) => !new RegExp('href="?/admin/' + p + '/"?').test(hub));
-  check('the built hub links every admin page', unlinked.length === 0, unlinked.join(', '));
-  check('the hub links the inventory editor', new RegExp('href="?/admin/inventory/"?').test(hub));
-  const cards = (hub.match(/class=admin-hub-card[ ">]/g) || []).length;
-  const expected = urls.length;
-  check('one card per named route', cards === expected, cards + ' cards, ' + expected + ' routes');
+  check('the hub renders the overview root', /id="?admin-overview"?/.test(hub));
+  const grid = (hub.match(/class=admin-hub-card[ ">]/g) || []).length;
+  check('the hub carries no sections grid (navigation is the nav\'s job)', grid === 0, grid + ' cards');
+  check('the hub keeps the sidebar nav', /class="[^"]*admin-nav/.test(hub) || hub.includes('op-side'));
 
   // 5. a normal page's nav: complete + current marked
   const favPath = path.join(PUBLIC_ADMIN, 'favourites', 'index.html');

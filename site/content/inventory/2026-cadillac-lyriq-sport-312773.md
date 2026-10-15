@@ -17,6 +17,6 @@ exterior_color: Vibrant White Tricoat
 interior_color: Sky Cool Gray with Santorini Blue accents, Intelux
 drivetrain: AWD
 inventory_sync: https://www.cadillacofsouthcharlotte.com
-inventory_sync_synced: 2026-10-04
+inventory_sync_synced: 2026-10-15
 ---
 AWD · 6 mi. AWD drivetrain · Vibrant White Tricoat exterior · Sky Cool Gray with Santorini Blue accents, Intelux interior. 6 miles. Full specification and availability on request — ask Caddy Ed for the details on this vehicle.

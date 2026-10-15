@@ -43,6 +43,17 @@ const json = (event, status, body) => ({
   body: JSON.stringify(body),
 });
 
+/** When the next manual request becomes allowed, from the newest run's start. */
+function cooldownInfo(run) {
+  const minutes = SyncRules.manualCooldownMinutes;
+  let nextManualAllowedAt = null;
+  if (run && run.startedAt) {
+    const t = Date.parse(run.startedAt) + minutes * 60000;
+    if (Number.isFinite(t)) nextManualAllowedAt = new Date(t).toISOString();
+  }
+  return { minutes: minutes, nextManualAllowedAt: nextManualAllowedAt };
+}
+
 exports.handler = async function (event) {
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 204, headers: corsFor(event), body: '' };
@@ -106,7 +117,9 @@ exports.handler = async function (event) {
         minIntervalHours: SyncRules.minIntervalHours,
         windowStartHour: SyncRules.windowStartHour,
         windowEndHour: SyncRules.windowEndHour,
+        manualCooldownMinutes: SyncRules.manualCooldownMinutes,
       },
+      cooldown: cooldownInfo(current.run),
       current: current.run,
       runs: recent.runs,
     });

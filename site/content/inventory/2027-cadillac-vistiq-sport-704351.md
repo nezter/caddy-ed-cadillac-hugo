@@ -17,6 +17,6 @@ exterior_color: Radiant Red Tintcoat
 interior_color: Sheer Gray, Inteluxe Seats with Perforated inserts
 drivetrain: AWD
 inventory_sync: https://www.cadillacofsouthcharlotte.com
-inventory_sync_synced: 2026-10-04
+inventory_sync_synced: 2026-10-15
 ---
 AWD · 2 mi. AWD drivetrain · Radiant Red Tintcoat exterior · Sheer Gray, Inteluxe Seats with Perforated inserts interior. 2 miles. Full specification and availability on request — ask Caddy Ed for the details on this vehicle.

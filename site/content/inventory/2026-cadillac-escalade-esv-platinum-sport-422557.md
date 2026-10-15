@@ -19,6 +19,6 @@ drivetrain: 4WD
 transmission: Automatic
 engine: V8 engine
 inventory_sync: https://www.cadillacofsouthcharlotte.com
-inventory_sync_synced: 2026-10-04
+inventory_sync_synced: 2026-10-15
 ---
 4WD · Automatic · 308 mi. 4WD drivetrain · Automatic · V8 engine · Vibrant White Tricoat exterior · Jet Black, Full semi-aniline leather seats with Mo interior. 308 miles. Full specification and availability on request — ask Caddy Ed for the details on this vehicle.

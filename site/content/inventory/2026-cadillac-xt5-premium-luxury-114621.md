@@ -19,6 +19,6 @@ drivetrain: FWD
 transmission: Automatic
 engine: V6 engine
 inventory_sync: https://www.cadillacofsouthcharlotte.com
-inventory_sync_synced: 2026-10-04
+inventory_sync_synced: 2026-10-15
 ---
 FWD · Automatic · 5 mi. FWD drivetrain · Automatic · V6 engine · Argent Silver Metallic exterior · Sedona Sauvage, Leather seating surfaces with mini interior. 5 miles. Full specification and availability on request — ask Caddy Ed for the details on this vehicle.

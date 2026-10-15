@@ -17,6 +17,6 @@ exterior_color: Stellar Black Metallic
 interior_color: Kona Brown Sauvage Nappa with Sheer Gray accents,
 drivetrain: RWD
 inventory_sync: https://www.cadillacofsouthcharlotte.com
-inventory_sync_synced: 2026-10-04
+inventory_sync_synced: 2026-10-15
 ---
 RWD · 2 mi. RWD drivetrain · Stellar Black Metallic exterior · Kona Brown Sauvage Nappa with Sheer Gray accents, interior. 2 miles. Full specification and availability on request — ask Caddy Ed for the details on this vehicle.

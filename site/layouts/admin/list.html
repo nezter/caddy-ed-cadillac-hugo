@@ -1,13 +1,12 @@
 ﻿{{- /* The admin front door. Unlike the other pages in this section it is a
        section index, so it renders through layouts/admin/list.html instead
-       of single.html -- same operator shell, plus the hub. The cards come
-       from partials/admin-sections.html, the same data the nav renders, so
-       every page in this section is reachable from here and from the nav
-       on every other page. ci/check-admin-portal.js asserts both.
+       of single.html -- same operator shell, plus the dashboard.
 
-       ONE DELIBERATE OMISSION: no live counters on the cards. A door that
-       shows yesterday's number is worse than a plain one; the pages that
-       own the data show it themselves. */ -}}
+       There is deliberately NO sections grid here: the nav on every page
+       (partials/admin-sections.html) carries the wayfinding, and the space
+       where the grid used to be belongs to the numbers. The dashboard
+       cards themselves come from admin-hub.js. ci/check-admin-portal.js
+       asserts the grid stays gone and the nav stays complete. */ -}}
 {{/* Empty on purpose (HTML comment keeps the override from being pruned):
      admin pages carry their own chrome via the operator shell. */}}
 {{ define "header" }}<!-- admin chrome: see layouts/admin -->{{ end }}
@@ -32,24 +31,6 @@
 
       <div class="admin-content">
         {{ .Content }}
-
-        <div class="admin-hub">
-        {{ range (partial "admin-sections.html" .) }}
-        <section class="admin-hub__group">
-          <h2>{{ .label }}</h2>
-          {{ with .note }}<p class="admin-hub__note">{{ . }}</p>{{ end }}
-          <div class="admin-hub__cards">
-            {{ range .items }}
-            <a class="admin-hub-card" href="{{ .url }}">
-              <span class="admin-hub-card__tag admin-hub-card__tag--{{ .tag }}">{{ .tagLabel }}</span>
-              <h3>{{ .title }}</h3>
-              <p>{{ .body }}</p>
-            </a>
-            {{ end }}
-          </div>
-        </section>
-        {{ end }}
-        </div>
       </div>
     </div>
   </div>

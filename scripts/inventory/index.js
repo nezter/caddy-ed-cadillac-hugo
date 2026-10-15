@@ -367,6 +367,10 @@ async function main() {
       // A claimed request runs regardless of the crawl window; say so in the
       // record so the page can show WHY this run skipped the overnight rule.
       runDetail.gate = { waivedBy: 'manual request' };
+      // The outer gate above skips for claimed runs, but crawler.crawl()
+      // checks the SAME gate again on the pull itself -- so the waiver has
+      // to travel as --force, or the crawl refuses the deliberate run.
+      args.force = true;
       info(`adopted the queued sync request for /admin/sync (${claimed.id})`);
     } else if (!claimed.ok && claimed.reason !== 'not-configured') {
       info(`the sync queue could not be checked (${claimed.reason})`);
@@ -448,6 +452,9 @@ async function main() {
   } catch (err) {
     if (err instanceof crawler.GateError) {
       warn(err.message);
+      // A claimed row must never strand as 'running' because the load
+      // refused: close the record with the reason, then stop.
+      if (activeRunId) await runFinish({ status: 'failed', message: 'crawl window: ' + err.message });
       process.exitCode = 0;
       return;
     }

@@ -19,6 +19,11 @@ const SYNC_RULES = {
   minIntervalHours: 24,
   windowStartHour: 1,
   windowEndHour: 5,
+  // Manual requests (the /admin/sync button) skip the window above, so they
+  // need their own floor: one run per cooldown. A person cannot decide twice
+  // a minute; a script that can is the bot this refuses -- and refusals are
+  // recorded (sync.throttled) so repeats are visible.
+  manualCooldownMinutes: 30,
 };
 
 module.exports = SYNC_RULES;

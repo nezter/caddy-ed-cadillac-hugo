@@ -65,6 +65,11 @@
     'auth.login': 'Signed in',
     'seed.run': 'Ran a seed script',
     'staff.update': 'Changed a staff record',
+    'vehicle.edit': 'Edited a vehicle record',
+    'agent.create': 'Created an agent key',
+    'agent.revoke': 'Revoked an agent key',
+    'sync.request': 'Queued an inventory sync',
+    'sync.throttled': 'Sync request throttled (too soon)',
   };
 
   function describe(entry) {

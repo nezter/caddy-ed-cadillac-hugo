@@ -177,13 +177,39 @@
     return '<div class="op-sync-chips">' + html + '</div>';
   }
 
-  function controls(rules) {
+  function controls(data) {
+    var rules = data && data.rules;
     var rulesText = rulesLine(rules);
+    var state = queueState(data);
     return '<section class="op-sync-card op-sync-card--controls"><div class="op-sync-controls">' +
-      '<button type="button" class="op-sync-btn" id="sync-now">Sync now</button>' +
-      '<span class="op-sync-hint" id="sync-now-note">Queues a run. It starts when the sync runner picks it up.</span>' +
+      '<button type="button" class="op-sync-btn" id="sync-now"' + (state.disabled ? ' disabled' : '') + '>Sync now</button>' +
+      '<span class="op-sync-hint" id="sync-now-note">' + esc(state.note) + '</span>' +
       (rulesText ? '<span class="op-sync-rules">' + esc(rulesText) + '</span>' : '') +
       '</div></section>';
+  }
+
+  // Why the button is (or is not) pressable right now: queued, running, or
+  // inside the cooldown after the last run. The server enforces the same
+  // rules; this is so the page never offers a click it will refuse.
+  function queueState(data) {
+    var runs = (data && data.runs) || [];
+    var current = data && data.current;
+    for (var i = 0; i < runs.length; i += 1) {
+      if (runs[i].status === 'requested') {
+        return { disabled: true, note: 'A run is already queued. It starts when the sync runner picks it up.' };
+      }
+    }
+    if (current && current.status === 'running') {
+      return { disabled: true, note: 'A sync is running right now.' };
+    }
+    var cd = data && data.cooldown;
+    if (cd && cd.nextManualAllowedAt) {
+      var t = Date.parse(cd.nextManualAllowedAt);
+      if (isFinite(t) && t > Date.now()) {
+        return { disabled: true, note: 'Manual runs are limited to one per ' + num(cd.minutes) + ' minutes. Next available ' + clock(cd.nextManualAllowedAt) + '.' };
+      }
+    }
+    return { disabled: false, note: 'Queues a run. It starts when the sync runner picks it up.' };
   }
 
   // The limits the runner enforces, said where the button is. Built from the
@@ -193,7 +219,8 @@
     var hh = function (h) { var t2 = String(num(h)); return t2.length === 1 ? '0' + t2 : t2; };
     return 'Automatic pulls: once per ' + num(rules.minIntervalHours) + 'h, ' +
       hh(rules.windowStartHour) + ':00-' + hh(rules.windowEndHour) + ':00 only. ' +
-      'Queued requests run when a runner picks them up, at any hour.';
+      'Queued requests run when a runner picks them up, at any hour. ' +
+      'One manual run per ' + num(rules.manualCooldownMinutes || 30) + ' minutes.';
   }
 
   function queuedCard(run) {
@@ -341,7 +368,7 @@
     lastData = data;
     var runs = data.runs || [];
     var current = data.current;
-    var html = controls(data.rules);
+    var html = controls(data);
     var queued = null;
     for (var i = 0; i < runs.length; i += 1) {
       if (runs[i].status === 'requested') { queued = runs[i]; break; }
@@ -418,6 +445,7 @@
         btn.disabled = false;
         if (res.status === 401) { note.textContent = 'Sign in again to queue a run.'; return; }
         if (res.status === 403) { note.textContent = 'This account cannot queue syncs.'; return; }
+        if (res.status === 429) { note.textContent = (res.body && res.body.error) || 'A sync ran recently. Try again soon.'; schedule(30000); return; }
         if (res.status === 503) { note.textContent = (res.body && res.body.error) || 'The record database is not configured.'; return; }
         if (!res.body || !res.body.ok) { note.textContent = 'The request could not be recorded.'; return; }
         note.textContent = res.body.alreadyQueued ? 'A run is already queued.' : 'Sync queued. It starts when a runner picks it up, at any hour.';

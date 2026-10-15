@@ -17,6 +17,6 @@ exterior_color: Black Raven
 interior_color: Black, Inteluxe Seats seat trim
 drivetrain: RWD
 inventory_sync: https://www.cadillacofsouthcharlotte.com
-inventory_sync_synced: 2026-10-04
+inventory_sync_synced: 2026-10-15
 ---
 RWD · 8 mi. RWD drivetrain · Black Raven exterior · Black, Inteluxe Seats seat trim interior. 8 miles. Full specification and availability on request — ask Caddy Ed for the details on this vehicle.

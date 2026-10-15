@@ -18,6 +18,6 @@ drivetrain: 4WD
 transmission: Automatic
 engine: V8 engine
 inventory_sync: https://www.cadillacofsouthcharlotte.com
-inventory_sync_synced: 2026-10-04
+inventory_sync_synced: 2026-10-15
 ---
 4WD · Automatic. 4WD drivetrain · Automatic · V8 engine · Black Raven exterior · Black, Full semi-aniline leather seats with Mondri interior. Full specification and availability on request — ask Caddy Ed for the details on this vehicle.
