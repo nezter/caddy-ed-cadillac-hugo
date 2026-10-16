@@ -28,13 +28,15 @@
             "body" "The signed-in rep's leads, appointments and performance metrics.")
       (dict "url" "/admin/calendar/" "nav" "Calendar" "title" "Calendar" "tag" "live" "tagLabel" "Live"
             "body" "One month at a glance: every enquiry and booking request on the day it belongs to.")
+      (dict "url" "/admin/reports/" "nav" "Reports" "title" "Reports" "tag" "live" "tagLabel" "Live"
+            "body" "The pipeline, enquiries by year and source, and the stock figure -- each live from the same endpoints the other pages use.")
     ))
   (dict
     "label" "Customers"
     "note" "The pipeline, from first enquiry to appointment."
     "items" (slice
       (dict "url" "/admin/leads/" "nav" "Leads" "title" "Lead Management" "tag" "live" "tagLabel" "Live"
-            "body" "Deduplication stats, duplicate checks and the manual merge tool.")
+            "body" "Every enquiry with filters, working status, assignment and notes; the duplicate finder stays folded below.")
       (dict "url" "/admin/leads-intake/" "nav" "New lead" "title" "New Lead" "tag" "live" "tagLabel" "Live"
             "body" "Enter a lead taken by phone or in person into the same pipeline the website forms feed.")
       (dict "url" "/admin/followup-campaigns/" "nav" "Campaigns" "title" "Follow-up Campaigns" "tag" "live" "tagLabel" "Live"

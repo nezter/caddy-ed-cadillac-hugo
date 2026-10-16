@@ -304,5 +304,10 @@
   });
   if (el.refresh) el.refresh.addEventListener('click', load);
 
+  // The topbar search links here with ?q=; start the list on that term.
+  var initialQ = '';
+  try { initialQ = new URLSearchParams(window.location.search).get('q') || ''; } catch (e) { initialQ = ''; }
+  if (initialQ && el.search) el.search.value = initialQ;
+
   loadReps().then(load);
 })();

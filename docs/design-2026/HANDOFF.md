@@ -2204,3 +2204,26 @@ recorded); ran the sync -> adopted the row, crawled (172 found, 14 new,
 128 updated), phases + change lists recorded, gate waiver noted; pressed
 again -> 429 cooldown + sync.throttled audit row. Inventory rebuilt and
 redeployed. Deploy 6ad0c7b3 + content deploy.
+
+---
+
+## Admin experience round: live search, Reports, mobile nav (2026-10-16, eighth round)
+
+Owner: keep enhancing the admin experience and features.
+
+- Topbar search is now LIVE: typing fetches /search?q= (the endpoint the
+  search page uses), renders a dropdown of results, arrows move, Enter
+  opens the highlighted result, and the last row always offers the full
+  search page. Lead results link to /admin/leads/?q=, and the leads page
+  now starts on that term.
+- New /admin/reports: pipeline tiles (all time), enquiries-by-year bars,
+  by-source and by-status chips, stock from the sync record, and an
+  honest empty state for bookings. Every card fails alone; no invented
+  revenue. Added to the Today group in the nav (portal check 16/16).
+- Small screens: the nav rail no longer stacks above every page -- a
+  Menu button in the topbar collapses it (aria-expanded kept in sync).
+- Leads nav description stopped selling the dedupe tool as the page.
+
+Verified: jsdom harness ALL PASS (typeahead, arrows, toggle, reports
+cards), checks 38/22 + 16/16 + 35/35, build PASSED. Deploy 6ad26275
+live; /admin/reports gated 302.

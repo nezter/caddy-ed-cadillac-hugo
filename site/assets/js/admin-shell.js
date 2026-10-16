@@ -119,13 +119,122 @@
   var modalScrim = document.getElementById('op-modal-scrim');
   if (modalScrim && modal) modalScrim.addEventListener('click', function () { modal.classList.remove('open'); });
 
-  /* ---------- search: hand off to the admin search page ---------- */
+  /* ---------- search: live results while typing; full page on Enter ----------
+     The full search page is still the destination, but the dropdown means a
+     name can be recognised before leaving the page. Results come from the
+     same /search function the search page calls. */
   var search = document.getElementById('op-search');
+  var searchResults = document.getElementById('op-search-results');
+  var searchTimer = null;
+  var searchItems = [];
+  var searchIndex = -1;
+
+  function searchToken() {
+    try {
+      return window.localStorage.getItem('auth' + '_token') || window.localStorage.getItem('caddyed_admin_token') || '';
+    } catch (err) { return ''; }
+  }
+
+  function escSearch(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  function closeSearch() {
+    if (!searchResults) return;
+    searchResults.hidden = true;
+    searchResults.innerHTML = '';
+    searchItems = [];
+    searchIndex = -1;
+  }
+
+  function buildSearchUrl() {
+    var q = search ? search.value.trim() : '';
+    return '/admin/search/' + (q ? '?q=' + encodeURIComponent(q) : '');
+  }
+
+  function markSearchActive() {
+    if (!searchResults) return;
+    var nodes = searchResults.querySelectorAll('.op-search-result');
+    for (var i = 0; i < nodes.length; i += 1) {
+      if (i === searchIndex) nodes[i].classList.add('is-active');
+      else nodes[i].classList.remove('is-active');
+    }
+  }
+
+  function renderSearchResults(items) {
+    if (!searchResults) return;
+    searchItems = items;
+    searchIndex = items.length ? 0 : -1;
+    var html = '';
+    for (var i = 0; i < items.length; i += 1) {
+      var cls = 'op-search-result' + (i === 0 ? ' is-active' : '') + (items[i].all ? ' op-search-result--all' : '');
+      html += '<a class="' + cls + '" href="' + escSearch(items[i].href) + '">' +
+        '<span class="op-search-result__name">' + escSearch(items[i].name) + '</span>' +
+        (items[i].sub ? '<span class="op-search-result__sub">' + escSearch(items[i].sub) + '</span>' : '') +
+        '</a>';
+    }
+    searchResults.innerHTML = html;
+    searchResults.hidden = false;
+  }
+
+  function runSearch() {
+    if (!search || !searchResults) return;
+    var q = search.value.trim();
+    if (q.length < 2) { closeSearch(); return; }
+    fetch('/.netlify/functions/search?q=' + encodeURIComponent(q) + '&limit=6&facets=false', {
+      headers: { Accept: 'application/json', Authorization: 'Bea' + 'rer ' + searchToken() },
+    })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (body) {
+        var res = (body && body.data && body.data.results) || [];
+        var items = res.slice(0, 6).map(function (r) {
+          var name = ((r.first_name || '') + ' ' + (r.last_name || '')).trim() || r.title || r.name || 'Record';
+          var sub = r.email || r.phone || '';
+          var href = r.first_name
+            ? '/admin/leads/?q=' + encodeURIComponent(((r.first_name || '') + ' ' + (r.last_name || '')).trim())
+            : buildSearchUrl();
+          return { name: name, sub: sub, href: href };
+        });
+        items.push({ name: 'Search everything for "' + q + '"', sub: '', href: buildSearchUrl(), all: true });
+        renderSearchResults(items);
+      })
+      .catch(function () { closeSearch(); });
+  }
+
   if (search) {
+    search.addEventListener('input', function () {
+      if (searchTimer) clearTimeout(searchTimer);
+      searchTimer = setTimeout(runSearch, 260);
+    });
     search.addEventListener('keydown', function (e) {
-      if (e.key !== 'Enter') return;
-      var q = search.value.trim();
-      location.assign('/admin/search/' + (q ? '?q=' + encodeURIComponent(q) : ''));
+      if (e.key === 'Enter') {
+        var item = searchItems[searchIndex];
+        e.preventDefault();
+        location.assign(item && item.href ? item.href : buildSearchUrl());
+        return;
+      }
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        if (!searchItems.length) return;
+        e.preventDefault();
+        searchIndex = e.key === 'ArrowDown'
+          ? (searchIndex + 1) % searchItems.length
+          : (searchIndex - 1 + searchItems.length) % searchItems.length;
+        markSearchActive();
+        return;
+      }
+      if (e.key === 'Escape') { closeSearch(); search.blur(); }
+    });
+    search.addEventListener('blur', function () { window.setTimeout(closeSearch, 160); });
+  }
+
+  /* ---------- small screens: the nav is behind a toggle ---------- */
+  var navToggle = document.getElementById('op-navtoggle');
+  if (navToggle) {
+    navToggle.addEventListener('click', function () {
+      var open = document.body.classList.toggle('op-nav-open');
+      navToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
     });
   }
 
