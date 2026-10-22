@@ -27,6 +27,48 @@
   }
   window.opToast = toast;
 
+  /** Same toast, for one line of markup (a link). Builders escape their text. */
+  function toastHtml(html) {
+    if (!toastWrap) return;
+    var t = document.createElement('div');
+    t.className = 'op-toast';
+    t.innerHTML = html;
+    toastWrap.appendChild(t);
+    window.setTimeout(function () { t.remove(); }, 6000);
+  }
+
+  /* ---------- guardrails ----------
+     A wrapper around fetch that only OBSERVES. Pages keep their own error
+     handling; this makes two failures visible instead of silent: a session
+     that expired mid-visit, and the browser going offline while somebody
+     is filling a form. */
+  var sessionWarned = false;
+  var rawFetch = window.fetch ? window.fetch.bind(window) : null;
+  if (rawFetch) {
+    window.fetch = function (input, init) {
+      var url = typeof input === 'string' ? input : (input && input.url) || '';
+      return rawFetch(input, init).then(function (res) {
+        if (!sessionWarned && (res.status === 401 || res.status === 403) &&
+            url.indexOf('/.netlify/functions/') !== -1 && url.indexOf('/sales-login') === -1) {
+          sessionWarned = true;
+          toastHtml('Your session may have expired. <a href="/admin/sign-in/">Sign in again</a> to keep working.');
+        }
+        return res;
+      });
+    };
+  }
+
+  var errorTosted = false;
+  window.addEventListener('error', function () {
+    if (errorTosted) return;
+    errorTosted = true;
+    toastHtml('Something went wrong on this page. Reload to try again.');
+  });
+
+  window.addEventListener('offline', function () {
+    toastHtml('You are offline. Saving will fail until the connection returns.');
+  });
+
   /* ---------- user chip ---------- */
   try {
     var raw = window.localStorage.getItem('auth_user');

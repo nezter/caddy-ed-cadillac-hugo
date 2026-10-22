@@ -66,7 +66,8 @@
 
   function failCard(title, msg) {
     return '<section class="op-hub-card"><h2 class="op-hub-card__title">' + esc(title) + '</h2>' +
-      '<p class="op-hub-card__fail">' + esc(msg) + '</p></section>';
+      '<p class="op-hub-card__fail">' + esc(msg) + '</p>' +
+      '<button type="button" class="op-btn op-retry" data-rep-retry="1">Retry</button></section>';
   }
 
   function tile(value, label) {
@@ -85,7 +86,8 @@
       tile(num(b.convertedLeads), 'Converted') +
       tile(b.conversionRate || '0%', 'Conversion') +
       tile(num(b.appointments), 'Appointments') +
-      '</div></section>';
+      '</div>' +
+      '<p class="op-hint-line">All time, whole shop. Converted counts leads marked sold.</p></section>';
   }
 
   /* ---------- enquiries per year (from the lead list) ---------- */
@@ -112,7 +114,8 @@
         '<span class="op-rep-col__label">' + esc(y) + '</span></div>';
     }).join('');
     return '<section class="op-hub-card"><h2 class="op-hub-card__title">Enquiries by year</h2>' +
-      '<div class="op-rep-chart">' + cols + '</div></section>';
+      '<div class="op-rep-chart">' + cols + '</div>' +
+      '<p class="op-hint-line">Each bar is one year; the number above it is how many enquiries came in.</p></section>';
   }
 
   /* ---------- chips: by source / by status (same lead list) ---------- */
@@ -128,9 +131,11 @@
     var d = res.body && res.body.data;
     if (!d || !d.leads || !d.leads.length) return '';
     return '<section class="op-hub-card"><h2 class="op-hub-card__title">Where enquiries come from</h2>' +
-      '<div class="op-sync-chips">' + chipCounts(d.leads, 'source', 'unknown') + '</div></section>' +
+      '<div class="op-sync-chips">' + chipCounts(d.leads, 'source', 'unknown') + '</div>' +
+      '<p class="op-hint-line">Values as stored on each lead.</p></section>' +
       '<section class="op-hub-card"><h2 class="op-hub-card__title">How they stand</h2>' +
-      '<div class="op-sync-chips">' + chipCounts(d.leads, 'status', 'new') + '</div></section>';
+      '<div class="op-sync-chips">' + chipCounts(d.leads, 'status', 'new') + '</div>' +
+      '<p class="op-hint-line">The status on each lead right now.</p></section>';
   }
 
   /* ---------- stock (from the sync record) ---------- */
@@ -146,6 +151,7 @@
       body = '<p class="op-hub-card__fail">No sync recorded yet.</p>';
     }
     return '<section class="op-hub-card"><h2 class="op-hub-card__title">Stock</h2>' + body +
+      '<p class="op-hint-line">Figures come from the latest inventory sync.</p>' +
       '<a class="op-hub-card__more" href="/admin/sync/">Sync record</a></section>';
   }
 
@@ -169,7 +175,8 @@
     root.innerHTML = '<div class="admin-hub">' + banner + parts.filter(Boolean).join('') + '</div>';
   }
 
-  (function load() {
+  function refresh() {
+    needSignIn = false;
     Promise.all([
       get('sales-metrics?timeframe=all'),
       get('sales-leads?timeframe=all&status=all&sort=date-desc'),
@@ -184,7 +191,14 @@
         renderBookings(results[3]),
       ]);
     }).catch(function () {
-      render([failCard('Reports', 'The console could not reach its data just now. Reload to try again.')]);
+      render([failCard('Reports', 'The console could not reach its data just now. Retry, or reload the page.')]);
     });
-  })();
+  }
+
+  root.addEventListener('click', function (ev) {
+    var btn = ev.target && ev.target.closest ? ev.target.closest('[data-rep-retry]') : null;
+    if (btn) refresh();
+  });
+
+  refresh();
 })();

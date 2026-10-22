@@ -46,6 +46,7 @@ scripts:
 
   <div id="leads-status" class="settings-status" role="status" hidden></div>
   <div id="leads-count" class="op-leads-count" role="status"></div>
+  <p class="op-hint-line">Status changes, assignments and notes save immediately, and every admin sees them.</p>
 
   <div class="op-sync-scroll">
     <table class="op-sync-table op-leads-table">

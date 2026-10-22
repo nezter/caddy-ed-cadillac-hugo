@@ -667,3 +667,13 @@ body.admin .input::placeholder { color: var(--op-text-faint); }
 .op-rep-col__bar { width: 100%; max-width: 56px; min-height: 4px; background: linear-gradient(180deg, var(--op-accent), #a06a2e); border-radius: 6px 6px 0 0; }
 .op-rep-col__label { font-size: 11px; color: var(--op-text-faint); }
 @media (max-width: 640px) { .op-rep-chart { gap: 8px; } }
+
+/* Explanation lines under cards: one sentence saying what the numbers
+   mean, so a figure never needs a manual to read. */
+.op-hint-line { margin: 0; font-size: 12px; color: var(--op-text-faint); }
+
+/* Zebra rows: scanning long tables (leads, audit, sync history) is
+   easier when alternate rows separate. */
+.op-sync-table tbody tr:nth-child(even) td { background: rgba(255, 255, 255, 0.015); }
+.op-toast a { color: var(--op-accent); }
+.op-retry { margin-top: 4px; }

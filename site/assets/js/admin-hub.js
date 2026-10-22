@@ -68,7 +68,8 @@
 
   function failCard(title, msg) {
     return '<section class="op-hub-card"><h2 class="op-hub-card__title">' + esc(title) + '</h2>' +
-      '<p class="op-hub-card__fail">' + esc(msg) + '</p></section>';
+      '<p class="op-hub-card__fail">' + esc(msg) + '</p>' +
+      '<button type="button" class="op-btn op-retry" data-hub-retry="1">Retry</button></section>';
   }
 
   /* ---------- tiles (sales-metrics, shop-wide) ---------- */
@@ -85,7 +86,8 @@
       tile(num(b.appointments), 'Appointments') +
       tile(num(b.totalLeads), 'In the pipeline') +
       tile(b.conversionRate || '0%', 'Conversion') +
-      '</div></section>';
+      '</div>' +
+      '<p class="op-hint-line">All time, whole shop. Conversion is leads marked sold divided by leads.</p></section>';
   }
 
   /* ---------- chart (calendar-data, last 14 days) ---------- */
@@ -121,6 +123,7 @@
       '<div class="op-hub-chart">' + bars + '</div>' +
       '<div class="op-hub-legend"><span class="op-cal-badge is-inq">' + inqTotal + '</span> enquiries <span class="op-cal-badge is-bkg">' + bkgTotal + '</span> booking requests</div>' +
       ((inqTotal + bkgTotal) === 0 ? '<p class="op-hub-card__fail">No activity in this window yet.</p>' : '') +
+      '<p class="op-hint-line">Per day, last 14 days. Bars stack booking requests over enquiries.</p>' +
       '</section>';
   }
 
@@ -175,6 +178,7 @@
     var chips = keys.map(function (k) { return '<span class="op-sync-chip">' + esc(k) + ' &middot; ' + counts[k] + '</span>'; }).join('');
     return '<section class="op-hub-card"><h2 class="op-hub-card__title">Pipeline by status</h2>' +
       '<div class="op-sync-chips">' + chips + '</div>' +
+      '<p class="op-hint-line">Counts by the status stored on each lead.</p>' +
       '<a class="op-hub-card__more" href="/admin/leads/">All leads</a></section>';
   }
 
@@ -187,7 +191,8 @@
     var keys = Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a]; });
     var chips = keys.map(function (k) { return '<span class="op-sync-chip">' + esc(k) + ' &middot; ' + counts[k] + '</span>'; }).join('');
     return '<section class="op-hub-card"><h2 class="op-hub-card__title">Enquiries by source</h2>' +
-      '<div class="op-sync-chips">' + chips + '</div></section>';
+      '<div class="op-sync-chips">' + chips + '</div>' +
+      '<p class="op-hint-line">Values as stored on each lead.</p></section>';
   }
 
   /* ---------- inventory (from the sync record) ---------- */
@@ -202,7 +207,8 @@
     }
     rows += '<a class="op-hub-row" href="/admin/inventory/"><span class="op-hub-row__name">Vehicle editor</span><span class="op-hub-row__meta">prices, photos, notes</span></a>';
     return '<section class="op-hub-card"><h2 class="op-hub-card__title">Inventory</h2><div class="op-hub-rows">' + rows +
-      '</div><a class="op-hub-card__more" href="/admin/sync/">Sync record</a></section>';
+      '</div><p class="op-hint-line">Figures come from the latest inventory sync.</p>' +
+      '<a class="op-hub-card__more" href="/admin/sync/">Sync record</a></section>';
   }
 
   /* ---------- system (booking queue + calendar) ---------- */
@@ -224,7 +230,8 @@
     root.innerHTML = banner + parts.join('');
   }
 
-  (function load() {
+  function refresh() {
+    needSignIn = false;
     var today = new Date();
     var from = new Date(today.getTime() - (DAYS_SHOWN - 1) * 86400000);
     var tasks = [
@@ -247,8 +254,15 @@
       ]);
     }).catch(function () {
       render([
-        failCard('The console', 'Could not reach its data just now. Reload to try again.'),
+        failCard('The console', 'Could not reach its data just now. Retry, or reload the page.'),
       ]);
     });
-  })();
+  }
+
+  root.addEventListener('click', function (ev) {
+    var btn = ev.target && ev.target.closest ? ev.target.closest('[data-hub-retry]') : null;
+    if (btn) refresh();
+  });
+
+  refresh();
 })();

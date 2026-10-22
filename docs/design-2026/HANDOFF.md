@@ -2227,3 +2227,26 @@ Owner: keep enhancing the admin experience and features.
 Verified: jsdom harness ALL PASS (typeahead, arrows, toggle, reports
 cards), checks 38/22 + 16/16 + 35/35, build PASSED. Deploy 6ad26275
 live; /admin/reports gated 302.
+
+---
+
+## Robustness + explainability round (2026-10-22, ninth round)
+
+Owner: keep refining the admin -- more robust, easier to use, more
+readable, more explainable.
+
+- Session guardrail: admin-shell.js wraps fetch (observer only) and shows
+  one toast with a Sign in link the first time any admin API answers 401/
+  or 403. Uncaught page errors and going offline also toast now, so a
+  failure is never silent.
+- Retry-able cards: hub and reports fail cards carry a Retry button that
+  refetches just that page (loaders are named functions now).
+- Explanation lines: one sentence under the tiles, the chart, the chips,
+  stock and the leads list, saying what the numbers mean and that lead
+  edits save immediately for every admin.
+- Readability: zebra rows on long tables; toast links styled.
+
+Verified: jsdom harness ALL PASS (401 toast once + link, reports retry
+recovers, hub retry recovers, hints present), checks 38/22 + 16/16 +
+35/35, build PASSED. Deploy 6ada2915 live; prod shell carries the
+guardrail.
