@@ -109,24 +109,6 @@ collections:
           - {label: "Business Hours", name: "hours", widget: "text", required: false}
           - {label: "Map Embed Code", name: "map", widget: "text", required: false}
 
-  - name: "inventory"
-    label: "Inventory Items"
-    folder: "site/content/inventory"
-    create: true
-    fields:
-      - {label: Title, name: title, widget: string}
-      - {label: "Publish Date", name: date, widget: datetime}
-      - {label: Price, name: price, widget: string}
-      - {label: Year, name: year, widget: number}
-      - {label: Make, name: make, widget: string}
-      - {label: Model, name: model, widget: string}
-      - {label: Trim, name: trim, widget: string, required: false}
-      - {label: Mileage, name: mileage, widget: number}
-      - {label: "Featured Image", name: featured_image, widget: image}
-      - {label: "Gallery Images", name: gallery, widget: list, field: {label: Image, name: image, widget: image}}
-      - {label: Description, name: description, widget: markdown}
-      - {label: Features, name: features, widget: list}
-
   # Content types (articles / specials / testimonials) are edited from
   # /admin/* in the site itself, where saving queues into the database and
   # the apply scripts write these files. The CMS below still commits to git

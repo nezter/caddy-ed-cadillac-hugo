@@ -271,6 +271,26 @@
 # their own names (e.g. /contact-form -> contact-form function), either
 # directly at /.netlify/functions/<name> or through these aliases below.
 # -----------------------------------------------------------------------------
+# Public inventory has been removed. Keep old bookmarks and search results
+# from resolving to a listing that must not be published.
+[[redirects]]
+  from = "/inventory"
+  to = "/test-drive/"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/inventory/*"
+  to = "/test-drive/"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/vehicles/*"
+  to = "/test-drive/"
+  status = 301
+  force = true
+
 # The admin gate. Reasoning in docs/ADMIN-GATE.md.
 #
 #   /admin/*    -> guard, which checks the session

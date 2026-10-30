@@ -1,13 +1,8 @@
-{{ define "headStyles" }}{{ partial "stylesheet.html" "connect.css" }}{{ partial "stylesheet.html" "components/shortlist.css" }}{{ partial "stylesheet.html" "components/home.css" }}{{ partial "stylesheet.html" "components/pick-tray.css" }}{{ partial "stylesheet.html" "components/comparison.css" }}{{ end }}
-{{ define "scripts" }}{{ partial "connect-config.html" . }}{{ partial "entry.html" (dict "entry" "connect.js" "page" .) }}{{ partial "entry.html" (dict "entry" "social-feed.js" "page" .) }}{{ partial "entry.html" (dict "entry" "shortlist.js" "page" .) }}{{ partial "entry.html" (dict "entry" "inventory-filter.js" "page" .) }}{{ partial "entry.html" (dict "entry" "ed-picks.js" "page" .) }}{{ partial "entry.html" (dict "entry" "compare-tray.js" "page" .) }}{{ partial "entry.html" (dict "entry" "vehicleComparison.js" "page" .) }}{{ end }}
+{{ define "headStyles" }}{{ partial "stylesheet.html" "connect.css" }}{{ partial "stylesheet.html" "components/home.css" }}{{ end }}
+{{ define "scripts" }}{{ partial "connect-config.html" . }}{{ partial "entry.html" (dict "entry" "connect.js" "page" .) }}{{ partial "entry.html" (dict "entry" "social-feed.js" "page" .) }}{{ end }}
 
 {{ define "main" }}
 {{- $phone := .Site.Params.phone | default "803-431-6180" -}}
-{{- /* $phoneHref is gone: the E.164 form is computed by
-       partials/phone-href.html, so all seven templates that link to the
-       dealership agree on it. Six of them stripped dots and one stripped
-       dots and parentheses, which is how "(803) 431-6180" produced a working
-       link on one page and a broken one on another. */ -}}
 {{- $tagline := .Site.Params.tagline | default "Always looking out for the best car for you!" -}}
 
 {{/* ------------------------------------------------------------------
@@ -36,7 +31,7 @@
         {{ end }}
 
         <div class="hero__actions">
-          <a class="btn btn-primary btn-lg" href="/inventory/">See what's in stock</a>
+          <a class="btn btn-primary btn-lg" href="/test-drive/">Book a test drive</a>
           <a class="btn btn-inverse btn-lg" href="tel:{{ partial "phone-href.html" $phone }}">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a.75.75 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a.75.75 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/>
@@ -46,13 +41,11 @@
         </div>
       </div>
 
-      {{/* The ask form, in the hero's empty right-hand space. It was in a panel
-           halfway down the page, where a visitor who wanted to ask a question
-           had to scroll past the entire inventory to find it. */}}
+      {{/* The ask form, in the hero's empty right-hand space. */}}
       <div class="hero__ask">
         <h2>Ask about any vehicle</h2>
-        <p class="lede">Model, budget, or a car you saw three months ago. Ed answers
-          the same day — usually the same hour.</p>
+        <p class="lede">Model, budget, or a car you have in mind. Ed answers the
+          same day, usually the same hour.</p>
         {{ partial "quick-ask.html" . }}
       </div>
     </div>
@@ -78,9 +71,6 @@
         <p class="proof-strip__label">Typical reply, always</p>
       </div>
       <div>
-        {{/* The fourth cell used to read "No pressure / That is the whole
-             point" -- a sentiment, and one every dealership on earth claims.
-             The mockup puts the actual differentiator here. */}}
         <p class="proof-strip__value">One</p>
         <p class="proof-strip__label">Person, start to finish</p>
       </div>
@@ -89,10 +79,7 @@
 </section>
 
 {{/* ------------------------------------------------------------------
-     3. ED, STAY CONNECTED, AND WHAT HE IS POSTING. Above the fleet, so a
-     client meets the person before the inventory. The left column is Ed's
-     photograph with "stay connected" under it; the right column is the live
-     social feed.
+     3. ED, STAY CONNECTED, AND WHAT HE IS POSTING.
      ------------------------------------------------------------------ */}}
 <section class="section">
   <div class="container">
@@ -100,12 +87,6 @@
 
       <div class="ed-column">
       <div class="ed-portrait">
-        {{/* picture.html, not vehicle-image.html. The vehicle partial rewrites a
-             leading "img/" away to support legacy /img/... paths in vehicle front
-             matter, which turned "img/caddy-ed.jpg" into "caddy-ed.jpg", missed
-             the file, and rendered "No image". This is a photograph of a person,
-             not a vehicle, and it has its own box, so it goes straight to the
-             picture partial. */}}
         {{ partial "picture.html" (dict
             "src" "img/caddy-ed.jpg"
             "alt" "Caddy Ed, Cadillac sales specialist in South Charlotte"
@@ -116,53 +97,37 @@
             "loading" "eager") }}
         <div class="ed-portrait__overlay">
           <p>{{ $tagline }}</p>
-          <cite>{{ .Site.Params.dealer_name }} · {{ $phone }}</cite>
+          <cite>{{ .Site.Params.dealer_name }} &middot; {{ $phone }}</cite>
         </div>
       </div>
 
-      {{/* "Stay connected" shares the left column with Ed's photograph.
-           The copy names two things a visitor can do here -- ask about a
-           vehicle, or set an alert for one they are waiting on -- so the
-           stock-alert form is here rather than in a band at the bottom of the
-           page, and it is the thing that fills this column to roughly the
-           height of the social feed beside it. */}}
       <div class="stay-connected">
         <h2 class="stay-connected__title" data-setting="signage.heading">Stay connected to Ed, between visits</h2>
         <p class="stay-connected__body" data-setting="signage.intro">
-          New stock lands here as it arrives, alongside what Ed is posting on
-          Facebook and X. Ask about any vehicle without leaving the page, or set
-          an alert for the one you are waiting on.
+          Questions about a Cadillac, a trade, or financing? Ask Ed directly.
+          There is one person here, and he answers every message himself.
         </p>
-        {{ partial "stock-alerts.html" . }}
+        <div class="contact-chips stay-connected__chips">
+          <a class="btn btn-outline btn-sm" href="tel:{{ partial "phone-href.html" $phone }}">Call {{ $phone }}</a>
+          <a class="btn btn-outline btn-sm" href="sms:{{ partial "phone-href.html" $phone }}">Text Ed</a>
+          <a class="btn btn-outline btn-sm" href="mailto:{{ .Site.Params.email | default "ed@caddyed.com" }}">{{ .Site.Params.email | default "ed@caddyed.com" }}</a>
+        </div>
+        <p style="margin-top:1rem"><a class="btn btn-primary" href="/contact/">Send a message</a></p>
       </div>
       </div>
 
-      {{/* The dock: fresh stock beside what Ed is posting. The vehicles are
-           real, taken from the same collection the fleet section uses, so the
-           list cannot drift from the inventory. */}}
-      {{- $all := where .Site.RegularPages "Section" "inventory" -}}
-      {{- $all = where $all "Params.available" "!=" false -}}
-      {{- $all = where $all "Params.make" "CADILLAC" -}}
-      {{- $fresh := first 4 (sort (sort $all "Params.year" "desc") "Params.price" "desc") -}}
+      {{/* The dock: the test-drive action beside what Ed is posting. */}}
       <div class="dock">
         <div class="tile tile--bronze">
-          <span class="tile__idx">01 &middot; Fresh stock</span>
-          <h3>What landed this week</h3>
-          <p style="margin-bottom:1rem">Straight from the lot, with the real number on it.</p>
-          <ul class="feed">
-            {{ range $fresh }}
-            <li>
-              <a href="{{ .RelPermalink }}" style="color:inherit;text-decoration:none"><span class="what">{{ .Title }}</span></a>
-              <span class="when">{{ partial "money.html" .Params.price }}</span>
-            </li>
-            {{ end }}
-          </ul>
+          <span class="tile__idx">01 &middot; Test drive</span>
+          <h3>Drive the one you're considering</h3>
+          <p style="margin-bottom:1rem">Tell Ed the model and when suits you. He confirms the car and the time himself.</p>
           <div class="chip-row">
-            <a class="chip" href="/inventory/">See all {{ len $all }} Cadillacs</a>
-            <a class="chip" href="#stockAlerts">Get alerts</a>
+            <a class="chip" href="/test-drive/">Book a test drive</a>
+            <a class="chip" href="/contact/">Ask a question</a>
           </div>
         </div>
-      {{ partial "social-feed.html" . }}
+        {{ partial "social-feed.html" . }}
       </div>
 
     </div>
@@ -170,151 +135,22 @@
 </section>
 
 {{/* ------------------------------------------------------------------
-     4. THE FLEET. Every Cadillac in stock, with the last-synced date
-     on the heading -- it used to be the only line in a stock panel header,
-     which is not somewhere anyone looks.
+     4. TEST DRIVES. The one action this site exists to make easy.
      ------------------------------------------------------------------ */}}
-{{- /*
-  The fleet.
-
-  Thirty-two Cadillacs rendered as a grid is not a selection, it is a wall. The
-  first three rows are almost entirely mid-size XT5s in grey, which is the least
-  interesting thing on the lot, and everything below them is a scroll nobody
-  finishes before reaching the footer.
-
-  So: SIX. Two clean rows of three, the newest first, and within a year the
-  most expensive first. Ten was still a wall -- three full rows and a stray
-  one-card row under it, which reads as an accident.
-
-  ON "LATEST"
-  -----------
-  Sorted by model year descending, then price descending. Not by the obvious
-  candidate: `inventory_sync_synced` is written on every vehicle the sync
-  touches, and on this lot all 35 carry the same value -- 2026-09-26 -- so
-  sorting by it returns the fleet in page order and "the ten most recently
-  synced" would be an accident. Measured, not assumed.
-
-  The feed carries no listing date, so how recently a car arrived is not knowable
-  from what we have. Model year is the closest honest proxy for "newest stock",
-  and price within a year is a reasonable second: two identically-aged cars, the
-  better-specified one first. If the DMS ever exposes a listing date, add it here
-  and the order becomes literal.
-
-  Favourited vehicles are hoisted above all of it (see
-  partials/vehicle-card.html, which badges them "Ed's pick"), so marking a car
-  in the admin changes what a visitor sees first.
-
-  The full, filterable list is one click away at /inventory/.
-*/ -}}
-{{- $cadillacAll := where (where (where .Site.RegularPages "Section" "inventory") "Params.available" "!=" false) "Params.make" "CADILLAC" -}}
-{{- $featured := first 6 (where $cadillacAll "Params.featured" true) -}}
-{{- $rest := where $cadillacAll "Params.featured" "!=" true -}}
-{{- $rest = first (sub 6 (len $featured)) (sort (sort $rest "Params.year" "desc") "Params.price" "desc") -}}
-{{- $cadillac := $featured | append $rest -}}
-{{- if $cadillac }}
-<section class="section section-subtle" id="fleet">
+<section class="section section-subtle" id="test-drive">
   <div class="container">
     <div class="section-head">
-      <p class="eyebrow">In stock now</p>
-      <h2>The fleet</h2>
-      <p class="lede">Everything below is a Cadillac, available today. If you want
-        something that isn't listed, ask — stock turns over fast and Ed can usually
-        find it.</p>
-      <p class="sync-note">
-        <span class="sync-note__dot" aria-hidden="true"></span>
-        Last synced <time datetime="{{ now.Format "2006-01-02" }}">{{ now.Format "2 January 2006" }}</time>
-        · {{ len $cadillac }} of {{ len $cadillacAll }} shown
-      </p>
+      <p class="eyebrow">Test drives</p>
+      <h2>Drive it before you decide.</h2>
+      <p class="lede">Tell Ed which Cadillac you have in mind and when suits
+        you. He will confirm the car and the time himself, usually the same day.</p>
     </div>
-
-    {{/* The filters sit immediately under the last-synced line, inside the fleet
-         heading, because that line answers "is this list current?" and the
-         filters are what you do once you know that it is. They were their own
-         section three screens further down. */}}
-    <div class="fleet-filters">
-      {{ partial "inventory-filters.html" (dict "page" . "closed" true "fleet" $cadillac "universe" (len $cadillacAll) "perPage" (len $cadillac)) }}
-    </div>
-
-    {{/* id and data-total are a CONTRACT with inventory-filter.js, which is
-         loaded below. Without them the filter form on this page silently does
-         nothing -- it is a GET form to /inventory/, so with scripting off it
-         still works, but with scripting on it expects to filter in place. */}}
-    <div class="vehicle-grid" id="vehicle-inventory" data-total="{{ len $cadillacAll }}" data-page-size="{{ len $cadillac }}">
-      {{ range $i, $v := $cadillac }}
-        {{ partial "vehicle-card.html" (dict "vehicle" $v "eager" (lt $i 3) "compare" true) }}
-      {{ end }}
-    </div>
-
-    {{/* Only the empty-state element is added here. #inventory-count already
-         exists in partials/inventory-filters.html, which is rendered just below,
-         and having it twice gave the page a duplicate id -- caught by the
-         structure gate. */}}
-    <div class="inventory-empty hidden" id="inventory-empty">
-      <p data-empty-message>No vehicles match those filters.</p>
-      <button class="btn btn-ghost btn-sm" type="button" data-inventory-reset>Clear them</button>
-    </div>
-
-    {{/* The comparison lives on the home page too. Without it the cards
-         here offered a Compare button that did nothing: no table, no script.
-         The same three elements the inventory page uses, from the same
-         partial, and the same script -- one comparison, two doors to it. */}}
-    {{ partial "comparison-app.html" . }}
-    <p class="comparison-hint">Use the <strong>Compare</strong> button on any
-    card to see up to three of them side by side right here. The address bar
-    carries your selection, so you can send someone what you are looking at.</p>
-
-    <div class="cluster" style="margin-top: var(--space-7)">
-      <a class="btn btn-outline" href="/inventory/">Filter by model, year and price</a>
+    <div class="cluster" style="margin-top: var(--space-6)">
+      <a class="btn btn-primary btn-lg" href="/test-drive/">Book a test drive</a>
+      <a class="btn btn-outline btn-lg" href="/contact/">Ask a question</a>
     </div>
   </div>
 </section>
-{{ end }}
-
-{{/* ------------------------------------------------------------------
-     6. WHAT CLIENTS SAY. The stock-alert signup is no longer a band at the
-     bottom of the page -- it is in the left column beside Ed's photograph,
-     because the "stay connected" copy there promises exactly that and a
-     promise three screens away is not a promise the page keeps.
-     ------------------------------------------------------------------ */}}
-{{/* Ed's pick. One car, one price, one person saying "this is the one I
-     would buy" -- the only merchandising surface on the page a template cannot
-     fake, which is why it is here instead of another row of cards. It is the
-     first vehicle of the fleet selection above, so it is always a real car
-     with a real price. */}}
-{{ with index $cadillac 0 }}
-<section class="stage stage--deep grain" style="padding-block:0">
-  <div class="wrap wrap--wide" style="padding-inline:0">
-    <div style="position:relative">
-      <div class="plate" style="aspect-ratio:21/9;border-radius:0;border-inline:0;box-shadow:none">
-        {{ partial "vehicle-image.html" (dict
-            "src" .Params.image
-            "alt" .Title
-            "width" .Params.image_width
-            "height" .Params.image_height
-            "sizes" "100vw"
-            "loading" "lazy") }}
-        <div class="spot" aria-hidden="true" style="z-index:1;opacity:.72"></div>
-      </div>
-      <div style="position:absolute;inset:auto 0 0 0;z-index:3">
-        <div class="wrap" style="padding-bottom:clamp(1.6rem,3.5vw,3rem)">
-          <p class="eyebrow">Ed's pick this week</p>
-          <h2 class="display display--md" style="color:#fff;max-width:18ch">The one I'd buy with my own money.</h2>
-          <div style="display:flex;align-items:end;justify-content:space-between;gap:2rem;flex-wrap:wrap;margin-top:1.4rem">
-            <div>
-              <p class="mono-label" style="color:#9aa1ad;margin:0">{{ .Title }}</p>
-              <p class="num" style="color:var(--bronze-hi);font-size:clamp(1.6rem,1.2rem + 1.6vw,2.4rem);font-weight:680;letter-spacing:-.03em;margin:.2rem 0 0">{{ partial "money.html" .Params.price }}</p>
-            </div>
-            <div style="display:flex;gap:.7rem;flex-wrap:wrap">
-              <a class="btn btn--red btn--lg" href="{{ .RelPermalink }}">Ask Ed why</a>
-              <a class="btn btn--ghost btn--lg" href="/test-drive/">Book a drive in it</a>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-{{ end }}
 
 {{ partial "comments.html" . }}
 
@@ -324,8 +160,7 @@
      touching this template. */}}
 {{ with .Content }}<section class="section section-subtle"><div class="container prose">{{ . }}</div></section>{{ end }}
 
-{{/* The closing call. The page used to end on the marketing copy, so the last
-     thing on screen was an obligation rather than an invitation. */}}
+{{/* The closing call. */}}
 <section class="stage stage--deep grain pad--tight">
   <div class="wrap" style="display:flex;align-items:center;justify-content:space-between;gap:2rem;flex-wrap:wrap">
     <div>

@@ -135,6 +135,9 @@ const main = () => {
     let m;
     while ((m = re.exec(body)) !== null) {
       const url = m[1];
+      // A bare prefix is a dynamic URL builder (fetch('/.netlify/functions/' + path)),
+      // not a call to a function named "".
+      if (url === '/.netlify/functions/') continue;
       const isFunction = url.startsWith('/.netlify/functions/');
       const isLegacy = url.startsWith('/api/');
       if (!isFunction && !isLegacy) continue;

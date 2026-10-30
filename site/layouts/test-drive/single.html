@@ -12,23 +12,16 @@
        `MARKER-A={{ .Title }}` published `MARKER-A={{ .Title }}` to the
        browser. ci/verify-build.js fails the build on exactly that ("unrendered
        template syntax in output"), which is how it was caught. So the dealer
-       phone number and the inventory list cannot be interpolated from a
+       phone number and other live values cannot be interpolated from a
        content file -- they would ship as literal braces.
-    2. The vehicle list has to come from the content, not from a hand-kept
-       copy. `where .Site.RegularPages "Section" "inventory"` is the same
-       source the inventory section builds its filters from, so an option can
-       only exist if that vehicle is actually in stock.
-
-  The booking form itself is deliberately duplicated from
-  layouts/inventory/single.html rather than extracted into partials/, which
-  was out of scope for this change. The two copies must stay in step: the
-  field names are the schedule-test-drive.js contract.
+    2. The booking form is rendered here rather than written into markdown,
+       so its field names stay in step with the schedule-test-drive.js
+       contract.
 */}}
-{{ define "headStyles" }}{{ partial "stylesheet.html" "inventory.scss" }}{{ end }}
+{{ define "headStyles" }}{{ partial "stylesheet.html" "test-drive.scss" }}{{ end }}
 
 {{ define "main" }}
 {{- $phone := .Site.Params.phone | default "803-431-6180" -}}
-{{- $vehicles := sort (where .Site.RegularPages "Section" "inventory") "Params.year" "desc" -}}
 <article class="section test-drive-page">
   <div class="container">
     <nav aria-label="Breadcrumb" class="vehicle-breadcrumb">
@@ -64,26 +57,12 @@
             action="/.netlify/functions/schedule-test-drive" data-test-drive-form
             data-phone="{{ $phone }}" novalidate>
         <div class="form-field">
-          <label for="ttd-vehicle">Which car?</label>
-          <select class="select" id="ttd-vehicle" name="vehicleId" required>
-            <option value="">Choose from current inventory</option>
-            {{/* A stock number is not a choice anyone can make in a dropdown, so
-                 the label carries what a person actually picks by: what it is,
-                 whether it is new or used, and what it costs. The value stays
-                 the stock number, which is what the endpoint expects. */}}
-            {{ range $vehicles }}
-            <option value="{{ with .Params.stock }}{{ . }}{{ else }}{{ .Title }}{{ end }}">
-              {{- .Title -}}
-              {{- with .Params.status }} — {{ . }}{{ end -}}
-              {{- with .Params.mileage }} · {{ lang.FormatNumber 0 . }} mi{{ end -}}
-              {{- with .Params.price }} · {{ partial "money.html" . }}{{ end -}}
-            </option>
-            {{ end }}
-            <option value="other">Something else — I'll describe it below</option>
-          </select>
+          <label for="ttd-vehicle">Which Cadillac?</label>
+          <input class="input" id="ttd-vehicle" name="vehicleId" type="text"
+                 placeholder="Year, make, model — or the one you have in mind" required>
           <p class="hint">
-            Not seeing the one you want? Pick &ldquo;something else&rdquo; and
-            say what you are after — I can usually source it.
+            A model and trim is enough. If you are not sure yet, say what you
+            are looking for.
           </p>
         </div>
 
@@ -172,8 +151,8 @@
     <h2 class="h-sec" style="color:#fff;max-width:26ch">Say which car. Say when. Turn up.</h2>
     <div class="bento bento--3" style="margin-top:2rem">
       <div class="tile tile--bronze"><span class="tile__idx">01</span>
-        <h3>Pick the car</h3>
-        <p>Anything in stock, or describe the one you want and Ed will find it. You are not limited to what is on the site.</p></div>
+        <h3>Name the car</h3>
+        <p>Tell Ed the model and trim you have in mind, or describe the one you want and he will find it.</p></div>
       <div class="tile"><span class="tile__idx">02</span>
         <h3>Pick a time that suits you</h3>
         <p>It is a request, not a locked slot. Ed confirms the exact time and checks the car is still here before you set off.</p></div>

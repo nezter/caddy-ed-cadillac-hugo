@@ -30,7 +30,6 @@
  *   gdpr + audit           an erasure is complete and leaves proof identifying nobody
  *   staff management       the staff list cannot lock every administrator out
  *   inquiry path           a form submission survives its own notification failing
- *   compare + shortlist    the two card buttons do two different things
  *   structured data        every ld+json block parses, and none is double-encoded
  *   build output           no page references a missing asset
  *
@@ -165,12 +164,6 @@ const CHECKS = [
     needsDatabase: true,
     slow: true,
     why: 'a customer enquiry survives its own notification failing',
-  },
-  {
-    name: 'compare + shortlist',
-    file: 'check-compare-shortlist.js',
-    needsBuild: true,
-    why: 'the two card buttons do two different things, and both do them',
   },
   {
     name: 'structured data',

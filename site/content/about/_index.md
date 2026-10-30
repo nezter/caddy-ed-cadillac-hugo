@@ -21,7 +21,7 @@ a vehicle is not the right choice. That ongoing relationship is the point.
 
 ## How to Work Together
 
-- Browse [current inventory](/inventory/) to see what is in stock
+- Book a [test drive](/test-drive/) in the Cadillac you have in mind
 - Ask about [financing](/financing/) or a [trade-in value](/trade-in/)
 - Check [service availability](/service/) if you already own a Cadillac
 - Get in touch directly for anything else

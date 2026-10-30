@@ -34,9 +34,7 @@ from a call centre reading a screen.
 There are two kinds of questions in a car purchase: the ones about the car,
 and the ones about the money. Both go to the same person here.
 
-- **The car.** [Every Cadillac in stock](/inventory/) has photographs, the
-  real mileage and the actual asking price. No "call for price", no car
-  that sold last week still glowing on the page.
+- **The car.** Ask about any Cadillac — model, trim, colors, availability, and the real asking price. No "call for price", and no car that sold last week still glowing on the page.
 - **Your trade.** A [trade-in valuation](/trade-in/) takes a few minutes and
   gives you a real number to work from before the conversation starts.
 - **The money.** [Financing questions](/financing/) — term lengths, what a
@@ -48,6 +46,5 @@ and the ones about the money. Both go to the same person here.
 
 Call or text Ed at [803-431-6180](tel:+18034316180), or send a note from the
 [contact page](/contact/) about any vehicle you see. If you would rather
-just look first, [browse the Cadillacs in stock](/inventory/) and take your
-time — the inventory is kept current, and the person who answers knows every
-car on it.
+just look first, [book a test drive](/test-drive/) and take your
+time - the person who answers knows every car he is selling.

@@ -37,4 +37,4 @@ payoff amount and the trade-in value is either:
 An in-person appraisal gives you a firm number. Bring the vehicle, the title, and
 any service records.
 
-[Contact Caddy Ed](/contact/) · [Browse Inventory](/inventory/)
+[Contact Caddy Ed](/contact/) · [Book a Test Drive](/test-drive/)

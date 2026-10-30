@@ -226,7 +226,7 @@ jobs:
           # 200s: the pages, the feed, and the function alias.
           for url in \
             "https://caddyed.com/" \
-            "https://caddyed.com/inventory/" \
+            "https://caddyed.com/test-drive/" \
             "https://caddyed.com/articles/" \
             "https://caddyed.com/articles/index.xml" \
             "https://caddyed.com/health"; do
@@ -234,6 +234,10 @@ jobs:
             echo "$code (want 200)  $url"
             [ "$code" = "200" ] || fail=1
           done
+          # The public inventory must be gone: old URLs redirect to the test-drive page.
+          code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 25 "https://caddyed.com/inventory/" || echo 000)
+          echo "$code (want 301)  https://caddyed.com/inventory/"
+          [ "$code" = "301" ] || fail=1
           # The admin gate must still redirect (302) rather than serve.
           code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 25 "https://caddyed.com/admin/" || echo 000)
           echo "$code (want 302)  https://caddyed.com/admin/"

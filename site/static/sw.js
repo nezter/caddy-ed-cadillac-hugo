@@ -1,6 +1,6 @@
 // Service Worker
 
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v2';
 const CACHE_NAME = `caddy-ed-cache-${CACHE_VERSION}`;
 const OFFLINE_URL = '/offline/';
 
@@ -23,7 +23,7 @@ const OFFLINE_URL = '/offline/';
 //      never take the whole worker down again.
 const PRECACHE_ASSETS = [
   '/',
-  '/inventory/',
+  '/test-drive/',
   '/contact/'
 ];
 
@@ -65,6 +65,14 @@ self.addEventListener('fetch', event => {
   // Skip non-GET requests and browser extensions
   if (event.request.method !== 'GET' || 
       !event.request.url.startsWith('http')) {
+    return;
+  }
+
+  // The public inventory was removed. Never serve an old inventory page or a
+  // vehicle photograph from a cache that predates the removal.
+  const pathname = new URL(event.request.url).pathname;
+  if (pathname.startsWith('/inventory/') || pathname.startsWith('/vehicles/')) {
+    event.respondWith(fetch(event.request));
     return;
   }
 

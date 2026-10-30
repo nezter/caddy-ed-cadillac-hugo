@@ -205,9 +205,9 @@ jobs:
           set -euo pipefail
           BASE="https://${DEV_ALIAS}--vibrant-ritchie-0cef93.netlify.app"
           fail=0
-          # / and /inventory/ must be 200; /admin/ is gated, so a redirect is
-          # the correct answer there; /health must reach the function alias.
-          for pair in "/ 200" "/inventory/ 200" "/health 200" "/admin/ 302"; do
+          # / and /test-drive/ must be 200; /inventory/ must be gone (301);
+          # /admin/ is gated, so a redirect is correct; /health must reach the function alias.
+          for pair in "/ 200" "/test-drive/ 200" "/inventory/ 301" "/health 200" "/admin/ 302"; do
             url="$BASE${pair% *}"
             want="${pair#* }"
             code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 25 "$url" || echo 000)

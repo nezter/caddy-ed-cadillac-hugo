@@ -19,7 +19,7 @@ enableRobotsTXT = true
 disableKinds = ["RSS"]
 
 [params]
-  description = "Caddy Ed - Your Cadillac Sales Specialist in South Charlotte. New & Pre-Owned Cadillac inventory, test drives, and trade-in valuations."
+  description = "Caddy Ed - Your Cadillac Sales Specialist in South Charlotte. Cadillac sales, test drives, and trade-in valuations."
   # Social share card. 1200x630, the size both Facebook and Twitter
   # crop to. Read by partials/head-meta.html as .Site.Params.og_image.
   # This was `images = ["img/caddy-ed-logo.jpg"]` -- wrong key, and
@@ -60,9 +60,9 @@ disableKinds = ["RSS"]
     url = "/"
     weight = 1
   [[menu.main]]
-    identifier = "inventory"
-    name = "Inventory"
-    url = "/inventory/"
+    identifier = "test-drive"
+    name = "Test Drive"
+    url = "/test-drive/"
     weight = 2
   [[menu.main]]
     identifier = "specials"

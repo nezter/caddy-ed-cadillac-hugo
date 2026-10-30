@@ -9,13 +9,8 @@
         {{ partial "entry.html" (dict "entry" "connect.js" "page" .) }}
       {{ end }}
 
-  The stock list is baked here from the real inventory pages, so the panel is
-  correct on first paint with no fetch, no skeleton flash and no 404 when the
-  optional live feed is not deployed. Set `stockEndpoint` to a URL to switch the
-  panel into pull mode.
-
-  Front matter it reads from content/inventory/*.md:
-    title, status, price, subtitle, image, year
+  The public inventory has been removed. The remaining config is for the
+  contact and social panels; no vehicle list is emitted.
 */ -}}
 
 {{- $social := hugo.Data.social | default dict -}}
@@ -26,8 +21,6 @@
 {{- $ig := "" -}}
 {{- $igh := "" -}}
 {{- with $social.instagram }}{{ $ig = .url | default "" }}{{ $igh = .handle | default "" }}{{ end -}}
-
-{{- $vehicles := where (where site.RegularPages "Section" "inventory") "Params.available" "!=" false -}}
 
 <script>
   window.CADDY_CONNECT = {
@@ -44,30 +37,9 @@
     askEndpoint: "/.netlify/functions/contact-form",
     alertFormName: "stock-alerts",
     visibleCount: 6,
-    totalStock: {{ len $vehicles }},
+    totalStock: 0,
     buildDate: {{ now.Format "2 Jan 2006" | jsonify | safeJS }}
   };
 </script>
 
-{{- $items := slice -}}
-{{- range $vehicles -}}
-  {{- $img := "" -}}
-  {{- with .Params.image }}{{ with resources.Get . }}{{ $img = .RelPermalink }}{{ end }}{{ end -}}
-  {{- $price := int (.Params.price | default 0) -}}
-  {{- /* priceText is deliberately left empty: connect.js formats the numeric
-         `price` with toLocaleString, so no Hugo number-formatting function is
-         needed and there is no way for a locale/API change to break the build. */ -}}
-  {{- $items = $items | append (dict
-      "slug" .File.TranslationBaseName
-      "title" .Title
-      "href" .RelPermalink
-      "img" $img
-      "price" $price
-      "priceText" ""
-      "condition" (.Params.status | default "Pre-Owned")
-      "status" (.Params.status | default "used")
-      "year" (string (.Params.year | default ""))
-      "meta" (.Params.subtitle | default "")
-  ) -}}
-{{- end -}}
-<script>window.CADDY_STOCK_FALLBACK = {{ $items | jsonify | safeJS }};</script>
+

@@ -1,61 +1,26 @@
-// Was: const fetch = require('node-fetch')
-// Node 18+ has global fetch, and this deployment runs Node 24. The package was a
-// second HTTP client alongside the global one, for no benefit.
-const errorHandler = require('./utils/error-handler');
+'use strict';
 
-exports.handler = async function(event, context) {
-  // Get vehicle ID from query string
-  const vehicleId = event.queryStringParameters.id;
-  
-  if (!vehicleId) {
-    return errorHandler.validationError('Vehicle ID is required', { id: 'Missing required parameter' });
-  }
-  
-  // This was hardcoded to https://www.cadillacofsouthcharlotte.com/api/vehicle/
-  // -- a different dealership -- and spoofed a desktop Chrome User-Agent to get
-  // past its 403. It is now INVENTORY_SOURCE_URL: a feed you control, with no
-  // default. With nothing configured, respond honestly rather than failing
-  // against someone else's server.
-  const source = require('./utils/inventory-source');
-  if (!source.isConfigured()) {
-    return errorHandler.createSuccessResponse({
-      vehicleId,
-      configured: false,
-      ...source.notConfigured(),
-    });
-  }
-
-  try {
-    const apiUrl = `${source.baseUrl()}/vehicle/${encodeURIComponent(vehicleId)}`;
-    const response = await fetch(apiUrl, { headers: source.headers() });
-    
-    if (!response.ok) {
-      // Handle different API error status codes
-      if (response.status === 404) {
-        return errorHandler.notFoundError(`Vehicle with ID ${vehicleId} not found`);
-      }
-      
-      return errorHandler.apiError(
-        `Failed to fetch vehicle data (Status: ${response.status})`, 
-        { status: response.status, statusText: response.statusText }
-      );
-    }
-    
-    const data = await response.json();
-    
-    // Cache results for improved performance
-    return {
-      statusCode: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Cache-Control': 'public, max-age=300' // Cache for 5 minutes
-      },
-      body: JSON.stringify({
-        success: true,
-        data: data
-      })
-    };
-  } catch (error) {
-    return errorHandler.serverError('Error fetching vehicle details', error);
-  }
+/**
+ * vehicle-details -- RETIRED.
+ *
+ * This endpoint used to proxy a live vehicle feed by stock number. The public
+ * inventory has been removed from the site, so the endpoint is closed rather
+ * than left as an unlinked but callable source of vehicle data.
+ *
+ * It remains on disk (and in the function manifest) so the deployment keeps a
+ * stable, explicit 410 instead of resolving to an unrelated 404.
+ */
+exports.handler = async function () {
+  return {
+    statusCode: 410,
+    headers: {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-store',
+    },
+    body: JSON.stringify({
+      success: false,
+      error: 'Gone',
+      message: 'Vehicle inventory is no longer published.',
+    }),
+  };
 };

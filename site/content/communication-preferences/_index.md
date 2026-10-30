@@ -10,13 +10,13 @@ sitemap:
 
 ## You choose the channel
 
-Ed only contacts you about a car you asked about, a request you made, or stock
+Ed only contacts you about a car you asked about, a request you made, or a model
 you asked to hear about. Nothing is sold, shared, or added to a list. If you
 want to change how that reaches you — or stop it entirely — say so and it is
 done the same day.
 
 - **Email** — for longer answers, numbers, and anything you may want to keep.
-- **Text** — for short updates, usually the same hour. Good for "the car landed".
+- **Text** — for short updates, usually the same hour. Good for "I found the one".
 - **Call** — for anything that needs a conversation. Ed rings once and does not
   keep trying.
 
