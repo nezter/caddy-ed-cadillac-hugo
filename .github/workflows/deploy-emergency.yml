@@ -75,6 +75,9 @@ jobs:
           npm install --omit=optional --no-audit --no-fund
           (cd netlify/functions && npm install --omit=dev --omit=optional --no-audit --no-fund)
 
+      - name: Build the CMS bundle
+        run: npx webpack --config webpack.cms.js
+
       - name: Build the site
         env:
           HUGO_BASEURL: https://caddyed.com/
