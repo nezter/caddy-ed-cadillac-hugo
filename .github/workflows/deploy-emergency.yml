@@ -1,0 +1,129 @@
+name: Deploy (GitHub-hosted emergency)
+
+# =============================================================================
+# Emergency production deploy for caddyed.com.
+#
+# WHY THIS EXISTS
+# ---------------
+# The normal production lane (.github/workflows/deploy.yml) runs on the
+# self-hosted `caddy-ci` runner. On 2026-10-30 that runner was offline: the
+# dev-lane and production runs both sat queued indefinitely. The public
+# inventory had to come down immediately, so this workflow builds the same
+# prebuilt artifact on a GitHub-hosted runner and uploads it with the repo's
+# existing NETLIFY_AUTH_TOKEN / NETLIFY_SITE_ID secrets.
+#
+# It uses no Netlify build minutes: `netlify deploy --dir` uploads an
+# already-built directory. GitHub-hosted minutes are free for this public
+# repository.
+#
+# This is a fallback, not a replacement. The self-hosted lane remains the
+# normal path because it is pinned to the project's build image.
+# =============================================================================
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "deploy" to publish to production (caddyed.com)'
+        required: true
+        default: ''
+      reason:
+        description: 'Why is this being deployed?'
+        required: true
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: netlify-production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Build and publish from a GitHub-hosted runner
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Verify the operator really meant it
+        run: |
+          set -euo pipefail
+          if [ "${{ inputs.confirm }}" != "deploy" ]; then
+            echo "::error::confirmation must be exactly 'deploy'"
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install Hugo Extended 0.166.0
+        run: |
+          set -euo pipefail
+          curl -sSL \
+            https://github.com/gohugoio/hugo/releases/download/v0.166.0/hugo_extended_0.166.0_linux-amd64.tar.gz \
+            -o /tmp/hugo.tar.gz
+          tar -xzf /tmp/hugo.tar.gz -C /tmp
+          sudo mv /tmp/hugo /usr/local/bin/hugo
+          hugo version
+
+      - name: Install build dependencies
+        run: |
+          set -euo pipefail
+          npm install --omit=optional --no-audit --no-fund
+          (cd netlify/functions && npm install --omit=dev --omit=optional --no-audit --no-fund)
+
+      - name: Build the site
+        env:
+          HUGO_BASEURL: https://caddyed.com/
+        run: |
+          set -euo pipefail
+          hugo --source=site --destination=../site/public --minify --gc --cleanDestinationDir
+          test -f site/public/index.html
+          test -f site/public/test-drive/index.html
+          test -f site/public/contact/index.html
+          test ! -e site/public/inventory
+          test ! -e site/public/vehicles
+
+      - name: Verify build output
+        run: |
+          set -euo pipefail
+          node ci/verify-build.js
+
+      - name: Upload prebuilt site to production
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+          REASON: ${{ inputs.reason }}
+        run: |
+          set -euo pipefail
+          npx --yes netlify-cli@latest deploy \
+            --prod \
+            --site="$NETLIFY_SITE_ID" \
+            --dir=site/public \
+            --functions=netlify/functions \
+            --message="emergency production: ${GITHUB_SHA} -- ${REASON}"
+
+      - name: Post-deploy smoke test
+        run: |
+          set -euo pipefail
+          fail=0
+          for url in \
+            "https://caddyed.com/" \
+            "https://caddyed.com/test-drive/" \
+            "https://caddyed.com/contact/" \
+            "https://caddyed.com/articles/"; do
+            code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 25 "$url" || echo 000)
+            echo "$code (want 200)  $url"
+            [ "$code" = "200" ] || fail=1
+          done
+          code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 25 "https://caddyed.com/inventory/" || echo 000)
+          echo "$code (want 301)  https://caddyed.com/inventory/"
+          [ "$code" = "301" ] || fail=1
+          if [ "$fail" != "0" ]; then
+            echo "::error::production smoke test failed"
+            exit 1
+          fi
+          echo "production is up: https://caddyed.com/"
