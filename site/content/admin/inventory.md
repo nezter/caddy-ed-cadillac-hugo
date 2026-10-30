@@ -2,6 +2,8 @@
 title: "Inventory"
 description: "Every vehicle on the site — edit the records, hold cars off, and promote Ed’s picks."
 layout: "admin"
+sitemap:
+  disable: true
 inventoryData: true
 styles:
   - components/admin.css
