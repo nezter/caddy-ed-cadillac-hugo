@@ -56,12 +56,21 @@ const ROOT = path.resolve(__dirname, '..');
  * remove the line too, and the check will tell you if it comes back.
  */
 const REVIEWED = {
-  // --- tests. Not bundled, run by jest. ------------------------------------
-  'refactored/tests/EventHandlers.test.js': 'test, run by jest',
-  'refactored/tests/Calendar.test.js': 'test, run by jest',
-
   // --- a CMS component that has no editor UI yet. --------------------------
   'cms-preview-templates/sales-rep.js': 'CMS preview for a component that does not exist yet',
+};
+
+/**
+ * Directories whose files are deliberately unmounted as a group.
+ *
+ * refactored/ is the scheduling-calendar engine and its unit tests. The
+ * public test-drive page now uses one form (vehicle-detail.js), so no page
+ * mounts this engine; it is kept because its tests are maintained and a
+ * future availability picker would build on it. One reviewed decision for
+ * the directory is clearer than nine look-alike entries.
+ */
+const REVIEWED_PREFIXES = {
+  'refactored/': 'unit-tested calendar engine; no page mounts it after the test-drive form consolidation',
 };
 
 /**
@@ -112,7 +121,10 @@ const brokenRoots = graph.missingRoots || [];
 // ---------------------------------------------------------------------------
 // 2. Unreferenced files that nobody has signed off.
 // ---------------------------------------------------------------------------
-const unreviewed = graph.js.unreferenced.filter((u) => !REVIEWED[u.file]);
+const unreviewed = graph.js.unreferenced.filter((u) => {
+  if (REVIEWED[u.file]) return false;
+  return !Object.keys(REVIEWED_PREFIXES).some((prefix) => u.file.startsWith(prefix));
+});
 const staleEntries = Object.keys(REVIEWED).filter(
   (f) => !fs.existsSync(path.join(JS, f)) && !graph.js.unreferenced.some((u) => u.file === f)
 );

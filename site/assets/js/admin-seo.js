@@ -51,7 +51,7 @@
     root.innerHTML = [
       '<div class="seo-bar">',
       '  <label class="seo-bar__field"><span>Score one page</span>',
-      '    <input class="input" type="search" id="seo-path" placeholder="/articles/... or /inventory/..." autocomplete="off"></label>',
+      '    <input class="input" type="search" id="seo-path" placeholder="/articles/... or /test-drive/..." autocomplete="off"></label>',
       '  <button type="button" class="btn btn-primary" id="seo-one">Score it</button>',
       '  <button type="button" class="btn btn-secondary" id="seo-all" disabled>Score all pages</button>',
       '</div>',
@@ -70,7 +70,7 @@
 
     el.one.addEventListener('click', function () {
       var p = (el.path.value || '').trim();
-      if (!p) { say('Give a path like / or /inventory/.', 'warn'); return; }
+      if (!p) { say('Give a path like / or /test-drive/.', 'warn'); return; }
       if (p.indexOf('http') === 0) { try { p = new URL(p).pathname; } catch (e) { /* keep as typed */ } }
       scorePath(p, true);
     });

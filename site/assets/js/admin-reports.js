@@ -3,7 +3,7 @@
  *
  * WHAT THIS IS FOR
  * ----------------
- * The console's other pages each own a slice (leads, stock, bookings); this
+ * The console's other pages each own a slice (leads, test drives, bookings); this
  * one exists so "how are we doing?" has a single answer. Every figure is
  * computed live from the same endpoints the other pages use, so nothing
  * here can show something the rest of the console would deny.
@@ -138,23 +138,6 @@
       '<p class="op-hint-line">The status on each lead right now.</p></section>';
   }
 
-  /* ---------- stock (from the sync record) ---------- */
-  function renderStock(syncRes) {
-    var s = (syncRes.body || {}).current;
-    var body = '';
-    if (s) {
-      body = '<div class="op-hub-rows">' +
-        '<a class="op-hub-row" href="/admin/inventory/"><span class="op-hub-row__name">' + num(s.feedTotal) + ' vehicles in the last pull</span>' +
-        '<span class="op-hub-row__meta">' + num(s.addedCount) + ' new &middot; ' + num(s.updatedCount) + ' updated &middot; ' + num(s.retiredCount) + ' retired &middot; ' + esc(ago(s.finishedAt || s.updatedAt)) + '</span></a>' +
-        '</div>';
-    } else {
-      body = '<p class="op-hub-card__fail">No sync recorded yet.</p>';
-    }
-    return '<section class="op-hub-card"><h2 class="op-hub-card__title">Stock</h2>' + body +
-      '<p class="op-hint-line">Figures come from the latest inventory sync.</p>' +
-      '<a class="op-hub-card__more" href="/admin/sync/">Sync record</a></section>';
-  }
-
   /* ---------- bookings honesty ---------- */
   function renderBookings(bookingRes) {
     var body = bookingRes.body || {};
@@ -180,15 +163,13 @@
     Promise.all([
       get('sales-metrics?timeframe=all'),
       get('sales-leads?timeframe=all&status=all&sort=date-desc'),
-      get('inventory-sync-status'),
       get('booking-queue'),
     ]).then(function (results) {
       render([
         renderTiles(results[0]),
         renderYears(results[1]),
         renderSplit(results[1]),
-        renderStock(results[2]),
-        renderBookings(results[3]),
+        renderBookings(results[2]),
       ]);
     }).catch(function () {
       render([failCard('Reports', 'The console could not reach its data just now. Retry, or reload the page.')]);

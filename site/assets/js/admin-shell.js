@@ -148,7 +148,6 @@
       var gmap = {
         d: '/admin/',
         l: '/admin/leads/',
-        i: '/admin/inventory/',
         b: '/admin/bookings/',
         c: '/admin/customers/',
         a: '/admin/agents/'

@@ -4,9 +4,8 @@
  * WHAT THIS IS. /admin/ used to open on a grid of links. A console should
  * open on the shop: what came in, what is booked, what the sync last did.
  * This page pulls those five things from the endpoints that already own
- * them -- metrics, the calendar feed, the lead list, the booking queue and
- * the sync record -- and lays them out as tiles, a two-week chart and three
- * short lists. Everything below links through to the page that owns it.
+ * them -- metrics, the calendar feed, the lead list and the booking queue --
+ * and lays them out as tiles, a two-week chart and short lists. Everything below links through to the page that owns it.
  *
  * EACH CARD FAILS ALONE. A card whose fetch fails says so in one line; it
  * never takes the rest of the page down with it. A 401 anywhere raises one
@@ -195,22 +194,6 @@
       '<p class="op-hint-line">Values as stored on each lead.</p></section>';
   }
 
-  /* ---------- inventory (from the sync record) ---------- */
-  function renderInventory(syncRes) {
-    var s = (syncRes.body || {}).current;
-    var rows = '';
-    if (s) {
-      rows += '<a class="op-hub-row" href="/admin/inventory/"><span class="op-hub-row__name">' + num(s.feedTotal) + ' vehicles in the last pull</span>' +
-        '<span class="op-hub-row__meta">' + num(s.addedCount) + ' new &middot; ' + num(s.updatedCount) + ' updated &middot; ' + num(s.retiredCount) + ' retired &middot; ' + esc(ago(s.finishedAt || s.updatedAt)) + '</span></a>';
-    } else {
-      rows += '<a class="op-hub-row" href="/admin/sync/"><span class="op-hub-row__name">No sync recorded yet</span><span class="op-hub-row__meta">queue one from the sync page</span></a>';
-    }
-    rows += '<a class="op-hub-row" href="/admin/inventory/"><span class="op-hub-row__name">Vehicle editor</span><span class="op-hub-row__meta">prices, photos, notes</span></a>';
-    return '<section class="op-hub-card"><h2 class="op-hub-card__title">Inventory</h2><div class="op-hub-rows">' + rows +
-      '</div><p class="op-hint-line">Figures come from the latest inventory sync.</p>' +
-      '<a class="op-hub-card__more" href="/admin/sync/">Sync record</a></section>';
-  }
-
   /* ---------- system (booking queue + calendar) ---------- */
   function renderSystem(bookingRes) {
     var lines = [];
@@ -239,7 +222,6 @@
       get('/.netlify/functions/calendar-data?from=' + iso(from) + '&to=' + iso(today)),
       get('/.netlify/functions/sales-leads?timeframe=all&status=all&sort=date-desc'),
       get('/.netlify/functions/booking-queue'),
-      get('/.netlify/functions/inventory-sync-status'),
     ];
     Promise.all(tasks).then(function (results) {
       render([
@@ -249,7 +231,6 @@
         renderPipeline(results[2]),
         renderSource(results[2]),
         renderBookings(results[3]),
-        renderInventory(results[4]),
         renderSystem(results[3]),
       ]);
     }).catch(function () {

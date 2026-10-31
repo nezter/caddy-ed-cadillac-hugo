@@ -128,6 +128,19 @@
    Bookings list. Shares this file with the favourites control for the same
    reason: one admin-only stylesheet rather than two loaded together.
    --------------------------------------------------------------------------- */
+.bookings-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.bookings-filters .btn.is-active {
+  background: var(--ink-1);
+  border-color: var(--ink-1);
+  color: #fff;
+}
+
 .bookings-bar {
   display: flex;
   flex-wrap: wrap;
@@ -165,8 +178,16 @@
 
 /* A request already on the calendar, or already dealt with, recedes. */
 .booking-row.is-synced,
-.booking-row.is-handled { opacity: 0.62; }
-.booking-row.is-cancelled { opacity: 0.4; text-decoration: line-through; }
+.booking-row.is-handled { opacity: 0.72; }
+/* A cancelled request stays readable: the row recedes, but the Reopen
+   control must not disappear with it. */
+.booking-row.is-cancelled { border-style: dashed; }
+.booking-row.is-cancelled .booking-row__when,
+.booking-row.is-cancelled .booking-row__who,
+.booking-row.is-cancelled .booking-row__car {
+  opacity: 0.55;
+  text-decoration: line-through;
+}
 .booking-row.is-sync-failed { border-color: #c8102e; }
 
 .booking-row__when { font-weight: 600; font-variant-numeric: tabular-nums; }
@@ -175,6 +196,15 @@
 .booking-row__car em { font-style: normal; color: var(--text-muted); }
 .booking-row__note { margin: var(--space-2) 0 0; color: var(--text-muted); }
 .booking-row__state { text-align: right; }
+.booking-row__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+}
+
+.booking-row__actions .btn { white-space: nowrap; }
 .booking-row__state a { color: var(--accent); }
 
 .bookings-empty,
@@ -187,4 +217,5 @@
 @media (max-width: 48rem) {
   .booking-row { grid-template-columns: 1fr; gap: var(--space-2); }
   .booking-row__state { text-align: left; }
+  .booking-row__actions { justify-content: flex-start; }
 }

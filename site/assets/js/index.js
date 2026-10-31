@@ -78,14 +78,60 @@ document.addEventListener("DOMContentLoaded", () => {
   // Contact form handling
   const contactForm = document.querySelector('#contact-form');
   if (contactForm) {
+    const successEl = document.querySelector('#form-success');
+    const errorEl = document.querySelector('#form-error');
+    const submitButton = contactForm.querySelector('button[type="submit"]');
+
+    const clearMessages = () => {
+      if (successEl) successEl.classList.add('hidden');
+      if (errorEl) {
+        errorEl.textContent = '';
+        errorEl.classList.add('hidden');
+      }
+    };
+
+    const showError = (text, field) => {
+      if (successEl) successEl.classList.add('hidden');
+      if (errorEl) {
+        errorEl.textContent = text;
+        errorEl.classList.remove('hidden');
+      }
+      if (field && typeof field.focus === 'function') field.focus();
+    };
+
     contactForm.addEventListener('submit', async (event) => {
       event.preventDefault();
-      
+      clearMessages();
+
       const formData = new FormData(contactForm);
       const formObject = {};
       formData.forEach((value, key) => {
         formObject[key] = value;
       });
+
+      const name = String(formObject.name || '').trim();
+      const email = String(formObject.email || '').trim();
+      const message = String(formObject.message || '').trim();
+
+      if (!name) {
+        showError('Please add your name so Ed knows who to reply to.', contactForm.querySelector('#name'));
+        return;
+      }
+      if (!/^[^s@]+@[^s@]+.[^s@]+$/.test(email)) {
+        showError('Please add a valid email address.', contactForm.querySelector('#email'));
+        return;
+      }
+      if (message.length < 10) {
+        showError('Please add a little more detail so Ed can answer properly.', contactForm.querySelector('#message'));
+        return;
+      }
+
+      const idleLabel = submitButton ? submitButton.textContent : '';
+      if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.setAttribute('aria-busy', 'true');
+        submitButton.textContent = 'Sending…';
+      }
 
       try {
         const response = await fetch('/.netlify/functions/contact-form', {
@@ -96,35 +142,28 @@ document.addEventListener("DOMContentLoaded", () => {
           body: JSON.stringify(formObject)
         });
 
-        const result = await response.json();
+        const result = await response.json().catch(() => ({}));
 
-        if (result.success) {
-          // Show success message
-          document.querySelector('#form-success').classList.remove('hidden');
+        if (response.ok && result.success === true) {
+          if (successEl) successEl.classList.remove('hidden');
           contactForm.reset();
         } else {
-          // Show the error message.
-          //
-          // Three shapes reach here: our functions ({message}), a static
-          // preview that answers /.netlify/* with a truthful stub
-          // ({error: "..."}), and anything else that forgot a message. The
-          // last one used to be printed verbatim as "undefined"; now every
-          // shape has something a customer can act on.
           const text = result.message
             || (typeof result.error === 'string' ? result.error : null)
             || 'We could not send that just now. Please call 803-431-6180 and we will take it from there.';
-          document.querySelector('#form-error').textContent = text;
-          document.querySelector('#form-error').classList.remove('hidden');
+          showError(text);
         }
       } catch (error) {
-        // No JSON came back at all: the form service is unreachable from this
-        // page (a static preview, functions not deployed, or a dropped
-        // network). The old text -- "An unexpected error occurred. Please try
-        // again." -- read like a bug and gave nobody anything to do.
         console.error('Form submission error:', error);
-        document.querySelector('#form-error').textContent =
-          'We could not reach the form service from this page. Please try again in a moment, or call 803-431-6180 and we will take it down directly.';
-        document.querySelector('#form-error').classList.remove('hidden');
+        showError(
+          'We could not reach the form service from this page. Please try again in a moment, or call 803-431-6180 and we will take it down directly.'
+        );
+      } finally {
+        if (submitButton) {
+          submitButton.disabled = false;
+          submitButton.removeAttribute('aria-busy');
+          submitButton.textContent = idleLabel || 'Send message';
+        }
       }
     });
   }

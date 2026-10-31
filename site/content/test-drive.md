@@ -3,9 +3,6 @@ title: "Book a Test Drive"
 subtitle: "Half an hour in the car, on your own route"
 description: "Request a test drive in the Cadillac you have in mind. Pick a day, and Ed will confirm the time."
 date: 2026-09-26
-scripts:
-  - appointment-scheduler.js
-  - schedulingCalendar.js
 ---
 
 Tell me which Cadillac you have in mind, when suits you, and I'll come back with
@@ -17,75 +14,18 @@ page, or use the [contact page](/contact/). If you are after a number rather
 than a drive, tell me the model and your budget and I will tell you what I can
 actually get you, including models I can source for you.
 
+## Request a time
 
-## Pick a Time
-
-The scheduler below checks real availability and books straight into the
-calendar. Choose a day, pick a slot, and it confirms before you leave.
-
-<div class="scheduling-calendar" data-calendar="test-drive">
-  <div class="calendar-container"></div>
-  <div class="time-slots"></div>
-</div>
-
-<div id="appointment-scheduler">
-  <form id="appointment-form" class="form" method="post" action="/.netlify/functions/schedule-test-drive" data-phone="803-431-6180">
-    <div class="form-grid form-grid-2">
-      <div class="form-field">
-        <label for="appointment-type">Appointment type</label>
-        <select id="appointment-type" name="type" required>
-          <option value="test-drive">Test drive</option>
-          <option value="consultation">Consultation</option>
-          <option value="trade-appraisal">Trade appraisal</option>
-        </select>
-      </div>
-      <div class="form-field">
-        <label for="sales-rep-selector">Sales representative</label>
-        <select id="sales-rep-selector" name="rep" required>
-          <option value="caddy-ed">Caddy Ed</option>
-        </select>
-      </div>
-      <div class="form-field">
-        <label for="appointment-date">Preferred date</label>
-        <input type="date" id="appointment-date" name="date" required>
-      </div>
-      <div class="form-field">
-        <label for="appointment-time">Preferred time</label>
-        <select id="appointment-time" name="time" required>
-          <option value="">Select a time</option>
-        </select>
-      </div>
-    </div>
-    <div id="time-availability" class="time-availability" aria-live="polite"></div>
-    <div class="form-field">
-      <label for="appointment-name">Name <span aria-hidden="true">*</span></label>
-      <input type="text" id="appointment-name" name="name" required autocomplete="name">
-    </div>
-    <div class="form-field">
-      <label for="appointment-email">Email <span aria-hidden="true">*</span></label>
-      <input type="email" id="appointment-email" name="email" required autocomplete="email">
-    </div>
-    <div class="form-field">
-      <label for="appointment-phone">Phone <span aria-hidden="true">*</span></label>
-      <input type="tel" id="appointment-phone" name="phone" required autocomplete="tel">
-    </div>
-  <div class="form-field form-field--honeypot" aria-hidden="true">
-    <label for="appt-website">Leave this field blank</label>
-    <input type="text" id="appt-website" name="website" tabindex="-1" autocomplete="off">
-  </div>
-  <input type="hidden" name="_t" value="">
-    <button type="submit" class="btn btn-primary">Request this appointment</button>
-    <p class="form-message" id="appointment-status" role="status" hidden></p>
-  </form>
-</div>
+Use the form below. Pick a day and a rough time; I will confirm the exact slot
+by phone or email, usually the same day. It is a request, not a locked booking.
 
 ## How it works
 
-- **You send a day and a rough time.** It is a request, not a locked slot.
-- **I confirm the exact time** by phone or email, and confirm the car.
+- **You send a day and a rough time.** I confirm the exact time with you.
 - **We drive.** Around the block, or out on the highway if you want to know
-  what the seats are like at speed. If you have a trade, bring it and I will
-  give you a real number against this one on the same drive.
+  what the seats are like at speed.
+- **Bring your trade if you have one.** I will give you a real number against
+  this one on the same visit.
 
 Tell me the model and trim you want to drive. If something specific is not
 available, say so in the comments and I will find the nearest equivalent.

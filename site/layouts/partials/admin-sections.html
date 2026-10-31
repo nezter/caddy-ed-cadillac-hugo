@@ -8,7 +8,7 @@
   that every route named here resolves.
 
   Grouping follows the Operator console (Direction A of the redesign):
-  Today / Customers / Cars / Marketing / Admin.
+  Today / Leads / Content / Admin.
 
   Fields:
     url       where the page lives (trailing slash except /admin/cms,
@@ -26,13 +26,15 @@
     "items" (slice
       (dict "url" "/admin/dashboard/" "nav" "Worklist" "title" "Sales Dashboard" "tag" "live" "tagLabel" "Live"
             "body" "The signed-in rep's leads, appointments and performance metrics.")
+      (dict "url" "/admin/bookings/" "nav" "Test drives" "title" "Test Drives & Bookings" "tag" "live" "tagLabel" "Live"
+            "body" "Every test-drive request, with status handling and Google Calendar sync.")
       (dict "url" "/admin/calendar/" "nav" "Calendar" "title" "Calendar" "tag" "live" "tagLabel" "Live"
             "body" "One month at a glance: every enquiry and booking request on the day it belongs to.")
       (dict "url" "/admin/reports/" "nav" "Reports" "title" "Reports" "tag" "live" "tagLabel" "Live"
-            "body" "The pipeline, enquiries by year and source, and the stock figure -- each live from the same endpoints the other pages use.")
+            "body" "The pipeline, enquiries by year and source, conversion and response performance -- each live from the same endpoints the other pages use.")
     ))
   (dict
-    "label" "Customers"
+    "label" "Leads"
     "note" "The pipeline, from first enquiry to appointment."
     "items" (slice
       (dict "url" "/admin/leads/" "nav" "Leads" "title" "Lead Management" "tag" "live" "tagLabel" "Live"
@@ -48,30 +50,14 @@
       (dict "url" "/admin/interactions/" "nav" "Interactions" "title" "Interaction History" "tag" "live" "tagLabel" "Live"
             "body" "Every customer touchpoint in one timeline, and a form to add more.")
       (dict "url" "/admin/search/" "nav" "Search" "title" "Search" "tag" "live" "tagLabel" "Live"
-            "body" "Cross-entity search across customers, leads, interactions, appointments and vehicle stock.")
+            "body" "Cross-entity search across customers, leads, interactions, appointments and bookings.")
       (dict "url" "/admin/customers/" "nav" "Customers" "title" "Customers" "tag" "live" "tagLabel" "Live"
             "body" "The book of customers assigned to the signed-in rep.")
       (dict "url" "/admin/gdpr/" "nav" "Customer data" "title" "Customer Data" "tag" "live" "tagLabel" "Live"
             "body" "Answer a request for someone's data, or remove it.")
-      (dict "url" "/admin/bookings/" "nav" "Bookings" "title" "Bookings & Calendar" "tag" "live" "tagLabel" "Live"
-            "body" "Every test-drive request, and push them onto the Google Calendar.")
     ))
   (dict
-    "label" "Cars"
-    "note" "The lot, and what gets promoted."
-    "items" (slice
-      (dict "url" "/admin/inventory/" "nav" "Inventory" "title" "Inventory"
-            "tag" "sync" "tagLabel" "Next sync + deploy"
-            "body" "Every vehicle on the site. Edit pricing, specs and descriptions; hold a car off the lot; promote it as one of Ed's picks.")
-      (dict "url" "/admin/sync/" "nav" "Sync" "title" "Inventory Sync"
-            "tag" "live" "tagLabel" "Live"
-            "body" "Where the last sync landed, and while one is running, how far along it is: found, existing, updated, new, retired.")
-      (dict "url" "/admin/favourites/" "nav" "Favourites" "title" "Favourites: Ed's picks"
-            "tag" "live" "tagLabel" "Live"
-            "body" "Feature promotion: pin vehicles to the top of the home page fleet, badged as Ed's picks, with no rebuild.")
-    ))
-  (dict
-    "label" "Marketing"
+    "label" "Content"
     "note" "What the public site shows."
     "items" (slice
       (dict "url" "/admin/articles/" "nav" "Articles" "title" "Articles"

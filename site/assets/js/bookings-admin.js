@@ -49,6 +49,10 @@
   const refreshEl = document.querySelector('[data-refresh], [data-cal-refresh]');
   if (!listEl) return;
 
+  let allEntries = [];
+  let queueAvailable = true;
+  let activeFilter = 'all';
+
   function esc(v) {
     return String(v === null || v === undefined ? '' : v)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -70,16 +74,43 @@
     });
   }
 
-  function render(entries, available) {
-    if (!available) {
+  function filteredEntries() {
+    if (activeFilter === 'all') return allEntries;
+    if (activeFilter === 'new') return allEntries.filter((e) => (e.status || 'new') === 'new');
+    if (activeFilter === 'handled') return allEntries.filter((e) => !['new', 'cancelled'].includes(e.status || 'new'));
+    return allEntries.filter((e) => (e.status || 'new') === activeFilter);
+  }
+
+  function updateFilterButtons() {
+    document.querySelectorAll('[data-bookings-filter]').forEach((btn) => {
+      const on = btn.getAttribute('data-bookings-filter') === activeFilter;
+      btn.classList.toggle('is-active', on);
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  }
+
+  function actionButtons(entry, state) {
+    const id = esc(entry.id || '');
+    if (!id) return '';
+    if (state === 'new') {
+      return '<button type="button" class="btn btn-ghost btn-sm" data-booking-action="handled" data-booking-id="' + id + '">Mark handled</button>' +
+        '<button type="button" class="btn btn-ghost btn-sm" data-booking-action="cancelled" data-booking-id="' + id + '">Cancel</button>';
+    }
+    return '<button type="button" class="btn btn-ghost btn-sm" data-booking-action="new" data-booking-id="' + id + '">Reopen</button>';
+  }
+
+  function render() {
+    updateFilterButtons();
+    if (!queueAvailable) {
       listEl.innerHTML =
-        '<p class="bookings-empty">No booking store on this site yet. Create a Blobs ' +
-        'store named <code>booking-requests</code> and requests will be listed here ' +
-        'as well as emailed. Until then they are only in the email.</p>';
+        '<p class="bookings-empty">The booking store is not configured on this site yet. ' +
+        'Until the database is connected, requests are emailed but not listed here.</p>';
       return;
     }
+    const entries = filteredEntries();
     if (!entries.length) {
-      listEl.innerHTML = '<p class="bookings-empty">No requests yet.</p>';
+      listEl.innerHTML = '<p class="bookings-empty">' +
+        (allEntries.length ? 'No requests match this filter.' : 'No requests yet.') + '</p>';
       return;
     }
     listEl.innerHTML = entries.map((e) => {
@@ -105,9 +136,35 @@
             : e.googleEventLink
             ? '<a href="' + esc(e.googleEventLink) + '" target="_blank" rel="noopener">on calendar</a>'
             : '<span>' + esc(state) + '</span>') +
+          '<div class="booking-row__actions">' + actionButtons(e, state) + '</div>' +
         '</div>' +
         '</article>';
     }).join('');
+  }
+
+  async function setStatus(id, status) {
+    if (!id || !status) return;
+    try {
+      const res = await fetch(QUEUE, {
+        method: 'PATCH',
+        headers: Object.assign({ 'Content-Type': 'application/json' }, authHeaders()),
+        body: JSON.stringify({ id: id, status: status }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (res.status === 401 || res.status === 403) {
+        say(statusEl, 'Sign in before changing a request', 'warn');
+        return;
+      }
+      if (!res.ok) {
+        say(statusEl, body.error || body.message || 'Could not update that request', 'warn');
+        return;
+      }
+      say(statusEl, 'Request marked ' + status, 'ok');
+      await load();
+    } catch (err) {
+      console.error('booking status update failed:', err);
+      say(statusEl, 'Could not update that request. Try again shortly.', 'warn');
+    }
   }
 
   async function load() {
@@ -118,18 +175,24 @@
         // share one failure path that rendered an empty list, so a 401 looked
         // exactly like a dealership with no bookings -- which is the message you
         // would most want someone to believe.
-        render([], false);
+        allEntries = [];
+        queueAvailable = false;
+        render();
         say(statusEl, 'Sign in to see booking requests', 'warn');
         listEl.innerHTML = '<p class="bookings-empty">Sign in to see booking requests.</p>';
         return;
       }
       const body = await res.json();
       if (body.error) {
-        render([], false);
+        allEntries = [];
+        queueAvailable = false;
+        render();
         return;
       }
-      render(body.entries || [], body.available !== false);
-      say(statusEl, `${(body.entries || []).length} request(s) recorded`, 'ok');
+      allEntries = body.entries || [];
+      queueAvailable = body.available !== false;
+      render();
+      say(statusEl, `${allEntries.length} request(s) recorded`, 'ok');
     } catch (err) {
       listEl.innerHTML = '<p class="bookings-empty">Could not reach the booking store: ' +
         esc(err.message) + '</p>';
@@ -257,6 +320,21 @@
   if (syncEl) syncEl.addEventListener('click', pushAll);
   if (pullEl) pullEl.addEventListener('click', pullAll);
   if (refreshEl) refreshEl.addEventListener('click', load);
+
+  document.querySelectorAll('[data-bookings-filter]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      activeFilter = btn.getAttribute('data-bookings-filter') || 'all';
+      render();
+    });
+  });
+
+  if (listEl) {
+    listEl.addEventListener('click', (event) => {
+      const btn = event.target && event.target.closest ? event.target.closest('[data-booking-action]') : null;
+      if (!btn) return;
+      setStatus(btn.getAttribute('data-booking-id'), btn.getAttribute('data-booking-action'));
+    });
+  }
 
   load();
   loadCalendar();

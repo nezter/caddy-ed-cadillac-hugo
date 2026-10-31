@@ -25,15 +25,6 @@
 
       <div class="admin-content">
         {{ .Content }}
-        {{/* The favourites control needs the vehicle list at build time. It cannot
-             be fetched, and it cannot be written as {{ partial }} in the .md body
-             because Go templates are not evaluated there -- so a page opts in with
-             `favouritesData: true` and the layout emits the list. Only that one
-             page pays for it. */}}
-        {{ if .Params.favouritesData }}{{ partial "favourites-data.html" . }}{{ end }}
-        {{/* Same opt-in for the vehicle record editor: the full vehicle list, with
-             bodies, compiled into one page. See inventory-admin-data.html. */}}
-        {{ if .Params.inventoryData }}{{ partial "inventory-admin-data.html" . }}{{ end }}
         {{/* The content editor pages (articles / specials / testimonials): one
              generic emitter, typed by front matter. */}}
         {{ if .Params.contentAdminData }}{{ partial "content-admin-data.html" (dict "type" .Params.contentType) }}{{ end }}

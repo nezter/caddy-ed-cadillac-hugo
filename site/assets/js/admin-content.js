@@ -252,8 +252,8 @@
     if (targets.length) {
       html.push('<div class="cadmin-links">');
       html.push('<h3>Insert an internal link</h3>');
-      html.push('<p class="settings-note">Link back into the site — inventory, financing, contact. Search, then insert at the cursor.</p>');
-      html.push('<input class="input" type="search" id="cadmin-link-q" placeholder="Search pages, articles, vehicles">');
+      html.push('<p class="settings-note">Link back into the site - test drives, financing, contact. Search, then insert at the cursor.</p>');
+      html.push('<input class="input" type="search" id="cadmin-link-q" placeholder="Search pages and articles">');
       html.push('<div class="cadmin-links__list" id="cadmin-link-list"></div>');
       html.push('</div>');
     }

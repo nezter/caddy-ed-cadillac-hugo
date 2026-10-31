@@ -46,8 +46,8 @@ const missingFromSections = pages.filter((p) => !urls.includes('/admin/' + p + '
 check('every admin page is named in admin-sections', missingFromSections.length === 0, missingFromSections.join(', '));
 const dupes = urls.filter((u, i) => urls.indexOf(u) !== i);
 check('no route is named twice', dupes.length === 0, dupes.join(', '));
-const inventoryUrl = urls.includes('/admin/inventory/');
-check('the inventory editor is on the portal', inventoryUrl);
+const testDriveUrl = urls.includes('/admin/bookings/');
+check('the test-drive bookings page is on the portal', testDriveUrl);
 
 // 2. every route resolves
 const unresolved = [];
@@ -96,14 +96,14 @@ if (!fs.existsSync(hubPath)) {
   check('the hub keeps the sidebar nav', /class="[^"]*admin-nav/.test(hub) || hub.includes('op-side'));
 
   // 5. a normal page's nav: complete + current marked
-  const favPath = path.join(PUBLIC_ADMIN, 'favourites', 'index.html');
-  if (fs.existsSync(favPath)) {
-    const fav = fs.readFileSync(favPath, 'utf8');
-    const navUnlinked = pages.filter((p) => !new RegExp('href="?/admin/' + p + '/"?').test(fav));
+  const bookingsPath = path.join(PUBLIC_ADMIN, 'bookings', 'index.html');
+  if (fs.existsSync(bookingsPath)) {
+    const bookings = fs.readFileSync(bookingsPath, 'utf8');
+    const navUnlinked = pages.filter((p) => !new RegExp('href="?/admin/' + p + '/"?').test(bookings));
     check('a normal admin page nav links every admin page', navUnlinked.length === 0, navUnlinked.join(', '));
-    check('the current page carries is-current + aria-current', fav.includes('is-current') && fav.includes('aria-current=page'));
+    check('the current page carries is-current + aria-current', bookings.includes('is-current') && bookings.includes('aria-current=page'));
   } else {
-    check('built favourites page exists (run a build first)', false);
+    check('built bookings page exists (run a build first)', false);
   }
 }
 
