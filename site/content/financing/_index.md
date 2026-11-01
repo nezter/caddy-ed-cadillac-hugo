@@ -6,34 +6,7 @@ scripts:
   - financingCalculator.js
 ---
 
-## Financing Options
-
-Financing a Cadillac should be straightforward and transparent. There are three
-main routes, and which one is best depends on whether you are buying, leasing, or
-trading.
-
-### 1. GM Financial
-Manufacturer-affiliated financing, often with promotional rates on select models.
-Best when you are buying new and the vehicle qualifies for a GM incentive.
-
-### 2. Bank or Credit Union Financing
-An outside lender can sometimes beat dealer financing, particularly with a large
-down payment or a shorter loan term. Caddy Ed is happy to work with any lender
-you choose.
-
-### 3. Leasing
-Leasing lowerises the monthly payment but does not build equity. It can make
-sense if you trade every few years and want predictable costs.
-
-## What Affects Your Rate
-
-- Credit history and score
-- Down payment and trade-in value
-- Loan term (shorter terms carry lower rates)
-- Vehicle age and mileage, for pre-owned
-
-
-## Payment Calculator
+## Payment calculator
 
 Every field below is optional except the three that matter: price, rate and
 term. The rest refine it. Sales tax is applied to the full price before the
@@ -114,7 +87,7 @@ down payment and trade-in are subtracted, which is how most lenders quote it.
 {"note":"Estimates only. Your rate depends on credit history, down payment, loan term and vehicle age. Final figures come from the lender."}
 </script>
 
-## Get a Personalized Number
+## Get a personalized number
 
 Rates move daily and depend on your credit profile, so any figure online is only
 an estimate. Ask for a real quote.

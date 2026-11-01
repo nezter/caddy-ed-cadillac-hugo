@@ -1,4 +1,4 @@
-/* ==========================================================================
+﻿/* ==========================================================================
    Caddy Ed - "Stay Connected" hub
    Additive stylesheet. Built entirely on the tokens defined in main.css
    (--brand-ink, --brand-red, --brand-bronze, --space-*, --radius*, --shadow*).
@@ -614,3 +614,39 @@
   background: var(--bg-subtle);
   border-bottom: 1px solid var(--border);
 }
+
+/* Social panel: a photograph and a route to the full feed. */
+.panel__link {
+  margin-left: auto;
+  color: var(--accent);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.panel__link:hover {
+  text-decoration: underline;
+}
+
+.panel__media {
+  margin: 0 0 var(--space-4);
+  overflow: hidden;
+  background: #11151b;
+}
+
+.panel__media picture,
+.panel__media img {
+  display: block;
+  width: 100%;
+}
+
+.panel__media img {
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}
+
+@media (max-width: 64rem) {
+  .panel__link { margin-left: 0; }
+}
+

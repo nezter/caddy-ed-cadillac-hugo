@@ -1,0 +1,100 @@
+{{ define "headStyles" }}{{ partial "stylesheet.html" "components/page-visuals.css" }}{{ end }}
+
+{{ define "main" }}
+{{- $phone := .Site.Params.phone | default "803-431-6180" -}}
+
+<section class="page-hero">
+  <div class="page-hero__media">
+    {{ partial "static-picture.html" (dict
+        "src" "img/financing-hero.jpg"
+        "alt" "A key fob, finance agreement and coffee on a showroom desk"
+        "sizes" "100vw"
+        "widths" (slice 640 1024 1600 1920)
+        "loading" "eager") }}
+  </div>
+  <div class="container page-hero__inner">
+    <p class="eyebrow">Financing</p>
+    <h1>Make the numbers make sense.</h1>
+    <p class="lede">Three ways to pay for a Cadillac, one person to explain
+      them, and no pressure to pick any of them today.</p>
+    <div class="page-hero__actions">
+      <a class="btn btn-primary btn-lg" href="/contact/">Start a conversation</a>
+      <a class="btn btn-inverse btn-lg" href="tel:{{ partial "phone-href.html" $phone }}">Call {{ $phone }}</a>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="section-head">
+      <p class="eyebrow">Three routes</p>
+      <h2>Pick the one that fits the way you own cars.</h2>
+      <p class="lede">There is no single best answer. It depends on how long you
+        keep a car, how much cash you want to put down, and whether the vehicle
+        qualifies for a manufacturer program.</p>
+    </div>
+
+    <div class="page-cards">
+      <article class="page-card page-card--dark">
+        <span class="page-card__idx">01 · Manufacturer</span>
+        <h3>GM Financial</h3>
+        <p>Often the sharpest route on a new or certified Cadillac when the
+          model carries a promotional rate. We check the current programs
+          before you commit.</p>
+      </article>
+      <article class="page-card">
+        <span class="page-card__idx">02 · Local lender</span>
+        <h3>Bank or credit union</h3>
+        <p>A strong down payment or a shorter term can beat dealer financing.
+          Ed works with any lender you choose and does not mark up the rate.</p>
+      </article>
+      <article class="page-card">
+        <span class="page-card__idx">03 · Lower payment</span>
+        <h3>Lease</h3>
+        <p>Lower monthly cost and a fixed term, without building equity. It
+          makes sense if you like a new car every few years and want the
+          number to stay predictable.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="page-band">
+  <div class="container">
+    <div class="page-split">
+      <div class="page-split__copy">
+        <p class="eyebrow">What shapes the number</p>
+        <h2 style="max-width:18ch;margin:var(--space-3) 0 var(--space-5)">Five things move a payment more than the sticker.</h2>
+        <ul class="clean-list">
+          <li><strong>Credit history.</strong> The score and the depth of the file decide the tier.</li>
+          <li><strong>Down payment and trade.</strong> Either one lowers what you finance.</li>
+          <li><strong>Term length.</strong> A longer term lowers the payment and raises the interest.</li>
+          <li><strong>Vehicle age and mileage.</strong> Pre-owned rates often differ from new.</li>
+          <li><strong>Taxes and fees.</strong> They are part of the amount financed, not a surprise at signing.</li>
+        </ul>
+      </div>
+      <aside class="finance-note-card">
+        <p class="eyebrow" style="color:#e8c27a">The only number that matters</p>
+        <p class="finance-note-card__big">One payment.<br>No surprises.</p>
+        <p>Send Ed the price, the term and what you want to put down. He comes
+          back with a real quote from a real lender, not an online estimate.</p>
+        <a class="btn btn--red" href="/contact/">Ask for a real quote</a>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="financing-calculator-shell">
+      {{ .Content }}
+    </div>
+  </div>
+</section>
+
+{{ partial "closing-cta.html" (dict
+    "phone" $phone
+    "phoneHref" (replace $phone "." "")
+    "label" "Ready when you are"
+    "heading" "Bring the question. Leave with a number.") }}
+{{ end }}

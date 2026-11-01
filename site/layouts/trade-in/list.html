@@ -1,3 +1,4 @@
+{{ define "headStyles" }}{{ partial "stylesheet.html" "components/page-visuals.css" }}{{ end }}
 {{ define "main" }}
 {{- $phone := .Site.Params.phone | default "803-431-6180" -}}
 {{- $phoneHref := replace $phone "." "" -}}
@@ -12,17 +13,54 @@
      in one message field rather than five separate inputs, because the endpoint
      reads name, email, phone and message only; asking for fields it discards
      would be theatre. */}}
-<section class="stage stage--deep grain pad--tight">
-  <div class="wrap">
-    <p class="eyebrow">Trade-in<span class="ltbar" aria-hidden="true"><i></i><i></i><i></i></span></p>
-    <div style="display:flex;align-items:end;justify-content:space-between;gap:2rem;flex-wrap:wrap">
-      <h1 class="display display--sm" style="color:#fff;max-width:22ch">{{ .Title | default "Trade-In" }}</h1>
-      <p class="lede" style="max-width:40ch;margin:0">Two numbers matter when you trade. What the car you are buying costs, and what the one you are driving is worth. This is the second one.</p>
+<section class="page-hero page-hero--compact">
+  <div class="page-hero__media">
+    {{ partial "static-picture.html" (dict
+        "src" "img/trade-in-hero.jpg"
+        "alt" "A black Cadillac SUV and a silver trade-in sedan parked nose to nose"
+        "sizes" "100vw"
+        "widths" (slice 640 1024 1600 1920)
+        "loading" "eager") }}
+  </div>
+  <div class="container page-hero__inner">
+    <p class="eyebrow">Trade-in</p>
+    <h1>What you drive now is part of the next one.</h1>
+    <p class="lede">Two numbers matter when you trade: what the car you are
+      buying costs, and what the one in your driveway is worth. This page is
+      about the second one.</p>
+    <div class="page-hero__actions">
+      <a class="btn btn-primary btn-lg" href="#trade-in-form">Get an appraisal</a>
+      <a class="btn btn-inverse btn-lg" href="tel:{{ partial "phone-href.html" $phone }}">Call {{ $phone }}</a>
     </div>
   </div>
 </section>
 
-<section style="background:#fff;padding-block:clamp(2.2rem,4.5vw,3.5rem)">
+<section class="page-band">
+  <div class="container">
+    <div class="page-cards">
+      <article class="page-card page-card--dark">
+        <span class="page-card__idx">01 · Market value</span>
+        <h3>What it is worth</h3>
+        <p>Year, trim, mileage, condition and what comparable cars are actually
+          selling for this week, not last quarter.</p>
+      </article>
+      <article class="page-card">
+        <span class="page-card__idx">02 · Payoff</span>
+        <h3>What is still owed</h3>
+        <p>If there is a lien, the payoff is the starting point. Ed handles the
+          paperwork with your lender so there is one less call for you.</p>
+      </article>
+      <article class="page-card">
+        <span class="page-card__idx">03 · Equity</span>
+        <h3>What moves to the new car</h3>
+        <p>Positive equity becomes a down payment. Negative equity is rolled
+          into the new loan. Either way, you see both numbers before you sign.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section id="trade-in-form" style="background:#fff;padding-block:clamp(2.2rem,4.5vw,3.5rem)">
   <div class="wrap" style="display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(1.5rem,4vw,3rem);align-items:start">
     <div class="prose">{{ .Content }}</div>
 

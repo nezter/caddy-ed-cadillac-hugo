@@ -33,8 +33,19 @@
 {{- $default := "facebook" -}}
 
 <div class="panel" aria-label="What Ed is posting">
+  {{ if ne .Section "social" }}
+  <figure class="panel__media">
+    {{ partial "static-picture.html" (dict
+        "src" "img/social-hero.jpg"
+        "alt" "A Cadillac SUV parked outside a coffee shop in Charlotte"
+        "sizes" "(max-width: 64rem) 92vw, 38vw"
+        "widths" (slice 480 720 1000 1200)
+        "loading" "lazy") }}
+  </figure>
+  {{ end }}
   <div class="panel__head">
     <h2 class="panel__title">What Ed is posting</h2>
+    {{ if ne .Section "social" }}<a class="panel__link" href="/social/">See the feed &rarr;</a>{{ end }}
     {{/* The tablist serves the multi-network case; social-feed.js hides it
          when only one network remains connected. */}}
     <div class="tabs" role="tablist" aria-label="Choose a feed">

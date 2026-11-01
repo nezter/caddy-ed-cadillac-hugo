@@ -26,15 +26,12 @@
   (dict "title" "Service & maintenance" "url" "/service/")
   (dict "title" "About Caddy Ed" "url" "/about/")
   (dict "title" "Contact Ed" "url" "/contact/")
+  (dict "title" "Follow Ed" "url" "/social/")
   (dict "title" "All articles" "url" "/articles/") -}}
 {{- range (sort (where site.RegularPages "Section" "articles") "Date" "desc") -}}
   {{- $targets = $targets | append (dict "title" .Title "url" .RelPermalink) -}}
 {{- end -}}
 {{- range (sort (where site.RegularPages "Section" "specials") "Date" "desc") -}}
-  {{- $targets = $targets | append (dict "title" .Title "url" .RelPermalink) -}}
-{{- end -}}
-{{- $fresh := first 40 (sort (where (where site.RegularPages "Section" "inventory") "Params.available" "!=" false) "Params.year" "desc") -}}
-{{- range $fresh -}}
   {{- $targets = $targets | append (dict "title" .Title "url" .RelPermalink) -}}
 {{- end -}}
 <script>window.CONTENT_ADMIN_DATA = {{ dict "type" $type "built" $built "targets" $targets | jsonify | safeJS }};</script>

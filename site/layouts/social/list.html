@@ -1,0 +1,79 @@
+{{ define "headStyles" }}{{ partial "stylesheet.html" "connect.css" }}{{ partial "stylesheet.html" "components/home.css" }}{{ partial "stylesheet.html" "components/page-visuals.css" }}{{ end }}
+{{ define "scripts" }}{{ partial "connect-config.html" . }}{{ partial "entry.html" (dict "entry" "social-feed.js" "page" .) }}{{ end }}
+
+{{ define "main" }}
+{{- $phone := .Site.Params.phone | default "803-431-6180" -}}
+{{- $social := hugo.Data.social | default dict -}}
+{{- $fb := "" }}{{ with $social }}{{ with .facebook }}{{ $fb = .url | default "" }}{{ end }}{{ end -}}
+
+<section class="page-hero page-hero--compact">
+  <div class="page-hero__media">
+    {{ partial "static-picture.html" (dict
+        "src" "img/social-hero.jpg"
+        "alt" "A black Cadillac SUV parked outside a coffee shop in Charlotte"
+        "sizes" "100vw"
+        "widths" (slice 640 1024 1600 1920)
+        "loading" "eager") }}
+  </div>
+  <div class="container page-hero__inner">
+    <p class="eyebrow">Follow Ed</p>
+    <h1>The job between the appointments.</h1>
+    <p class="lede">New arrivals, real numbers, and the parts of the day that
+      never make it onto a listing page. Mostly cars, occasionally coffee.</p>
+    <div class="page-hero__actions">
+      {{ with $fb }}
+      <a class="btn btn-primary btn-lg" href="{{ . }}" target="_blank" rel="noopener">Follow on Facebook</a>
+      {{ end }}
+      <a class="btn btn-inverse btn-lg" href="/contact/">Ask Ed directly</a>
+    </div>
+  </div>
+</section>
+
+<section class="section social-page__feed">
+  <div class="container">
+    <div class="page-split">
+      <div>
+        {{ partial "social-feed.html" . }}
+      </div>
+      <div class="page-cards page-cards--stack">
+        <article class="page-card page-card--dark">
+          <span class="page-card__idx">01 · New arrivals</span>
+          <h3>What just landed</h3>
+          <p>The cars worth knowing about before they settle into the site,
+            with the details that actually matter.</p>
+        </article>
+        <article class="page-card">
+          <span class="page-card__idx">02 · Real numbers</span>
+          <h3>Payments, not teasers</h3>
+          <p>What a car really costs, what a trade is really worth, and when a
+            lease makes more sense than a loan.</p>
+        </article>
+        <article class="page-card">
+          <span class="page-card__idx">03 · The in-between</span>
+          <h3>The part people miss</h3>
+          <p>Delivery day, the first drive, the questions that come up after
+            the paperwork is signed.</p>
+        </article>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="page-band page-band--dark">
+  <div class="container">
+    <div class="page-band__head">
+      <div>
+        <p class="eyebrow" style="color:#e8c27a">Stay close</p>
+        <h2 style="color:#fff">Facebook is where most of it lands.</h2>
+      </div>
+      <p>No algorithm games, no daily newsletter. When there is something worth
+        showing, it goes up. When there is not, Ed is answering the phone.</p>
+    </div>
+    <div style="display:flex;gap:.7rem;flex-wrap:wrap">
+      {{ with $fb }}<a class="btn btn--red btn--lg" href="{{ . }}" target="_blank" rel="noopener">Open Facebook</a>{{ end }}
+      <a class="btn btn--ghost btn--lg" href="tel:{{ partial "phone-href.html" $phone }}">{{ $phone }}</a>
+      <a class="btn btn--ghost btn--lg" href="/contact/">Send a message</a>
+    </div>
+  </div>
+</section>
+{{ end }}

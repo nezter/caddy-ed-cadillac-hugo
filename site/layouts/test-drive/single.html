@@ -18,10 +18,32 @@
        so its field names stay in step with the schedule-test-drive.js
        contract.
 */}}
-{{ define "headStyles" }}{{ partial "stylesheet.html" "test-drive.scss" }}{{ end }}
+{{ define "headStyles" }}{{ partial "stylesheet.html" "test-drive.scss" }}{{ partial "stylesheet.html" "components/page-visuals.css" }}{{ end }}
 
 {{ define "main" }}
 {{- $phone := .Site.Params.phone | default "803-431-6180" -}}
+
+<section class="page-hero page-hero--test-drive">
+  <div class="page-hero__media">
+    {{ partial "static-picture.html" (dict
+        "src" "img/test-drive-hero.jpg"
+        "alt" "A dark Cadillac sedan on a tree-lined road at golden hour"
+        "sizes" "100vw"
+        "widths" (slice 640 1024 1600 1920)
+        "loading" "eager") }}
+  </div>
+  <div class="container page-hero__inner">
+    <p class="eyebrow">Test drive</p>
+    <h1>Half an hour. Your route. No pressure.</h1>
+    <p class="lede">Tell Ed which Cadillac you have in mind and when suits you.
+      He confirms the car and the time himself, usually the same day.</p>
+    <div class="page-hero__actions">
+      <a class="btn btn-primary btn-lg" href="#book-a-test-drive">Request a time</a>
+      <a class="btn btn-inverse btn-lg" href="tel:{{ partial "phone-href.html" $phone }}">Call {{ $phone }}</a>
+    </div>
+  </div>
+</section>
+
 <article class="section test-drive-page">
   <div class="container">
     <nav aria-label="Breadcrumb" class="vehicle-breadcrumb">
@@ -30,12 +52,19 @@
       <span aria-current="page">{{ .Title }}</span>
     </nav>
 
-    <header class="vehicle-header">
-      <h1>{{ .Title }}</h1>
-      {{ with .Params.subtitle }}<p class="lede">{{ . }}</p>{{ end }}
-    </header>
-
-    <div class="prose">{{ .Content }}</div>
+    <div class="page-split test-drive-intro">
+      <div class="page-split__copy prose">{{ .Content }}</div>
+      <figure class="page-split__media">
+        {{ partial "static-picture.html" (dict
+            "src" "img/test-drive-interior.jpg"
+            "alt" "A driver's hands on a tan leather steering wheel in a Cadillac"
+            "sizes" "(max-width: 64rem) 92vw, 46vw"
+            "widths" (slice 480 720 1000 1400)
+            "loading" "eager") }}
+        <figcaption>The first ten minutes are the point: the seat, the sightlines,
+          and whether the car fits your day.</figcaption>
+      </figure>
+    </div>
 
     <section class="vehicle-booking card" id="book-a-test-drive"
              aria-labelledby="test-drive-heading">
